@@ -20,6 +20,7 @@
             padding: 15px;
             box-shadow: 0 35px 70px -15px rgba(255, 105, 180, 0.3);
             border: 12px solid #fbcfe8; 
+            min-height: 350px;
         }
 
         .game-wrapper {
@@ -101,7 +102,8 @@
         <div class="game mb-10 relative">
             <div class="game-container-outer">
                 <div class="game-wrapper" id="canvas-container">
-                    <div class="interstitial-wrapper w-full h-full"></div>
+                    <!-- Canvas container for injection -->
+                    <div class="interstitial-wrapper w-full h-full" style="min-height: 250px;"></div>
                     
                     <div id="game-summary">
                         <h3 class="text-pink-600 text-3xl font-black mb-1">BRAVO!</h3>
@@ -171,11 +173,17 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'bunny-festival-final';
+        // Safe Firebase initialization
+        let db, auth, appId;
+        try {
+            const firebaseConfig = JSON.parse(__firebase_config);
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            appId = typeof __app_id !== 'undefined' ? __app_id : 'bunny-festival-v3';
+        } catch (e) {
+            console.warn("Firebase not available, using offline mode.");
+        }
 
         // --- Realistic Particle for Fireworks ---
         class Particle {
@@ -312,7 +320,7 @@
                 }
 
                 if (this.frameCount % Math.max(90, Math.floor(180 - this.config.SPEED * 6)) === 0) {
-                    this.obstacles.push({ x: 800, y: 175, w: 50, h: 60 });
+                    this.obstacles.push({ x: 800, y: 175, w: 55, h: 65 });
                 }
                 
                 if (this.frameCount % 180 === 0) {
@@ -321,8 +329,8 @@
 
                 this.obstacles.forEach(o => {
                     o.x -= this.config.SPEED;
-                    if (this.bunny.x + 15 < o.x + o.w - 15 && this.bunny.x + this.bunny.width - 15 > o.x + 15 && 
-                        this.bunny.y + 15 < o.y + o.h - 5 && this.bunny.y + this.bunny.height - 5 > o.y + 5) {
+                    if (this.bunny.x + 20 < o.x + o.w - 20 && this.bunny.x + this.bunny.width - 20 > o.x + 20 && 
+                        this.bunny.y + 20 < o.y + o.h - 5 && this.bunny.y + this.bunny.height - 10 > o.y + 5) {
                         this.isGameOver = true;
                         this.showSummary();
                     }
@@ -334,8 +342,8 @@
             },
             generateCloudParts: function() {
                 let parts = [];
-                for(let i=0; i<5; i++) {
-                    parts.push({ dx: i * 15, dy: Math.random() * 10, r: 15 + Math.random() * 15 });
+                for(let i=0; i<6; i++) {
+                    parts.push({ dx: i * 14, dy: Math.sin(i)*10, r: 18 + Math.random() * 12 });
                 }
                 return parts;
             },
@@ -352,24 +360,28 @@
             draw: function() {
                 this.ctx.clearRect(0, 0, 800, 250);
 
-                // --- REALISTIC SUN ---
+                // --- LUXURY SUN ---
                 const sunX = 80, sunY = 60;
+                this.ctx.save();
+                this.ctx.shadowBlur = 20;
+                this.ctx.shadowColor = '#facc15';
                 const sunGrad = this.ctx.createRadialGradient(sunX, sunY, 5, sunX, sunY, 40);
-                sunGrad.addColorStop(0, '#fff9c4');
-                sunGrad.addColorStop(0.4, '#fdd835');
-                sunGrad.addColorStop(1, '#f9a825');
+                sunGrad.addColorStop(0, '#ffffff');
+                sunGrad.addColorStop(0.3, '#fef08a');
+                sunGrad.addColorStop(1, '#facc15');
                 this.ctx.fillStyle = sunGrad;
                 this.ctx.beginPath();
                 this.ctx.arc(sunX, sunY, 35, 0, Math.PI * 2);
                 this.ctx.fill();
+                this.ctx.restore();
                 
                 this.ctx.strokeStyle = 'rgba(253, 216, 53, 0.4)';
                 this.ctx.lineWidth = 6;
-                for(let i=0; i<12; i++) {
-                    const angle = (i / 12) * Math.PI * 2 + (this.frameCount * 0.02);
+                for(let i=0; i<10; i++) {
+                    const angle = (i / 10) * Math.PI * 2 + (this.frameCount * 0.015);
                     this.ctx.beginPath();
-                    this.ctx.moveTo(sunX + Math.cos(angle) * 45, sunY + Math.sin(angle) * 45);
-                    this.ctx.lineTo(sunX + Math.cos(angle) * 55, sunY + Math.sin(angle) * 55);
+                    this.ctx.moveTo(sunX + Math.cos(angle) * 48, sunY + Math.sin(angle) * 48);
+                    this.ctx.lineTo(sunX + Math.cos(angle) * 58, sunY + Math.sin(angle) * 58);
                     this.ctx.stroke();
                 }
 
@@ -379,119 +391,115 @@
                 this.ctx.fillStyle = '#22c55e';
                 this.ctx.fillRect(0, 220, 800, 6);
 
-                // Fluffy Clouds
-                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+                // REAL Fluffy Clouds
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.96)';
+                this.ctx.shadowBlur = 10;
+                this.ctx.shadowColor = 'rgba(0,0,0,0.05)';
                 this.clouds.forEach(c => {
                     c.parts.forEach(p => {
                         this.ctx.beginPath();
-                        this.ctx.arc(c.x + p.dx, 40 + p.dy, p.r, 0, Math.PI * 2);
+                        this.ctx.arc(c.x + p.dx, 50 + p.dy, p.r, 0, Math.PI * 2);
                         this.ctx.fill();
                     });
                 });
+                this.ctx.shadowBlur = 0;
 
-                // --- DYNAMIC BUNNY ---
+                // --- DETAILED BUNNY ---
                 const bx = this.bunny.x;
                 const by = this.bunny.y;
-                const isJumping = this.bunny.jumping;
+                const jumping = this.bunny.jumping;
 
                 this.ctx.save();
-                if (isJumping) this.ctx.rotate(-0.05); // Tilt forward when jumping
+                if(jumping) this.ctx.rotate(-0.08);
 
-                // Ears (Dynamic)
+                // Ears
                 this.ctx.fillStyle = '#fb7185';
-                const earY = isJumping ? by + 5 : by + 15;
-                this.ctx.beginPath(); // Left
-                this.ctx.ellipse(bx + 15, earY, 10, 30, 0.2, 0, Math.PI * 2);
-                this.ctx.fill();
-                this.ctx.beginPath(); // Right
-                this.ctx.ellipse(bx + 40, earY, 10, 30, -0.2, 0, Math.PI * 2);
-                this.ctx.fill();
-                // Pink centers
+                const earY = jumping ? by + 5 : by + 12;
+                this.ctx.beginPath(); 
+                this.ctx.ellipse(bx + 18, earY, 12, 35, 0.25, 0, Math.PI * 2); this.ctx.fill();
+                this.ctx.beginPath(); 
+                this.ctx.ellipse(bx + 45, earY, 12, 35, -0.25, 0, Math.PI * 2); this.ctx.fill();
+                // Inner ears
                 this.ctx.fillStyle = '#fda4af';
                 this.ctx.beginPath();
-                this.ctx.ellipse(bx + 15, earY + 5, 5, 20, 0.2, 0, Math.PI * 2);
-                this.ctx.fill();
+                this.ctx.ellipse(bx + 18, earY + 5, 6, 25, 0.25, 0, Math.PI * 2); this.ctx.fill();
                 this.ctx.beginPath();
-                this.ctx.ellipse(bx + 40, earY + 5, 5, 20, -0.2, 0, Math.PI * 2);
-                this.ctx.fill();
+                this.ctx.ellipse(bx + 45, earY + 5, 6, 25, -0.25, 0, Math.PI * 2); this.ctx.fill();
 
-                // Legs (Action pose)
+                // Body & Paws
                 this.ctx.fillStyle = '#fb7185';
-                if (isJumping) {
-                    // Stretched legs back
-                    this.ctx.beginPath(); this.ctx.ellipse(bx + 5, by + 65, 12, 6, 0.4, 0, Math.PI * 2); this.ctx.fill();
-                    this.ctx.beginPath(); this.ctx.ellipse(bx + 15, by + 68, 12, 6, 0.2, 0, Math.PI * 2); this.ctx.fill();
+                if(jumping) {
+                    this.ctx.beginPath(); this.ctx.ellipse(bx + 10, by + 68, 15, 8, 0.4, 0, Math.PI * 2); this.ctx.fill();
                 } else {
-                    // Normal running legs
-                    const legMove = Math.sin(this.frameCount * 0.3) * 10;
-                    this.ctx.beginPath(); this.ctx.ellipse(bx + 15 + legMove, by + 68, 8, 12, 0, 0, Math.PI * 2); this.ctx.fill();
-                    this.ctx.beginPath(); this.ctx.ellipse(bx + 35 - legMove, by + 68, 8, 12, 0, 0, Math.PI * 2); this.ctx.fill();
+                    const walk = Math.sin(this.frameCount * 0.4) * 8;
+                    this.ctx.beginPath(); this.ctx.ellipse(bx + 15 + walk, by + 70, 10, 14, 0, 0, Math.PI * 2); this.ctx.fill();
+                    this.ctx.beginPath(); this.ctx.ellipse(bx + 40 - walk, by + 70, 10, 14, 0, 0, Math.PI * 2); this.ctx.fill();
                 }
-
-                // Body
+                // Main body
                 this.ctx.fillStyle = '#fb7185';
                 this.ctx.beginPath();
-                this.ctx.ellipse(bx + 28, by + 45, 32, 28, 0, 0, Math.PI * 2);
+                this.ctx.ellipse(bx + 32, by + 48, 35, 30, 0, 0, Math.PI * 2);
                 this.ctx.fill();
+                
+                // Fluffy Tail
+                this.ctx.fillStyle = '#ffffff';
+                this.ctx.beginPath(); this.ctx.arc(bx + 4, by + 58, 12, 0, Math.PI * 2); this.ctx.fill();
 
-                // Eyes
+                // Eyes & Face
                 this.ctx.fillStyle = 'white';
-                this.ctx.beginPath(); this.ctx.arc(bx + 45, by + 40, 12, 0, Math.PI * 2); this.ctx.fill();
+                this.ctx.beginPath(); this.ctx.arc(bx + 52, by + 42, 14, 0, Math.PI * 2); this.ctx.fill();
                 this.ctx.fillStyle = 'black';
-                this.ctx.beginPath(); this.ctx.arc(bx + 50, by + 40, 6, 0, Math.PI * 2); this.ctx.fill();
+                this.ctx.beginPath(); this.ctx.arc(bx + 58, by + 42, 7, 0, Math.PI * 2); this.ctx.fill();
                 this.ctx.fillStyle = 'white';
-                this.ctx.beginPath(); this.ctx.arc(bx + 52, by + 37, 3, 0, Math.PI * 2); this.ctx.fill();
-                
-                // Nose/Cheeks
-                this.ctx.fillStyle = 'rgba(255, 182, 193, 0.5)';
-                this.ctx.beginPath(); this.ctx.ellipse(bx + 35, by + 50, 8, 5, 0, 0, Math.PI * 2); this.ctx.fill();
+                this.ctx.beginPath(); this.ctx.arc(bx + 61, by + 39, 3.5, 0, Math.PI * 2); this.ctx.fill();
+                // Pink blush
+                this.ctx.fillStyle = 'rgba(255, 182, 193, 0.6)';
+                this.ctx.beginPath(); this.ctx.ellipse(bx + 45, by + 55, 10, 6, 0, 0, Math.PI * 2); this.ctx.fill();
+                // Nose
                 this.ctx.fillStyle = '#f43f5e';
-                this.ctx.beginPath(); this.ctx.arc(bx + 58, by + 50, 4, 0, Math.PI * 2); this.ctx.fill();
-                
+                this.ctx.beginPath(); this.ctx.arc(bx + 68, by + 52, 4.5, 0, Math.PI * 2); this.ctx.fill();
                 this.ctx.restore();
 
                 // --- REALISTIC MUSHROOMS ---
                 this.obstacles.forEach(o => {
-                    // Stem (3D effect)
-                    const stemGrad = this.ctx.createLinearGradient(o.x, o.y, o.x + 30, o.y);
-                    stemGrad.addColorStop(0, '#fef3c7');
-                    stemGrad.addColorStop(1, '#fde68a');
-                    this.ctx.fillStyle = stemGrad;
+                    // 3D Stem
+                    const stemG = this.ctx.createLinearGradient(o.x, o.y, o.x + 40, o.y);
+                    stemG.addColorStop(0, '#fefce8'); stemG.addColorStop(1, '#fde68a');
+                    this.ctx.fillStyle = stemG;
                     this.ctx.beginPath();
-                    this.ctx.moveTo(o.x + 15, o.y + 20);
-                    this.ctx.lineTo(o.x + 10, o.y + 60);
-                    this.ctx.lineTo(o.x + 35, o.y + 60);
-                    this.ctx.lineTo(o.x + 30, o.y + 20);
+                    this.ctx.moveTo(o.x + 18, o.y + 25);
+                    this.ctx.quadraticCurveTo(o.x + 25, o.y + 65, o.x + 15, o.y + 65);
+                    this.ctx.lineTo(o.x + 40, o.y + 65);
+                    this.ctx.quadraticCurveTo(o.x + 30, o.y + 65, o.x + 37, o.y + 25);
                     this.ctx.fill();
 
-                    // Cap (Shaded)
-                    const capGrad = this.ctx.createRadialGradient(o.x + 15, o.y + 10, 5, o.x + 22, o.y + 15, 35);
-                    capGrad.addColorStop(0, '#f87171');
-                    capGrad.addColorStop(1, '#991b1b');
-                    this.ctx.fillStyle = capGrad;
+                    // Shaded Cap
+                    const capG = this.ctx.createRadialGradient(o.x + 15, o.y + 10, 2, o.x + 25, o.y + 20, 40);
+                    capG.addColorStop(0, '#f87171'); capG.addColorStop(1, '#b91c1c');
+                    this.ctx.fillStyle = capG;
                     this.ctx.beginPath();
-                    this.ctx.ellipse(o.x + 22, o.y + 15, 30, 22, 0, 0, Math.PI * 2);
+                    this.ctx.ellipse(o.x + 28, o.y + 18, 35, 25, 0, 0, Math.PI * 2);
                     this.ctx.fill();
 
-                    // White Spots
-                    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-                    this.ctx.beginPath(); this.ctx.arc(o.x + 10, o.y + 8, 7, 0, Math.PI * 2); this.ctx.fill();
-                    this.ctx.beginPath(); this.ctx.arc(o.x + 35, o.y + 20, 5, 0, Math.PI * 2); this.ctx.fill();
-                    this.ctx.beginPath(); this.ctx.arc(o.x + 20, o.y + 28, 4, 0, Math.PI * 2); this.ctx.fill();
+                    // Realistic Spots
+                    this.ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                    this.ctx.beginPath(); this.ctx.arc(o.x + 15, o.y + 10, 8, 0, Math.PI * 2); this.ctx.fill();
+                    this.ctx.beginPath(); this.ctx.arc(o.x + 45, o.y + 22, 6, 0, Math.PI * 2); this.ctx.fill();
+                    this.ctx.beginPath(); this.ctx.arc(o.x + 28, o.y + 30, 5, 0, Math.PI * 2); this.ctx.fill();
                 });
 
-                // Fireworks update & draw
+                // Fireworks
                 this.fireworks.forEach(p => p.draw(this.ctx));
 
-                // Final UI Overlays
+                // UI
                 if (!this.isStarted) {
                     this.ctx.textAlign = 'center';
-                    this.ctx.fillStyle = 'rgba(255,255,255,0.8)';
-                    this.ctx.roundRect(150, 90, 500, 90, 35);
+                    this.ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                    this.ctx.roundRect(150, 100, 500, 90, 40);
                     this.ctx.fill();
                     this.ctx.fillStyle = '#db2777';
                     this.ctx.font = 'bold 45px "Poppins"';
-                    this.ctx.fillText('CLICK TO START! 🐾', 400, 155);
+                    this.ctx.fillText('CLICK TO START! 🐾', 400, 162);
                 }
             },
             gameLoop: function() {
@@ -503,65 +511,69 @@
 
         async function init() {
             const form = document.getElementById('settings-form');
-            const status = document.getElementById('save-status');
-            const userDisplay = document.getElementById('user-display');
             const speedVal = document.getElementById('speed-val');
             const gravityVal = document.getElementById('gravity-val');
             const highScoreDisplay = document.getElementById('high-score-display');
+            const userDisplay = document.getElementById('user-display');
             
-            const wrapper = document.querySelector('.interstitial-wrapper');
-            if (!wrapper) return;
+            // Wait for DOM to be truly ready for canvas injection
+            setTimeout(() => {
+                const wrapper = document.querySelector('.interstitial-wrapper');
+                if (!wrapper) return;
+                const runner = new Runner('.interstitial-wrapper');
+                setupLogic(runner);
+            }, 100);
 
-            const runner = new Runner('.interstitial-wrapper');
-            
-            function syncForm(cfg) {
-                if (!form) return;
-                for (let key in cfg) {
-                    if (form.elements[key]) {
-                        form.elements[key].value = cfg[key];
-                        if (key === 'SPEED') speedVal.textContent = parseFloat(cfg[key]).toFixed(1);
-                        if (key === 'GRAVITY') gravityVal.textContent = parseFloat(cfg[key]).toFixed(2);
+            async function setupLogic(runner) {
+                function syncForm(cfg) {
+                    if (!form) return;
+                    for (let key in cfg) {
+                        if (form.elements[key]) {
+                            form.elements[key].value = cfg[key];
+                            if (key === 'SPEED') speedVal.textContent = parseFloat(cfg[key]).toFixed(1);
+                            if (key === 'GRAVITY') gravityVal.textContent = parseFloat(cfg[key]).toFixed(2);
+                        }
                     }
                 }
+
+                if (auth && db) {
+                    try {
+                        const { user } = await signInAnonymously(auth);
+                        userDisplay.textContent = user.uid.substring(0, 8);
+                        const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'config');
+                        const snap = await getDoc(docRef);
+                        if (snap.exists()) {
+                            const data = snap.data();
+                            Object.assign(runner.config, data);
+                            if (data.highScore) {
+                                runner.highScore = data.highScore;
+                                highScoreDisplay.textContent = Math.floor(data.highScore).toString().padStart(5, '0');
+                            }
+                        }
+                        syncForm(runner.config);
+                    } catch (e) { console.warn("Firebase sync disabled."); }
+                }
+
+                form.addEventListener('input', async (e) => {
+                    const key = e.target.name;
+                    const val = parseFloat(e.target.value);
+                    if (!isNaN(val)) {
+                        runner.config[key] = val;
+                        if (key === 'SPEED') speedVal.textContent = val.toFixed(1);
+                        if (key === 'GRAVITY') gravityVal.textContent = val.toFixed(2);
+                        if (auth && auth.currentUser) {
+                            await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'config'), {
+                                ...runner.config,
+                                highScore: runner.highScore
+                            });
+                        }
+                    }
+                });
             }
-
-            try {
-                const { user } = await signInAnonymously(auth);
-                userDisplay.textContent = user.uid.substring(0, 8);
-                const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'config');
-                const snap = await getDoc(docRef);
-                if (snap.exists()) {
-                    const data = snap.data();
-                    Object.assign(runner.config, data);
-                    if (data.highScore) {
-                        runner.highScore = data.highScore;
-                        highScoreDisplay.textContent = Math.floor(data.highScore).toString().padStart(5, '0');
-                    }
-                }
-                syncForm(runner.config);
-            } catch (e) { console.error(e); }
-
-            form.addEventListener('input', async (e) => {
-                const key = e.target.name;
-                const val = parseFloat(e.target.value);
-                if (!isNaN(val)) {
-                    runner.config[key] = val;
-                    if (key === 'SPEED') speedVal.textContent = val.toFixed(1);
-                    if (key === 'GRAVITY') gravityVal.textContent = val.toFixed(2);
-                    if (auth.currentUser) {
-                        await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'config'), {
-                            ...runner.config,
-                            highScore: runner.highScore
-                        });
-                        status.classList.remove('hidden');
-                        status.classList.add('inline-flex');
-                        setTimeout(() => status.classList.add('hidden'), 2000);
-                    }
-                }
-            });
         }
 
-        window.onload = init;
+        // Initialize when window is fully loaded to prevent null element issues
+        window.addEventListener('load', init);
     </script>
 </body>
 </html>
