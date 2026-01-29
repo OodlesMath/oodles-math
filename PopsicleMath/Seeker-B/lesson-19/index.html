@@ -3,522 +3,686 @@
 <head>
     <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Shape Adventure</title>
-    <!-- Font Poppins -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Shape Adventure!</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            margin: 0;
-            overflow: hidden;
-            background: #a1c4fd;
+        :root {
+            --bg-sky: #87CEEB;
+            --font-main: 'Poppins', sans-serif;
+            --c-red: #FF6B6B;
+            --c-blue: #4ECDC4;
+            --c-green: #95E1D3;
+            --c-yellow: #FFE66D;
+            --c-orange: #FFA500;
+            --c-purple: #C39BD3;
+            --c-white: #FFFFFF;
+            --shadow-soft: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        * {
+            box-sizing: border-box;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Playground Background */
-        .sky-bg {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, #4facfe 0%, #00f2fe 100%);
-            z-index: -1;
-        }
-
-        .ground {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 25vh;
-            background: #91e462;
-            border-top: 8px solid #7ed348;
-            z-index: -1;
-        }
-
-        .cloud {
-            position: absolute;
-            background: white;
-            border-radius: 50px;
-            opacity: 0.9;
-            animation: float linear infinite;
-        }
-
-        @keyframes float {
-            from { transform: translateX(-300px); }
-            to { transform: translateX(110vw); }
-        }
-
-        canvas { display: block; position: absolute; top: 0; left: 0; }
-        #fireworks-canvas { pointer-events: none; z-index: 60; }
-        
-        .game-ui {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 15px;
-            z-index: 10;
-        }
-
-        @media (min-width: 768px) {
-            .game-ui { padding: 25px; }
-        }
-
-        .btn {
-            pointer-events: auto;
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            cursor: pointer;
-        }
-        .btn:hover { transform: translateY(-3px) scale(1.03); }
-        .btn:active { transform: scale(0.95); }
-        
-        .shape-option {
-            background: white;
-            border-radius: 20px;
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-sky);
+            background-image: 
+                radial-gradient(circle at 50% 50%, white 10px, transparent 11px),
+                radial-gradient(circle at 10% 20%, rgba(255,255,255,0.6) 20px, transparent 21px),
+                radial-gradient(circle at 90% 80%, rgba(255,255,255,0.6) 30px, transparent 31px);
+            background-size: 100px 100px, 200px 200px, 300px 300px;
+            margin: 0;
             padding: 10px;
-            box-shadow: 0 6px 0 #cbd5e0, 0 10px 20px rgba(0,0,0,0.1);
-            border: 4px solid #fff;
-            width: 130px;
-            height: 70px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            color: #2d3748;
-            text-align: center;
-            font-size: 0.9rem;
-        }
-
-        @media (min-width: 768px) {
-            .shape-option {
-                width: 170px;
-                height: 90px;
-                font-size: 1.2rem;
-                border-radius: 30px;
-                box-shadow: 0 10px 0 #cbd5e0, 0 15px 30px rgba(0,0,0,0.1);
-                border-width: 6px;
-            }
-        }
-
-        .shape-option.correct { border-color: #48bb78; background: #f0fff4; color: #276749; box-shadow: 0 8px 0 #38a169; }
-        .shape-option.wrong { border-color: #f56565; background: #fff5f5; color: #9b2c2c; box-shadow: 0 8px 0 #e53e3e; }
-        
-        @keyframes pop {
-            0% { transform: scale(0); }
-            80% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-        .pop-animation { animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-
-        /* Level 2 Balanced Card Design */
-        #real-world-card {
-            background: radial-gradient(circle at center, #ffffff 0%, #f7fafc 100%);
-            border-radius: 40px;
-            padding: 25px;
-            box-shadow: 0 20px 50px rgba(49, 130, 206, 0.2);
-            border: 8px solid #fff;
-            text-align: center;
-            max-width: 280px;
-            width: 85%;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: visible;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none;
         }
 
-        #real-world-card::after {
-            content: '';
-            position: absolute;
-            inset: -12px;
-            border-radius: 50px;
-            border: 4px dashed rgba(255, 255, 255, 0.5);
-            pointer-events: none;
-        }
-
-        @media (min-width: 768px) {
-            #real-world-card {
-                border-radius: 60px;
-                padding: 40px;
-                max-width: 360px;
-            }
-        }
-
-        #real-world-object {
-            font-size: 7rem;
-            line-height: 1;
-            filter: drop-shadow(0 15px 20px rgba(0,0,0,0.15));
-            animation: floating 3s ease-in-out infinite;
-            margin-bottom: 10px;
-        }
-
-        @media (min-width: 768px) {
-            #real-world-object { font-size: 10rem; }
-        }
-
-        @keyframes floating {
-            0%, 100% { transform: translateY(0) rotate(0); }
-            50% { transform: translateY(-15px) rotate(3deg); }
-        }
-
-        #object-label {
-            background: #ebf8ff;
-            color: #2b6cb0;
-            padding: 8px 20px;
+        /* --- Header --- */
+        header {
+            width: 100%;
+            max-width: 900px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 20px;
             border-radius: 20px;
-            font-weight: 800;
-            font-size: 1.1rem;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.05);
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            z-index: 50;
+        }
+
+        .title-group h1 {
+            color: #2c3e50;
+            font-size: 1rem;
+            margin: 0;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
+            font-weight: 800;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .speaker-btn {
+            background: var(--c-yellow);
+            border: 3px solid #F1C40F;
+            border-radius: 50%;
+            width: 38px;
+            height: 38px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 0 #D4AC0D;
+        }
+        .speaker-btn:active { transform: scale(0.9) translateY(2px); box-shadow: none; }
+
+        .score-board {
+            background: var(--c-blue);
+            color: white;
+            padding: 6px 15px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            box-shadow: 0 3px 0 #2A9D8F;
+            text-align: center;
+            min-width: 85px;
+        }
+
+        /* --- Main Stage --- */
+        #main-stage {
+            width: 100%;
+            max-width: 900px;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 30px;
+            padding: 12px;
+            box-shadow: var(--shadow-soft);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .instruction-text {
+            font-size: 1.2rem;
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 8px;
+            font-weight: 800;
+            height: 1.5em;
+        }
+
+        /* --- Shape Display Area --- */
+        #shape-container {
+            width: 100%;
+            flex: 1;
+            position: relative;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 2px dashed rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* --- Real World Card Level 2 --- */
+        #real-world-card {
+            background: white;
+            border-radius: 30px;
+            padding: 25px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+            border: 8px solid var(--c-blue);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 90%;
+            min-width: 240px;
+        }
+
+        #object-emoji { font-size: 7rem; line-height: 1; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.1)); }
+        #object-name { 
+            background: #f0f9ff; 
+            color: #0369a1; 
+            padding: 8px 25px; 
+            border-radius: 99px; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            font-size: 1.1rem;
+            white-space: nowrap;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
         }
 
-        @media (min-width: 768px) {
-            #object-label { font-size: 1.4rem; padding: 10px 30px; }
+        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        /* --- Buttons --- */
+        .ans-container {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            padding-top: 10px;
+            margin-top: 10px;
+            border-top: 2px solid #e2e8f0;
         }
 
-        #question-box {
-            margin-top: 1vh;
-            background: #fff;
-            border-radius: 50px;
-            padding: 12px 25px;
-            border: 5px solid #3182ce;
-            box-shadow: 0 8px 0 #2c5282, 0 12px 20px rgba(0,0,0,0.1);
+        .ans-btn {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 10px;
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: #475569;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #cbd5e1;
+            transition: all 0.1s;
+            text-transform: uppercase;
         }
 
+        .ans-btn:hover { background: #f8fafc; transform: translateY(-1px); }
+        .ans-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #cbd5e1; }
+        .ans-btn.correct { background: var(--c-green); color: #065f46; border-color: transparent; box-shadow: 0 4px 0 #6DBBAF; }
+        .ans-btn.wrong { background: var(--c-red); color: white; border-color: transparent; box-shadow: 0 4px 0 #d94e4e; }
+
+        /* --- Overlays --- */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.98);
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .hidden { display: none !important; }
+
+        .start-btn {
+            background: var(--c-orange);
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            font-size: 1.6rem;
+            font-weight: 800;
+            border-radius: 40px;
+            cursor: pointer;
+            box-shadow: 0 8px 0 #d97706;
+            transition: all 0.1s;
+        }
+        .start-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #d97706; }
+
+        #game-canvas {
+            background: #e0f2fe;
+            border-radius: 15px;
+            border: 4px solid var(--c-purple);
+            box-shadow: var(--shadow-soft);
+            max-width: 100%;
+            height: auto;
+        }
+
+        .feedback-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px 40px;
+            border-radius: 25px;
+            font-size: 3rem;
+            font-weight: 800;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+            z-index: 500;
+            display: none;
+            animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #fireworks-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 300; }
+
         @media (min-width: 768px) {
-            #question-box {
-                border-radius: 100px;
-                padding: 15px 60px;
-                border-width: 8px;
-            }
+            .ans-container { grid-template-columns: repeat(4, 1fr); gap: 15px; }
+            .title-group h1 { font-size: 1.25rem; }
+            .instruction-text { font-size: 1.5rem; }
+            .ans-btn { font-size: 1.1rem; padding: 15px; }
+            #object-emoji { font-size: 9rem; }
+            #object-name { font-size: 1.4rem; }
+            header { padding: 15px 25px; }
         }
     </style>
 </head>
 <body>
     <img src="../assets/logo-oodles-math.png" class="oodles-logo">
-    <div class="sky-bg">
-        <div class="cloud" style="width: 200px; height: 60px; top: 10%; left: -100px; animation-duration: 35s;"></div>
-        <div class="cloud" style="width: 250px; height: 80px; top: 25%; left: -200px; animation-duration: 50s; animation-delay: 5s;"></div>
-        <div class="ground"></div>
-    </div>
-
-    <div id="game-container"></div>
-    <canvas id="fireworks-canvas"></canvas>
-
-    <!-- Start Screen -->
-    <div id="start-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-blue-500 p-6 text-center">
-        <div class="bg-white p-8 md:p-12 rounded-[40px] md:rounded-[60px] shadow-2xl max-w-md w-full pop-animation border-[10px] md:border-[15px] border-yellow-400">
-            <div class="text-6xl md:text-8xl mb-6">🥳⚽🎲</div>
-            <h1 class="text-3xl md:text-4xl font-extrabold text-blue-600 mb-2">3D Shape Adventure</h1>
-            <p class="text-lg md:text-xl text-gray-500 mb-10 font-medium tracking-wide">Fun English Learning!</p>
-            <button onclick="startGame()" class="btn bg-orange-500 hover:bg-orange-600 text-white text-2xl md:text-3xl font-black py-5 md:py-6 px-10 md:px-14 rounded-full shadow-[0_12px_0_#9c4221] active:shadow-none active:translate-y-2 uppercase tracking-tighter">Play!</button>
+    <header>
+        <div class="title-group">
+            <h1>3D Shape Adventure! ⚽🎲</h1>
         </div>
-    </div>
-
-    <!-- Game UI -->
-    <div class="game-ui">
-        <!-- Header Left Side -->
-        <div class="flex flex-col gap-3 pointer-events-none items-start max-w-fit">
-            <div class="bg-yellow-400 p-3 px-6 md:px-10 rounded-full shadow-lg pointer-events-auto border-4 border-white">
-                <span class="text-blue-800 font-black text-xl md:text-3xl tracking-tighter">⭐ <span id="score">0</span></span>
-            </div>
-            <div id="level-badge" class="bg-purple-600 p-3 px-6 md:px-10 rounded-full shadow-lg pointer-events-auto text-white font-black text-lg md:text-2xl border-4 border-white">
-                LEVEL <span id="level-num">1</span>
-            </div>
+        <div class="controls">
+            <button class="speaker-btn" onclick="speakTask()" title="Listen">🔊</button>
+            <div class="score-board">LVL <span id="level-val">1</span> | ⭐ <span id="score-val">0</span></div>
         </div>
+    </header>
 
-        <!-- Question Area -->
-        <div id="question-area" class="flex flex-col items-center pointer-events-none flex-grow justify-start pt-2 md:pt-4">
-            <div id="question-box" class="pointer-events-auto pop-animation">
-                <h3 class="text-lg md:text-2xl font-black text-blue-600 uppercase tracking-widest text-center">What is this 3D shape?</h3>
-            </div>
-            
-            <!-- Balanced Level 2 Card -->
-            <div id="real-world-display" class="hidden pointer-events-none mt-10 md:mt-16 flex flex-col items-center w-full">
-                <div id="real-world-card" class="pop-animation mx-auto">
-                    <div id="real-world-object">🎲</div>
-                    <div id="object-label">A Dice!</div>
+    <main id="main-stage">
+        <div id="instruction" class="instruction-text">What is this 3D shape?</div>
+        
+        <div id="shape-container">
+             <div id="real-world-wrapper" class="flex items-center justify-center h-full w-full">
+                <div id="real-world-card">
+                    <div id="object-emoji">🎲</div>
+                    <div id="object-name">A Dice!</div>
                 </div>
-            </div>
+             </div>
         </div>
 
-        <!-- Options Container -->
-        <div id="options-container" class="flex flex-wrap justify-center gap-3 md:gap-6 w-full max-w-5xl mx-auto pb-10 md:pb-14 pointer-events-auto px-4">
-            <!-- Options injected by JS -->
-        </div>
+        <div id="ans-container" class="ans-container"></div>
+    </main>
+
+    <div id="start-overlay" class="overlay">
+        <h1 style="font-size: 3rem; font-weight: 800; color: #2c3e50; margin-bottom: 10px; line-height: 1.1;">3D Shape<br><span style="color: var(--c-blue)">Adventure!</span></h1>
+        <p style="font-size: 1.1rem; color: #64748b; margin-bottom: 25px; font-weight: 600;">Explore Shapes & Jump with Kangaroo! 🦘</p>
+        <button class="start-btn" onclick="startGame()">PLAY! ▶</button>
     </div>
 
-    <!-- Feedback Overlay -->
-    <div id="feedback" class="fixed inset-0 pointer-events-none flex items-center justify-center z-40 hidden">
-        <div id="feedback-content" class="text-[8rem] md:text-[14rem] drop-shadow-2xl"></div>
+    <div id="game-overlay" class="overlay hidden">
+        <h2 style="font-size: 2.2rem; font-weight: 800; color: #16a34a; margin-bottom: 5px;">KANGAROO JUMP! 🦘</h2>
+        <p style="font-weight: 600; color: #64748b; margin-bottom: 10px; font-size: 0.9rem;">Tap to Jump & Score Bonus Points! 🌲</p>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #3b82f6; margin-bottom: 10px;">Time: <span id="timer-val">15</span>s</div>
+        <canvas id="game-canvas" width="600" height="250"></canvas>
+        <div id="game-score-display" style="font-size: 1.8rem; font-weight: 800; color: var(--c-orange); margin-top: 10px;">Score: 0</div>
+        <button id="game-start-btn" class="start-btn" style="margin-top: 15px;" onclick="startKangarooGame()">GO! 🦘</button>
     </div>
+
+    <div id="win-overlay" class="overlay hidden">
+        <canvas id="fireworks-canvas"></canvas>
+        <div style="font-size: 6rem; position: relative; z-index: 10;">🏆</div>
+        <h1 style="font-size: 2.5rem; font-weight: 800; color: #f59e0b; position: relative; z-index: 10;">AMAZING!</h1>
+        <div style="font-size: 2rem; font-weight: 800; color: #3b82f6; margin-bottom: 30px; position: relative; z-index: 10;">Final Score: <span id="final-score">0</span></div>
+        <button class="start-btn" style="position: relative; z-index: 10;" onclick="resetGame()">PLAY AGAIN ↺</button>
+    </div>
+
+    <div id="feedback" class="feedback-label"></div>
 
     <script>
-        // --- SOUNDS ---
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playTone(freq, type, duration, vol=0.2) {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = type;
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + duration);
-        }
-        const successSnd = () => { playTone(523, 'sine', 0.15); setTimeout(() => playTone(659, 'sine', 0.15), 100); setTimeout(() => playTone(783, 'sine', 0.4, 0.3), 200); };
-        const failSnd = () => { playTone(220, 'triangle', 0.2); setTimeout(() => playTone(140, 'triangle', 0.4), 150); };
-
         // --- DATA ---
-        const shapes = [
-            { id: 'cube', name: 'Cube', color: 0xFF5733, geometry: new THREE.BoxGeometry(2.5, 2.5, 2.5), objects: [{e:'🎲', l:'Dice'}, {e:'📦', l:'Box'}] },
-            { id: 'cuboid', name: 'Cuboid', color: 0x33FFD1, geometry: new THREE.BoxGeometry(3.8, 2.2, 2), objects: [{e:'📕', l:'Closed Book'}, {e:'🧃', l:'Juice Box'}, {e:'🧱', l:'Brick'}] },
-            { id: 'sphere', name: 'Sphere', color: 0x33FF57, geometry: new THREE.SphereGeometry(2, 32, 32), objects: [{e:'⚽', l:'Soccer Ball'}, {e:'🏀', l:'Basketball'}, {e:'🍊', l:'Orange'}] },
-            { id: 'cylinder', name: 'Cylinder', color: 0x3357FF, geometry: new THREE.CylinderGeometry(1.4, 1.4, 3.2, 32), objects: [{e:'🥫', l:'Can'}, {e:'🔋', l:'Battery'}, {e:'🥁', l:'Drum'}] },
-            { id: 'cone', name: 'Cone', color: 0xF333FF, geometry: new THREE.ConeGeometry(2, 3.5, 32), objects: [{e:'📣', l:'Megaphone'}] },
-            { id: 'pyramid', name: 'Pyramid', color: 0xFFF333, geometry: new THREE.ConeGeometry(2.2, 3.5, 4), objects: [{e:'🗻', l:'Great Pyramid'}, {e:'⛰️', l:'Step Pyramid'}] },
-            { id: 'prism', name: 'Prism', color: 0xFF8C00, geometry: new THREE.CylinderGeometry(1.8, 1.8, 3.2, 3), objects: [{e:'🍰', l:'Cake Slice'}, {e:'🧀', l:'Cheese'}] }
+        const SHAPES = [
+            { id: 'cube', name: 'Cube', color: 0xFF6B6B, geometry: new THREE.BoxGeometry(4.5, 4.5, 4.5), objects: [{e:'🎲', l:'Dice'}, {e:'📦', l:'Box'}] },
+            { id: 'cuboid', name: 'Cuboid', color: 0x4ECDC4, geometry: new THREE.BoxGeometry(6, 3.5, 2.8), objects: [{e:'📕', l:'Book'}, {e:'🧃', l:'Juice Box'}] },
+            { id: 'sphere', name: 'Sphere', color: 0x4F46E5, geometry: new THREE.SphereGeometry(3, 32, 32), objects: [{e:'⚽', l:'Ball'}, {e:'🍊', l:'Orange'}] }, // Màu đậm hơn
+            { id: 'cylinder', name: 'Cylinder', color: 0xFFE66D, geometry: new THREE.CylinderGeometry(2.2, 2.2, 5, 32), objects: [{e:'🥫', l:'Can'}, {e:'🔋', l:'Battery'}] },
+            { id: 'cone', name: 'Cone', color: 0xFFA500, geometry: new THREE.ConeGeometry(2.8, 5.5, 32), objects: [{e:'📣', l:'Megaphone'}] },
+            { id: 'pyramid', name: 'Pyramid', color: 0xC39BD3, geometry: new THREE.ConeGeometry(3.5, 5.5, 4), objects: [{e:'🗻', l:'Pyramid'}] },
+            { id: 'prism', name: 'Prism', color: 0xFF8C00, geometry: new THREE.CylinderGeometry(2.8, 2.8, 5, 3), objects: [{e:'🍰', l:'Cake Slice'}, {e:'🧀', l:'Cheese'}] }
         ];
 
-        let score = 0;
-        let level = 1;
-        let questionIndex = 0;
-        let level1Shapes = [];
-        let level2Shapes = [];
-        let targetShape = null;
-        let hasMistake = false;
-        let scene, camera, renderer, currentMesh;
+        let state = {
+            level: 1,
+            score: 0,
+            qIdx: 0,
+            questions: [],
+            soundStarted: false,
+            currentTask: "What is this 3D shape?",
+            hasMistake: false,
+            isLocked: false,
+            fwAnimationId: null
+        };
 
-        // --- FIREWORKS ---
-        const fwCanvas = document.getElementById('fireworks-canvas');
-        const fwCtx = fwCanvas.getContext('2d');
-        let fireworks = [];
+        const sounds = {
+            pop: new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.1 } }).toDestination(),
+            correct: new Tone.PolySynth(Tone.Synth).toDestination(),
+            wrong: new Tone.Synth({ oscillator: { type: 'sawtooth' } }).toDestination(),
+            jump: new Tone.Synth({ oscillator: { type: 'square' } }).toDestination(),
+            crash: new Tone.NoiseSynth({ noise: { type: 'brown' }, envelope: { decay: 0.3 } }).toDestination()
+        };
 
-        class Particle {
-            constructor(x, y, color) {
-                this.x = x; this.y = y; this.color = color;
-                this.speed = Math.random() * 7 + 3;
-                this.angle = Math.random() * Math.PI * 2;
-                this.friction = 0.96; this.gravity = 0.3;
-                this.vx = Math.cos(this.angle) * this.speed;
-                this.vy = Math.sin(this.angle) * this.speed;
-                this.opacity = 1;
-            }
-            update() {
-                this.vx *= this.friction; this.vy *= this.friction;
-                this.vy += this.gravity;
-                this.x += this.vx; this.y += this.vy;
-                this.opacity -= 0.015;
-            }
-            draw() {
-                fwCtx.globalAlpha = this.opacity;
-                fwCtx.fillStyle = this.color;
-                fwCtx.beginPath();
-                fwCtx.arc(this.x, this.y, 4, 0, Math.PI * 2);
-                fwCtx.fill();
-            }
+        function playSfx(s) {
+            if(!state.soundStarted) return;
+            if(s==='correct') sounds.correct.triggerAttackRelease(['C5','E5','G5'], '8n');
+            else if(s==='wrong') sounds.wrong.triggerAttackRelease('A2', '8n');
+            else if(s==='jump') sounds.jump.triggerAttackRelease('C4', '16n');
+            else if(s==='crash') sounds.crash.triggerAttackRelease('8n');
+            else sounds.pop.triggerAttackRelease('E5', '32n');
         }
 
-        function createFirework(x, y) {
-            const colors = ['#FFD700', '#FF1493', '#00BFFF', '#ADFF2F', '#FF4500', '#FFFFFF'];
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            for (let i = 0; i < 50; i++) fireworks.push(new Particle(x, y, color));
-        }
-
-        function animateFireworks() {
-            fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
-            fireworks = fireworks.filter(p => p.opacity > 0);
-            fireworks.forEach(p => { p.update(); p.draw(); });
-            requestAnimationFrame(animateFireworks);
+        function speakTask() {
+            window.speechSynthesis.cancel();
+            const ut = new SpeechSynthesisUtterance(state.currentTask);
+            ut.lang = 'en-US';
+            ut.rate = 0.9;
+            window.speechSynthesis.speak(ut);
         }
 
         // --- THREE JS ---
+        let scene, camera, renderer, shapeMesh;
         function initThree() {
+            const container = document.getElementById('shape-container');
+            if(renderer) return;
             scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera = new THREE.PerspectiveCamera(70, container.clientWidth / container.clientHeight, 0.1, 1000);
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.getElementById('game-container').appendChild(renderer.domElement);
-            scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+            
+            scene.add(new THREE.AmbientLight(0xffffff, 1.5));
             const light = new THREE.DirectionalLight(0xffffff, 0.6);
             light.position.set(5, 10, 5);
             scene.add(light);
-            camera.position.z = 8.5;
-            animate();
-        }
+            camera.position.z = 10;
 
-        function animate() {
-            requestAnimationFrame(animate);
-            if (currentMesh) {
-                currentMesh.rotation.y += 0.015;
-                currentMesh.rotation.x += 0.005;
+            function animateThree() {
+                requestAnimationFrame(animateThree);
+                if (shapeMesh) {
+                    shapeMesh.rotation.y += 0.015;
+                    shapeMesh.rotation.x += 0.005;
+                }
+                renderer.render(scene, camera);
             }
-            renderer.render(scene, camera);
+            animateThree();
         }
 
-        // --- GAMEPLAY ---
-        function startGame() {
-            audioCtx.resume();
-            document.getElementById('start-screen').classList.add('hidden');
-            fwCanvas.width = window.innerWidth;
-            fwCanvas.height = window.innerHeight;
-            animateFireworks();
-
-            level1Shapes = [...shapes].sort(() => 0.5 - Math.random());
-            level2Shapes = [...shapes].sort(() => 0.5 - Math.random());
-            
-            initThree();
-            nextQuestion();
-        }
-
-        function nextQuestion() {
-            hasMistake = false;
-            if (level === 1 && questionIndex >= level1Shapes.length) {
-                level = 2; questionIndex = 0;
-            } 
-            
-            if (level === 2 && questionIndex >= level2Shapes.length) {
-                showGameEnd();
-                return;
-            }
-
-            document.getElementById('level-num').innerText = level;
-            
-            if (level === 1) {
-                targetShape = level1Shapes[questionIndex];
-                document.getElementById('real-world-display').classList.add('hidden');
-                showMesh(targetShape);
-            } else {
-                targetShape = level2Shapes[questionIndex];
-                if (currentMesh) scene.remove(currentMesh);
-                document.getElementById('real-world-display').classList.remove('hidden');
-                const randomObj = targetShape.objects[Math.floor(Math.random() * targetShape.objects.length)];
-                document.getElementById('real-world-object').innerText = randomObj.e;
-                document.getElementById('object-label').innerText = `A ${randomObj.l}!`;
-            }
-
-            generateOptions();
-        }
-
-        function showMesh(shapeData) {
-            if (currentMesh) scene.remove(currentMesh);
-            
-            const material = new THREE.MeshPhongMaterial({ 
-                color: shapeData.color, 
-                shininess: 120,
-                specular: 0xffffff
-            });
-            
-            currentMesh = new THREE.Mesh(shapeData.geometry, material);
-            
-            // EDGES FOR LEVEL 1
+        function updateShape(shapeData) {
+            if(shapeMesh) scene.remove(shapeMesh);
+            const material = new THREE.MeshPhongMaterial({ color: shapeData.color, shininess: 120, specular: 0xffffff });
+            shapeMesh = new THREE.Mesh(shapeData.geometry, material);
             const edges = new THREE.EdgesGeometry(shapeData.geometry, 15);
-            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 }));
-            currentMesh.add(line);
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2.5 }));
+            shapeMesh.add(line);
+            shapeMesh.scale.set(0.1, 0.1, 0.1);
+            scene.add(shapeMesh);
             
-            currentMesh.scale.set(0,0,0);
-            scene.add(currentMesh);
-            
-            if (shapeData.id === 'pyramid' || shapeData.id === 'cone') currentMesh.position.y = -0.5;
-            else currentMesh.position.y = 0;
-
-            let s = 0;
-            const anim = setInterval(() => {
-                s += 0.1;
-                currentMesh.scale.set(s,s,s);
-                if (s >= 1) clearInterval(anim);
+            let scaleVal = 0.1;
+            const timer = setInterval(() => {
+                scaleVal += 0.15;
+                if(scaleVal >= 1) {
+                    scaleVal = 1;
+                    clearInterval(timer);
+                }
+                shapeMesh.scale.set(scaleVal, scaleVal, scaleVal);
             }, 20);
         }
 
-        function generateOptions() {
-            const container = document.getElementById('options-container');
-            container.innerHTML = '';
-            
-            let others = shapes.filter(s => s.id !== targetShape.id).sort(() => 0.5 - Math.random()).slice(0, 3);
-            let options = [...others, targetShape].sort(() => 0.5 - Math.random());
+        // --- GAME LOGIC ---
+        function startGame() {
+            Tone.start();
+            state.soundStarted = true;
+            document.getElementById('start-overlay').classList.add('hidden');
+            initThree();
+            startLevel(1);
+        }
 
-            options.forEach(opt => {
-                const div = document.createElement('div');
-                div.className = 'shape-option btn pop-animation uppercase';
-                div.innerText = opt.name;
-                div.onclick = () => checkAnswer(opt.id, div);
-                container.appendChild(div);
+        function resetGame() {
+            state.score = 0;
+            state.level = 1;
+            state.qIdx = 0;
+            if(state.fwAnimationId) cancelAnimationFrame(state.fwAnimationId);
+            document.getElementById('score-val').innerText = '0';
+            document.getElementById('win-overlay').classList.add('hidden');
+            document.getElementById('game-overlay').classList.add('hidden');
+            startLevel(1);
+        }
+
+        function startLevel(lvl) {
+            state.level = lvl;
+            state.qIdx = 0;
+            state.questions = [...SHAPES].sort(() => Math.random() - 0.5);
+            document.getElementById('level-val').innerText = lvl;
+            
+            if(renderer) {
+                const container = document.getElementById('shape-container');
+                renderer.setSize(container.clientWidth, container.clientHeight);
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+            }
+            
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            state.isLocked = false;
+            state.hasMistake = false;
+            const q = state.questions[state.qIdx];
+            
+            const card = document.getElementById('real-world-card');
+            const canvasEl = renderer ? renderer.domElement : null;
+
+            if(state.level === 1) {
+                card.style.display = 'none';
+                if(canvasEl) canvasEl.style.display = 'block';
+                updateShape(q);
+                state.currentTask = "What is this 3D shape?";
+            } else {
+                if(canvasEl) canvasEl.style.display = 'none';
+                card.style.display = 'flex';
+                const randomObj = q.objects[Math.floor(Math.random() * q.objects.length)];
+                document.getElementById('object-emoji').innerText = randomObj.e;
+                document.getElementById('object-name').innerText = `A ${randomObj.l}!`;
+                state.currentTask = `Which 3D shape is like a ${randomObj.l}?`;
+            }
+
+            document.getElementById('instruction').innerText = state.currentTask;
+            
+            const choices = [q];
+            while(choices.length < 4) {
+                const other = SHAPES[Math.floor(Math.random()*SHAPES.length)];
+                if(!choices.find(c => c.id === other.id)) choices.push(other);
+            }
+            choices.sort(() => Math.random() - 0.5);
+
+            const container = document.getElementById('ans-container');
+            container.innerHTML = '';
+            choices.forEach(c => {
+                const btn = document.createElement('button');
+                btn.className = 'ans-btn';
+                btn.innerText = c.name;
+                btn.onclick = () => handleChoice(c, btn);
+                container.appendChild(btn);
             });
         }
 
-        function checkAnswer(selectedId, element) {
-            if (element.classList.contains('correct') || element.classList.contains('wrong')) return;
+        function handleChoice(shape, btn) {
+            if(state.isLocked) return;
+            const target = state.questions[state.qIdx];
 
-            if (selectedId === targetShape.id) {
-                if (!hasMistake) {
-                    score += 10;
-                    document.getElementById('score').innerText = score;
-                }
-                
-                element.classList.add('correct');
-                showFeedback('🌟');
-                successSnd();
-                
-                const rect = element.getBoundingClientRect();
-                createFirework(rect.left + rect.width/2, rect.top);
+            if(shape.id === target.id) {
+                state.isLocked = true;
+                btn.classList.add('correct');
+                playSfx('correct');
+                showFeedback("Correct! 🌟", "var(--c-green)");
+                if(!state.hasMistake) state.score += 10;
+                document.getElementById('score-val').innerText = state.score;
 
                 setTimeout(() => {
-                    questionIndex++;
-                    nextQuestion();
+                    state.qIdx++;
+                    if(state.qIdx >= state.questions.length) {
+                        if(state.level === 1) showKangarooBonus();
+                        else showWin();
+                    } else loadQuestion();
                 }, 1500);
             } else {
-                hasMistake = true;
-                element.classList.add('wrong');
-                showFeedback('❌');
-                failSnd();
+                state.hasMistake = true;
+                btn.classList.add('wrong');
+                playSfx('wrong');
+                showFeedback("Try again!", "var(--c-red)");
+                setTimeout(() => btn.classList.remove('wrong'), 800);
             }
         }
 
-        function showFeedback(emoji) {
-            const fb = document.getElementById('feedback');
-            const content = document.getElementById('feedback-content');
-            content.innerText = emoji;
-            fb.classList.remove('hidden');
-            setTimeout(() => fb.classList.add('hidden'), 1000);
+        function showFeedback(text, color) {
+            const f = document.getElementById('feedback');
+            f.innerText = text;
+            f.style.color = color;
+            f.style.display = 'block';
+            setTimeout(() => f.style.display = 'none', 1000);
         }
 
-        function showGameEnd() {
-            const fwInterval = setInterval(() => {
-                createFirework(Math.random() * fwCanvas.width, Math.random() * fwCanvas.height);
-            }, 400);
+        function showKangarooBonus() {
+            document.getElementById('game-overlay').classList.remove('hidden');
+        }
 
-            const startScreen = document.getElementById('start-screen');
-            startScreen.innerHTML = `
-                <div class="bg-white p-8 md:p-12 rounded-[40px] md:rounded-[60px] shadow-2xl max-w-md w-full pop-animation relative z-[100] border-[10px] md:border-[15px] border-green-400">
-                    <div class="text-7xl md:text-9xl mb-6 text-center">🏆</div>
-                    <h1 class="text-3xl md:text-4xl font-extrabold text-blue-600 mb-2 text-center">Well Done!</h1>
-                    <p class="text-lg md:text-xl text-gray-500 mb-6 font-bold uppercase tracking-widest text-center">You know your shapes!</p>
-                    <div class="bg-blue-50 p-6 md:p-8 rounded-[30px] md:rounded-[40px] mb-10 border-4 border-dashed border-blue-200">
-                        <div class="text-md text-blue-400 font-black uppercase mb-1 text-center">Total Score</div>
-                        <div class="text-5xl md:text-7xl font-black text-blue-600 text-center">${score}</div>
-                    </div>
-                    <button onclick="location.reload()" class="btn bg-orange-500 hover:bg-orange-600 text-white text-2xl md:text-3xl font-black py-4 md:py-6 px-10 md:px-14 rounded-full shadow-[0_12px_0_#9c4221] active:shadow-none active:translate-y-2 uppercase tracking-tighter w-full">Play Again!</button>
-                </div>
-            `;
-            startScreen.classList.remove('hidden');
+        function showWin() {
+            document.getElementById('win-overlay').classList.remove('hidden');
+            document.getElementById('final-score').innerText = state.score;
+            startWinFw();
+        }
+
+        // --- Kangaroo Mini Game ---
+        const kCanvas = document.getElementById('game-canvas');
+        const kCtx = kCanvas.getContext('2d');
+        let kId, kRunning = false, kangaroo = { x: 50, y: 170, dy: 0, grounded: true }, obs = [], kScore = 0, speed = 6, fCount = 0, kStart;
+        let clouds = [{x: 100, y: 50, s: 0.8}, {x: 400, y: 30, s: 1.1}, {x: 550, y: 60, s: 0.7}];
+
+        function startKangarooGame() {
+            document.getElementById('game-start-btn').classList.add('hidden');
+            obs = []; kScore = 0; fCount = 0; kStart = Date.now(); kRunning = true;
+            kangaroo.y = 165; kangaroo.dy = 0;
+            document.getElementById('game-score-display').innerText = "Score: 0";
+            updateKangaroo();
+        }
+
+        function drawKangaroo(x, y) {
+            kCtx.save();
+            kCtx.translate(x, y);
+            
+            // Đuôi khỏe
+            kCtx.strokeStyle = "#C07B2D"; kCtx.lineWidth = 10; kCtx.lineCap = "round";
+            kCtx.beginPath(); kCtx.moveTo(5, 35); kCtx.quadraticCurveTo(-20, 50, -15, 20); kCtx.stroke();
+
+            // Chân sau (To, rõ khớp)
+            kCtx.fillStyle = "#A0522D";
+            kCtx.beginPath();
+            kCtx.ellipse(10, 45, 12, 6, 0.3, 0, Math.PI * 2);
+            kCtx.fill();
+            kCtx.strokeStyle = "#80421D"; kCtx.lineWidth = 2; kCtx.stroke();
+
+            // Thân
+            kCtx.fillStyle = "#D2691E"; kCtx.beginPath(); kCtx.ellipse(20, 30, 20, 15, -0.2, 0, Math.PI * 2); kCtx.fill();
+            
+            // Túi
+            kCtx.fillStyle = "#E9967A"; kCtx.beginPath(); kCtx.arc(25, 35, 10, 0, Math.PI); kCtx.fill();
+            
+            // Chân trước (Nhỏ)
+            kCtx.strokeStyle = "#A0522D"; kCtx.lineWidth = 4;
+            kCtx.beginPath(); kCtx.moveTo(35, 30); kCtx.lineTo(42, 40); kCtx.stroke();
+
+            // Đầu & Tai
+            kCtx.fillStyle = "#D2691E"; kCtx.beginPath(); kCtx.ellipse(40, 12, 12, 10, -0.3, 0, Math.PI * 2); kCtx.fill();
+            kCtx.beginPath(); kCtx.ellipse(35, 0, 5, 15, -0.4, 0, Math.PI * 2); kCtx.ellipse(42, -2, 5, 15, -0.2, 0, Math.PI * 2); kCtx.fill();
+            
+            // Mặt
+            kCtx.fillStyle = "#333"; kCtx.beginPath(); kCtx.arc(52, 12, 2.5, 0, Math.PI * 2); kCtx.fill();
+            kCtx.fillStyle = "white"; kCtx.beginPath(); kCtx.arc(42, 8, 3, 0, Math.PI * 2); kCtx.fill();
+            kCtx.fillStyle = "black"; kCtx.beginPath(); kCtx.arc(43, 8, 1.5, 0, Math.PI * 2); kCtx.fill();
+            
+            kCtx.restore();
+        }
+
+        function drawWorld() {
+            kCtx.fillStyle = "#55A630"; kCtx.fillRect(0, 215, 600, 35);
+            let sunGrd = kCtx.createRadialGradient(530, 50, 5, 530, 50, 40);
+            sunGrd.addColorStop(0, "#FFD700"); sunGrd.addColorStop(0.6, "#FFA500"); sunGrd.addColorStop(1, "rgba(255,165,0,0)");
+            kCtx.fillStyle = sunGrd; kCtx.beginPath(); kCtx.arc(530, 50, 40, 0, Math.PI*2); kCtx.fill();
+            kCtx.fillStyle = "rgba(255, 255, 255, 0.85)";
+            clouds.forEach(c => {
+                c.x -= 0.6; if(c.x < -120) c.x = 650;
+                kCtx.beginPath(); kCtx.arc(c.x, c.y, 25*c.s, 0, Math.PI*2); kCtx.arc(c.x + 20*c.s, c.y - 15*c.s, 30*c.s, 0, Math.PI*2); kCtx.arc(c.x + 45*c.s, c.y, 25*c.s, 0, Math.PI*2); kCtx.fill();
+            });
+        }
+
+        function updateKangaroo() {
+            if(!kRunning) return;
+            kCtx.clearRect(0,0,600,250);
+            fCount++;
+            const left = Math.max(0, 15 - Math.floor((Date.now() - kStart)/1000));
+            document.getElementById('timer-val').innerText = left;
+            if(left <= 0) return endKRun("TIME UP!");
+
+            drawWorld();
+            kangaroo.dy += 0.65; kangaroo.y += kangaroo.dy;
+            if(kangaroo.y > 165) { kangaroo.y = 165; kangaroo.dy = 0; kangaroo.grounded = true; }
+            drawKangaroo(kangaroo.x, kangaroo.y);
+
+            if(fCount % 90 === 0) obs.push({x: 620, type: ['🌵','🌲','🥚','🍄'][Math.floor(Math.random()*4)]});
+            for(let i=obs.length-1; i>=0; i--) {
+                const o = obs[i];
+                o.x -= speed;
+                kCtx.font = "34px Arial"; kCtx.fillText(o.type, o.x, 212);
+                if(kangaroo.x + 10 < o.x + 25 && kangaroo.x + 45 > o.x && kangaroo.y + 40 > 185) return endKRun("CRASH!");
+                if(o.x < -40) { obs.splice(i,1); kScore++; document.getElementById('game-score-display').innerText = `Score: ${kScore}`; }
+            }
+            kId = requestAnimationFrame(updateKangaroo);
+        }
+
+        kCanvas.onpointerdown = () => { if(kangaroo.grounded) { kangaroo.dy = -13.5; kangaroo.grounded = false; playSfx('jump'); } };
+
+        function endKRun(msg) {
+            kRunning = false; cancelAnimationFrame(kId);
+            playSfx(msg === "CRASH!" ? 'crash' : 'correct');
+            const btn = document.getElementById('game-start-btn');
+            btn.innerText = `${msg} NEXT >>`;
+            btn.classList.remove('hidden');
+            btn.onclick = () => {
+                document.getElementById('game-overlay').classList.add('hidden');
+                state.score += kScore;
+                document.getElementById('score-val').innerText = state.score;
+                startLevel(2);
+                btn.onclick = startKangarooGame;
+            };
+        }
+
+        function startWinFw() {
+            const fw = document.getElementById('fireworks-canvas');
+            const fctx = fw.getContext('2d');
+            fw.width = window.innerWidth; fw.height = window.innerHeight;
+            let particlesArr = [];
+            function loopFw() {
+                fctx.fillStyle = 'rgba(255,255,255,0.15)'; fctx.fillRect(0,0,fw.width,fw.height);
+                if(Math.random()<0.1) {
+                    const c = `hsl(${Math.random()*360},100%,50%)`;
+                    const x = Math.random()*fw.width, y = Math.random()*fw.height/2;
+                    for(let i=0; i<40; i++) {
+                        const a = Math.random()*Math.PI*2, s = Math.random()*5+2;
+                        particlesArr.push({x, y, vx: Math.cos(a)*s, vy: Math.sin(a)*s, c, life: 1});
+                    }
+                }
+                particlesArr.forEach((p, i) => {
+                    p.x += p.vx; p.y += p.vy; p.vy += 0.12; p.life -= 0.02;
+                    fctx.globalAlpha = p.life; fctx.fillStyle = p.c; fctx.fillRect(p.x, p.y, 4, 4);
+                    if(p.life <= 0) particlesArr.splice(i, 1);
+                });
+                state.fwAnimationId = requestAnimationFrame(loopFw);
+            }
+            loopFw();
         }
 
         window.onresize = () => {
-            if (camera && renderer) {
-                camera.aspect = window.innerWidth / window.innerHeight;
+            if(camera && renderer) {
+                const container = document.getElementById('shape-container');
+                camera.aspect = container.clientWidth / container.clientHeight;
                 camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                fwCanvas.width = window.innerWidth;
-                fwCanvas.height = window.innerHeight;
+                renderer.setSize(container.clientWidth, container.clientHeight);
             }
         };
     </script>
