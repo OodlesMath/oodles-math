@@ -4,663 +4,664 @@
     <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pop the Greater Number</title>
+    <title>Number Race Game</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Tone.js for Audio -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    
     <style>
-        :root {
-            --bg-sky: #87CEEB;
-            --font-main: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
-            
-            /* Brighter, Yummy Colors */
-            --c-red: #FF6B6B;
-            --c-blue: #4ECDC4;
-            --c-green: #95E1D3;
-            --c-yellow: #FFE66D;
-            --c-orange: #FFA500;
-            --c-purple: #C39BD3;
-            --c-white: #FFFFFF;
-        }
-
-        * {
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            font-family: var(--font-main);
-            background-color: var(--bg-sky);
-            /* Cute cloud background pattern */
-            background-image: 
-                radial-gradient(circle at 50% 50%, white 10px, transparent 11px),
-                radial-gradient(circle at 10% 20%, rgba(255,255,255,0.6) 20px, transparent 21px),
-                radial-gradient(circle at 90% 80%, rgba(255,255,255,0.6) 30px, transparent 31px);
-            background-size: 100px 100px, 200px 200px, 300px 300px;
-            margin: 0;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        /* --- Header --- */
-        header {
-            width: 100%;
-            max-width: 800px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 15px 25px;
-            border-radius: 25px;
-            box-shadow: 0 8px 0 rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .title-group h1 {
-            color: #2c3e50;
-            font-size: 1.5rem;
-            margin: 0;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .controls {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-top: 5px;
-        }
-
-        .speaker-btn {
-            background: var(--c-yellow);
-            border: 3px solid #F1C40F;
-            border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            cursor: pointer;
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.1s;
-        }
-
-        .speaker-btn:active { transform: scale(0.9); }
-
-        .score-board {
-            background: var(--c-blue);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 15px;
-            font-size: 1.4rem;
-            font-weight: bold;
-            box-shadow: 0 4px 0 #2A9D8F;
-        }
-
-        /* --- Game Area --- */
-        #game-area {
-            width: 100%;
-            max-width: 900px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-        }
-
-        .question-label {
-            font-size: 2rem;
-            color: white;
-            text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
-            margin-bottom: 20px;
-            font-weight: bold;
-            background: rgba(0,0,0,0.2);
-            padding: 5px 20px;
-            border-radius: 20px;
-        }
-
-        .balloons-wrapper {
-            display: flex;
-            justify-content: center;
-            align-items: flex-end; /* Align bottom to make strings look grounded */
-            gap: 60px;
-            min-height: 350px;
-            padding-bottom: 20px;
-        }
-
-        /* --- Balloons --- */
-        .balloon-container {
-            position: relative;
-            cursor: pointer;
-            transition: transform 0.2s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+        /* Custom animations not included in default Tailwind */
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes zoom-in { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes slide-up { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
-        .balloon-container:hover { transform: translateY(-5px); }
-        .balloon-container:active { transform: scale(0.95); }
-
-        .balloon {
-            width: 130px;
-            height: 160px;
-            background: var(--c-red);
-            border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 4rem;
-            font-weight: bold;
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-            position: relative;
-            box-shadow: inset -10px -10px 20px rgba(0,0,0,0.1), 5px 10px 10px rgba(0,0,0,0.1);
-            z-index: 2;
-        }
-
-        /* Shine reflection */
-        .balloon::after {
-            content: '';
-            position: absolute;
-            top: 25px;
-            left: 30px;
-            width: 25px;
-            height: 45px;
-            background: rgba(255,255,255,0.4);
-            border-radius: 50%;
-            transform: rotate(20deg);
-        }
-
-        .string {
-            width: 4px;
-            height: 100px;
-            background: #fff;
-            margin-top: -5px;
-            position: relative;
-            z-index: 1;
-            filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.1));
-        }
-
-        /* --- Colors --- */
-        .b-red { background-color: var(--c-red); }
-        .b-blue { background-color: var(--c-blue); }
-        .b-green { background-color: var(--c-green); }
-        .b-yellow { background-color: var(--c-yellow); color: #665; }
-        .b-orange { background-color: var(--c-orange); }
-        .b-purple { background-color: var(--c-purple); }
-
-        /* --- Animations & Feedback --- */
+        .animate-fade-in { animation: fade-in 0.5s ease-out; }
+        .animate-zoom-in { animation: zoom-in 0.5s ease-out; }
+        .animate-slide-up { animation: slide-up 0.3s ease-out; }
         
-        /* POP Animation */
-        @keyframes pop {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.2); opacity: 0.8; }
-            100% { transform: scale(0); opacity: 0; }
-        }
-        .popped .balloon { animation: pop 0.3s forwards ease-in; }
-        .popped .string { opacity: 0; transition: 0.3s; }
-
-        /* Shake Animation */
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px) rotate(-5deg); }
-            75% { transform: translateX(10px) rotate(5deg); }
-        }
-        .shake .balloon { animation: shake 0.4s ease-in-out; }
-
-        /* Stars Effect (Correct) */
-        .star-effect {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 5rem;
-            color: #FFD700;
-            opacity: 0;
-            pointer-events: none;
-            z-index: 10;
-        }
-        .popped .star-effect { animation: starBurst 0.6s ease-out forwards; }
-        @keyframes starBurst {
-            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2) rotate(20deg); }
-            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5) rotate(45deg); }
-        }
-
-        /* Try Again Text (Incorrect) */
-        .try-again {
-            position: absolute;
-            top: -40px;
-            width: 150%;
-            left: -25%;
-            text-align: center;
-            background: #fff;
-            color: var(--c-red);
-            padding: 5px 10px;
-            border-radius: 10px;
-            font-weight: bold;
-            font-size: 1.2rem;
-            opacity: 0;
-            transform: translateY(10px);
-            pointer-events: none;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .shake .try-again { animation: floatUp 1s ease-out; }
-        @keyframes floatUp {
-            0% { opacity: 1; transform: translateY(0); }
-            80% { opacity: 1; transform: translateY(-20px); }
-            100% { opacity: 0; transform: translateY(-30px); }
-        }
-
-        /* --- Mystery Box Section --- */
-        #mystery-area {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            animation: fadeIn 0.5s;
-        }
-        
-        .mystery-title {
-            font-size: 2rem;
-            color: white;
-            text-shadow: 2px 2px 0 #333;
-            margin-bottom: 40px;
-            text-align: center;
-        }
-
-        .boxes-container {
-            display: flex;
-            gap: 30px;
-            justify-content: center;
-        }
-
-        .mystery-box {
-            width: 120px;
-            height: 120px;
-            background: linear-gradient(to bottom, #FF9A9E 0%, #FECFEF 100%);
-            border-radius: 15px;
-            position: relative;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-            transition: transform 0.2s;
-        }
-        
-        .mystery-box:hover { transform: translateY(-5px) scale(1.05); }
-
-        .lid {
-            position: absolute;
-            top: -10px;
-            left: -5px;
-            width: 130px;
-            height: 35px;
-            background: #FF6B6B;
-            border-radius: 8px;
-            z-index: 5;
-            transition: 0.5s;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
-        }
-        /* Bow */
-        .lid::after {
-            content: '';
-            position: absolute;
-            left: 50%;
-            top: -15px;
-            transform: translateX(-50%);
-            width: 30px;
-            height: 20px;
-            background: #FFD700;
-            border-radius: 5px;
-        }
-
-        .prize {
-            font-size: 3.5rem;
-            position: absolute;
-            bottom: 30px;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: 0.5s;
-        }
-
-        .mystery-box.opened .lid { transform: translateY(-50px) rotate(-15deg); opacity: 0; }
-        .mystery-box.opened .prize { opacity: 1; transform: translateY(-10px) scale(1.2); }
-
-        /* --- Victory Modal --- */
-        #victory-modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 100;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 40px;
-            border-radius: 30px;
-            text-align: center;
-            animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            max-width: 90%;
-        }
-
-        @keyframes bounceIn {
-            from { transform: scale(0.5); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-
-        .modal-content h2 { font-size: 2.5rem; color: var(--c-purple); margin: 0 0 10px 0; }
-        .modal-content p { font-size: 1.2rem; color: #555; }
-        
-        button.restart-btn {
-            background: var(--c-blue);
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            font-size: 1.3rem;
-            border-radius: 50px;
-            cursor: pointer;
-            margin-top: 20px;
-            font-family: inherit;
-            box-shadow: 0 4px 0 #2A9D8F;
-        }
-        button.restart-btn:hover { transform: translateY(-2px); }
-
-        /* Mobile */
-        @media (max-width: 600px) {
-            .balloon { width: 100px; height: 120px; font-size: 3rem; }
-            .balloons-wrapper { gap: 30px; }
-            h1 { font-size: 1.2rem; }
-            .mystery-box { width: 90px; height: 90px; }
-            .lid { width: 100px; }
-        }
-
-        #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99; }
+        body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        .no-select { user-select: none; -webkit-user-select: none; }
     </style>
 </head>
-<body>
-<img src="../assets/logo-oodles-math.png" class="oodles-logo">
-    <header>
-        <div class="title-group">
-            <h1>Pop the Greater Number</h1>
-            <div class="controls">
-                <div style="color: #555; font-size: 1rem;">Click the bigger number!</div>
-                <button class="speaker-btn" onclick="speakQuestion()" title="Read Question">🔊</button>
-            </div>
-        </div>
-        <div class="score-board">Score: <span id="score">0</span> / 6</div>
-    </header>
-
-    <div id="game-area">
-        <!-- Question Section -->
-        <div id="question-wrapper" style="width: 100%; text-align: center;">
-            <div class="question-label" id="q-label">Question 1</div>
-            <div class="balloons-wrapper" id="balloons-wrapper">
-                <!-- Balloons injected here -->
-            </div>
-        </div>
-
-        <!-- Mystery Box Section -->
-        <div id="mystery-area">
-            <div class="mystery-title">Correct! Pick a Mystery Box! 🎁</div>
-            <div class="boxes-container" id="boxes-container">
-                <!-- Boxes injected here -->
-            </div>
-        </div>
+<body class="min-h-screen bg-sky-100 flex flex-col items-center font-sans text-slate-700 overflow-hidden relative no-select">
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- App Container -->
+    <div id="app" class="w-full h-full flex flex-col items-center">
+        <!-- Content will be injected here by JavaScript -->
     </div>
-
-    <!-- Victory Modal -->
-    <div id="victory-modal">
-        <div class="modal-content">
-            <h2>You are a Star! 🌟</h2>
-            <p>You answered all questions correctly!</p>
-            <button class="restart-btn" onclick="location.reload()">Play Again</button>
-        </div>
-    </div>
-
-    <canvas id="confetti-canvas"></canvas>
 
     <script>
-        // ==========================================
-        // TEACHER AREA
-        // ==========================================
-        const gameData = [
-            { label: 'Question 1', left: 5,  right: 12 },
-            { label: 'Question 2', left: 18, right: 9  },
-            { label: 'Question 3', left: 3,  right: 7  },
-            { label: 'Question 4', left: 14, right: 11 },
-            { label: 'Question 5', left: 2,  right: 6  },
-            { label: 'Question 6', left: 10, right: 15 }
+        // --- CONFIGURATION & DATA ---
+        const TOTAL_CELLS = 50;
+
+        const PLAYER_DATA = [
+            { id: 0, name: 'Bunny', color: 'bg-rose-500', text: 'text-rose-600', border: 'border-rose-500', icon: '🐰', shadow: 'shadow-rose-300' },
+            { id: 1, name: 'Turtle', color: 'bg-cyan-500', text: 'text-cyan-600', border: 'border-cyan-500', icon: '🐢', shadow: 'shadow-cyan-300' },
+            { id: 2, name: 'Froggy', color: 'bg-lime-500', text: 'text-lime-600', border: 'border-lime-500', icon: '🐸', shadow: 'shadow-lime-300' },
+            { id: 3, name: 'Ducky', color: 'bg-amber-400', text: 'text-amber-600', border: 'border-amber-500', icon: '🦆', shadow: 'shadow-amber-300' },
         ];
 
-        // Colors for balloons
-        const colors = ['b-red', 'b-blue', 'b-green', 'b-yellow', 'b-orange', 'b-purple'];
+        const CELL_COLORS = [
+            'bg-red-50 border-red-100', 'bg-orange-50 border-orange-100', 
+            'bg-amber-50 border-amber-100', 'bg-yellow-50 border-yellow-100', 
+            'bg-lime-50 border-lime-100', 'bg-green-50 border-green-100', 
+            'bg-emerald-50 border-emerald-100', 'bg-teal-50 border-teal-100', 
+            'bg-cyan-50 border-cyan-100', 'bg-sky-50 border-sky-100'
+        ];
 
-        let currentQIndex = 0;
-        let score = 0;
-        
-        // DOM Elements
-        const qWrapper = document.getElementById('question-wrapper');
-        const mysteryArea = document.getElementById('mystery-area');
-        const balloonsWrapper = document.getElementById('balloons-wrapper');
-        const boxesContainer = document.getElementById('boxes-container');
-        const qLabel = document.getElementById('q-label');
-        const scoreDisplay = document.getElementById('score');
-        const victoryModal = document.getElementById('victory-modal');
+        // --- STATE MANAGEMENT ---
+        const state = {
+            gameState: 'SETUP', // SETUP, ROLL, ROLLING_DICE, MOVING_MANUAL, QUIZ, WIN, REWARD
+            players: [],
+            turn: 0,
+            diceVal: 1,
+            stepsLeft: 0,
+            startTurnPos: 1,
+            quiz: null,
+            score: 0,
+            rewardGameType: 'CHEST',
+            chests: [],
+            balloons: [],
+            fireworks: [],
+            rewardMessage: ''
+        };
+
+        let animationFrameId;
+        let audioInitialized = false;
+        let timerId = null;
 
         // --- AUDIO SYSTEM ---
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const speak = (text) => {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.9;
+                utterance.pitch = 1.2;
+                window.speechSynthesis.speak(utterance);
+            }
+        };
 
-        function playSound(type) {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
+        const initAudio = async () => {
+            if (!audioInitialized) {
+                await Tone.start();
+                audioInitialized = true;
+            }
+        };
 
-            const now = audioCtx.currentTime;
+        const playSoundEffect = (type) => {
+            if (!audioInitialized) return;
+
+            const synth = new Tone.PolySynth(Tone.Synth).toDestination();
 
             if (type === 'pop') {
-                // High pitch pop
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(600, now);
-                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
-                gain.gain.setValueAtTime(0.5, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                osc.start(now);
-                osc.stop(now + 0.1);
-            } else if (type === 'error') {
-                // Low buzz
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, now);
-                osc.frequency.linearRampToValueAtTime(100, now + 0.2);
-                gain.gain.setValueAtTime(0.5, now);
-                gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
-                osc.start(now);
-                osc.stop(now + 0.2);
-            } else if (type === 'win') {
-                // Magical chime
-                [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
-                    let o = audioCtx.createOscillator();
-                    let g = audioCtx.createGain();
-                    o.connect(g);
-                    g.connect(audioCtx.destination);
-                    o.type = 'triangle';
-                    o.frequency.value = freq;
-                    g.gain.setValueAtTime(0.1, now + i*0.1);
-                    g.gain.linearRampToValueAtTime(0, now + i*0.1 + 0.4);
-                    o.start(now + i*0.1);
-                    o.stop(now + i*0.1 + 0.4);
-                });
+                const noise = new Tone.NoiseSynth({
+                    envelope: { attack: 0.001, decay: 0.1, sustain: 0 }
+                }).toDestination();
+                noise.triggerAttackRelease("16n");
+            } else if (type === 'chest') {
+                synth.triggerAttackRelease(["C5", "E5", "G5"], "8n");
+            } else if (type === 'correct') {
+                synth.triggerAttackRelease(["C5", "F5", "A5", "C6"], "4n");
+            } else if (type === 'wrong') {
+                const membrane = new Tone.MembraneSynth().toDestination();
+                membrane.triggerAttackRelease("C2", "8n");
+            } else if (type === 'click') {
+                const click = new Tone.MetalSynth({
+                    envelope: { attack: 0.001, decay: 0.05, sustain: 0 }
+                }).toDestination();
+                click.triggerAttackRelease("32n");
             }
-        }
-
-        function speakQuestion() {
-            window.speechSynthesis.cancel();
-            const item = gameData[currentQIndex];
-            if (!item) return;
-
-            const text = `Which number is bigger? ${item.left}, or ${item.right}?`;
-            const ut = new SpeechSynthesisUtterance(text);
-            ut.lang = 'en-US';
-            ut.rate = 0.9;
-            window.speechSynthesis.speak(ut);
-        }
+        };
 
         // --- GAME LOGIC ---
-        function initGame() {
-            showQuestion(0);
+
+        function handleStartGame(count) {
+            initAudio();
+            state.players = Array.from({ length: count }, (_, i) => ({
+                ...PLAYER_DATA[i],
+                pos: 1,
+            }));
+            state.gameState = 'ROLL';
+            state.turn = 0;
+            speak("Welcome to Number Race! Player 1, it's your turn.");
+            render();
         }
 
-        function showQuestion(index) {
-            if (index >= gameData.length) {
-                endGame();
-                return;
-            }
-
-            // Reset UI
-            qWrapper.style.display = 'block';
-            mysteryArea.style.display = 'none';
-            balloonsWrapper.innerHTML = '';
+        function handleRollClick() {
+            state.gameState = 'ROLLING_DICE';
+            render();
             
-            // IMPORTANT FIX: Re-enable clicking on the wrapper
-            balloonsWrapper.style.pointerEvents = 'auto';
-
-            const item = gameData[index];
-            qLabel.innerText = item.label;
-
-            // Pick colors based on index
-            const c1 = colors[(index * 2) % colors.length];
-            const c2 = colors[(index * 2 + 1) % colors.length];
-
-            // Create balloons
-            balloonsWrapper.appendChild(createBalloon(item.left, item.right, c1));
-            balloonsWrapper.appendChild(createBalloon(item.right, item.left, c2));
+            let count = 0;
+            const interval = setInterval(() => {
+                state.diceVal = Math.floor(Math.random() * 6) + 1;
+                playSoundEffect('click');
+                // Only update the dice UI
+                updateDiceUI(); 
+                count++;
+                if (count > 12) {
+                    clearInterval(interval);
+                    finalizeRoll();
+                }
+            }, 80);
         }
 
-        function createBalloon(num, otherNum, colorClass) {
-            const container = document.createElement('div');
-            container.className = 'balloon-container';
+        function finalizeRoll() {
+            const val = Math.floor(Math.random() * 6) + 1;
+            state.diceVal = val;
+            state.stepsLeft = val;
+            state.startTurnPos = state.players[state.turn].pos;
+            state.gameState = 'MOVING_MANUAL';
+            speak(`You got a ${val}. Tap the path to move!`);
+            render();
+        }
 
-            container.innerHTML = `
-                <div class="try-again">Try Again!</div>
-                <div class="balloon ${colorClass}">${num}</div>
-                <div class="string"></div>
-                <div class="star-effect">⭐</div>
-            `;
+        function handleCellClick(cellNum) {
+            if (state.gameState !== 'MOVING_MANUAL') return;
 
-            container.onclick = (e) => {
-                // Prevent multiple clicks if parent is disabled
-                if (balloonsWrapper.style.pointerEvents === 'none') return;
+            const currentPlayer = state.players[state.turn];
+            const expectedPos = currentPlayer.pos + 1;
 
-                if (num > otherNum) {
-                    // CORRECT
-                    playSound('pop');
-                    container.classList.add('popped');
-                    // Disable all clicks immediately
-                    balloonsWrapper.style.pointerEvents = 'none';
+            if (cellNum === expectedPos && state.stepsLeft > 0) {
+                playSoundEffect('click');
+                state.players[state.turn].pos = cellNum;
+                state.stepsLeft--;
 
-                    setTimeout(() => {
-                        startMysteryPhase();
-                    }, 1200);
-                } else {
-                    // INCORRECT
-                    playSound('error');
-                    container.classList.add('shake');
-                    setTimeout(() => container.classList.remove('shake'), 500);
+                // Optimization: Just re-render board instead of full app if possible, 
+                // but full render is safer for state consistency in vanilla JS.
+                
+                if (cellNum >= TOTAL_CELLS) {
+                    triggerWin(currentPlayer);
+                } else if (state.stepsLeft === 0) {
+                    prepareQuiz(state.startTurnPos, state.diceVal, cellNum);
                 }
+                render();
+            }
+        }
+
+        function triggerWin(winner) {
+            state.gameState = 'WIN';
+            speak(`Congratulations! ${winner.name} is the champion!`);
+            createFireworks();
+            render();
+        }
+
+        function createFireworks() {
+            state.fireworks = Array.from({length: 40}, (_, i) => ({
+                id: i,
+                x: Math.random() * 80 + 10,
+                y: Math.random() * 40 + 20,
+                color: `hsl(${Math.random() * 360}, 70%, 50%)`,
+                angle: Math.random() * 360,
+                speed: Math.random() * 4 + 2,
+                life: 100
+            }));
+            startAnimationLoop();
+        }
+
+        function prepareQuiz(start, added, result) {
+            let wrong1 = result + (Math.random() > 0.5 ? 1 : 2);
+            let wrong2 = Math.max(1, result - (Math.random() > 0.5 ? 1 : 2));
+            if (wrong2 === result || wrong2 === start) wrong2 = result + 3;
+            
+            const options = [result, wrong1, wrong2].sort(() => Math.random() - 0.5);
+
+            state.quiz = {
+                start,
+                add: added,
+                correct: result,
+                options: options
             };
 
-            return container;
+            setTimeout(() => {
+                state.gameState = 'QUIZ';
+                speak(`What is ${start} plus ${added}?`);
+                render();
+            }, 400);
         }
 
-        // --- MYSTERY PHASE ---
-        function startMysteryPhase() {
-            qWrapper.style.display = 'none';
-            mysteryArea.style.display = 'flex';
-            boxesContainer.innerHTML = '';
-            mysteryArea.setAttribute('data-locked', 'false');
+        function handleQuizAnswer(ans) {
+            if (ans === state.quiz.correct) {
+                playSoundEffect('correct');
+                speak("Excellent!");
+                const type = Math.random() > 0.5 ? 'CHEST' : 'BALLOON';
+                state.rewardGameType = type;
+                
+                if (type === 'CHEST') setupChestGame();
+                else setupBalloonGame();
+            } else {
+                playSoundEffect('wrong');
+                speak("Oh no, try again!");
+            }
+        }
 
-            // Prizes: 1 Trophy, 2 Candies
-            let prizes = ['🏆', '🍬', '🍬'];
-            prizes.sort(() => Math.random() - 0.5);
+        function setupChestGame() {
+            state.gameState = 'REWARD';
+            state.rewardMessage = 'Choose your treasure! 🎁';
+            state.chests = [
+                { id: 1, content: 'gems', isOpen: false },
+                { id: 2, content: 'gold', isOpen: false },
+                { id: 3, content: 'crown', isOpen: false }
+            ].sort(() => Math.random() - 0.5);
+            render();
+        }
 
-            prizes.forEach(prize => {
-                const box = document.createElement('div');
-                box.className = 'mystery-box';
-                box.innerHTML = `
-                    <div class="lid"></div>
-                    <div class="prize">${prize}</div>
+        function openChest(chestId) {
+            if (state.chests.some(c => c.isOpen)) return;
+            
+            const chestIndex = state.chests.findIndex(c => c.id === chestId);
+            state.chests[chestIndex].isOpen = true;
+            playSoundEffect('chest');
+
+            const chest = state.chests[chestIndex];
+            let bonus = 10;
+            let msg = "";
+            if (chest.content === 'gems') { msg = "Crystal Gems!"; bonus = 20; }
+            else if (chest.content === 'gold') { msg = "Pot of Gold!"; bonus = 50; }
+            else if (chest.content === 'crown') { msg = "Royal Crown!"; bonus = 100; }
+
+            state.rewardMessage = msg;
+            state.score += bonus;
+            
+            render(); // Update UI to show open chest and score
+
+            if (timerId) clearTimeout(timerId);
+            timerId = setTimeout(() => advanceTurn(), 2500);
+        }
+
+        function setupBalloonGame() {
+            state.gameState = 'REWARD';
+            state.rewardMessage = 'Pop as many as you can! 🎈';
+            state.balloons = Array.from({ length: 10 }, (_, i) => ({
+                id: i,
+                x: Math.random() * 80 + 10,
+                y: -20 - (i * 10),
+                speed: Math.random() * 0.5 + 0.3,
+                color: ['#FF6B6B', '#4ECDC4', '#95E1D3', '#FFE66D', '#C39BD3'][Math.floor(Math.random() * 5)],
+                popped: false
+            }));
+            
+            render();
+            startAnimationLoop();
+
+            if (timerId) clearTimeout(timerId);
+            timerId = setTimeout(() => advanceTurn(), 7000);
+        }
+
+        function popBalloon(id) {
+            const bIndex = state.balloons.findIndex(b => b.id === id);
+            if(bIndex > -1 && !state.balloons[bIndex].popped) {
+                playSoundEffect('pop');
+                state.balloons[bIndex].popped = true;
+                state.score += 5;
+                render(); // Re-render to remove balloon and update score
+            }
+        }
+
+        function advanceTurn() {
+            state.gameState = state.gameState === 'WIN' ? 'WIN' : 'ROLL';
+            state.quiz = null;
+            state.turn = (state.turn + 1) % state.players.length;
+            render();
+        }
+
+        function resetGame() {
+            if (timerId) clearTimeout(timerId);
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            state.gameState = 'SETUP';
+            state.players = [];
+            state.fireworks = [];
+            state.balloons = [];
+            state.score = 0;
+            render();
+        }
+
+        // --- ANIMATION LOOP ---
+        function startAnimationLoop() {
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            
+            function loop() {
+                let needsRender = false;
+
+                // Fireworks Logic
+                if (state.gameState === 'WIN' && state.fireworks.length > 0) {
+                    state.fireworks = state.fireworks.map(p => ({
+                        ...p,
+                        x: p.x + Math.cos(p.angle * Math.PI / 180) * p.speed * 0.2,
+                        y: p.y + Math.sin(p.angle * Math.PI / 180) * p.speed * 0.2,
+                        life: p.life - 2,
+                        speed: p.speed * 0.96
+                    })).filter(p => p.life > 0);
+                    
+                    updateFireworksUI();
+                    needsRender = true;
+                }
+
+                // Balloons Logic
+                if (state.gameState === 'REWARD' && state.rewardGameType === 'BALLOON') {
+                    state.balloons = state.balloons.map(b => ({
+                        ...b,
+                        y: b.y + b.speed
+                    }));
+                    updateBalloonsUI();
+                    needsRender = true;
+                }
+
+                if (state.gameState === 'WIN' || (state.gameState === 'REWARD' && state.rewardGameType === 'BALLOON')) {
+                    animationFrameId = requestAnimationFrame(loop);
+                }
+            }
+            loop();
+        }
+
+        // --- DOM RENDERERS ---
+
+        // Specialized UI updaters to avoid full re-render on high-frequency animations
+        function updateDiceUI() {
+            const diceEl = document.getElementById('dice-value');
+            if (diceEl) diceEl.innerText = state.diceVal;
+        }
+
+        function updateFireworksUI() {
+            const container = document.getElementById('fireworks-container');
+            if (!container) return;
+            
+            let html = '';
+            state.fireworks.forEach(p => {
+                html += `
+                    <div class="absolute w-2 h-2 rounded-full"
+                         style="background-color: ${p.color}; left: ${p.x}%; top: ${p.y}%; opacity: ${p.life / 100}; transform: scale(${p.life/50})">
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function updateBalloonsUI() {
+            // We only update the bottom position style of existing elements to avoid DOM thrashing
+            state.balloons.forEach(b => {
+                const el = document.getElementById(`balloon-${b.id}`);
+                if (el) {
+                    el.style.bottom = `${b.y}%`;
+                }
+            });
+        }
+
+        // --- MAIN RENDER FUNCTION ---
+        function render() {
+            const app = document.getElementById('app');
+            let html = '';
+
+            // Background Decor
+            html += `
+                <div class="absolute top-10 left-10 w-24 h-24 bg-white/40 rounded-full blur-2xl animate-pulse pointer-events-none"></div>
+                <div class="absolute bottom-20 right-10 w-32 h-32 bg-cyan-200/40 rounded-full blur-3xl pointer-events-none"></div>
+            `;
+
+            // HEADER
+            html += `
+                <header class="w-full max-w-4xl bg-white/90 backdrop-blur-md p-4 px-6 shadow-sm flex justify-between items-center z-40 m-2 rounded-3xl border border-white/50">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center shadow-lg">
+                            <i data-lucide="star" class="text-white w-5 h-5"></i>
+                        </div>
+                        <h1 class="text-2xl font-black text-slate-800 tracking-tight">Number Race</h1>
+                    </div>
+                    
+                    <div class="flex items-center gap-4">
+                        <div class="bg-white px-4 py-2 rounded-2xl shadow-inner border border-slate-100 flex items-center gap-2">
+                            <i data-lucide="gem" class="text-cyan-500 w-4 h-4"></i>
+                            <span class="font-black text-xl text-slate-700">${state.score}</span>
+                        </div>
+                        <button onclick="resetGame()" class="p-2.5 bg-slate-100 rounded-2xl hover:bg-slate-200 transition-colors text-slate-500">
+                            <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </header>
+            `;
+
+            // SETUP SCREEN
+            if (state.gameState === 'SETUP') {
+                html += `
+                    <div class="flex-1 flex flex-col items-center justify-center w-full max-w-2xl p-6 animate-zoom-in">
+                        <div class="relative mb-12">
+                            <div class="text-9xl animate-bounce">🏁</div>
+                            <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-32 h-4 bg-black/10 blur-md rounded-full"></div>
+                        </div>
+                        
+                        <h2 class="text-4xl font-black mb-10 text-center text-slate-800 drop-shadow-sm">How many racers?</h2>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-lg">
+                            ${[1, 2, 3, 4].map(num => `
+                                <button onclick="handleStartGame(${num})" class="bg-white/80 backdrop-blur p-8 rounded-[2rem] shadow-xl border-b-8 border-violet-200 hover:border-violet-500 hover:-translate-y-2 transition-all flex flex-col items-center gap-4 group">
+                                    <div class="flex -space-x-4 group-hover:space-x-2 transition-all">
+                                        ${Array.from({length: num}).map((_, i) => `
+                                            <span class="text-4xl filter drop-shadow-md">${PLAYER_DATA[i].icon}</span>
+                                        `).join('')}
+                                    </div>
+                                    <span class="font-extrabold text-2xl text-slate-600">${num} Racer${num > 1 ? 's' : ''}</span>
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // GAME AREA
+            if (state.gameState !== 'SETUP') {
+                html += `<div class="w-full max-w-3xl px-4 mt-2 mb-32 flex flex-col flex-1 overflow-y-auto">`;
+                
+                // RENDER BOARD
+                html += `<div class="grid grid-cols-10 gap-2 p-4 bg-white/80 backdrop-blur-md rounded-[2.5rem] shadow-2xl border-[8px] border-white/50 select-none relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-violet-500/5 to-cyan-500/5 pointer-events-none"></div>`;
+                
+                for(let rowIndex = 0; rowIndex < 5; rowIndex++) {
+                    const rowStart = 41 - (rowIndex * 10);
+                    for(let j = 0; j < 10; j++) {
+                        let cellNum = rowIndex % 2 === 0 ? rowStart + j : (rowStart + 9) - j;
+                        const colorClass = CELL_COLORS[(cellNum - 1) % 10];
+                        const currentPlayer = state.players[state.turn];
+                        // Safe check for undefined during transitions
+                        const isNextStep = currentPlayer && state.gameState === 'MOVING_MANUAL' && cellNum === currentPlayer.pos + 1;
+                        
+                        html += `
+                            <div onclick="handleCellClick(${cellNum})" 
+                                class="relative aspect-square border-2 border-white/40 rounded-2xl flex items-center justify-center shadow-sm transition-all duration-300 ${colorClass} ${isNextStep ? 'ring-4 ring-yellow-400 scale-105 z-20 cursor-pointer animate-bounce shadow-xl' : 'hover:brightness-95'}">
+                                
+                                <span class="absolute inset-0 flex items-center justify-center text-xl sm:text-2xl font-black text-slate-400/30 select-none pointer-events-none z-0">${cellNum}</span>
+                                
+                                ${cellNum === TOTAL_CELLS ? '<i data-lucide="trophy" class="text-yellow-500 z-10 drop-shadow-lg scale-110 w-8 h-8"></i>' : ''}
+                                
+                                <div class="relative z-10 flex -space-x-2 items-center justify-center w-full h-full flex-wrap content-center pointer-events-none">
+                                    ${state.players.map((p, idx) => p.pos === cellNum ? `
+                                        <div class="w-8 h-8 sm:w-11 sm:h-11 rounded-full shadow-lg border-2 border-white flex items-center justify-center text-xl sm:text-2xl transition-all ${p.color} z-10 transform hover:scale-125 hover:rotate-12">
+                                            ${p.icon}
+                                        </div>
+                                    ` : '').join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+                html += `</div>`; // End Grid
+                html += `</div>`; // End Game Area Wrapper
+            }
+
+            // BOTTOM CONTROLS PANEL
+            if (state.gameState !== 'SETUP') {
+                const currentPlayer = state.players[state.turn];
+                
+                html += `
+                    <div class="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-lg shadow-[0_-15px_40px_rgba(0,0,0,0.1)] p-5 px-6 rounded-t-[3rem] z-50 transition-all border-t border-white/60">
+                        <div class="max-w-xl mx-auto">
                 `;
 
-                box.onclick = () => {
-                    if (box.classList.contains('opened')) return;
-                    if (mysteryArea.getAttribute('data-locked') === 'true') return;
+                // ROLL DICE PHASE
+                if (state.gameState === 'ROLL' || state.gameState === 'ROLLING_DICE') {
+                    html += `
+                        <div class="flex items-center justify-between gap-4 animate-slide-up">
+                            <div class="flex items-center gap-5">
+                                <div class="w-20 h-20 rounded-[1.5rem] flex items-center justify-center text-5xl shadow-2xl border-b-8 border-black/10 ${currentPlayer?.color} text-white">
+                                    ${currentPlayer?.icon}
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-1">Current Racer</div>
+                                    <div class="font-black text-3xl ${currentPlayer?.text}">${currentPlayer?.name}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex-shrink-0">
+                                ${state.gameState === 'ROLL' ? `
+                                    <button onclick="handleRollClick()" class="bg-gradient-to-br from-violet-500 to-indigo-600 text-white px-10 py-5 rounded-2xl font-black text-2xl shadow-xl shadow-indigo-200 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 border-b-4 border-indigo-800">
+                                        <i data-lucide="dices" class="w-8 h-8"></i> ROLL
+                                    </button>
+                                ` : `
+                                    <div class="w-24 h-24 bg-white border-4 border-violet-100 rounded-3xl shadow-inner flex items-center justify-center">
+                                        <div id="dice-value" class="text-4xl font-black text-violet-600 animate-spin">${state.diceVal}</div>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                }
 
-                    // Open box
-                    box.classList.add('opened');
-                    playSound('win');
-                    mysteryArea.setAttribute('data-locked', 'true');
+                // MOVING MANUAL INSTRUCTION
+                if (state.gameState === 'MOVING_MANUAL') {
+                    html += `
+                        <div class="text-center py-2 animate-fade-in">
+                            <div class="flex justify-center items-center gap-6 mb-4">
+                                <div class="bg-white border-4 border-violet-100 rounded-2xl w-16 h-16 flex items-center justify-center shadow-lg">
+                                    <span class="text-4xl font-black text-violet-600">${state.diceVal}</span>
+                                </div>
+                                <i data-lucide="arrow-right" class="text-slate-200 w-8 h-8" stroke-width="4"></i>
+                                <div class="text-left">
+                                    <span class="text-4xl font-black text-slate-700 block leading-none">${state.stepsLeft}</span>
+                                    <span class="text-xs font-bold text-slate-400 uppercase tracking-tighter">Steps to go</span>
+                                </div>
+                            </div>
+                            <div class="bg-amber-100 text-amber-700 px-6 py-2 rounded-full font-black text-lg inline-flex items-center gap-2 border-2 border-amber-200 animate-pulse">
+                                <i data-lucide="play" class="w-5 h-5 fill-current"></i> TAP THE NEXT BOX!
+                            </div>
+                        </div>
+                    `;
+                }
 
-                    score++;
-                    scoreDisplay.innerText = score;
+                // QUIZ
+                if (state.gameState === 'QUIZ' && state.quiz) {
+                    html += `
+                        <div class="animate-slide-up">
+                            <h3 class="text-center text-slate-400 font-bold uppercase text-sm mb-3 tracking-widest">Math Challenge!</h3>
+                            <div class="flex items-center justify-center gap-4 mb-6 text-4xl font-black text-slate-800 bg-white p-6 rounded-3xl border-4 border-violet-50 shadow-inner">
+                                <span>${state.quiz.start}</span>
+                                <span class="text-violet-500">+</span>
+                                <span>${state.quiz.add}</span>
+                                <span class="text-slate-300">=</span>
+                                <span class="text-violet-600">?</span>
+                            </div>
+                            <div class="grid grid-cols-3 gap-4">
+                                ${state.quiz.options.map(opt => `
+                                    <button onclick="handleQuizAnswer(${opt})" class="bg-white border-b-8 border-slate-100 hover:border-violet-500 hover:bg-violet-50 py-5 rounded-2xl text-3xl font-black shadow-lg transition-all active:scale-95 active:border-b-0 text-slate-700">
+                                        ${opt}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
 
-                    // Wait then go to next
-                    setTimeout(() => {
-                        currentQIndex++;
-                        showQuestion(currentQIndex);
-                    }, 2500);
-                };
-                boxesContainer.appendChild(box);
-            });
-        }
-
-        function endGame() {
-            startConfetti();
-            victoryModal.style.display = 'flex';
-            playSound('win');
-        }
-
-        // --- CONFETTI ---
-        const canvas = document.getElementById('confetti-canvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-
-        function resizeC() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-        window.onresize = resizeC;
-        resizeC();
-
-        function startConfetti() {
-            for(let i=0; i<200; i++) {
-                particles.push({
-                    x: Math.random()*canvas.width, y: Math.random()*canvas.height - canvas.height,
-                    w: Math.random()*10+5, h: Math.random()*10+5,
-                    color: `hsl(${Math.random()*360}, 100%, 50%)`,
-                    speed: Math.random()*5+2, angle: Math.random()*6.2, spin: Math.random()*0.2-0.1
-                });
+                // WINNER
+                if (state.gameState === 'WIN') {
+                    html += `
+                        <div class="text-center py-4 animate-zoom-in">
+                            <div class="inline-block p-4 bg-yellow-100 rounded-full mb-3 border-4 border-white shadow-lg">
+                                <i data-lucide="trophy" class="text-yellow-600 w-12 h-12"></i>
+                            </div>
+                            <h2 class="text-4xl font-black text-slate-800 mb-1">WE HAVE A WINNER!</h2>
+                            <p class="text-xl font-bold text-violet-600 mb-6">${currentPlayer?.name} is the fastest!</p>
+                            <button onclick="resetGame()" class="bg-violet-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-violet-700 w-full">PLAY AGAIN ↺</button>
+                        </div>
+                    `;
+                }
+                
+                html += `</div></div>`; // End Bottom Panel
             }
-            loopConfetti();
+
+            // REWARD MODAL
+            if (state.gameState === 'REWARD') {
+                html += `
+                    <div class="fixed inset-0 z-[100] bg-sky-600/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
+                        <div class="absolute top-10 left-10 text-9xl opacity-20">🎈</div>
+                        <div class="absolute bottom-20 right-10 text-9xl opacity-20">🎁</div>
+
+                        <div class="bg-white rounded-[3rem] p-10 w-full max-w-lg shadow-[0_30px_60px_-12px_rgba(0,0,0,0.5)] border-[12px] border-white/50 relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-pink-500 via-violet-500 to-cyan-500"></div>
+                            
+                            <h2 class="text-3xl font-black text-slate-800 mb-2">${state.rewardMessage}</h2>
+                            <p class="text-slate-400 font-bold mb-10 tracking-widest uppercase text-xs">Bonus Points Round</p>
+                            
+                            ${state.rewardGameType === 'CHEST' ? `
+                                <div class="flex justify-center gap-4">
+                                    ${state.chests.map(chest => `
+                                        <div onclick="openChest(${chest.id})" class="relative w-28 h-28 flex items-center justify-center cursor-pointer transition-all duration-300 ${chest.isOpen ? 'scale-110' : 'hover:scale-105 active:scale-90'}">
+                                            ${chest.isOpen ? `
+                                                <div class="animate-zoom-in flex flex-col items-center">
+                                                    ${chest.content === 'gems' ? '<i data-lucide="gem" class="text-pink-500 drop-shadow-lg w-16 h-16"></i>' : ''}
+                                                    ${chest.content === 'gold' ? '<i data-lucide="coins" class="text-yellow-500 drop-shadow-lg w-16 h-16"></i>' : ''}
+                                                    ${chest.content === 'crown' ? '<i data-lucide="sparkles" class="text-purple-500 drop-shadow-lg w-16 h-16"></i>' : ''}
+                                                </div>
+                                            ` : `
+                                                <div class="w-full h-full bg-gradient-to-b from-amber-400 to-amber-600 rounded-3xl border-b-8 border-amber-800 shadow-2xl flex items-center justify-center relative overflow-hidden group">
+                                                    <div class="w-full h-1/3 bg-white/20 absolute top-0"></div>
+                                                    <div class="w-10 h-10 bg-amber-200 rounded-full border-4 border-amber-800 z-10 shadow-inner flex items-center justify-center">
+                                                        <div class="w-2 h-2 bg-slate-800 rounded-full"></div>
+                                                    </div>
+                                                </div>
+                                            `}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : `
+                                <div class="h-64 relative bg-sky-50 rounded-3xl border-4 border-dashed border-sky-200 overflow-hidden">
+                                    ${state.balloons.map(b => !b.popped ? `
+                                        <div id="balloon-${b.id}" onclick="popBalloon(${b.id})" class="absolute cursor-pointer animate-pulse" 
+                                             style="left: ${b.x}%; bottom: ${b.y}%; transition: bottom 0.1s linear;">
+                                            <div class="w-14 h-16 rounded-[50%] shadow-lg border-2 border-white/30 relative" style="background-color: ${b.color}">
+                                                <div class="w-1 h-8 bg-white/40 absolute top-full left-1/2 -translate-x-1/2"></div>
+                                                <div class="w-2 h-4 bg-white/30 absolute top-2 right-3 rounded-full rotate-45"></div>
+                                            </div>
+                                        </div>
+                                    ` : '').join('')}
+                                    ${state.balloons.every(b => b.popped) ? '<div class="flex items-center justify-center h-full text-5xl">🏆</div>' : ''}
+                                </div>
+                            `}
+
+                            ${(state.chests.some(c => c.isOpen) || state.rewardGameType === 'BALLOON') ? `
+                                <div class="mt-8 flex items-center justify-center gap-2 text-violet-500 font-bold animate-pulse">
+                                    Next round in a moment...
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // FIREWORKS CONTAINER
+            if (state.gameState === 'WIN') {
+                html += '<div id="fireworks-container" class="fixed inset-0 pointer-events-none z-[70]"></div>';
+            }
+
+            app.innerHTML = html;
+            lucide.createIcons();
+            
+            // Re-draw fireworks immediately if they exist to prevent flicker
+            if (state.gameState === 'WIN' && state.fireworks.length > 0) updateFireworksUI();
         }
 
-        function loopConfetti() {
-            ctx.clearRect(0,0,canvas.width,canvas.height);
-            particles.forEach(p => {
-                p.y += p.speed; p.angle += p.spin; p.x += Math.sin(p.angle);
-                if(p.y > canvas.height) { p.y = -20; p.x = Math.random()*canvas.width; }
-                ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle);
-                ctx.fillStyle = p.color; ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h); ctx.restore();
-            });
-            requestAnimationFrame(loopConfetti);
-        }
-
-        // Start
-        initGame();
+        // --- INIT ---
+        render();
 
     </script>
 </body>
