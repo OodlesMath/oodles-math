@@ -3,14 +3,14 @@
 <head>
     <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pop the Greater Number</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Math Friends: Compare & Count!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <style>
         :root {
             --bg-sky: #87CEEB;
-            --font-main: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
-            
-            /* Brighter, Yummy Colors */
+            --font-main: 'Poppins', sans-serif;
             --c-red: #FF6B6B;
             --c-blue: #4ECDC4;
             --c-green: #95E1D3;
@@ -18,6 +18,7 @@
             --c-orange: #FFA500;
             --c-purple: #C39BD3;
             --c-white: #FFFFFF;
+            --shadow-soft: 0 8px 25px rgba(0,0,0,0.1);
         }
 
         * {
@@ -29,7 +30,6 @@
         body {
             font-family: var(--font-main);
             background-color: var(--bg-sky);
-            /* Cute cloud background pattern */
             background-image: 
                 radial-gradient(circle at 50% 50%, white 10px, transparent 11px),
                 radial-gradient(circle at 10% 20%, rgba(255,255,255,0.6) 20px, transparent 21px),
@@ -40,628 +40,652 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 100vh;
-            overflow-x: hidden;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none;
         }
 
         /* --- Header --- */
         header {
             width: 100%;
-            max-width: 800px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 15px 25px;
-            border-radius: 25px;
-            box-shadow: 0 8px 0 rgba(0,0,0,0.1);
-            margin-bottom: 30px;
+            max-width: 900px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 20px;
+            border-radius: 20px;
+            box-shadow: 0 6px 0 rgba(0,0,0,0.05);
+            margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            backdrop-filter: blur(10px);
+            z-index: 50;
         }
 
         .title-group h1 {
             color: #2c3e50;
-            font-size: 1.5rem;
+            font-size: 1rem;
             margin: 0;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
+            font-weight: 800;
         }
 
-        .controls {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-top: 5px;
-        }
+        .controls { display: flex; align-items: center; gap: 10px; }
 
         .speaker-btn {
             background: var(--c-yellow);
             border: 3px solid #F1C40F;
             border-radius: 50%;
-            width: 45px;
-            height: 45px;
+            width: 38px;
+            height: 38px;
             cursor: pointer;
-            font-size: 1.5rem;
+            font-size: 1.1rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.1s;
+            box-shadow: 0 3px 0 #D4AC0D;
         }
-
-        .speaker-btn:active { transform: scale(0.9); }
+        .speaker-btn:active { transform: scale(0.9) translateY(2px); box-shadow: none; }
 
         .score-board {
             background: var(--c-blue);
             color: white;
-            padding: 10px 20px;
-            border-radius: 15px;
-            font-size: 1.4rem;
-            font-weight: bold;
-            box-shadow: 0 4px 0 #2A9D8F;
+            padding: 6px 15px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            box-shadow: 0 3px 0 #2A9D8F;
+            text-align: center;
+            min-width: 85px;
         }
 
-        /* --- Game Area --- */
-        #game-area {
+        /* --- Main Stage --- */
+        #main-stage {
             width: 100%;
-            max-width: 900px;
+            max-width: 1000px;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 30px;
+            padding: 15px;
+            box-shadow: var(--shadow-soft);
+            display: flex;
+            flex-direction: row;
+            gap: 15px;
             flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        @media (max-width: 900px) {
+            #main-stage { flex-direction: column; overflow-y: auto; }
+        }
+
+        .game-content { flex: 1; display: flex; flex-direction: column; gap: 15px; min-height: 0; }
+
+        .instruction-banner {
+            background: #fff8e1;
+            border: 3px dashed var(--c-orange);
+            border-radius: 20px;
+            padding: 10px;
+            text-align: center;
+            font-weight: 800;
+            color: #d84315;
+            font-size: 1.1rem;
+        }
+
+        .sets-display { display: flex; gap: 15px; flex: 1; min-height: 200px; }
+
+        .set-box {
+            flex: 1;
+            background: rgba(255,255,255,0.6);
+            border-radius: 25px;
+            border: 4px solid var(--c-blue);
+            padding: 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            position: relative;
+            overflow-y: auto;
         }
 
-        .question-label {
-            font-size: 2rem;
-            color: white;
-            text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
-            margin-bottom: 20px;
-            font-weight: bold;
-            background: rgba(0,0,0,0.2);
-            padding: 5px 20px;
+        .set-box.set-a { border-color: #4facfe; background: #f0f9ff; }
+        .set-box.set-b { border-color: #ff8a80; background: #fff5f5; }
+
+        .set-label {
+            background: white;
+            padding: 4px 15px;
+            border-radius: 99px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .objects-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: 100%; }
+        .object-emoji { font-size: 2.2rem; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.1)); }
+
+        /* --- Inputs --- */
+        .inputs-area {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: white;
+            padding: 15px;
             border-radius: 20px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
         }
 
-        .balloons-wrapper {
+        .input-row { display: flex; justify-content: center; align-items: center; gap: 15px; font-weight: 800; }
+        
+        .count-field {
+            width: 60px;
+            height: 60px;
+            background: #f8fafc;
+            border: 3px solid #cbd5e1;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .count-field.active { border-color: var(--c-orange); background: #fffbeb; box-shadow: 0 0 10px rgba(255,165,0,0.2); }
+
+        /* --- Sidebar --- */
+        .sidebar { width: 280px; display: flex; flex-direction: column; gap: 15px; }
+
+        @media (max-width: 900px) { .sidebar { width: 100%; } }
+
+        .numpad {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 25px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .num-btn {
+            aspect-ratio: 1;
+            background: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 800;
+            color: #1e40af;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 0 #94a3b8;
+            cursor: pointer;
+        }
+        .num-btn:active { transform: translateY(4px); box-shadow: none; }
+
+        .action-btn {
+            padding: 12px;
+            border: none;
+            border-radius: 15px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            cursor: pointer;
+            color: white;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-check { background: var(--c-green); box-shadow: 0 4px 0 #065f46; }
+        .btn-new { background: var(--c-blue); box-shadow: 0 4px 0 #0284c7; }
+
+        /* --- Overlays --- */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.98);
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .hidden { display: none !important; }
+
+        .start-btn {
+            background: var(--c-orange);
+            color: white;
+            border: none;
+            padding: 15px 50px;
+            font-size: 2rem;
+            font-weight: 800;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 0 #d97706;
+            transition: all 0.1s;
+        }
+
+        /* --- Basketball Bonus Game --- */
+        #bonus-overlay { background: linear-gradient(to bottom, #87CEEB 60%, #55A630 60%); }
+        
+        .hoop-container {
             display: flex;
             justify-content: center;
-            align-items: flex-end; /* Align bottom to make strings look grounded */
-            gap: 60px;
-            min-height: 350px;
-            padding-bottom: 20px;
+            gap: 40px;
+            width: 100%;
+            max-width: 900px;
+            margin-top: 20px;
         }
 
-        /* --- Balloons --- */
-        .balloon-container {
+        .hoop-item {
             position: relative;
             cursor: pointer;
             transition: transform 0.2s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            width: 160px;
+            height: 200px;
         }
-        
-        .balloon-container:hover { transform: translateY(-5px); }
-        .balloon-container:active { transform: scale(0.95); }
+        .hoop-item:hover { transform: scale(1.05); }
 
-        .balloon {
-            width: 130px;
-            height: 160px;
-            background: var(--c-red);
-            border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 4rem;
-            font-weight: bold;
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-            position: relative;
-            box-shadow: inset -10px -10px 20px rgba(0,0,0,0.1), 5px 10px 10px rgba(0,0,0,0.1);
-            z-index: 2;
-        }
-
-        /* Shine reflection */
-        .balloon::after {
-            content: '';
+        .backboard {
+            width: 140px;
+            height: 90px;
+            background: white;
+            border: 5px solid #d32f2f;
+            border-radius: 8px;
             position: absolute;
-            top: 25px;
-            left: 30px;
-            width: 25px;
-            height: 45px;
-            background: rgba(255,255,255,0.4);
-            border-radius: 50%;
-            transform: rotate(20deg);
+            top: 0; left: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .backboard::after {
+            content: '';
+            width: 60px;
+            height: 50px;
+            border: 3px solid #d32f2f;
+            position: absolute;
+            bottom: 5px;
         }
 
-        .string {
-            width: 4px;
-            height: 100px;
-            background: #fff;
-            margin-top: -5px;
-            position: relative;
-            z-index: 1;
-            filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.1));
+        .rim {
+            width: 80px;
+            height: 12px;
+            background: #ff5722;
+            border-radius: 10px;
+            position: absolute;
+            top: 90px; left: 40px;
+            z-index: 10;
         }
 
-        /* --- Colors --- */
-        .b-red { background-color: var(--c-red); }
-        .b-blue { background-color: var(--c-blue); }
-        .b-green { background-color: var(--c-green); }
-        .b-yellow { background-color: var(--c-yellow); color: #665; }
-        .b-orange { background-color: var(--c-orange); }
-        .b-purple { background-color: var(--c-purple); }
+        .net {
+            width: 70px;
+            height: 60px;
+            position: absolute;
+            top: 100px; left: 45px;
+            background: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.7) 4px, rgba(255,255,255,0.7) 6px),
+                        repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(255,255,255,0.7) 4px, rgba(255,255,255,0.7) 6px);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 0 0 10px 10px;
+        }
 
-        /* --- Animations & Feedback --- */
+        #active-ball {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 5rem;
+            z-index: 30;
+            transition: all 0.6s cubic-bezier(0.42, 0, 0.58, 1);
+            pointer-events: none;
+        }
+
+        .bonus-text { font-size: 2.5rem; font-weight: 800; color: white; text-shadow: 2px 4px 0 #d84315; margin-bottom: 40px; }
         
-        /* POP Animation */
-        @keyframes pop {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.2); opacity: 0.8; }
-            100% { transform: scale(0); opacity: 0; }
+        .floating-score {
+            position: absolute;
+            top: 0; left: 50%;
+            transform: translateX(-50%) translateY(0);
+            font-size: 3rem;
+            font-weight: 900;
+            color: #ffeb3b;
+            text-shadow: 2px 2px #000;
+            opacity: 0;
+            z-index: 50;
+            pointer-events: none;
         }
-        .popped .balloon { animation: pop 0.3s forwards ease-in; }
-        .popped .string { opacity: 0; transition: 0.3s; }
-
-        /* Shake Animation */
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px) rotate(-5deg); }
-            75% { transform: translateX(10px) rotate(5deg); }
+        .reveal-score { animation: floatScore 1.5s forwards ease-out; }
+        @keyframes floatScore {
+            0% { opacity: 0; transform: translateX(-50%) translateY(0) scale(0.5); }
+            30% { opacity: 1; transform: translateX(-50%) translateY(-60px) scale(1.2); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-100px) scale(1); }
         }
-        .shake .balloon { animation: shake 0.4s ease-in-out; }
 
-        /* Stars Effect (Correct) */
-        .star-effect {
+        /* --- Feedbacks --- */
+        .feedback-label {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 5rem;
-            color: #FFD700;
-            opacity: 0;
-            pointer-events: none;
-            z-index: 10;
-        }
-        .popped .star-effect { animation: starBurst 0.6s ease-out forwards; }
-        @keyframes starBurst {
-            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2) rotate(20deg); }
-            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5) rotate(45deg); }
-        }
-
-        /* Try Again Text (Incorrect) */
-        .try-again {
-            position: absolute;
-            top: -40px;
-            width: 150%;
-            left: -25%;
-            text-align: center;
-            background: #fff;
-            color: var(--c-red);
-            padding: 5px 10px;
-            border-radius: 10px;
-            font-weight: bold;
-            font-size: 1.2rem;
-            opacity: 0;
-            transform: translateY(10px);
-            pointer-events: none;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .shake .try-again { animation: floatUp 1s ease-out; }
-        @keyframes floatUp {
-            0% { opacity: 1; transform: translateY(0); }
-            80% { opacity: 1; transform: translateY(-20px); }
-            100% { opacity: 0; transform: translateY(-30px); }
-        }
-
-        /* --- Mystery Box Section --- */
-        #mystery-area {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            animation: fadeIn 0.5s;
-        }
-        
-        .mystery-title {
-            font-size: 2rem;
-            color: white;
-            text-shadow: 2px 2px 0 #333;
-            margin-bottom: 40px;
-            text-align: center;
-        }
-
-        .boxes-container {
-            display: flex;
-            gap: 30px;
-            justify-content: center;
-        }
-
-        .mystery-box {
-            width: 120px;
-            height: 120px;
-            background: linear-gradient(to bottom, #FF9A9E 0%, #FECFEF 100%);
-            border-radius: 15px;
-            position: relative;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-            transition: transform 0.2s;
-        }
-        
-        .mystery-box:hover { transform: translateY(-5px) scale(1.05); }
-
-        .lid {
-            position: absolute;
-            top: -10px;
-            left: -5px;
-            width: 130px;
-            height: 35px;
-            background: #FF6B6B;
-            border-radius: 8px;
-            z-index: 5;
-            transition: 0.5s;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
-        }
-        /* Bow */
-        .lid::after {
-            content: '';
-            position: absolute;
-            left: 50%;
-            top: -15px;
-            transform: translateX(-50%);
-            width: 30px;
-            height: 20px;
-            background: #FFD700;
-            border-radius: 5px;
-        }
-
-        .prize {
-            font-size: 3.5rem;
-            position: absolute;
-            bottom: 30px;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: 0.5s;
-        }
-
-        .mystery-box.opened .lid { transform: translateY(-50px) rotate(-15deg); opacity: 0; }
-        .mystery-box.opened .prize { opacity: 1; transform: translateY(-10px) scale(1.2); }
-
-        /* --- Victory Modal --- */
-        #victory-modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 100;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
             background: white;
-            padding: 40px;
-            border-radius: 30px;
-            text-align: center;
-            animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            max-width: 90%;
+            padding: 20px 40px;
+            border-radius: 25px;
+            font-size: 2.5rem;
+            font-weight: 800;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+            z-index: 500;
+            display: none;
+            animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+        @keyframes bounceIn { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
 
-        @keyframes bounceIn {
-            from { transform: scale(0.5); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-
-        .modal-content h2 { font-size: 2.5rem; color: var(--c-purple); margin: 0 0 10px 0; }
-        .modal-content p { font-size: 1.2rem; color: #555; }
-        
-        button.restart-btn {
-            background: var(--c-blue);
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            font-size: 1.3rem;
-            border-radius: 50px;
-            cursor: pointer;
-            margin-top: 20px;
-            font-family: inherit;
-            box-shadow: 0 4px 0 #2A9D8F;
-        }
-        button.restart-btn:hover { transform: translateY(-2px); }
-
-        /* Mobile */
-        @media (max-width: 600px) {
-            .balloon { width: 100px; height: 120px; font-size: 3rem; }
-            .balloons-wrapper { gap: 30px; }
-            h1 { font-size: 1.2rem; }
-            .mystery-box { width: 90px; height: 90px; }
-            .lid { width: 100px; }
-        }
-
-        #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99; }
+        #fireworks-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 300; }
     </style>
 </head>
 <body>
-<img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
     <header>
         <div class="title-group">
-            <h1>Pop the Greater Number</h1>
-            <div class="controls">
-                <div style="color: #555; font-size: 1rem;">Click the bigger number!</div>
-                <button class="speaker-btn" onclick="speakQuestion()" title="Read Question">🔊</button>
-            </div>
+            <h1>Compare & Count! 🦄</h1>
         </div>
-        <div class="score-board">Score: <span id="score">0</span> / 6</div>
+        <div class="controls">
+            <button class="speaker-btn" onclick="speakTask()" title="Listen">🔊</button>
+            <div class="score-board">⭐ <span id="score-val">0</span></div>
+        </div>
     </header>
 
-    <div id="game-area">
-        <!-- Question Section -->
-        <div id="question-wrapper" style="width: 100%; text-align: center;">
-            <div class="question-label" id="q-label">Question 1</div>
-            <div class="balloons-wrapper" id="balloons-wrapper">
-                <!-- Balloons injected here -->
+    <main id="main-stage">
+        <div class="game-content">
+            <div id="instruction" class="instruction-banner">Count the objects in both sets!</div>
+            
+            <div class="sets-display">
+                <div class="set-box set-a">
+                    <div class="set-label" style="color:#0284c7">SET A</div>
+                    <div id="area-a" class="objects-grid"></div>
+                </div>
+                <div class="set-box set-b">
+                    <div class="set-label" style="color:#ef4444">SET B</div>
+                    <div id="area-b" class="objects-grid"></div>
+                </div>
+            </div>
+
+            <div class="inputs-area">
+                <div class="input-row">
+                    <span style="color:#0284c7">Set A:</span>
+                    <div id="field-a" class="count-field active" onclick="setFocus('field-a')">?</div>
+                    <span style="color:#ef4444">Set B:</span>
+                    <div id="field-b" class="count-field" onclick="setFocus('field-b')">?</div>
+                </div>
+                <div id="comparison-sentence" class="input-row" style="color:#15803d; font-size: 1.1rem; border-top: 2px dashed #e2e8f0; padding-top: 10px;">
+                    Set <span id="comp-type">A</span> has 
+                    <div id="field-diff" class="count-field" style="width:50px; height:50px; border-width:2px" onclick="setFocus('field-diff')">?</div> 
+                    <span id="comp-label">more</span> than Set <span id="comp-other">B</span>.
+                </div>
             </div>
         </div>
 
-        <!-- Mystery Box Section -->
-        <div id="mystery-area">
-            <div class="mystery-title">Correct! Pick a Mystery Box! 🎁</div>
-            <div class="boxes-container" id="boxes-container">
-                <!-- Boxes injected here -->
+        <div class="sidebar">
+            <div class="numpad" id="numpad"></div>
+            <button class="action-btn btn-check" onclick="checkAnswer()">✅ CHECK ANSWER</button>
+            <button class="action-btn btn-new" onclick="newRound()">✨ NEW ROUND</button>
+        </div>
+    </main>
+
+    <!-- Overlays -->
+    <div id="start-overlay" class="overlay">
+        <h1 style="font-size: 3.5rem; font-weight: 800; color: #2c3e50; margin-bottom: 10px; line-height: 1.1;">Math Friends:<br><span style="color: var(--c-blue)">Compare!</span></h1>
+        <p style="font-size: 1.2rem; color: #64748b; margin-bottom: 30px; font-weight: 600;">Count, Compare, and Shoot Hoops! 🏀</p>
+        <button class="start-btn" onclick="startGame()">PLAY! ▶</button>
+    </div>
+
+    <!-- Basketball Bonus Game Overlay -->
+    <div id="bonus-overlay" class="overlay hidden">
+        <div class="bonus-text">PICK A HOOP! 🏀</div>
+        <div class="hoop-container">
+            <div class="hoop-item" onclick="shootBall(0)">
+                <div class="backboard"></div><div class="rim"></div><div class="net"></div>
+                <div id="bonus-score-0" class="floating-score">+10</div>
+            </div>
+            <div class="hoop-item" onclick="shootBall(1)">
+                <div class="backboard"></div><div class="rim"></div><div class="net"></div>
+                <div id="bonus-score-1" class="floating-score">+50</div>
+            </div>
+            <div class="hoop-item" onclick="shootBall(2)">
+                <div class="backboard"></div><div class="rim"></div><div class="net"></div>
+                <div id="bonus-score-2" class="floating-score">+20</div>
             </div>
         </div>
+        <div id="active-ball">🏀</div>
     </div>
 
-    <!-- Victory Modal -->
-    <div id="victory-modal">
-        <div class="modal-content">
-            <h2>You are a Star! 🌟</h2>
-            <p>You answered all questions correctly!</p>
-            <button class="restart-btn" onclick="location.reload()">Play Again</button>
-        </div>
+    <div id="win-overlay" class="overlay hidden">
+        <canvas id="fireworks-canvas"></canvas>
+        <div style="font-size: 6rem; position: relative; z-index: 10;">🏆</div>
+        <h1 style="font-size: 3rem; font-weight: 800; color: #f59e0b; position: relative; z-index: 10;">AMAZING!</h1>
+        <div style="font-size: 2rem; font-weight: 800; color: #3b82f6; margin-bottom: 30px; position: relative; z-index: 10;">Final Score: <span id="final-score">0</span></div>
+        <button class="start-btn" style="position: relative; z-index: 10;" onclick="resetGame()">PLAY AGAIN ↺</button>
     </div>
 
-    <canvas id="confetti-canvas"></canvas>
+    <div id="feedback" class="feedback-label"></div>
 
     <script>
-        // ==========================================
-        // TEACHER AREA
-        // ==========================================
-        const gameData = [
-            { label: 'Question 1', left: 5,  right: 12 },
-            { label: 'Question 2', left: 18, right: 9  },
-            { label: 'Question 3', left: 3,  right: 7  },
-            { label: 'Question 4', left: 14, right: 11 },
-            { label: 'Question 5', left: 2,  right: 6  },
-            { label: 'Question 6', left: 10, right: 15 }
-        ];
-
-        // Colors for balloons
-        const colors = ['b-red', 'b-blue', 'b-green', 'b-yellow', 'b-orange', 'b-purple'];
-
-        let currentQIndex = 0;
-        let score = 0;
+        const ICONS = ['🍎', '🐸', '🌟', '🍪', '🚗', '⚽', '🦋', '🎈', '🐱', '🌻', '🧁', '🐢'];
         
-        // DOM Elements
-        const qWrapper = document.getElementById('question-wrapper');
-        const mysteryArea = document.getElementById('mystery-area');
-        const balloonsWrapper = document.getElementById('balloons-wrapper');
-        const boxesContainer = document.getElementById('boxes-container');
-        const qLabel = document.getElementById('q-label');
-        const scoreDisplay = document.getElementById('score');
-        const victoryModal = document.getElementById('victory-modal');
+        let state = {
+            countA: 0,
+            countB: 0,
+            activeField: 'field-a',
+            score: 0,
+            round: 1,
+            maxRounds: 10,
+            soundStarted: false,
+            taskText: "",
+            isLocked: false,
+            bonusPoints: [10, 20, 50],
+            canShoot: true,
+            fwAnimationId: null
+        };
 
-        // --- AUDIO SYSTEM ---
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const sounds = {
+            pop: new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.1 } }).toDestination(),
+            correct: new Tone.PolySynth(Tone.Synth).toDestination(),
+            wrong: new Tone.Synth({ oscillator: { type: 'sawtooth' } }).toDestination(),
+            score: new Tone.PolySynth(Tone.Synth).toDestination()
+        };
 
-        function playSound(type) {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-
-            const now = audioCtx.currentTime;
-
-            if (type === 'pop') {
-                // High pitch pop
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(600, now);
-                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
-                gain.gain.setValueAtTime(0.5, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                osc.start(now);
-                osc.stop(now + 0.1);
-            } else if (type === 'error') {
-                // Low buzz
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, now);
-                osc.frequency.linearRampToValueAtTime(100, now + 0.2);
-                gain.gain.setValueAtTime(0.5, now);
-                gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
-                osc.start(now);
-                osc.stop(now + 0.2);
-            } else if (type === 'win') {
-                // Magical chime
-                [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
-                    let o = audioCtx.createOscillator();
-                    let g = audioCtx.createGain();
-                    o.connect(g);
-                    g.connect(audioCtx.destination);
-                    o.type = 'triangle';
-                    o.frequency.value = freq;
-                    g.gain.setValueAtTime(0.1, now + i*0.1);
-                    g.gain.linearRampToValueAtTime(0, now + i*0.1 + 0.4);
-                    o.start(now + i*0.1);
-                    o.stop(now + i*0.1 + 0.4);
-                });
-            }
+        function playSfx(s) {
+            if(!state.soundStarted) return;
+            if(s==='correct') sounds.correct.triggerAttackRelease(['C5','E5','G5'], '8n');
+            else if(s==='wrong') sounds.wrong.triggerAttackRelease('A2', '8n');
+            else if(s==='score') sounds.score.triggerAttackRelease(['G5','B5','D6'], '4n');
+            else sounds.pop.triggerAttackRelease('E5', '32n');
         }
 
-        function speakQuestion() {
+        function speakTask() {
             window.speechSynthesis.cancel();
-            const item = gameData[currentQIndex];
-            if (!item) return;
-
-            const text = `Which number is bigger? ${item.left}, or ${item.right}?`;
-            const ut = new SpeechSynthesisUtterance(text);
-            ut.lang = 'en-US';
-            ut.rate = 0.9;
+            const ut = new SpeechSynthesisUtterance(state.taskText);
+            ut.lang = 'en-US'; ut.rate = 0.9;
             window.speechSynthesis.speak(ut);
         }
 
-        // --- GAME LOGIC ---
-        function initGame() {
-            showQuestion(0);
+        function startGame() {
+            Tone.start();
+            state.soundStarted = true;
+            document.getElementById('start-overlay').classList.add('hidden');
+            genNumpad();
+            newRound();
         }
 
-        function showQuestion(index) {
-            if (index >= gameData.length) {
-                endGame();
-                return;
+        function resetGame() {
+            state.score = 0; state.round = 1;
+            document.getElementById('score-val').innerText = '0';
+            document.getElementById('win-overlay').classList.add('hidden');
+            if(state.fwAnimationId) cancelAnimationFrame(state.fwAnimationId);
+            newRound();
+        }
+
+        function genNumpad() {
+            const pad = document.getElementById('numpad');
+            for(let i=1; i<=20; i++) {
+                const b = document.createElement('button');
+                b.className = 'num-btn'; b.innerText = i;
+                b.onclick = () => setVal(i);
+                pad.appendChild(b);
+            }
+            const clear = document.createElement('button');
+            clear.className = 'num-btn'; clear.style.color = '#ef4444'; clear.innerText = 'C';
+            clear.onclick = () => setVal('?');
+            pad.appendChild(clear);
+        }
+
+        function setFocus(id) {
+            document.querySelectorAll('.count-field').forEach(f => f.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            state.activeField = id;
+            playSfx('pop');
+        }
+
+        function setVal(v) {
+            document.getElementById(state.activeField).innerText = v;
+            playSfx('pop');
+        }
+
+        function newRound() {
+            state.isLocked = false;
+            state.countA = Math.floor(Math.random() * 12) + 1;
+            state.countB = Math.floor(Math.random() * 12) + 1;
+            if(state.countA === state.countB) state.countB++;
+
+            const icon = ICONS[Math.floor(Math.random() * ICONS.length)];
+            const areaA = document.getElementById('area-a');
+            const areaB = document.getElementById('area-b');
+            areaA.innerHTML = ''; areaB.innerHTML = '';
+
+            for(let i=0; i<state.countA; i++) areaA.innerHTML += `<span class="object-emoji">${icon}</span>`;
+            for(let i=0; i<state.countB; i++) areaB.innerHTML += `<span class="object-emoji">${icon}</span>`;
+
+            const isMore = Math.random() > 0.5;
+            if(isMore) {
+                const target = state.countA > state.countB ? "A" : "B";
+                const other = target === "A" ? "B" : "A";
+                document.getElementById('comp-type').innerText = target;
+                document.getElementById('comp-other').innerText = other;
+                document.getElementById('comp-label').innerText = "more";
+                state.taskText = `Set ${target} has more objects. How many more?`;
+            } else {
+                const target = state.countA < state.countB ? "A" : "B";
+                const other = target === "A" ? "B" : "A";
+                document.getElementById('comp-type').innerText = target;
+                document.getElementById('comp-other').innerText = other;
+                document.getElementById('comp-label').innerText = "fewer";
+                state.taskText = `Set ${target} has fewer objects. How many fewer?`;
             }
 
-            // Reset UI
-            qWrapper.style.display = 'block';
-            mysteryArea.style.display = 'none';
-            balloonsWrapper.innerHTML = '';
+            document.getElementById('field-a').innerText = '?';
+            document.getElementById('field-b').innerText = '?';
+            document.getElementById('field-diff').innerText = '?';
+            setFocus('field-a');
+        }
+
+        function checkAnswer() {
+            if(state.isLocked) return;
+            const valA = parseInt(document.getElementById('field-a').innerText);
+            const valB = parseInt(document.getElementById('field-b').innerText);
+            const valDiff = parseInt(document.getElementById('field-diff').innerText);
+
+            if(isNaN(valA) || isNaN(valB) || isNaN(valDiff)) {
+                showFeedback("Fill all boxes!", "var(--c-orange)"); return;
+            }
+
+            if(valA === state.countA && valB === state.countB && valDiff === Math.abs(state.countA - state.countB)) {
+                state.isLocked = true; playSfx('correct');
+                showFeedback("Great Job! 🌟", "var(--c-green)");
+                setTimeout(showBonusGame, 1200);
+            } else {
+                playSfx('wrong'); showFeedback("Try again!", "var(--c-red)");
+            }
+        }
+
+        function showFeedback(text, color) {
+            const f = document.getElementById('feedback');
+            f.innerText = text; f.style.color = color; f.style.display = 'block';
+            setTimeout(() => f.style.display = 'none', 1000);
+        }
+
+        // --- Basketball Bonus Game ---
+        function showBonusGame() {
+            state.canShoot = true;
+            const overlay = document.getElementById('bonus-overlay');
+            overlay.classList.remove('hidden');
+            const ball = document.getElementById('active-ball');
+            ball.style.transform = "translateX(-50%)";
+            ball.style.bottom = "40px";
+            ball.style.opacity = "1";
+            ball.style.fontSize = "5rem";
             
-            // IMPORTANT FIX: Re-enable clicking on the wrapper
-            balloonsWrapper.style.pointerEvents = 'auto';
-
-            const item = gameData[index];
-            qLabel.innerText = item.label;
-
-            // Pick colors based on index
-            const c1 = colors[(index * 2) % colors.length];
-            const c2 = colors[(index * 2 + 1) % colors.length];
-
-            // Create balloons
-            balloonsWrapper.appendChild(createBalloon(item.left, item.right, c1));
-            balloonsWrapper.appendChild(createBalloon(item.right, item.left, c2));
-        }
-
-        function createBalloon(num, otherNum, colorClass) {
-            const container = document.createElement('div');
-            container.className = 'balloon-container';
-
-            container.innerHTML = `
-                <div class="try-again">Try Again!</div>
-                <div class="balloon ${colorClass}">${num}</div>
-                <div class="string"></div>
-                <div class="star-effect">⭐</div>
-            `;
-
-            container.onclick = (e) => {
-                // Prevent multiple clicks if parent is disabled
-                if (balloonsWrapper.style.pointerEvents === 'none') return;
-
-                if (num > otherNum) {
-                    // CORRECT
-                    playSound('pop');
-                    container.classList.add('popped');
-                    // Disable all clicks immediately
-                    balloonsWrapper.style.pointerEvents = 'none';
-
-                    setTimeout(() => {
-                        startMysteryPhase();
-                    }, 1200);
-                } else {
-                    // INCORRECT
-                    playSound('error');
-                    container.classList.add('shake');
-                    setTimeout(() => container.classList.remove('shake'), 500);
-                }
-            };
-
-            return container;
-        }
-
-        // --- MYSTERY PHASE ---
-        function startMysteryPhase() {
-            qWrapper.style.display = 'none';
-            mysteryArea.style.display = 'flex';
-            boxesContainer.innerHTML = '';
-            mysteryArea.setAttribute('data-locked', 'false');
-
-            // Prizes: 1 Trophy, 2 Candies
-            let prizes = ['🏆', '🍬', '🍬'];
-            prizes.sort(() => Math.random() - 0.5);
-
-            prizes.forEach(prize => {
-                const box = document.createElement('div');
-                box.className = 'mystery-box';
-                box.innerHTML = `
-                    <div class="lid"></div>
-                    <div class="prize">${prize}</div>
-                `;
-
-                box.onclick = () => {
-                    if (box.classList.contains('opened')) return;
-                    if (mysteryArea.getAttribute('data-locked') === 'true') return;
-
-                    // Open box
-                    box.classList.add('opened');
-                    playSound('win');
-                    mysteryArea.setAttribute('data-locked', 'true');
-
-                    score++;
-                    scoreDisplay.innerText = score;
-
-                    // Wait then go to next
-                    setTimeout(() => {
-                        currentQIndex++;
-                        showQuestion(currentQIndex);
-                    }, 2500);
-                };
-                boxesContainer.appendChild(box);
-            });
-        }
-
-        function endGame() {
-            startConfetti();
-            victoryModal.style.display = 'flex';
-            playSound('win');
-        }
-
-        // --- CONFETTI ---
-        const canvas = document.getElementById('confetti-canvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-
-        function resizeC() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-        window.onresize = resizeC;
-        resizeC();
-
-        function startConfetti() {
-            for(let i=0; i<200; i++) {
-                particles.push({
-                    x: Math.random()*canvas.width, y: Math.random()*canvas.height - canvas.height,
-                    w: Math.random()*10+5, h: Math.random()*10+5,
-                    color: `hsl(${Math.random()*360}, 100%, 50%)`,
-                    speed: Math.random()*5+2, angle: Math.random()*6.2, spin: Math.random()*0.2-0.1
-                });
+            // Randomize bonus points
+            const pointsPool = [10, 20, 20, 50, 100];
+            state.bonusPoints = [
+                pointsPool[Math.floor(Math.random()*pointsPool.length)],
+                pointsPool[Math.floor(Math.random()*pointsPool.length)],
+                pointsPool[Math.floor(Math.random()*pointsPool.length)]
+            ];
+            
+            for(let i=0; i<3; i++) {
+                const float = document.getElementById(`bonus-score-${i}`);
+                float.innerText = `+${state.bonusPoints[i]}`;
+                float.classList.remove('reveal-score');
             }
-            loopConfetti();
         }
 
-        function loopConfetti() {
-            ctx.clearRect(0,0,canvas.width,canvas.height);
-            particles.forEach(p => {
-                p.y += p.speed; p.angle += p.spin; p.x += Math.sin(p.angle);
-                if(p.y > canvas.height) { p.y = -20; p.x = Math.random()*canvas.width; }
-                ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle);
-                ctx.fillStyle = p.color; ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h); ctx.restore();
-            });
-            requestAnimationFrame(loopConfetti);
+        function shootBall(index) {
+            if(!state.canShoot) return;
+            state.canShoot = false;
+
+            const ball = document.getElementById('active-ball');
+            const hoopItems = document.querySelectorAll('.hoop-item');
+            const targetHoop = hoopItems[index];
+            const hoopRect = targetHoop.getBoundingClientRect();
+            const overlayRect = document.getElementById('bonus-overlay').getBoundingClientRect();
+
+            // Calculate trajectory
+            const targetX = hoopRect.left + hoopRect.width/2 - overlayRect.left;
+            const targetY = hoopRect.top + 100 - overlayRect.top; // Aim for the rim
+
+            ball.style.transform = `translate(calc(-50% + ${targetX - overlayRect.width/2}px), ${targetY - (overlayRect.height - 80)}px) scale(0.5)`;
+
+            setTimeout(() => {
+                playSfx('score');
+                document.getElementById(`bonus-score-${index}`).classList.add('reveal-score');
+                state.score += state.bonusPoints[index];
+                document.getElementById('score-val').innerText = state.score;
+                
+                setTimeout(() => {
+                    document.getElementById('bonus-overlay').classList.add('hidden');
+                    state.round++;
+                    if(state.round <= state.maxRounds) newRound(); else showWin();
+                }, 2000);
+            }, 600);
         }
 
-        // Start
-        initGame();
+        function showWin() {
+            document.getElementById('win-overlay').classList.remove('hidden');
+            document.getElementById('final-score').innerText = state.score;
+            startFw();
+        }
 
+        function startFw() {
+            const fw = document.getElementById('fireworks-canvas');
+            const fctx = fw.getContext('2d');
+            fw.width = window.innerWidth; fw.height = window.innerHeight;
+            let parts = [];
+            function loopFw() {
+                fctx.fillStyle = 'rgba(255,255,255,0.1)'; fctx.fillRect(0,0,fw.width,fw.height);
+                if(Math.random()<0.1) {
+                    const x = Math.random()*fw.width, y = Math.random()*fw.height/2;
+                    for(let i=0; i<30; i++) parts.push({x,y,vx:Math.random()*6-3,vy:Math.random()*6-3,c:`hsl(${Math.random()*360},100%,50%)`,l:1});
+                }
+                parts.forEach((p,i) => { p.x+=p.vx; p.y+=p.vy; p.vy+=0.1; p.l-=0.02; fctx.fillStyle=p.c; fctx.globalAlpha=p.l; fctx.fillRect(p.x,p.y,3,3); if(p.l<=0) parts.splice(i,1); });
+                state.fwAnimationId = requestAnimationFrame(loopFw);
+            }
+            loopFw();
+        }
     </script>
 </body>
 </html>
