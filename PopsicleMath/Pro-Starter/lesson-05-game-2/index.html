@@ -1,723 +1,344 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="stylesheet" href="../assets/brand.css">
+    <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tens and Ones Game</title>
-    
-    <!-- Tải Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Tải Tone.js cho hiệu ứng âm thanh --><script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-    
-    <!-- Tải Google Font 'Nunito' --><link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&display=swap" rel="stylesheet">
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cube Builder: Multiplication Fun</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Nunito', sans-serif;
-            background: linear-gradient(135deg, #FFD700 0%, #FF69B4 100%); /* Nền gradient tươi sáng */
+            font-family: 'Quicksand', sans-serif;
+            background-color: #f0f9ff;
+            overflow: hidden; /* Prevents whole page scroll */
             touch-action: none;
-            overflow: hidden; /* Ngăn cuộn */
-        }
-        
-        #game-container {
-            max-width: 900px; /* Giảm chiều rộng tối đa */
-            max-height: 95vh; /* Giới hạn chiều cao */
-            overflow: hidden; /* SỬA LỖI: Đổi từ 'auto' sang 'hidden' để tắt cuộn trên di động */
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            background-color: #fcfcfc; /* Màu nền trắng nhẹ */
-        }
-
-        /* -- Khu vực kéo thả -- */
-        .tens-and-ones-frame {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            border: 4px solid #6b46c1; /* Màu tím đậm */
-            border-radius: 8px;
-            background-color: #fefcbf; /* Màu vàng nhạt */
-            min-height: 120px; 
-        }
-        
-        .dropzone {
-            min-height: 100px; 
-            padding: 8px;
-            display: flex;
-            flex-wrap: wrap; /* Cho phép các khối gói lại */
-            align-content: flex-start; /* Sắp xếp từ trên xuống */
-            gap: 4px;
-        }
-        
-        .dropzone-tens {
-            border-right: 4px solid #6b46c1;
-            max-height: 120px; 
-            overflow-y: auto;
-        }
-        .dropzone-ones {
-             max-height: 120px; 
-             overflow-y: auto;
-        }
-
-        /* -- Kiểu dáng cho các khối Unifix -- */
-        .cube {
-            cursor: grab;
             user-select: none;
-            border-radius: 4px;
-            box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
-            border: 1px solid rgba(0,0,0,0.2);
-            transition: transform 0.1s ease-out; /* Thêm chuyển động nhỏ */
         }
-        .cube:active {
-            cursor: grabbing;
-            transform: scale(1.05);
+        h1, h2, .math-font {
+            font-family: 'Fredoka One', cursive;
         }
-        
-        /* Khối đơn vị (One-Cube) */
-        .one-cube {
-            width: 30px; 
-            height: 30px;
-            background-color: #4299e1; /* Blue */
-            border-color: #2b6cb0;
-        }
-        
-        /* Khối hàng chục (Ten-Rod) - NẰM NGANG VÀ NHỎ HƠN */
-        .ten-rod {
-            width: 300px; /* Chiều rộng */
-            height: 30px; /* Chiều cao */
-            background-color: #e53e3e; /* Red */
-            border-color: #c53030;
-            display: flex;
-            flex-direction: row; /* Nằm ngang */
-            gap: 0px; 
-            margin: 2px;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
-            border-radius: 4px;
-        }
-        .ten-rod-segment {
-            width: 30px; /* Mỗi phân đoạn rộng 30px */
-            height: 100%;
-            background-color: #e53e3e;
-            border-right: 1px solid #c53030; /* Viền bên phải */
-        }
-        .ten-rod-segment:last-child {
-            border-right: none;
-        }
-
-
-        /* -- Kiểu dáng cho bộ bài -- */
-        #flashcard-deck {
-            width: 90px; 
-            height: 90px; 
-            position: relative; 
-            cursor: pointer;
-            perspective: 1000px;
-        }
-        .card-face {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
-            transition: transform 0.6s;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        .card-back {
-            background: linear-gradient(135deg, #a78bfa 0%, #6d28d9 100%); /* Màu tím mộng mơ */
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem; 
-            transform: rotateY(0deg);
-        }
-        .card-front {
-            background: white;
-            color: #2d3748;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5rem; 
-            font-weight: 900;
-            transform: rotateY(180deg);
-        }
-        
-        #flashcard-deck.is-flipped .card-back {
-            transform: rotateY(-180deg);
-        }
-        #flashcard-deck.is-flipped .card-front {
-            transform: rotateY(0deg);
-        }
-        
-        /* -- Kiểu dáng cho đối tượng đang kéo -- */
-        .drag-clone {
-            position: absolute;
-            pointer-events: none;
-            z-index: 9999;
-            opacity: 0.8;
-            transform: translate(-50%, -50%);
-        }
-
-        /* Hiệu ứng rung lắc */
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); } 
-            20%, 40%, 60%, 80% { transform: translateX(5px); }
-        }
-        .shake {
-            animation: shake 0.4s ease-in-out; 
-        }
-
-        /* Hiệu ứng nảy lên */
-        @keyframes bounce-in {
-            0% { transform: scale(0.5); opacity: 0; }
-            50% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(1); }
-        }
-        .bounce-in {
-            animation: bounce-in 0.3s ease-out; 
-        }
-        
-        /* Nút */
-        button {
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.07);
-        }
-        button:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* CSS cho Hộp quà Bí ẩn (Bonus Modal) */
-        .mystery-box {
+        .group-zone {
+            background: rgba(255, 255, 255, 0.6);
+            border: 4px dashed #93c5fd;
+            border-radius: 20px;
             transition: all 0.3s ease;
-            cursor: pointer;
+            position: relative;
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            padding: 8px;
+            gap: 4px;
+            justify-content: center;
+            /* Adjusted size to fit 10 boxes without scrolling */
+            width: 110px;
+            height: 110px;
         }
-        .mystery-box:hover {
+        @media (min-width: 768px) {
+            .group-zone { width: 160px; height: 160px; }
+        }
+        @media (min-height: 900px) {
+            .group-zone { width: 180px; height: 180px; }
+        }
+        .group-zone.active {
+            border-color: #3b82f6;
+            background: rgba(219, 234, 254, 0.8);
             transform: scale(1.05);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .cube {
+            width: 28px;
+            height: 28px;
+            border-radius: 5px;
+            box-shadow: inset -2px -2px 0 rgba(0,0,0,0.1), 1px 1px 3px rgba(0,0,0,0.1);
+            cursor: grab;
+            position: relative;
+            z-index: 10;
+        }
+        @media (min-width: 768px) {
+            .cube { width: 38px; height: 38px; border-radius: 7px; }
+        }
+        .cube:active { cursor: grabbing; }
+        
+        .tray-cube {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            cursor: grab;
+            transition: transform 0.2s;
+            box-shadow: inset -5px -5px 0 rgba(0,0,0,0.1), 3px 3px 10px rgba(0,0,0,0.1);
+        }
+        @media (min-width: 768px) {
+            .tray-cube { width: 64px; height: 64px; }
+        }
+        .tray-cube:hover { transform: translateY(-5px) scale(1.05); }
+
+        .floating-bot {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
         }
 
+        .star-anim {
+            animation: starPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes starPop {
+            0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+            100% { transform: scale(1.2) rotate(0); opacity: 1; }
+        }
+
+        .control-btn {
+            @apply flex items-center justify-center rounded-full transition-all active:scale-90 shadow-md;
+            width: 44px;
+            height: 44px;
+        }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
-<img src="../assets/logo-oodles-math.png" class="oodles-logo">
-    <div id="game-container" class="w-full bg-white rounded-2xl p-6 md:p-8 relative">
+<body class="h-screen flex flex-col">
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- Header / Task Area -->
+    <header class="relative p-3 md:p-4 bg-white shadow-md flex justify-between items-center z-20 shrink-0">
+        <div class="flex items-center gap-3 md:gap-4">
+            <div class="w-12 h-12 md:w-16 md:h-16 bg-yellow-400 rounded-full flex items-center justify-center floating-bot border-4 border-white shadow-sm">
+                <svg viewBox="0 0 24 24" class="w-8 h-8 md:w-10 md:h-10 text-white fill-current">
+                    <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z" />
+                </svg>
+            </div>
+            <div>
+                <p id="task-text" class="text-xl md:text-3xl text-blue-800 font-bold">Build equal groups</p>
+                <p id="hint-text" class="text-xs md:text-sm text-blue-500 font-medium">Add boxes, then fill them with cubes.</p>
+            </div>
+        </div>
         
-        <!-- Tiêu đề và Thẻ bài --><div class="flex flex-col items-center mb-4">
-            <!-- SỬA LỖI: Tiêu đề căn giữa và giảm khoảng cách dưới (mb-2) --><h1 class="text-2xl md:text-3xl font-black text-purple-700 text-center mb-2">Tens and Ones Game</h1>
+        <!-- Group Controls -->
+        <div class="flex gap-2 md:gap-3 bg-blue-50 p-1 md:p-2 rounded-full border-2 border-blue-100">
+            <button onclick="removeGroup()" class="control-btn bg-white text-red-500 hover:bg-red-50">
+                <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M20 12H4"></path></svg>
+            </button>
+            <div class="flex flex-col items-center justify-center px-1 md:px-2 min-w-[50px]">
+                <span class="text-[10px] font-bold text-blue-400 uppercase leading-none mb-1">Boxes</span>
+                <span id="group-count-display" class="text-lg md:text-xl font-bold text-blue-700 leading-none">2</span>
+            </div>
+            <button onclick="addGroup()" class="control-btn bg-white text-green-500 hover:bg-green-50">
+                <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+            </button>
+        </div>
+    <!-- CENTER LOGO -->
+<img
+  src="https://image2url.com/r2/default/images/1770270908168-036a8878-e468-415d-9a50-73d8cbcc8574.png"
+  alt="Logo"
+  class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-10 md:h-14 object-contain pointer-events-none"
+/>
+</header>
+
+    <!-- Main Workspace -->
+    <main id="work-area" class="flex-grow p-4 md:p-6 flex flex-wrap gap-2 md:gap-4 items-center justify-center overflow-hidden relative">
+        <!-- Zones will be injected here -->
+    </main>
+
+    <!-- Cube Tray -->
+    <footer class="p-3 md:p-4 bg-blue-100 border-t-4 border-blue-200 shrink-0">
+        <div class="max-w-4xl mx-auto flex flex-col items-center gap-3 md:gap-4">
+            <div class="flex flex-col items-center">
+                <p class="text-blue-600 font-bold mb-1 uppercase text-[10px] md:text-xs tracking-widest">Grab a cube:</p>
+                <div id="tray" class="p-2 md:p-3 bg-white rounded-3xl shadow-inner flex justify-center border-2 border-blue-200">
+                    <div class="tray-cube bg-blue-500" onpointerdown="startDrag(event, 'bg-blue-500')"></div>
+                </div>
+            </div>
             
-            <div class="flex justify-center items-end w-full gap-4"> 
-                <!-- Thẻ bài (di chuyển xuống thấp hơn) --><div class="text-center flex flex-col items-center">
-                    <h2 class="text-base font-bold text-gray-700 mb-1">Click the card!</h2>
-                    <div id="flashcard-deck" title="Click to draw a new number">
-                        <div id="card-face-back" class="card-face card-back">?</div>
-                        <div id="card-face-front" class="card-face card-front"></div>
-                    </div>
-                </div>
-
-                <!-- Cube Bank (Giữ nguyên vị trí này) --><div class="flex items-center justify-center gap-6 p-3 bg-indigo-100 rounded-lg flex-grow">
-                    <p id="tens-first-warning" class="text-sm md:text-base text-red-600 font-bold hidden absolute -top-8 bg-yellow-100 p-2 rounded-md shadow-md">
-                        Please place the Ten rods first!
-                    </p>
-                    
-                    <!-- Nguồn kéo Ten-Rod --><div class="text-center">
-                        <p class="font-bold text-base text-gray-800">Ten Rod</p>
-                        <div id="source-ten-rod" class="cube ten-rod" data-type="ten">
-                            <script>
-                                for(let i = 0; i < 10; i++) {
-                                    document.write('<div class="ten-rod-segment"></div>');
-                                }
-                            </script>
-                        </div>
-                    </div>
-                    
-                    <!-- Nguồn kéo One-Cube --><div class="text-center">
-                        <p class="font-bold text-base text-gray-800">One Cube</p>
-                        <div id="source-one-cube" class="cube one-cube" data-type="one"></div>
-                    </div>
-                </div>
+            <div class="flex gap-4">
+                <button onclick="clearCanvas()" class="px-6 md:px-8 py-2 md:py-3 bg-white text-blue-600 rounded-full font-bold shadow-md hover:bg-red-50 hover:text-red-500 transition border-2 border-transparent hover:border-red-200 text-sm md:text-base">
+                    Clear All
+                </button>
+                <button onclick="checkResult()" id="check-btn" class="px-10 md:px-12 py-2 md:py-3 bg-green-500 text-white rounded-full font-bold text-lg md:text-xl shadow-lg hover:bg-green-600 transform hover:scale-105 transition active:scale-95">
+                    Check My Math!
+                </button>
             </div>
         </div>
+    </footer>
 
-        <!-- Khu vực Làm việc (Kéo thả) --><div class="flex flex-col lg:flex-row gap-4 mt-4"> 
-            <div class="w-full">
-                <div class="tens-and-ones-frame">
-                    <div class="text-center text-xl font-bold text-red-600 p-2 border-b-4 border-purple-800">TENS</div>
-                    <div class="text-center text-xl font-bold text-blue-600 p-2 border-b-4 border-purple-800">ONES</div>
-                    
-                    <div id="tens-column" class="dropzone dropzone-tens"></div>
-                    <div id="ones-column" class="dropzone dropzone-ones"></div>
-                </div>
-            </div>
+    <!-- Overlay for Feedback -->
+    <div id="feedback-overlay" class="fixed inset-0 bg-blue-600/90 hidden z-50 flex flex-col items-center justify-center text-white p-10 text-center">
+        <div class="mb-4 star-anim">
+            <svg class="w-24 h-24 md:w-32 md:h-32 text-yellow-400 fill-current" viewBox="0 0 24 24"><path d="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.45,13.97L5.82,21L12,17.27Z"/></svg>
         </div>
-        
-        <!-- Khu vực Điều khiển (Submit) --><!-- SỬA LỖI: Giảm khoảng cách trên (mt-4) --><div class="flex justify-center items-center gap-4 mt-4">
-            <button id="reset-board-button" class="px-5 py-2 bg-gray-400 text-white text-lg font-bold rounded-lg hover:bg-gray-500">
-                Reset Board
-            </button>
-            <button id="submit-button" class="px-8 py-3 bg-green-500 text-white text-xl font-bold rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed">
-                Submit
-            </button>
+        <h2 class="text-3xl md:text-5xl mb-6">You Built It!</h2>
+        <div id="math-sentences" class="bg-white/20 p-6 md:p-8 rounded-3xl mb-8">
+            <p id="repeated-addition" class="text-2xl md:text-4xl math-font"></p>
         </div>
-
-    </div>
-
-    <!-- Modal Phản hồi --><div id="feedback-modal" class="hidden absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div id="feedback-content" class="text-6xl md:text-7xl font-black text-white p-8 md:p-10 rounded-lg bounce-in">
-            <!-- "Correct!" hoặc "Try Again!" --></div>
-    </div>
-    
-    <!-- BỔ SUNG: Modal Hộp Quà (Bonus Modal) --><div id="bonus-modal" class="hidden absolute inset-0 bg-gradient-to-br from-yellow-400 to-orange-500 flex flex-col items-center justify-center z-40 p-4">
-        <h2 class="text-5xl md:text-6xl font-black text-white mb-4 animate-bounce">BONUS!</h2>
-        <p class="text-2xl text-white mb-6">Choose a mystery box!</p>
-        <div id="box-container" class="flex flex-wrap justify-center gap-6 md:gap-10 mb-6">
-            <!-- Các hộp quà sẽ được tạo bằng JS --></div>
-        <p id="bonus-result" class="text-3xl text-white font-bold mt-6 hidden"></p>
-    </div>
-    
-    <!-- BỔ SUNG: Modal Kết Thúc Trò Chơi (Game Over) --><div id="game-over-modal" class="hidden absolute inset-0 bg-gradient-to-br from-green-400 to-blue-500 flex flex-col items-center justify-center z-40 p-4">
-        <h2 class="text-6xl md:text-8xl font-black text-white mb-4 bounce-in">Great Job!</h2>
-        <p class="text-3xl text-white mb-6">You finished all the cards!</p>
-        <p id="final-score" class="text-4xl text-yellow-300 font-bold mb-8">Final Score: 0</p>
-        <button id="play-again-button" class="px-8 py-3 bg-white text-blue-600 text-xl font-bold rounded-lg shadow-lg hover:bg-gray-100">
-            Play Again
+        <button onclick="closeFeedback()" class="px-8 md:px-12 py-3 md:py-4 bg-yellow-400 text-blue-900 rounded-full font-bold text-xl md:text-2xl shadow-xl hover:bg-yellow-300 transition transform hover:scale-110">
+            Keep Building!
         </button>
     </div>
 
+    <!-- Dragging Helper -->
+    <div id="drag-proxy" class="cube fixed pointer-events-none hidden opacity-80" style="z-index: 1000;"></div>
 
     <script>
-        // --- SỬA LỖI: Khai báo biến DOM bằng let ---
-        let gameContainer, scoreEl, cardDeckEl, cardBackEl, cardFrontEl, 
-            submitButton, resetButton, feedbackModal, feedbackContent, 
-            tensFirstWarning, bonusModal, boxContainer, bonusResult, 
-            gameOverModal, finalScoreEl, playAgainButton, sourceTenRod, 
-            sourceOneCube, tensColumn, onesColumn;
-        
-        // --- Trạng thái Trò chơi ---
-        let score = 0;
-        let currentNumber = 0;
-        let cardDeck = [];
-        let isChecking = false;
-        let isBonusChecking = false;
-        let isDragging = false;
-        let dragClone = null;
-        let dragSourceType = ''; 
-        
-        // --- Cấu hình Âm thanh ---
-        let clickSynth, correctSynth, incorrectSynth, drawCardSynth, grabCubeSynth, dropCubeSynth, removeCubeSynth, warningSynth, bonusSound, winSound, backgroundMusic;
-        
-        // SỬA LỖI ÂM THANH: Đảm bảo Tone.start() được gọi và await
-        async function initAudio() {
-            if (!clickSynth) {
-                await Tone.start(); // <-- Chờ context khởi động
-                console.log("Audio Context Started"); // Ghi log để kiểm tra
-                
-                // Khởi tạo tất cả synths
-                clickSynth = new Tone.MembraneSynth({ pitchDecay: 0.01, envelope: { attack: 0.001, decay: 0.1, sustain: 0 } }).toDestination();
-                correctSynth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.05, decay: 0.2, sustain: 0.3, release: 0.5 } }).toDestination();
-                incorrectSynth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'square' }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.1, release: 0.4 } }).toDestination();
-                drawCardSynth = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.2 } }).toDestination();
-                grabCubeSynth = new Tone.FMSynth({ harmonicity: 3.01, modulationIndex: 14, envelope: { attack: 0.01, decay: 0.2, sustain: 0.0, release: 0.2}, modulationEnvelope: { attack: 0.001, decay: 0.2, sustain: 0.0, release: 0.2}, oscillator: { type: 'sine' }, modulation: { type: 'square' } }).toDestination();
-                dropCubeSynth = new Tone.PluckSynth({ attackNoise: 0.5, dampening: 4000, resonance: 0.9 }).toDestination();
-                removeCubeSynth = new Tone.NoiseSynth({ volume: -10, envelope: { attack: 0.001, decay: 0.1 } }).toDestination();
-                warningSynth = new Tone.Synth({ oscillator: { type: 'sawtooth' }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.2 } }).toDestination();
-                bonusSound = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.2, release: 0.5 } }).toDestination();
-                winSound = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'sine' } }).toDestination();
+        const state = {
+            numGroups: 2,
+            groups: [0, 0], 
+            dragColor: 'bg-blue-500', 
+            isDragging: false,
+            maxGroups: 10 // Updated to allow up to 10 boxes
+        };
 
-                // NHẠC NỀN MỚI - SỬA LỖI: Đã tắt nhạc nền
-                /*
-                backgroundMusic = new Tone.Sequence(
-                    (time, note) => {
-                        // Sử dụng synth riêng cho nhạc nền để không xung đột
-                        if(!correctSynth) return;
-                        correctSynth.triggerAttackRelease(note, "8n", time);
-                    },
-                    ["C4", "E4", "G4", "C5", "G4", "E4"], // Melody vui tươi
-                    "4n"
-                ).start(0);
-                backgroundMusic.loop = true;
-                backgroundMusic.playbackRate = 1.2; 
-                Tone.Transport.bpm.value = 120; 
-                Tone.Master.volume.value = -15; 
-                
-                // Khởi động transport SAU KHI context đã start
-                Tone.Transport.start(); 
-                */
-            }
-        }
-        
-        // SỬA LỖI ÂM THANH: Gọi initAudio() một cách bất đồng bộ
-        document.body.addEventListener('mousedown', async () => {
-            await initAudio();
-        }, { once: true });
-        document.body.addEventListener('touchstart', async () => {
-            await initAudio();
-        }, { once: true });
+        const workArea = document.getElementById('work-area');
+        const taskText = document.getElementById('task-text');
+        const hintText = document.getElementById('hint-text');
+        const dragProxy = document.getElementById('drag-proxy');
+        const feedbackOverlay = document.getElementById('feedback-overlay');
+        const additionDisplay = document.getElementById('repeated-addition');
+        const countDisplay = document.getElementById('group-count-display');
 
+        window.onload = () => {
+            renderZones();
+            updateUI();
+        };
 
-        // --- Logic Trò chơi ---
-        
-        function initGame() {
-            // SỬA LỖI: Gán các biến DOM bên trong initGame
-            gameContainer = document.getElementById('game-container');
-            scoreEl = document.getElementById('score');
-            cardDeckEl = document.getElementById('flashcard-deck');
-            cardBackEl = document.getElementById('card-face-back');
-            cardFrontEl = document.getElementById('card-face-front');
-            submitButton = document.getElementById('submit-button');
-            resetButton = document.getElementById('reset-board-button');
-            feedbackModal = document.getElementById('feedback-modal');
-            feedbackContent = document.getElementById('feedback-content');
-            tensFirstWarning = document.getElementById('tens-first-warning');
-            bonusModal = document.getElementById('bonus-modal');
-            boxContainer = document.getElementById('box-container');
-            bonusResult = document.getElementById('bonus-result');
-            gameOverModal = document.getElementById('game-over-modal');
-            finalScoreEl = document.getElementById('final-score');
-            playAgainButton = document.getElementById('play-again-button');
-            sourceTenRod = document.getElementById('source-ten-rod'); 
-            sourceOneCube = document.getElementById('source-one-cube');
-            tensColumn = document.getElementById('tens-column');
-            onesColumn = document.getElementById('ones-column');
-            
-            score = 0;
-            updateScore(); 
-            shuffleDeck();
-            drawCard();
-            setupDragEvents(); 
-            
-            submitButton.removeEventListener('click', handleSubmit);
-            resetButton.removeEventListener('click', resetBoard);
-            cardDeckEl.removeEventListener('click', drawCard);
-            playAgainButton.removeEventListener('click', initGame);
-
-            submitButton.addEventListener('click', handleSubmit);
-            resetButton.addEventListener('click', resetBoard);
-            cardDeckEl.addEventListener('click', drawCard);
-            playAgainButton.addEventListener('click', initGame);
-
-            gameOverModal.classList.add('hidden');
-            bonusModal.classList.add('hidden');
-            
-            // SỬA LỖI ÂM THANH: Tắt nhạc nền
-            /*
-            if (backgroundMusic && Tone.Transport.state !== 'started') {
-                Tone.Transport.start();
-            }
-            */
-        }
-
-        function shuffleDeck() {
-            cardDeck = Array.from({ length: 11 }, (_, i) => i + 10);
-            for (let i = cardDeck.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [cardDeck[i], cardDeck[j]] = [cardDeck[j], cardDeck[i]];
-            }
-        }
-
-        function drawCard() {
-            if (isChecking || isBonusChecking) return;
-            
-            if (cardDeck.length === 0) {
-                showGameEnd();
-                return;
-            }
-            
-            cardDeckEl.classList.remove('is-flipped');
-            submitButton.disabled = true;
-            tensFirstWarning.classList.add('hidden'); 
-            
-            setTimeout(() => {
-                currentNumber = cardDeck.pop();
-                cardFrontEl.textContent = currentNumber;
-                cardBackEl.textContent = "?"; 
-                
-                cardDeckEl.classList.add('is-flipped');
-                if(drawCardSynth) drawCardSynth.triggerAttackRelease("G4", "8n");
-                
-                resetBoard();
-                submitButton.disabled = false;
-            }, 300);
-        }
-        
-        function resetBoard() {
-            tensColumn.innerHTML = '';
-            onesColumn.innerHTML = '';
-            tensFirstWarning.classList.add('hidden');
-        }
-
-        function updateScore() {
-            // SỬA LỖI: Thêm kiểm tra null
-            if (scoreEl) {
-                scoreEl.textContent = `Score: ${score}`;
-            }
-        }
-        
-        function handleSubmit() {
-            if (isChecking || !currentNumber) return;
-            
-            const targetTens = Math.floor(currentNumber / 10);
-            const targetOnes = currentNumber % 10;
-            
-            const placedTens = tensColumn.querySelectorAll('.ten-rod').length;
-            const placedOnes = onesColumn.querySelectorAll('.one-cube').length;
-            
-            if (placedTens === targetTens && placedOnes === targetOnes) {
-                handleCorrectAnswer();
+        function addGroup() {
+            if (state.numGroups < state.maxGroups) {
+                state.numGroups++;
+                state.groups.push(0);
+                renderZones();
+                updateUI();
             } else {
-                handleIncorrectAnswer();
+                hintText.innerText = "Wow! 10 boxes is the limit!";
             }
         }
 
-        function handleCorrectAnswer() {
-            isChecking = true;
-            if(correctSynth) correctSynth.triggerAttackRelease(["C5", "E5", "G5"], "0.2");
-            
-            showFeedback("Correct!", "bg-green-500");
-            
-            setTimeout(() => {
-                feedbackModal.classList.add('hidden');
-                showBonusRound(); 
-            }, 1200); 
+        function removeGroup() {
+            if (state.numGroups > 1) {
+                state.numGroups--;
+                state.groups.pop();
+                renderZones();
+                updateUI();
+            }
         }
 
-        function handleIncorrectAnswer() {
-            isChecking = true;
-            if(incorrectSynth) incorrectSynth.triggerAttackRelease(["C4", "B3"], "0.3");
-            
-            gameContainer.classList.add('shake');
-            showFeedback("Try Again!", "bg-red-500");
-            
-            setTimeout(() => {
-                gameContainer.classList.remove('shake');
-                feedbackModal.classList.add('hidden');
-                isChecking = false;
-            }, 1500);
+        function updateUI() {
+            countDisplay.innerText = state.numGroups;
+            hintText.innerText = "Add cubes to make the groups equal!";
         }
 
-        function showFeedback(message, bgColor) {
-            feedbackContent.textContent = message;
-            feedbackContent.className = `text-6xl md:text-7xl font-black text-white p-8 md:p-10 rounded-lg bounce-in ${bgColor}`;
-            feedbackModal.classList.remove('hidden');
-        }
-        
-        // --- LOGIC HỘP QUÀ MỚI ---
-        const doorPrizes = [5, 10, 15]; 
-        
-        function showBonusRound() {
-            isBonusChecking = true;
-            bonusModal.classList.remove('hidden');
-            bonusResult.classList.add('hidden');
+        function renderZones() {
+            const existingCounts = [...state.groups];
+            workArea.innerHTML = '';
             
-            const shuffledPrizes = [...doorPrizes].sort(() => Math.random() - 0.5);
-            
-            boxContainer.innerHTML = ''; 
-            
-            shuffledPrizes.forEach((prize) => {
-                const box = document.createElement('button');
-                box.className = 'mystery-box w-32 h-32 md:w-40 md:h-40 bg-purple-500 rounded-lg shadow-xl flex items-center justify-center text-purple-100 transition-all duration-300 hover:scale-105 hover:bg-purple-600';
-                box.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="w-24 h-24" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 4.5A2.5 2.5 0 0 0 18 2H6a2.5 2.5 0 0 0-2.5 2.5v4.61c.4.19.76.44 1.09.75L7 12.27V9h10v3.27l2.41-2.41c.33-.31.69-.56 1.09-.75V4.5zM6 14.5c0 1.2.54 2.26 1.38 2.96L6 18.5V14.5zM18 14.5v4l-1.38-1.04A3.503 3.503 0 0 0 18 14.5zM12 7c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zM9 14.13c.64.41 1.41.67 2.25.67h1.5c.84 0 1.61-.26 2.25-.67l.63-.4V10c0-2.21-1.79-4-4-4s-4 1.79-4 4v3.73l.63.4zM9 15.5v3A2.5 2.5 0 0 0 11.5 21h1A2.5 2.5 0 0 0 15 18.5v-3c-1 .8-2.16 1.3-3.5 1.3S10 16.3 9 15.5z"/></svg>`;
-                box.dataset.prize = prize;
-                box.addEventListener('click', handleBoxClick, { once: true });
-                boxContainer.appendChild(box);
-            });
-        }
-        
-        function handleBoxClick(e) {
-            if (!isBonusChecking) return;
-            
-            const clickedBox = e.currentTarget;
-            const prize = parseInt(clickedBox.dataset.prize);
-            
-            score += prize; 
-            updateScore();
-            
-            if(bonusSound) bonusSound.triggerAttackRelease("C5", "0.1", Tone.now() + 0.1);
-            if(bonusSound) bonusSound.triggerAttackRelease("G5", "0.3", Tone.now() + 0.2);
-
-            const allBoxes = boxContainer.querySelectorAll('.mystery-box');
-            allBoxes.forEach(box => {
-                const boxPrize = parseInt(box.dataset.prize);
-                box.innerHTML = `<span class="text-5xl font-black bounce-in">+${boxPrize}</span>`;
-                box.disabled = true;
+            for (let i = 0; i < state.numGroups; i++) {
+                const zone = document.createElement('div');
+                zone.className = 'group-zone';
+                zone.dataset.index = i;
                 
-                if (box !== clickedBox) {
-                    box.classList.remove('bg-purple-500', 'hover:bg-purple-600');
-                    box.classList.add('bg-gray-400', 'opacity-60');
+                zone.onclick = (e) => {
+                    if (e.target.classList.contains('cube')) {
+                        removeCube(i, e.target);
+                    }
+                };
+
+                workArea.appendChild(zone);
+                
+                const count = existingCounts[i] || 0;
+                for(let c = 0; c < count; c++) {
+                    const cube = document.createElement('div');
+                    cube.className = `cube ${state.dragColor}`; 
+                    zone.appendChild(cube);
+                }
+            }
+        }
+
+        function removeCube(groupIndex, cubeEl) {
+            cubeEl.remove();
+            state.groups[groupIndex]--;
+        }
+
+        function startDrag(e, color) {
+            state.isDragging = true;
+            state.dragColor = color;
+            dragProxy.className = `cube fixed pointer-events-none ${color} shadow-2xl`;
+            dragProxy.style.display = 'block';
+            updateDragPosition(e);
+            window.addEventListener('pointermove', onPointerMove);
+            window.addEventListener('pointerup', onPointerUp);
+        }
+
+        function onPointerMove(e) {
+            if (!state.isDragging) return;
+            updateDragPosition(e);
+            const zones = document.querySelectorAll('.group-zone');
+            zones.forEach(z => {
+                const rect = z.getBoundingClientRect();
+                if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                    z.classList.add('active');
                 } else {
-                    box.classList.remove('bg-purple-500');
-                    box.classList.add('bg-yellow-400');
-                    box.style.transform = 'scale(1.1)';
+                    z.classList.remove('active');
                 }
             });
-            
-            const resultText = `You won ${prize} bonus points!`;
-            bonusResult.textContent = resultText;
-            bonusResult.classList.remove('hidden');
-            
-            setTimeout(() => {
-                bonusModal.classList.add('hidden');
-                isChecking = false;
-                isBonusChecking = false;
-                drawCard(); 
-            }, 2000);
-        }
-        
-        // --- LOGIC KẾT THÚC GAME MỚI ---
-        function showGameEnd() {
-            // SỬA LỖI: Tắt nhạc nền
-            /*
-            if (backgroundMusic) {
-                Tone.Transport.stop();
-            }
-            */
-
-            finalScoreEl.textContent = `Final Score: ${score}`;
-            gameOverModal.classList.remove('hidden');
-            
-            if(winSound) {
-                const now = Tone.now();
-                winSound.triggerAttackRelease("C5", "8n", now);
-                winSound.triggerAttackRelease("E5", "8n", now + 0.2);
-                winSound.triggerAttackRelease("G5", "8n", now + 0.4);
-                winSound.triggerAttackRelease("C6", "4n", now + 0.6);
-            }
         }
 
-        // --- Logic Kéo và Thả (KHÔNG THAY ĐỔI) ---
-        
-        function setupDragEvents() {
-            [sourceTenRod, sourceOneCube].forEach(source => {
-                source.addEventListener('mousedown', startDrag);
-                source.addEventListener('touchstart', startDrag, { passive: false });
-            });
-            
-            document.addEventListener('mousemove', dragMove);
-            document.addEventListener('touchmove', dragMove, { passive: false });
-            
-            document.addEventListener('mouseup', endDrag);
-            document.addEventListener('touchend', endDrag);
-        }
-        
-        function startDrag(e) {
-            e.preventDefault();
-            if (isChecking || isBonusChecking) return;
-            
-            const sourceEl = e.currentTarget;
-            dragSourceType = sourceEl.dataset.type; 
-            
-            dragClone = sourceEl.cloneNode(true);
-            if (dragSourceType === 'ten') {
-                dragClone.innerHTML = sourceEl.innerHTML; 
-            }
-            
-            dragClone.classList.add('drag-clone');
-            document.body.appendChild(dragClone);
-            
-            isDragging = true;
-            
-            const pos = getEventPosition(e);
-            updateClonePosition(pos.x, pos.y);
-            
-            if(grabCubeSynth) grabCubeSynth.triggerAttackRelease("C4", "8n"); 
-        }
-        
-        function dragMove(e) {
-            if (!isDragging || isBonusChecking) return;
-            
-            e.preventDefault();
-            const pos = getEventPosition(e);
-            updateClonePosition(pos.x, pos.y);
-        }
-        
-        function updateClonePosition(x, y) {
-            if (!dragClone) return;
-            dragClone.style.left = `${x}px`;
-            dragClone.style.top = `${y}px`;
+        function updateDragPosition(e) {
+            const offset = window.innerWidth < 768 ? 14 : 19;
+            dragProxy.style.left = (e.clientX - offset) + 'px';
+            dragProxy.style.top = (e.clientY - offset) + 'px';
         }
 
-        function endDrag(e) {
-            if (!isDragging || !dragClone || isBonusChecking) return;
-            
-            isDragging = false;
-            
-            dragClone.style.display = 'none';
-            const pos = getEventPosition(e);
-            const dropTarget = document.elementFromPoint(pos.x, pos.y);
-            
-            document.body.removeChild(dragClone);
-            dragClone = null;
-            
-            if (!dropTarget) {
-                if(dropCubeSynth) dropCubeSynth.triggerAttackRelease("C2", "8n");
-                return;
-            }
-
-            if (dragSourceType === 'ten' && tensColumn.contains(dropTarget)) {
-                placeCube('ten');
-                if(dropCubeSynth) dropCubeSynth.triggerAttackRelease("E3", "8n");
-            } else if (dragSourceType === 'one' && onesColumn.contains(dropTarget)) {
-                
-                const targetTens = Math.floor(currentNumber / 10);
-                const placedTens = tensColumn.querySelectorAll('.ten-rod').length;
-                
-                if (placedTens < targetTens) {
-                    tensFirstWarning.classList.remove('hidden');
-                    if(warningSynth) warningSynth.triggerAttackRelease("A3", "8n");
-                    gameContainer.classList.add('shake');
-                    setTimeout(() => gameContainer.classList.remove('shake'), 400);
-                } else {
-                    tensFirstWarning.classList.add('hidden');
-                    placeCube('one');
-                    if(dropCubeSynth) dropCubeSynth.triggerAttackRelease("G3", "8n");
+        function onPointerUp(e) {
+            if (!state.isDragging) return;
+            state.isDragging = false;
+            dragProxy.style.display = 'none';
+            const zones = document.querySelectorAll('.group-zone');
+            zones.forEach(z => {
+                const rect = z.getBoundingClientRect();
+                if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                    addCubeToZone(z);
                 }
-                
+                z.classList.remove('active');
+            });
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+        }
+
+        function addCubeToZone(zone) {
+            const index = parseInt(zone.dataset.index);
+            if (state.groups[index] >= 16) return;
+            const cube = document.createElement('div');
+            cube.className = `cube ${state.dragColor} animate-bounce`;
+            setTimeout(() => cube.classList.remove('animate-bounce'), 500);
+            zone.appendChild(cube);
+            state.groups[index]++;
+        }
+
+        function checkResult() {
+            const counts = state.groups;
+            const first = counts[0];
+            const allSame = counts.every(c => c === first && c > 0);
+            const total = counts.reduce((a, b) => a + b, 0);
+
+            if (allSame) {
+                showSuccess(state.numGroups, first, total);
+            } else if (total === 0) {
+                hintText.innerText = "Put some cubes in the boxes first!";
             } else {
-                if(dropCubeSynth) dropCubeSynth.triggerAttackRelease("C2", "8n");
+                hintText.innerText = "Almost! Make sure every box has the same number of cubes.";
             }
         }
-        
-        function placeCube(type) {
-            let newCube;
-            if (type === 'ten') {
-                newCube = sourceTenRod.cloneNode(true);
-                newCube.innerHTML = sourceTenRod.innerHTML; 
-                tensColumn.appendChild(newCube);
-            } else {
-                newCube = sourceOneCube.cloneNode(true);
-                onesColumn.appendChild(newCube);
-            }
-            
-            newCube.addEventListener('click', () => {
-                newCube.remove();
-                if(removeCubeSynth) removeCubeSynth.triggerAttackRelease('8n', Tone.now(), 0.5);
-                if(type === 'ten') {
-                    tensFirstWarning.classList.add('hidden');
-                }
-            });
-        }
-        
-        function getEventPosition(e) {
-            // SỬA LỖI: Cập nhật hàm để xử lý chính xác 'touchend'
-            if (e.touches && e.touches.length > 0) {
-                // Dùng cho touchstart và touchmove
-                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-            }
-            if (e.changedTouches && e.changedTouches.length > 0) {
-                // Dùng cho touchend (khi e.touches bị rỗng)
-                return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
-            }
-            // Dùng cho mouse events (dự phòng)
-            return { x: e.clientX, y: e.clientY };
-        }
-        
-        document.addEventListener('DOMContentLoaded', initGame);
 
+        function showSuccess(groups, perGroup, total) {
+            const addition = Array(groups).fill(perGroup).join(' + ');
+            additionDisplay.innerText = `${addition} = ${total}`;
+            feedbackOverlay.classList.remove('hidden');
+        }
+
+        function closeFeedback() {
+            feedbackOverlay.classList.add('hidden');
+        }
+
+        function clearCanvas() {
+            state.groups = Array(state.numGroups).fill(0);
+            renderZones();
+            hintText.innerText = "Ready to build something new!";
+        }
     </script>
 </body>
 </html>
