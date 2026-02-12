@@ -141,9 +141,9 @@
     .frame-grid {
       display: grid;
       grid-template-columns: repeat(10, 1fr);
-      gap: 8px;
+      gap: 10px;
       background: #f0f0f0;
-      padding: 15px;
+      padding: 20px;
       border-radius: 15px;
       margin: 20px 0;
     }
@@ -151,26 +151,44 @@
     .cell {
       aspect-ratio: 1;
       background: white;
-      border: 3px solid #333;
-      border-radius: 50%;
+      border: 4px solid #333;
+      border-radius: 12px; /* Square shape with rounded corners */
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 18px;
       cursor: pointer;
       transition: all 0.2s;
+      box-shadow: 0 4px 0px #cbd5e1; /* Cube shadow look */
     }
 
-    .cell.active { border-color: #4CAF50; }
-    .cell.crossed { background: #ffebee; position: relative; }
+    .cell.active { 
+      background: #4ade80; 
+      border-color: #166534;
+      box-shadow: 0 4px 0px #15803d; 
+    }
+    
+    .cell.active:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0px #15803d;
+    }
+
+    .cell.crossed { 
+      background: #fee2e2; 
+      border-color: #991b1b;
+      position: relative; 
+      box-shadow: 0 4px 0px #ef4444;
+    }
+    
     .cell.crossed::before, .cell.crossed::after {
       content: '';
       position: absolute;
-      width: 80%;
-      height: 3px;
-      background: #ff6b6b;
+      width: 70%;
+      height: 4px;
+      background: #ef4444;
       top: 50%;
       left: 50%;
+      border-radius: 2px;
     }
     .cell.crossed::before { transform: translate(-50%, -50%) rotate(45deg); }
     .cell.crossed::after { transform: translate(-50%, -50%) rotate(-45deg); }
@@ -304,7 +322,7 @@
         <p class="equation" id="equationText">20 - ? = ?</p>
       </div>
       
-      <p class="text-gray-600 font-bold mb-2">👇 Click the circles backward! 👇</p>
+      <p class="text-gray-600 font-bold mb-2">👇 Click the cubes backward! 👇</p>
       <div id="frameGrid" class="frame-grid"></div>
       <button id="undoBtn" class="undo-btn" onclick="undoClick()">↩ Undo last click</button>
 
@@ -347,17 +365,27 @@
 
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-  function playTone(freq, duration, type = 'sine') {
+  function playTone(freq, duration, type = 'sine', volume = 0.1) {
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = type;
     osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.setValueAtTime(volume, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     osc.start();
     osc.stop(audioCtx.currentTime + duration);
+  }
+
+  function playDiceRollSound() {
+    // Realistic rolling sound effect by playing multiple tones with slight delay
+    for (let i = 0; i < 12; i++) {
+      setTimeout(() => {
+        const freq = 150 + Math.random() * 300;
+        playTone(freq, 0.04, 'square', 0.1 + Math.random() * 0.1);
+      }, i * 40);
+    }
   }
 
   function createConfetti() {
@@ -418,7 +446,9 @@
     const rollBtn = document.getElementById('rollBtn');
     rollBtn.disabled = true;
     dice.classList.add('rolling');
-    playTone(200, 0.5, 'square');
+    
+    // Call the improved dice rolling sound
+    playDiceRollSound();
 
     let counter = 0;
     const interval = setInterval(() => {
@@ -437,7 +467,7 @@
   function setupSolvePhase() {
     document.getElementById('diceSection').classList.add('hidden');
     document.getElementById('solveSection').classList.remove('hidden');
-    document.getElementById('instruction').innerText = `Count backward ${subtrahend} circles!`;
+    document.getElementById('instruction').innerText = `Count backward ${subtrahend} cubes!`;
     document.getElementById('equationText').innerText = `${minuend} - ${subtrahend} = ?`;
     
     const grid = document.getElementById('frameGrid');
@@ -447,7 +477,7 @@
     for (let i = 0; i < minuend; i++) {
       const cell = document.createElement('div');
       cell.className = "cell active";
-      cell.innerText = "⭕";
+      cell.innerText = "";
       cell.id = `cell-${i}`;
       cell.onclick = () => handleCellClick(i);
       grid.appendChild(cell);
@@ -456,7 +486,6 @@
     document.getElementById('answerSection').classList.add('hidden');
     document.getElementById('undoBtn').disabled = true;
 
-    // FIX: Nếu trừ 0, hiển thị ngay các lựa chọn đáp án mà không cần click
     if (subtrahend === 0) {
       showAnswerOptions();
     }
@@ -476,13 +505,12 @@
       
       document.getElementById('undoBtn').disabled = false;
 
-      // Hiển thị đáp án ngay khi đạt hoặc vượt quá số lượng cần gạch
       if (clickedCount >= subtrahend) {
         showAnswerOptions();
       }
     } else {
       const fb = document.getElementById('feedback');
-      fb.innerText = "Count backward from the last circle!";
+      fb.innerText = "Count backward from the last cube!";
       fb.className = "feedback-box show wrong";
       playTone(150, 0.2, 'sawtooth');
       setTimeout(() => fb.classList.remove('show'), 1500);
@@ -496,7 +524,7 @@
     const cell = document.getElementById(`cell-${lastIndex}`);
     cell.classList.add('active');
     cell.classList.remove('crossed');
-    cell.innerText = "⭕";
+    cell.innerText = "";
     clickedCount--;
     playTone(300, 0.1);
 
@@ -504,7 +532,6 @@
       document.getElementById('undoBtn').disabled = true;
     }
 
-    // Nếu gạch chưa đủ số lượng, ẩn phần đáp án
     if (clickedCount < subtrahend) {
       document.getElementById('answerSection').classList.add('hidden');
     }
@@ -565,7 +592,6 @@
   }
 
   function pickGift(el) {
-    // Disable other boxes
     const boxes = document.querySelectorAll('.gift-box');
     boxes.forEach(b => b.style.pointerEvents = 'none');
 
