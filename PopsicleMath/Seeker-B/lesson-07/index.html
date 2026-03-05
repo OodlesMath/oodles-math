@@ -6,80 +6,93 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Animal Addition Adventure</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Import Poppins Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-  <!-- Import Canvas Confetti for Fireworks -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
         body {
             box-sizing: border-box;
             margin: 0;
             padding: 20px;
             background: linear-gradient(135deg, #FFE5F1, #E5F3FF, #F0FFE5);
-            /* Updated font to Poppins */
             font-family: 'Poppins', sans-serif;
             min-height: 100vh;
+            overflow-x: hidden;
         }
         .game-container {
-            max-width: 600px;
+            max-width: 750px;
             margin: 0 auto;
-            background: white;
-            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
             padding: 30px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 10;
         }
         .title {
             text-align: center;
             font-size: 2.2em;
-            color: #FF6B9D;
+            font-weight: 800;
+            color: #2D3436;
             margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-            font-weight: 700;
+            background: linear-gradient(90deg, #FF6B9D, #6C5CE7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         .progress-bar {
             width: 100%;
             height: 15px;
-            background: #E0E0E0;
-            border-radius: 10px;
+            background: #f1f2f6;
+            border-radius: 20px;
             margin-bottom: 25px;
             overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
         }
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #FF6B9D, #4ECDC4);
-            border-radius: 10px;
-            transition: width 0.5s ease;
-        }
-        .question-area {
-            text-align: center;
-            margin-bottom: 30px;
+            background: linear-gradient(90deg, #FF6B9D, #A29BFE);
+            border-radius: 20px;
+            transition: width 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .question-text {
             font-size: 1.6em;
-            color: #333;
-            margin-bottom: 20px;
+            color: #2D3436;
             font-weight: 600;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            margin-bottom: 20px;
+            text-align: center;
         }
         .animals-display {
-            font-size: 3em;
+            font-size: 3.5em;
             margin: 20px 0;
-            min-height: 80px;
+            min-height: 120px;
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-wrap: nowrap;
-            gap: 15px;
+            gap: 20px;
+            line-height: 1.2;
         }
-        .plus-sign {
-            font-size: 4em;
+        .animal-group {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 40%;
+            gap: 5px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: 20px;
+            border: 2px dashed rgba(0, 0, 0, 0.05);
+        }
+        .plus-sign-wrapper {
+            font-size: 1.5em;
             color: #FF6B9D;
-            margin: 0 15px;
-            font-weight: 700;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .number-bonds {
             position: relative;
@@ -87,638 +100,591 @@
             height: 180px;
             margin: 20px auto;
         }
-        .bond-lines {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
         .bond-circle {
             position: absolute;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 700;
+            font-weight: 800;
             color: white;
-            z-index: 2;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        .part-circle {
-            width: 60px;
-            height: 60px;
-            font-size: 1.5em;
-            background: #4ECDC4;
-            top: 0;
-        }
-        .part-left { left: 10px; }
-        .part-right { right: 10px; }
-        .whole-circle {
-            background: #FF6B9D;
-            width: 80px;
-            height: 80px;
-            font-size: 2em;
-            bottom: 0;
-            left: 60px;
-        }
+        .part-circle { width: 60px; height: 60px; font-size: 1.4em; background: #00CEC9; top: 0; }
+        .part-left { left: 0px; }
+        .part-right { right: 0px; }
+        .whole-circle { background: #FF6B9D; width: 85px; height: 85px; font-size: 2em; bottom: 0; left: 57px; }
+
         .answer-buttons {
             display: flex;
             justify-content: center;
-            gap: 15px;
+            gap: 20px;
             flex-wrap: wrap;
-            margin: 25px 0;
-        }
-        .answer-btn, .action-btn {
-            padding: 15px 25px;
-            font-size: 1.5em;
-            border: none;
-            border-radius: 15px;
-            cursor: pointer;
-            font-weight: 700;
-            transition: all 0.3s ease;
-            min-width: 80px;
-            font-family: 'Poppins', sans-serif;
+            margin: 30px 0;
         }
         .answer-btn {
-            background: linear-gradient(135deg, #FFE066, #FF9A56);
-            color: #333;
+            padding: 15px 35px;
+            font-size: 1.6em;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 700;
+            background: #ffffff;
+            color: #2D3436;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            border: 2px solid #f1f2f6;
+            transition: all 0.2s;
+            min-width: 90px;
         }
         .answer-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        .action-btn {
-            background: linear-gradient(135deg, #4ECDC4, #44A08D);
-            color: white;
-            margin: 10px;
-        }
-        .action-btn:hover {
-            transform: scale(1.05);
-        }
-        .feedback {
-            font-size: 1.4em;
-            font-weight: 700;
-            margin: 15px 0;
-            min-height: 30px;
-        }
-        .correct { color: #4CAF50; }
-        .incorrect { color: #FF5722; }
-
-        .celebration {
-            text-align: center;
-        }
-        .celebration h2 {
-            font-size: 2em;
-            color: #FF6B9D;
-            font-weight: 700;
-        }
-        .final-score {
-            font-size: 2.5em;
-            font-weight: 700;
-            color: #4ECDC4;
-            margin: 15px 0;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-            animation: bounce 2s infinite;
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-        .hidden { display: none !important; }
-        .listen-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 1em;
-            margin-left: 5px;
-            padding: 5px;
-            border-radius: 50%;
-            transition: transform 0.2s ease;
-        }
-        .listen-btn:hover {
-            transform: scale(1.2);
+            border-color: #A29BFE;
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
         }
         
-        /* Styles for Shell Game */
-        .mystery-box {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            text-align: center;
-            z-index: 1000;
-            animation: popIn 0.5s ease;
-            width: 90%;
-            max-width: 500px;
-        }
-        .mystery-box h3 {
-            color: #FF6B9D;
-            margin-bottom: 20px;
-            font-size: 1.8em;
-            font-weight: 700;
-        }
-        .mystery-gifts-container {
-            position: relative;
-            height: 120px; 
-            width: 100%;
-            margin: 20px 0;
-            display: flex;
-            justify-content: center;
-        }
-        .mystery-gift {
-            position: absolute; 
-            font-size: 3.5em;
-            cursor: pointer;
-            width: 80px;
-            height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 15px;
-            background: rgba(255, 107, 157, 0.1);
-            transition: left 0.6s ease-in-out, background 0.2s; 
-            user-select: none;
-        }
-        .mystery-gift:hover {
-            background: rgba(255, 107, 157, 0.3);
-        }
-        .mystery-gift.disabled {
-            cursor: default;
-            pointer-events: none;
-        }
-        .mystery-message {
-            min-height: 1.5em;
-            font-size: 1.2em;
-            color: #555;
-            margin-top: 10px;
+        .feedback {
+            font-size: 1.4em;
             font-weight: 600;
+            margin: 15px 0;
+            min-height: 40px;
+        }
+        .correct { color: #00b894; animation: bounce 0.5s; }
+        .incorrect { color: #ff7675; }
+
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
 
-        @keyframes popIn {
-            0% { transform: translate(-50%, -50%) scale(0); }
-            100% { transform: translate(-50%, -50%) scale(1); }
+        .listen-btn {
+            background: #ffffff;
+            border: 2px solid #f1f2f6;
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 10px;
+            border-radius: 50%;
+            transition: all 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
-        .overlay {
+        .listen-btn:hover { transform: scale(1.1); background: #f9f9f9; }
+
+        /* Archery Screen */
+        #archeryScreen {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 999;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.98);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
+        #archeryCanvas {
+            background: #e1f5fe;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            cursor: crosshair;
+            max-width: 95vw;
+        }
+        .archery-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Celebration */
+        #celebrationScreen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #1e272e;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+        #fireworksCanvas {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+        }
+        .celebration-content {
+            position: relative;
+            z-index: 201;
+            text-align: center;
+        }
+        .action-btn {
+            padding: 15px 45px;
+            font-size: 1.3em;
+            font-weight: 700;
+            border-radius: 50px;
+            border: none;
+            background: linear-gradient(90deg, #FF6B9D, #6C5CE7);
+            color: white;
+            cursor: pointer;
+            margin-top: 30px;
+            box-shadow: 0 10px 20px rgba(255, 107, 157, 0.3);
+            transition: transform 0.2s;
+        }
+        .action-btn:hover { transform: scale(1.05); }
+
+        .hidden { display: none !important; }
     </style>
  </head>
  <body>
   <img src="../assets/logo-oodles-math.png" class="oodles-logo">
   <div class="game-container">
-   <h1 class="title" id="gameTitle">Animal Addition Adventure!</h1>
+   <h1 class="title">Animal Addition Adventure</h1>
    <div class="progress-bar">
     <div class="progress-fill" id="progressFill"></div>
    </div>
-   <div id="gameScreen">
-    <div class="question-area">
-     <div class="question-text" id="questionText"></div>
-     <div class="animals-display" id="animalsDisplay"></div>
-     <div class="number-bonds hidden" id="numberBonds"></div>
-     <div class="answer-buttons" id="answerButtons"></div>
-     <div class="feedback" id="feedback"></div>
-    </div>
-   </div>
-   <div id="overlay" class="overlay hidden"></div>
-   
-   <div id="mysteryBox" class="mystery-box hidden">
-    <h3 id="mysteryTitle">Find the Trophy! 🏆</h3>
-    <div class="mystery-gifts-container" id="mysteryGiftsContainer">
-        <!-- Boxes will be injected here via JS -->
-    </div>
-    <div id="mysteryResult" class="mystery-message">Watch closely...</div>
-   </div>
-
-   <div id="celebrationScreen" class="celebration hidden">
-    <h2>Awesome Job!</h2>
-    <div class="final-score" id="finalScoreDisplay">Score: 0</div>
-    <div style="font-size: 3em; margin: 20px 0;">
-     🐶🎉🐱✨🐘🎉🐸✨
-    </div>
-    <button class="action-btn" id="playAgainBtn">Play Again!</button>
+   <div id="mathGameArea">
+    <div class="question-text" id="questionText"></div>
+    <div class="animals-display" id="animalsDisplay"></div>
+    <div class="number-bonds hidden" id="numberBonds"></div>
+    <div class="answer-buttons" id="answerButtons"></div>
+    <div class="feedback" id="feedback"></div>
    </div>
   </div>
 
+  <!-- Archery Overlay -->
+  <div id="archeryScreen" class="hidden">
+    <div class="archery-header">
+        <h2 class="text-4xl font-black text-gray-800">BONUS SHOT! 🏹</h2>
+        <div id="archeryScore" class="text-2xl font-bold text-purple-600">Total Score: 0</div>
+    </div>
+    <canvas id="archeryCanvas"></canvas>
+    <div id="shotFeedback" class="mt-4 text-2xl font-black h-10 text-purple-600"></div>
+  </div>
+
+  <!-- Celebration -->
+  <div id="celebrationScreen" class="hidden">
+    <canvas id="fireworksCanvas"></canvas>
+    <div class="celebration-content">
+        <h1 class="text-6xl font-black mb-4 tracking-tight">FANTASTIC! 🏆</h1>
+        <p class="text-2xl text-gray-300">You mastered Math & Archery!</p>
+        <div id="finalScoreDisplay" class="text-4xl font-bold my-8 text-yellow-400"></div>
+        <button class="action-btn" onclick="location.reload()">PLAY AGAIN</button>
+    </div>
+  </div>
+
   <script>
-        const animals = ['🐶', '🐱', '🐘', '🐸', '🦁', '🐰', '🐼', '🐯'];
-        const animalNames = ['dogs', 'cats', 'elephants', 'frogs', 'lions', 'rabbits', 'pandas', 'tigers'];
-        const WIN_ITEM = '🏆';
-        const LOSE_ITEM = '💨'; 
+    const animals = ['🐶', '🐱', '🐘', '🐸', '🦁', '🐰', '🐼', '🐯'];
+    const animalNames = ['dogs', 'cats', 'elephants', 'frogs', 'lions', 'rabbits', 'pandas', 'tigers'];
+    
+    let currentQuestion = 0;
+    let currentStep = 1;
+    let animal1, animal2, count1, count2, correctAnswer;
+    let totalArcheryScore = 0;
+    let speechText = "";
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playTone(freq, type, duration, volume = 0.1) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.stop(audioCtx.currentTime + duration);
+    }
+
+    // --- MATH GAME LOGIC ---
+
+    function startMath() {
+        if (currentQuestion >= 5) {
+            showCelebration();
+            return;
+        }
+        currentStep = 1;
+        const i1 = Math.floor(Math.random() * animals.length);
+        let i2 = Math.floor(Math.random() * animals.length);
+        while (i1 === i2) i2 = Math.floor(Math.random() * animals.length);
         
-        let currentQuestion = 0;
-        let currentStep = 1;
-        let animal1, animal2, count1, count2, correctAnswer;
-        let currentSpeechText = "";
-        
-        // Scoring system
-        let totalScore = 0;
-        let currentStepAttempts = 0;
+        animal1 = animals[i1];
+        animal2 = animals[i2];
+        count1 = Math.floor(Math.random() * 8) + 1;
+        count2 = Math.floor(Math.random() * 8) + 1; 
 
-        // Shell Game Variables
-        let boxes = []; 
-        const BOX_SPACING = 110; 
-        
-        const config = {
-            encouragement_text: "Fantastic! You got it right!"
-        };
+        updateProgress();
+        showMathStep();
+    }
 
-        // --- AUDIO SYSTEM ---
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function showMathStep() {
+        const qText = document.getElementById('questionText');
+        const display = document.getElementById('animalsDisplay');
+        const bonds = document.getElementById('numberBonds');
+        const feedback = document.getElementById('feedback');
+        feedback.textContent = "";
 
-        function playTone(freq, type, duration, startTime, volume = 0.2) {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = type;
-            osc.frequency.value = freq;
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            
-            osc.start(startTime);
-            gain.gain.setValueAtTime(volume, startTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-            osc.stop(startTime + duration);
-        }
-
-        function playCheer() {
-            const now = audioCtx.currentTime;
-            playTone(523.25, 'sine', 0.3, now);       
-            playTone(659.25, 'sine', 0.3, now + 0.1); 
-            playTone(783.99, 'sine', 0.4, now + 0.2); 
-        }
-
-        function playCorrectMath() {
-            const now = audioCtx.currentTime;
-            playTone(523.25, 'triangle', 0.1, now, 0.1);
-            playTone(1046.50, 'sine', 0.4, now + 0.05, 0.3); 
-        }
-
-        function playWrong() {
-            const now = audioCtx.currentTime;
-            playTone(300, 'sawtooth', 0.3, now, 0.1);
-            playTone(200, 'sawtooth', 0.4, now + 0.2, 0.1);
-        }
-
-        function playShuffleSound() {
-            const now = audioCtx.currentTime;
-            playTone(400, 'square', 0.05, now, 0.05);
-        }
-
-        function playFanfare() {
-            const now = audioCtx.currentTime;
-            playTone(523.25, 'triangle', 0.2, now);       
-            playTone(659.25, 'triangle', 0.2, now + 0.15); 
-            playTone(783.99, 'triangle', 0.2, now + 0.30); 
-            playTone(1046.50, 'triangle', 0.8, now + 0.45); 
-        }
-
-        // --- GAME LOGIC ---
-
-        function startNewQuestion() {
-            currentStep = 1;
-            const indices = [];
-            while (indices.length < 2) {
-                const idx = Math.floor(Math.random() * animals.length);
-                if (!indices.includes(idx)) indices.push(idx);
-            }
-            animal1 = animals[indices[0]];
-            animal2 = animals[indices[1]];
-            
-            do {
-                count1 = Math.floor(Math.random() * 10) + 1;
-                count2 = Math.floor(Math.random() * 10) + 1;
-            } while (count1 + count2 > 20);
-
-            updateProgress();
-            showStep1();
-        }
-
-        function showStep1() {
-            currentStepAttempts = 0;
-            currentSpeechText = `How many ${animalNames[animals.indexOf(animal1)]} do you see?`;
-            const questionHtml = `
-                <span>${currentSpeechText}</span>
-                <button class="listen-btn" onclick="speakQuestion()">🔊</button>
-            `;
-            document.getElementById('questionText').innerHTML = questionHtml;
-            document.getElementById('animalsDisplay').innerHTML = animal1.repeat(count1);
-            document.getElementById('numberBonds').classList.add('hidden');
+        if (currentStep === 1) {
+            speechText = `How many ${animalNames[animals.indexOf(animal1)]} do you see?`;
+            display.innerHTML = `<div class="animal-group">${animal1.repeat(count1)}</div>`;
+            bonds.classList.add('hidden');
             correctAnswer = count1;
-            createAnswerButtons();
-        }
-
-        function showStep2() {
-            currentStepAttempts = 0;
-            currentSpeechText = `How many ${animalNames[animals.indexOf(animal2)]} do you see?`;
-            const questionHtml = `
-                <span>${currentSpeechText}</span>
-                <button class="listen-btn" onclick="speakQuestion()">🔊</button>
-            `;
-            document.getElementById('questionText').innerHTML = questionHtml;
-            document.getElementById('animalsDisplay').innerHTML = animal2.repeat(count2);
+        } else if (currentStep === 2) {
+            speechText = `How many ${animalNames[animals.indexOf(animal2)]} do you see?`;
+            display.innerHTML = `<div class="animal-group">${animal2.repeat(count2)}</div>`;
             correctAnswer = count2;
-            createAnswerButtons();
-        }
-
-        function showStep3() {
-            currentStepAttempts = 0;
-            currentSpeechText = 'How many animals altogether?';
-            const questionHtml = `
-                <span>${currentSpeechText}</span>
-                <button class="listen-btn" onclick="speakQuestion()">🔊</button>
+        } else {
+            speechText = `How many animals altogether?`;
+            display.innerHTML = `
+                <div class="animal-group">${animal1.repeat(count1)}</div>
+                <div class="plus-sign-wrapper">+</div>
+                <div class="animal-group">${animal2.repeat(count2)}</div>
             `;
-            document.getElementById('questionText').innerHTML = questionHtml;
-            document.getElementById('animalsDisplay').innerHTML = 
-                `${animal1.repeat(count1)}<span class="plus-sign">+</span>${animal2.repeat(count2)}`;
-            
-            const bondsHtml = `
-                <svg class="bond-lines" viewBox="0 0 200 180" width="100%" height="100%">
-                    <line x1="40" y1="30" x2="100" y2="140" stroke="#FF6B9D" stroke-width="4" stroke-linecap="round"/>
-                    <line x1="160" y1="30" x2="100" y2="140" stroke="#FF6B9D" stroke-width="4" stroke-linecap="round"/>
+            bonds.classList.remove('hidden');
+            bonds.innerHTML = `
+                <svg style="position:absolute; top:0; left:0; width:100%; height:100%;">
+                    <line x1="40" y1="30" x2="100" y2="140" stroke="#FF6B9D" stroke-width="4" stroke-linecap="round" />
+                    <line x1="160" y1="30" x2="100" y2="140" stroke="#FF6B9D" stroke-width="4" stroke-linecap="round" />
                 </svg>
                 <div class="bond-circle part-circle part-left">${count1}</div>
                 <div class="bond-circle part-circle part-right">${count2}</div>
                 <div class="bond-circle whole-circle">?</div>
             `;
-            document.getElementById('numberBonds').innerHTML = bondsHtml;
-            document.getElementById('numberBonds').classList.remove('hidden');
-            
             correctAnswer = count1 + count2;
-            createAnswerButtons();
         }
 
-        function createAnswerButtons() {
-            const buttons = [];
-            buttons.push(correctAnswer);
-            while (buttons.length < 3) {
-                let wrong = correctAnswer + Math.floor(Math.random() * 6) - 3;
-                if (wrong > 0 && wrong !== correctAnswer && !buttons.includes(wrong)) {
-                    buttons.push(wrong);
-                }
-            }
-            buttons.sort(() => Math.random() - 0.5);
-            
-            const container = document.getElementById('answerButtons');
-            container.innerHTML = '';
-            buttons.forEach(num => {
-                const btn = document.createElement('button');
-                btn.className = 'answer-btn';
-                btn.textContent = num;
-                btn.onclick = () => checkAnswer(num);
-                container.appendChild(btn);
-            });
-            document.getElementById('feedback').textContent = '';
+        qText.innerHTML = `<span>${speechText}</span><button class="listen-btn" onclick="speak()">🔊</button>`;
+        createButtons();
+    }
+
+    function createButtons() {
+        const container = document.getElementById('answerButtons');
+        container.innerHTML = "";
+        let options = [correctAnswer];
+        while(options.length < 3) {
+            let r = correctAnswer + (Math.floor(Math.random()*5)-2);
+            if(r > 0 && !options.includes(r)) options.push(r);
         }
+        options.sort((a,b) => a - b);
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'answer-btn';
+            btn.textContent = opt;
+            btn.onclick = () => checkMath(opt, btn);
+            container.appendChild(btn);
+        });
+    }
 
-        function checkAnswer(selected) {
-            const feedback = document.getElementById('feedback');
-            if (selected === correctAnswer) {
-                // Calculate score: Max 10 pts for steps 1 & 2, Max 20 pts for step 3. Reduce if failed multiple times.
-                let maxPts = (currentStep === 3) ? 20 : 10;
-                let earnedPts = Math.max(maxPts - (currentStepAttempts * 5), 5); // Minimum 5 pts if correct eventually
-                totalScore += earnedPts;
-
-                playCorrectMath(); 
-                feedback.innerHTML = `${config.encouragement_text} <span style="color:#FF9A56; font-size:0.9em;">(+${earnedPts} pts)</span>`;
-                feedback.className = 'feedback correct';
-                
-                if (currentStep === 3) {
-                    document.querySelector('.whole-circle').textContent = correctAnswer;
-                }
-                
-                // Disable buttons
-                const btns = document.querySelectorAll('.answer-btn');
-                btns.forEach(b => b.style.pointerEvents = 'none');
-
-                setTimeout(() => {
-                    if (currentStep < 3) {
-                        currentStep++;
-                        if (currentStep === 2) showStep2();
-                        else if (currentStep === 3) showStep3();
-                    } else {
-                        initMysteryGame(); 
-                    }
-                }, 1500);
+    function checkMath(val, btn) {
+        const feedback = document.getElementById('feedback');
+        if (val === correctAnswer) {
+            playTone(600, 'sine', 0.2);
+            feedback.textContent = "Well done! Keep going! ⭐";
+            feedback.className = "feedback correct";
+            if (currentStep === 3) {
+                document.querySelector('.whole-circle').textContent = correctAnswer;
+                setTimeout(initArchery, 1000);
             } else {
-                currentStepAttempts++;
-                playWrong();
-                feedback.textContent = 'Try again!';
-                feedback.className = 'feedback incorrect';
+                setTimeout(() => {
+                    currentStep++;
+                    showMathStep();
+                }, 1000);
             }
+        } else {
+            playTone(200, 'sawtooth', 0.3);
+            feedback.textContent = "Oops! Try counting again.";
+            feedback.className = "feedback incorrect";
+        }
+    }
+
+    function speak() {
+        const msg = new SpeechSynthesisUtterance(speechText);
+        msg.rate = 1.0;
+        window.speechSynthesis.speak(msg);
+    }
+
+    function updateProgress() {
+        document.getElementById('progressFill').style.width = (currentQuestion / 5) * 100 + "%";
+    }
+
+    // --- ENHANCED ARCHERY MINI-GAME ---
+
+    const archCanvas = document.getElementById('archeryCanvas');
+    const archCtx = archCanvas.getContext('2d');
+    let isDragging = false;
+    let dragStart = { x: 0, y: 0 };
+    let dragEnd = { x: 0, y: 0 };
+    let arrow = null;
+    let targetX, targetY;
+    const targetRadius = 60;
+    let gameActive = false;
+
+    function initArchery() {
+        document.getElementById('archeryScreen').classList.remove('hidden');
+        archCanvas.width = Math.min(window.innerWidth - 40, 700);
+        archCanvas.height = 450;
+        targetX = archCanvas.width - 100;
+        targetY = archCanvas.height / 2;
+        gameActive = true;
+        arrow = null;
+        isDragging = false;
+        document.getElementById('shotFeedback').textContent = "";
+        drawArchery();
+    }
+
+    function drawArchery() {
+        if (!gameActive) return;
+        
+        // 1. Draw Background (Sky & Grass)
+        archCtx.fillStyle = "#87CEEB"; // Sky
+        archCtx.fillRect(0, 0, archCanvas.width, archCanvas.height);
+        
+        archCtx.fillStyle = "#2ecc71"; // Grass
+        archCtx.fillRect(0, archCanvas.height - 80, archCanvas.width, 80);
+        
+        // Sun
+        archCtx.beginPath();
+        archCtx.arc(50, 50, 30, 0, Math.PI*2);
+        archCtx.fillStyle = "#f1c40f";
+        archCtx.fill();
+
+        // 2. Draw Target
+        const rings = [
+            { r: targetRadius, color: 'white', pts: 2 },
+            { r: targetRadius * 0.8, color: 'black', pts: 4 },
+            { r: targetRadius * 0.6, color: '#3498db', pts: 6 },
+            { r: targetRadius * 0.4, color: '#e74c3c', pts: 8 },
+            { r: targetRadius * 0.2, color: '#f1c40f', pts: 10 }
+        ];
+
+        rings.forEach(ring => {
+            archCtx.beginPath();
+            archCtx.arc(targetX, targetY, ring.r, 0, Math.PI * 2);
+            archCtx.fillStyle = ring.color;
+            archCtx.fill();
+            archCtx.strokeStyle = "#2c3e50";
+            archCtx.lineWidth = 1;
+            archCtx.stroke();
+        });
+
+        const bowX = 100;
+        const bowY = archCanvas.height / 2;
+
+        // 3. Draw Aiming & Power Bar
+        if (isDragging && !arrow) {
+            const dx = dragStart.x - dragEnd.x;
+            const dy = dragStart.y - dragEnd.y;
+            const power = Math.min(Math.sqrt(dx*dx + dy*dy) / 100, 1);
+            
+            // Trajectory preview (dotted)
+            archCtx.beginPath();
+            archCtx.setLineDash([5, 10]);
+            archCtx.moveTo(bowX, bowY);
+            archCtx.lineTo(bowX + dx, bowY + dy);
+            archCtx.strokeStyle = "rgba(255,255,255,0.5)";
+            archCtx.stroke();
+            archCtx.setLineDash([]);
+
+            // Power Bar
+            const barWidth = 100;
+            archCtx.fillStyle = "#34495e";
+            archCtx.fillRect(bowX - 50, bowY + 80, barWidth, 10);
+            archCtx.fillStyle = power > 0.8 ? "#e74c3c" : "#f1c40f";
+            archCtx.fillRect(bowX - 50, bowY + 80, barWidth * power, 10);
         }
 
-        // --- MYSTERY BOX SHELL GAME LOGIC ---
-
-        function initMysteryGame() {
-            document.getElementById('overlay').classList.remove('hidden');
-            document.getElementById('mysteryBox').classList.remove('hidden');
-            document.getElementById('mysteryResult').textContent = "Watch carefully!";
-            document.getElementById('mysteryTitle').textContent = "Find the Trophy! 🏆";
+        // 4. Draw Arrow or Bow
+        if (arrow) {
+            updateArrow();
+            if (arrow) drawArrow(arrow.x, arrow.y, arrow.angle);
+        } else {
+            // Draw Bow
+            archCtx.beginPath();
+            archCtx.arc(bowX - 30, bowY, 60, -Math.PI/2.2, Math.PI/2.2);
+            archCtx.strokeStyle = "#8e44ad";
+            archCtx.lineWidth = 4;
+            archCtx.stroke();
             
-            const container = document.getElementById('mysteryGiftsContainer');
-            container.innerHTML = '';
-            boxes = [];
-            
-            const trophyIndex = Math.floor(Math.random() * 3); 
+            // Bow string
+            archCtx.beginPath();
+            archCtx.moveTo(bowX - 10, bowY - 55);
+            if (isDragging) {
+                archCtx.lineTo(bowX - (dragStart.x - dragEnd.x)/5, bowY);
+                archCtx.lineTo(bowX - 10, bowY + 55);
+            } else {
+                archCtx.lineTo(bowX - 10, bowY + 55);
+            }
+            archCtx.strokeStyle = "#ecf0f1";
+            archCtx.lineWidth = 1;
+            archCtx.stroke();
+        }
 
-            for (let i = 0; i < 3; i++) {
-                const boxEl = document.createElement('div');
-                boxEl.className = 'mystery-gift disabled'; 
-                boxEl.textContent = '🎁';
-                
-                const offset = (i - 1) * BOX_SPACING;
-                boxEl.style.left = `calc(50% + ${offset}px - 40px)`; 
-                
-                container.appendChild(boxEl);
-                
-                boxes.push({
-                    id: i,
-                    currentPos: i, 
-                    hasTrophy: (i === trophyIndex),
-                    element: boxEl
+        if (gameActive) requestAnimationFrame(drawArchery);
+    }
+
+    function drawArrow(x, y, angle) {
+        archCtx.save();
+        archCtx.translate(x, y);
+        archCtx.rotate(angle);
+        
+        // Shaft
+        archCtx.beginPath();
+        archCtx.moveTo(-40, 0);
+        archCtx.lineTo(0, 0);
+        archCtx.strokeStyle = "#34495e";
+        archCtx.lineWidth = 3;
+        archCtx.stroke();
+        
+        // Fletching (feathers)
+        archCtx.beginPath();
+        archCtx.moveTo(-40, 0);
+        archCtx.lineTo(-50, -8);
+        archCtx.lineTo(-45, 0);
+        archCtx.lineTo(-50, 8);
+        archCtx.closePath();
+        archCtx.fillStyle = "#e74c3c";
+        archCtx.fill();
+
+        // Tip
+        archCtx.beginPath();
+        archCtx.moveTo(0, 0);
+        archCtx.lineTo(-12, -6);
+        archCtx.lineTo(-12, 6);
+        archCtx.closePath();
+        archCtx.fillStyle = "#bdc3c7";
+        archCtx.fill();
+        
+        archCtx.restore();
+    }
+
+    function updateArrow() {
+        if (!arrow) return;
+        arrow.x += arrow.vx;
+        arrow.y += arrow.vy;
+        arrow.vy += 0.18; // Gravity
+        arrow.angle = Math.atan2(arrow.vy, arrow.vx);
+
+        const dist = Math.sqrt((arrow.x - targetX)**2 + (arrow.y - targetY)**2);
+        if (dist < targetRadius) {
+            const pts = calculatePoints(dist);
+            totalArcheryScore += pts;
+            document.getElementById('archeryScore').textContent = `Total Score: ${totalArcheryScore}`;
+            document.getElementById('shotFeedback').textContent = `BULLSEYE! +${pts}`;
+            playTone(800, 'sine', 0.2);
+            endTurn();
+        } else if (arrow.x > archCanvas.width || arrow.y > archCanvas.height || arrow.x < 0) {
+            document.getElementById('shotFeedback').textContent = "MISS!";
+            playTone(150, 'sawtooth', 0.3);
+            endTurn();
+        }
+    }
+
+    function calculatePoints(dist) {
+        if (dist < targetRadius * 0.2) return 10;
+        if (dist < targetRadius * 0.4) return 8;
+        if (dist < targetRadius * 0.6) return 6;
+        if (dist < targetRadius * 0.8) return 4;
+        return 2;
+    }
+
+    function endTurn() {
+        arrow = null;
+        gameActive = false;
+        setTimeout(() => {
+            document.getElementById('archeryScreen').classList.add('hidden');
+            currentQuestion++;
+            startMath();
+        }, 1500);
+    }
+
+    archCanvas.addEventListener('mousedown', e => {
+        if (!gameActive || arrow) return;
+        isDragging = true;
+        const rect = archCanvas.getBoundingClientRect();
+        dragStart = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        dragEnd = { ...dragStart };
+    });
+
+    archCanvas.addEventListener('mousemove', e => {
+        if (!isDragging) return;
+        const rect = archCanvas.getBoundingClientRect();
+        dragEnd = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    });
+
+    archCanvas.addEventListener('mouseup', e => {
+        if (!isDragging) return;
+        isDragging = false;
+        const dx = dragStart.x - dragEnd.x;
+        const dy = dragStart.y - dragEnd.y;
+        const power = Math.min(Math.sqrt(dx*dx + dy*dy) / 8, 18);
+        const angle = Math.atan2(dy, dx);
+        
+        if (power > 2) {
+            arrow = {
+                x: 100, y: archCanvas.height / 2,
+                vx: Math.cos(angle) * power,
+                vy: Math.sin(angle) * power,
+                angle: angle
+            };
+            playTone(400, 'triangle', 0.15);
+        }
+    });
+
+    // --- FIREWORKS ---
+
+    function showCelebration() {
+        document.getElementById('celebrationScreen').classList.remove('hidden');
+        document.getElementById('finalScoreDisplay').textContent = `Archery Score: ${totalArcheryScore}`;
+        initFireworks();
+    }
+
+    function initFireworks() {
+        const canvas = document.getElementById('fireworksCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let particles = [];
+        function createFirework() {
+            const x = Math.random() * canvas.width;
+            const targetY = Math.random() * (canvas.height * 0.6);
+            const color = `hsl(${Math.random() * 360}, 100%, 60%)`;
+            
+            for(let i=0; i<60; i++) {
+                particles.push({
+                    x, y: targetY,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    color,
+                    alpha: 1,
+                    size: Math.random() * 3 + 1
                 });
             }
-
-            setTimeout(() => {
-                revealContents(true);
-                setTimeout(() => {
-                    revealContents(false);
-                    document.getElementById('mysteryResult').textContent = "Shuffling...";
-                    startShuffling(5); 
-                }, 1500);
-            }, 500);
+            playTone(200 + Math.random()*300, 'sine', 0.1, 0.05);
         }
 
-        function revealContents(show) {
-            boxes.forEach(box => {
-                if (show) {
-                    box.element.textContent = box.hasTrophy ? WIN_ITEM : '';
-                    if (!box.hasTrophy) box.element.style.background = 'rgba(0,0,0,0.05)';
-                } else {
-                    box.element.textContent = '🎁';
-                    box.element.style.background = 'rgba(255, 107, 157, 0.1)';
-                }
+        function animate() {
+            ctx.fillStyle = 'rgba(30, 39, 46, 0.2)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            particles = particles.filter(p => p.alpha > 0);
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.08;
+                p.alpha -= 0.012;
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+                ctx.fill();
             });
-            if(show && boxes.some(b => b.hasTrophy)) playCheer();
+
+            if (Math.random() < 0.08) createFirework();
+            requestAnimationFrame(animate);
         }
+        animate();
+    }
 
-        function startShuffling(swapsRemaining) {
-            if (swapsRemaining <= 0) {
-                enableSelection();
-                return;
-            }
-
-            let posA = Math.floor(Math.random() * 3);
-            let posB = Math.floor(Math.random() * 3);
-            while (posA === posB) { posB = Math.floor(Math.random() * 3); }
-
-            let boxA = boxes.find(b => b.currentPos === posA);
-            let boxB = boxes.find(b => b.currentPos === posB);
-
-            boxA.currentPos = posB;
-            boxB.currentPos = posA;
-
-            const offsetA = (boxA.currentPos - 1) * BOX_SPACING;
-            const offsetB = (boxB.currentPos - 1) * BOX_SPACING;
-
-            playShuffleSound();
-            
-            boxA.element.style.left = `calc(50% + ${offsetA}px - 40px)`;
-            boxB.element.style.left = `calc(50% + ${offsetB}px - 40px)`;
-
-            setTimeout(() => {
-                startShuffling(swapsRemaining - 1);
-            }, 700); 
-        }
-
-        function enableSelection() {
-            document.getElementById('mysteryResult').textContent = "Where is the trophy?";
-            boxes.forEach(box => {
-                box.element.classList.remove('disabled');
-                box.element.onclick = () => checkMysteryChoice(box);
-            });
-        }
-
-        function checkMysteryChoice(box) {
-            boxes.forEach(b => b.element.classList.add('disabled'));
-
-            if (box.hasTrophy) {
-                totalScore += 50; // Bonus points for finding trophy
-                box.element.textContent = WIN_ITEM;
-                playFanfare();
-                document.getElementById('mysteryResult').innerHTML = `You found it! 🎉 <br><span style="color:#FF9A56; font-size:0.9em;">(+50 pts)</span>`;
-                document.getElementById('mysteryTitle').textContent = "WINNER!";
-                
-                setTimeout(() => {
-                    closeMysteryBox(true);
-                }, 2000);
-            } else {
-                box.element.textContent = LOSE_ITEM;
-                playWrong();
-                document.getElementById('mysteryResult').textContent = "Oh no! Empty!";
-                
-                setTimeout(() => {
-                    const actualBox = boxes.find(b => b.hasTrophy);
-                    actualBox.element.textContent = WIN_ITEM;
-                    actualBox.element.style.background = "#ffffaa";
-                    setTimeout(() => {
-                        closeMysteryBox(false); 
-                    }, 2000);
-                }, 800);
-            }
-        }
-
-        function closeMysteryBox(won) {
-            document.getElementById('overlay').classList.add('hidden');
-            document.getElementById('mysteryBox').classList.add('hidden');
-            nextQuestion();
-        }
-
-        function nextQuestion() {
-            currentQuestion++;
-            if (currentQuestion >= 5) {
-                showCelebration();
-            } else {
-                document.getElementById('gameScreen').classList.remove('hidden');
-                startNewQuestion();
-            }
-        }
-
-        function triggerFireworks() {
-            var duration = 3 * 1000;
-            var animationEnd = Date.now() + duration;
-            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
-            function randomInRange(min, max) {
-              return Math.random() * (max - min) + min;
-            }
-
-            var interval = setInterval(function() {
-              var timeLeft = animationEnd - Date.now();
-
-              if (timeLeft <= 0) {
-                return clearInterval(interval);
-              }
-
-              var particleCount = 50 * (timeLeft / duration);
-              // since particles fall down, start a bit higher than random
-              confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
-              confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
-            }, 250);
-        }
-
-        function showCelebration() {
-            document.getElementById('gameScreen').classList.add('hidden');
-            document.getElementById('progressFill').style.width = '100%';
-            playCheer();
-            document.getElementById('finalScoreDisplay').textContent = `Total Score: ${totalScore} Points!`;
-            document.getElementById('celebrationScreen').classList.remove('hidden');
-            triggerFireworks();
-        }
-
-        function restartGame() {
-            currentQuestion = 0;
-            totalScore = 0;
-            document.getElementById('celebrationScreen').classList.add('hidden');
-            document.getElementById('gameScreen').classList.remove('hidden');
-            startNewQuestion();
-        }
-
-        function updateProgress() {
-            const progress = (currentQuestion / 5) * 100;
-            document.getElementById('progressFill').style.width = progress + '%';
-        }
-
-        function speakQuestion() {
-            if ('speechSynthesis' in window) {
-                const utterance = new SpeechSynthesisUtterance(currentSpeechText);
-                utterance.lang = 'en-US'; // Force English pronunciation
-                utterance.rate = 0.8;
-                utterance.pitch = 1.2;
-                window.speechSynthesis.speak(utterance);
-            }
-        }
-        document.getElementById('playAgainBtn').onclick = restartGame;
-
-        document.body.addEventListener('click', function() {
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-        }, {once:true});
-
-        startNewQuestion();
-    </script>
+    window.onload = startMath;
+  </script>
  </body>
 </html>
