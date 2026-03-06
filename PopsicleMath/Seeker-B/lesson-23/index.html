@@ -18,7 +18,7 @@
             --flower-yellow: #ffea00;
         }
 
-        /* Ngăn chặn tương tác không mong muốn trên mobile */
+        /* Prevent unwanted mobile interactions */
         * { 
             box-sizing: border-box; 
             user-select: none; 
@@ -49,7 +49,7 @@
         header {
             padding: 10px clamp(10px, 4vw, 25px);
             display: flex; 
-            justify-content: flex-start; /* Điểm số sang trái */
+            justify-content: flex-start;
             z-index: 100;
             flex-shrink: 0;
         }
@@ -149,10 +149,10 @@
             z-index: 15;
         }
 
-        /* --- MATH AREA (SMALLER, HIGHER, FIXED TOP BORDER) --- */
+        /* --- MATH AREA --- */
         #problem-container {
             position: absolute; 
-            top: 10px; /* Di chuyển lên trên và đảm bảo viền không bị khuất */
+            top: 10px; 
             width: 100%;
             display: flex; 
             justify-content: center; 
@@ -163,16 +163,15 @@
 
         #equation-box {
             display: inline-block; 
-            padding: 6px clamp(12px, 3vw, 25px); /* Thu gọn padding */
+            padding: 6px clamp(12px, 3vw, 25px); 
             background: white; border-radius: 40px;
             box-shadow: 0 4px 0 #ffc8dd;
-            font-size: clamp(0.9rem, 3.5vw, 1.3rem); /* Chữ nhỏ lại */
+            font-size: clamp(0.9rem, 3.5vw, 1.3rem); 
             font-weight: 700; color: #2c3e50;
             border: 3px solid #ffafcc;
             animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
 
-        /* ICON LOA ĐẸP HƠN */
         .speaker-btn {
             width: clamp(28px, 6vw, 38px); 
             height: clamp(28px, 6vw, 38px);
@@ -244,6 +243,28 @@
         .mode-cpu { background: #3498db; box-shadow: 0 10px 0 #2980b9; }
         .mode-pvp { background: #ffafcc; box-shadow: 0 10px 0 #ff85a1; }
 
+        .range-selector {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin: 20px 0;
+        }
+        .range-btn {
+            padding: 10px 15px;
+            border-radius: 15px;
+            border: 2px solid #ffafcc;
+            background: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .range-btn.active {
+            background: #ffafcc;
+            color: white;
+            transform: scale(1.1);
+        }
+
         #feedback-pop {
             position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%);
             font-size: clamp(3rem, 12vw, 5rem); font-weight: 700; color: #ffea00;
@@ -281,7 +302,6 @@
     <canvas id="fireworks-canvas"></canvas>
 
     <header>
-        <!-- Khối tính điểm di chuyển sang trái -->
         <div class="stats-bar">
             <div id="question-counter">Question: 1/20</div>
             <div>Stars: <span id="win-count">0</span> ⭐</div>
@@ -310,7 +330,6 @@
             </svg>
         </div>
 
-        <!-- Khối phép tính: Nhỏ hơn & Di chuyển cao hơn -->
         <div id="problem-container">
             <div id="equation-box">? + ? = ?</div>
             <div class="speaker-btn" onclick="speakMath()" title="Listen">
@@ -395,7 +414,7 @@
         <div id="feedback-pop">YAY!</div>
     </div>
 
-    <!-- UI CONTROLS (WIDER GAP) -->
+    <!-- UI CONTROLS -->
     <div class="controls">
         <div class="player-panel">
             <div class="player-label" style="color: #3498db;">Player 1 (Keys: A, S)</div>
@@ -414,6 +433,16 @@
     <div id="menu-overlay" class="overlay">
         <div class="modal">
             <h1 style="margin: 0; color: #2c3e50; font-size: clamp(1.5rem, 5vw, 2.2rem);">🐐 GOAT PARTY</h1>
+            
+            <p style="margin: 15px 0 5px; font-weight: bold;">Select Math Range:</p>
+            <div class="range-selector">
+                <button class="range-btn" onclick="setRange(5)">5</button>
+                <button class="range-btn active" onclick="setRange(10)">10</button>
+                <button class="range-btn" onclick="setRange(20)">20</button>
+                <button class="range-btn" onclick="setRange(30)">30</button>
+                <button class="range-btn" onclick="setRange(100)">100</button>
+            </div>
+
             <p style="font-size: clamp(0.9rem, 3vw, 1.1rem); color: #7f8c8d; margin-bottom: 20px;">Solve magic math to win the bridge battle!</p>
             <button class="mode-btn mode-cpu" onclick="initGame('CPU')">PLAY VS COMPUTER</button>
             <button class="mode-btn mode-pvp" onclick="initGame('PVP')">TWO PLAYERS (PvP)</button>
@@ -430,9 +459,10 @@
 </div>
 
 <script>
-    /** --- TRẠNG THÁI GAME --- **/
+    /** --- GAME STATE --- **/
     const state = {
         mode: 'CPU',
+        mathRange: 10,
         currentQ: 1,
         totalQ: 20,
         scoreP1: 0,
@@ -444,9 +474,17 @@
         locked: false,
     };
 
-    /** --- ĐỌC PHÉP TOÁN (TTS) --- **/
+    /** --- MATH RANGE SELECTION --- **/
+    function setRange(val) {
+        state.mathRange = val;
+        document.querySelectorAll('.range-btn').forEach(btn => {
+            btn.classList.toggle('active', parseInt(btn.innerText) === val);
+        });
+    }
+
+    /** --- TTS --- **/
     function speakMath() {
-        if (!state.numA || !state.numB) return;
+        if (!state.numA && state.numA !== 0) return;
         const msg = new SpeechSynthesisUtterance(`${state.numA} plus ${state.numB}`);
         msg.lang = 'en-US';
         msg.rate = 0.8;
@@ -454,7 +492,7 @@
         window.speechSynthesis.speak(msg);
     }
 
-    /** --- ÂM THANH HIỆU ỨNG (Web Audio API) --- **/
+    /** --- AUDIO EFFECTS --- **/
     let audioCtx = null;
     function initAudio() { 
         if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
@@ -482,7 +520,7 @@
         osc.start(); osc.stop(now + 0.6);
     }
 
-    /** --- LOGIC GAME --- **/
+    /** --- GAME LOGIC --- **/
     function initGame(mode) {
         initAudio();
         state.mode = mode;
@@ -496,15 +534,29 @@
     }
 
     function generateMath() {
-        const sum = Math.floor(Math.random() * 11) + 10;
-        state.numA = Math.floor(Math.random() * (sum - 1)) + 1;
-        state.numB = sum - state.numA;
+        const range = state.mathRange;
+        let sum;
+        
+        // Define sum bounds based on range selection
+        if (range <= 10) {
+            sum = Math.floor(Math.random() * (range - 1)) + 2; // Min sum 2
+        } else {
+            // For larger ranges, favor middle/high values but allow lower ones
+            const min = Math.floor(range / 3);
+            sum = Math.floor(Math.random() * (range - min + 1)) + min;
+        }
 
+        state.numA = Math.floor(Math.random() * (sum + 1));
+        state.numB = sum - state.numA;
         state.correct = sum;
+
+        // Distractor logic
         let dist;
         do { 
-            dist = sum + (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 2) + 1);
-        } while (dist < 5 || dist > 25 || dist === sum);
+            const offset = (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 3) + 1);
+            dist = sum + offset;
+        } while (dist < 0 || dist > (range + 5) || dist === sum);
+        
         state.options = Math.random() > 0.5 ? [sum, dist] : [dist, sum];
 
         const box = document.getElementById('equation-box');
@@ -530,7 +582,7 @@
         generateMath();
 
         if(state.mode === 'CPU') {
-            const delay = 5000 + Math.random() * 3000;
+            const delay = 4000 + Math.random() * 4000;
             state.cpuTimer = setTimeout(() => {
                 if(!state.locked) handleInput(2, state.options.indexOf(state.correct));
             }, delay);
@@ -652,7 +704,6 @@
                 ctx.clearRect(0,0,canvas.width,canvas.height);
                 return;
             }
-            ctx.fillStyle = 'rgba(162, 210, 255, 0.2)'; 
             ctx.clearRect(0,0,canvas.width,canvas.height);
             particles = particles.filter(p => p.alpha > 0);
             particles.forEach(p => { p.update(); p.draw(); });
