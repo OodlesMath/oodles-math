@@ -4,7 +4,7 @@
     <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Math Game: Subtracting Blocks</title>
+    <title>Math Game: Tens & Ones</title>
     <!-- Google Fonts: Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -58,7 +58,6 @@
         .gummy-btn { box-shadow: 0 4px 0 rgba(0,0,0,0.1); }
         .gummy-btn:active:not(:disabled) { box-shadow: 0 0 0 rgba(0,0,0,0); transform: translateY(4px); }
         
-        /* Tower Builder Styles */
         #gameCanvas {
             background: #ffffff;
             border-radius: 20px;
@@ -112,7 +111,7 @@
             <div class="w-full bg-white rounded-3xl p-4 sm:p-6 shadow-xl flex flex-col items-center">
                 <div class="text-5xl sm:text-7xl font-black tracking-tight flex items-center">
                     <span id="eq-num1" class="text-blue-500">_</span>
-                    <span id="eq-op" class="mx-4 text-gray-300">+</span>
+                    <span id="eq-op" class="mx-4 text-gray-300">-</span>
                     <span id="eq-num2" class="text-red-400">_</span>
                     <span class="mx-4 text-gray-300">=</span>
                     <span id="eq-ans" class="text-gray-400">?</span>
@@ -144,7 +143,6 @@
                         <div id="ones-container" class="flex flex-wrap content-start justify-center gap-2 w-full pb-20 relative z-10"></div>
                         <div id="ones-zero" class="text-gray-100 font-black text-8xl opacity-50 absolute top-1/2 -translate-y-1/2 w-full text-center">0</div>
                         
-                        <!-- REGROUP BUTTON -->
                         <div id="regroup-hint" class="sticky bottom-4 left-0 right-0 flex justify-center z-20 mt-auto hidden">
                             <button onclick="regroupTen()" class="bg-white p-3 rounded-2xl border-4 border-orange-400 shadow-xl flex flex-col items-center gummy-btn">
                                 <span class="text-orange-500 font-black text-xs uppercase mb-1">Group 10!</span>
@@ -159,17 +157,13 @@
         <!-- CONTROLS -->
         <div id="control-panel" class="w-full max-w-4xl flex flex-col gap-2 shrink-0">
             <div id="action-area" class="flex justify-center mb-1">
-                <button id="btn-confirm-1" onclick="confirmStep1()" class="bg-green-500 hover:bg-green-400 text-white font-black py-2 px-10 rounded-2xl shadow-md uppercase tracking-widest text-sm transition-all gummy-btn">
+                <button id="btn-confirm-1" onclick="confirmStep1()" class="bg-green-500 hover:bg-green-400 text-white font-black py-1.5 px-8 rounded-xl shadow-md uppercase tracking-widest text-xs sm:text-sm transition-all gummy-btn mt-6">
                     Set Starting Number
                 </button>
             </div>
 
-            <!-- MCQ OPTIONS -->
-            <div id="mcq-options-container" class="grid grid-cols-2 gap-3 w-full hidden">
-                <!-- MCQ buttons injected via JS -->
-            </div>
+            <div id="mcq-options-container" class="grid grid-cols-2 gap-3 w-full hidden"></div>
 
-            <!-- MANUAL ADD CONTROLS -->
             <div id="manual-controls" class="flex justify-center gap-3 w-full">
                 <div class="flex-1 flex gap-2">
                     <button onclick="removeTen()" class="bg-white/40 text-white rounded-2xl p-3 gummy-btn"><i data-lucide="minus"></i></button>
@@ -212,8 +206,7 @@
     <script>
         /* --- MATH CALCULATOR LOGIC --- */
         let step = 1, operation = '-', num1 = 0, initialTens = 0, initialOnes = 0;
-        let tens = 0, ones = 0;
-        let globalScore = 0;
+        let tens = 0, ones = 0, globalScore = 0;
         let isDragging = false, dragType = '', audioCtx = null, notificationTimeout = null;
         const MAX_TENS = 20, MAX_ONES = 30;
 
@@ -223,6 +216,8 @@
         const btnConfirm1 = document.getElementById('btn-confirm-1');
         const eqAns = document.getElementById('eq-ans');
         const gameTitle = document.getElementById('game-title');
+        const dragPreview = document.getElementById('drag-preview');
+        const dragPreviewContent = document.getElementById('drag-preview-content');
 
         function setOp(op) {
             if (step === 2) return;
@@ -260,11 +255,10 @@
             if (step === 1) { 
                 document.getElementById('eq-num1').textContent = current || "_"; 
                 document.getElementById('eq-num2').textContent = "_";
-            }
-            else {
+            } else {
                 document.getElementById('eq-num1').textContent = num1;
-                let num2 = (operation === '+') ? (current - num1) : (num1 - current);
-                document.getElementById('eq-num2').textContent = num2 <= 0 ? "_" : num2;
+                let n2 = (operation === '+') ? (current - num1) : (num1 - current);
+                document.getElementById('eq-num2').textContent = n2 <= 0 ? "_" : n2;
             }
         }
 
@@ -283,13 +277,10 @@
                 b.onclick = () => {
                     if (v === correct) {
                         b.classList.add('bg-green-500', 'text-white');
-                        eqAns.textContent = v;
-                        eqAns.className = "text-green-500 font-black";
-                        globalScore += 1;
-                        document.getElementById('display-score').textContent = globalScore;
-                        showNotification("Correct! Let's play! 🏗️");
+                        eqAns.textContent = v; eqAns.className = "text-green-500 font-black";
+                        globalScore++; document.getElementById('display-score').textContent = globalScore;
                         playSound('magic');
-                        setTimeout(() => { document.getElementById('tower-modal').classList.remove('hidden'); }, 1000);
+                        setTimeout(() => { document.getElementById('tower-modal').classList.remove('hidden'); }, 800);
                     } else {
                         b.classList.add('bg-red-500', 'text-white', 'animate-shake');
                         playSound('delete');
@@ -323,11 +314,9 @@
             document.getElementById('btn-add-one').classList.toggle('opacity-20', isSub2);
             if (ones >= 10) { 
                 document.getElementById('regroup-hint').classList.remove('hidden'); 
-                const bp = document.getElementById('bundle-preview');
-                bp.innerHTML = '';
+                const bp = document.getElementById('bundle-preview'); bp.innerHTML = '';
                 for(let i=0; i<10; i++) bp.innerHTML += `<div class="w-2 h-2 bg-ones-peach rounded-sm"></div>`;
             } else document.getElementById('regroup-hint').classList.add('hidden');
-            
             if (step === 2) generateOptions();
             document.getElementById('tens-zero').style.display = tens === 0 ? 'block' : 'none';
             document.getElementById('ones-zero').style.display = ones === 0 ? 'block' : 'none';
@@ -335,26 +324,45 @@
 
         function createRod() {
             const w = document.createElement('div'); w.className = "flex flex-col sm:flex-row gap-[1px] cursor-grab touch-none group";
-            w.onmousedown = (e) => startDrag(e, 'tenRod'); 
-            w.onclick = () => { if(step === 2 && operation === '+') return; if(tens>0) tens--; updateUI(); updateCalculatorUI(); playSound('delete'); };
-            const inner = document.createElement('div'); inner.className = "flex gap-[1px]";
+            let startX, startY;
+            w.onmousedown = (e) => { startX = e.clientX; startY = e.clientY; startDrag(e, 'tenRod'); };
+            w.onmouseup = (e) => {
+                const dist = Math.sqrt(Math.pow(e.clientX-startX,2)+Math.pow(e.clientY-startY,2));
+                if (dist < 5) { // It's a click
+                    if(step === 2 && operation === '+' && tens <= initialTens) return;
+                    if(tens > 0) { tens--; updateUI(); updateCalculatorUI(); playSound('delete'); }
+                }
+            };
+            const inner = document.createElement('div'); inner.className = "flex gap-[1px] pointer-events-none";
             for (let i = 0; i < 10; i++) {
-                const s = document.createElement('div'); s.className = "w-5 h-5 sm:w-6 sm:h-6 bg-tens-cyan border border-white/20 rounded-sm";
-                inner.appendChild(s);
+                inner.innerHTML += `<div class="w-5 h-5 sm:w-6 sm:h-6 bg-tens-cyan border border-white/20 rounded-sm"></div>`;
             }
             w.appendChild(inner); return w;
         }
 
         function createCube() {
             const e = document.createElement('div'); e.className = "w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-ones-peach border border-white/20 cursor-pointer shadow-sm";
-            e.onclick = () => { if(step === 2 && operation === '+') return; if(ones>0) ones--; updateUI(); updateCalculatorUI(); playSound('delete'); };
+            e.onclick = () => {
+                if(step === 2 && operation === '+' && ones <= initialOnes) return;
+                if(ones > 0) { ones--; updateUI(); updateCalculatorUI(); playSound('delete'); }
+            };
             return e;
         }
 
         function addOne() { if (ones < MAX_ONES) { ones++; playSound('pop'); updateUI(); updateCalculatorUI(); } }
-        function removeOne() { if (ones > 0) { if(step === 2 && operation === '+') return; ones--; playSound('delete'); updateUI(); updateCalculatorUI(); } }
+        function removeOne() { 
+            if (ones > 0) { 
+                if(step === 2 && operation === '+' && ones <= initialOnes) return;
+                ones--; playSound('delete'); updateUI(); updateCalculatorUI(); 
+            } 
+        }
         function addTen() { if (tens < MAX_TENS) { tens++; playSound('pop'); updateUI(); updateCalculatorUI(); } }
-        function removeTen() { if (tens > 0) { if(step === 2 && operation === '+') return; tens--; playSound('delete'); updateUI(); updateCalculatorUI(); } }
+        function removeTen() { 
+            if (tens > 0) { 
+                if(step === 2 && operation === '+' && tens <= initialTens) return;
+                tens--; playSound('delete'); updateUI(); updateCalculatorUI(); 
+            } 
+        }
 
         /* --- BONUS MINI GAME LOGIC --- */
         const towerCanvas = document.getElementById('gameCanvas');
@@ -362,8 +370,7 @@
         const BLOCK_HEIGHT = 35;
         const WIN_LIMIT = 15;
         const COLORS = ['#00D2D3', '#FFAD9F', '#3498db', '#ff6b6b', '#feca57'];
-        
-        let towerBlocks = [], currentTBlock = null, towerScore = 0, towerSpeed = 1.2, towerCameraY = 0, towerGameState = 'START';
+        let towerBlocks = [], currentTBlock = null, towerScore = 0, towerCameraY = 0, towerGameState = 'START';
 
         function initTowerCanvas() {
             const r = towerCanvas.parentElement.getBoundingClientRect();
@@ -387,11 +394,10 @@
         }
 
         function startTowerGame() {
-            initTowerCanvas();
-            towerGameState = 'PLAYING'; towerBlocks = []; towerScore = 0; towerCameraY = 0;
+            initTowerCanvas(); towerGameState = 'PLAYING'; towerBlocks = []; towerScore = 0; towerCameraY = 0;
             document.getElementById('tower-overlay').classList.add('hidden');
-            const base = new TBlock((towerCanvas.width - 120)/2, towerCanvas.height - 40, 120, '#546de5', 0);
-            towerBlocks.push(base); spawnTBlock(); requestAnimationFrame(animateTower);
+            towerBlocks.push(new TBlock((towerCanvas.width - 120)/2, towerCanvas.height - 40, 120, '#546de5', 0));
+            spawnTBlock(); requestAnimationFrame(animateTower);
         }
 
         function spawnTBlock() {
@@ -402,19 +408,15 @@
         function animateTower() {
             if (towerGameState !== 'PLAYING') return;
             tCtx.clearRect(0,0,towerCanvas.width, towerCanvas.height);
-            
             const goalY = towerBlocks[0].y - (WIN_LIMIT * BLOCK_HEIGHT);
             tCtx.setLineDash([5, 5]); tCtx.strokeStyle = '#F1C40F'; tCtx.beginPath();
             tCtx.moveTo(0, goalY + towerCameraY); tCtx.lineTo(towerCanvas.width, goalY + towerCameraY); tCtx.stroke();
-
             towerBlocks.forEach(b => b.draw(tCtx, towerCameraY));
             currentTBlock.update(); currentTBlock.draw(tCtx, towerCameraY);
-
             if (currentTBlock.falling) {
                 const last = towerBlocks[towerBlocks.length - 1];
                 if (currentTBlock.y + BLOCK_HEIGHT >= last.y) {
-                    const diff = currentTBlock.x - last.x;
-                    const overlap = currentTBlock.w - Math.abs(diff);
+                    const diff = currentTBlock.x - last.x; const overlap = currentTBlock.w - Math.abs(diff);
                     if (overlap > 5) {
                         currentTBlock.falling = false; currentTBlock.y = last.y - BLOCK_HEIGHT;
                         currentTBlock.w = overlap; currentTBlock.x = diff > 0 ? last.x + diff : last.x;
@@ -430,11 +432,10 @@
 
         function endTower(res) {
             towerGameState = res;
-            const ov = document.getElementById('tower-result-overlay');
+            document.getElementById('tower-result-overlay').classList.remove('hidden');
             const txt = document.getElementById('tower-status-text');
-            ov.classList.remove('hidden');
             txt.textContent = res === 'WIN' ? "MASTER BUILDER! 🏆" : "OH NO! 💥";
-            txt.className = res === 'WIN' ? "text-3xl font-black text-yellow-500 mb-2" : "text-3xl font-black text-red-500 mb-2";
+            txt.className = res === 'WIN' ? "text-3xl font-black text-green-500 mb-2" : "text-3xl font-black text-red-500 mb-2";
         }
 
         function closeTowerGame() {
@@ -450,11 +451,8 @@
         function resetBoardFull() {
             step = 1; tens = 0; ones = 0; num1 = 0; initialTens = 0; initialOnes = 0;
             document.getElementById('op-selector').classList.remove('opacity-30', 'pointer-events-none');
-            btnConfirm1.classList.remove('hidden');
-            btnConfirm1.style.opacity = '1';
-            mcqOptions.classList.add('hidden');
-            eqAns.textContent = "?";
-            eqAns.className = "text-gray-400";
+            btnConfirm1.classList.remove('hidden'); mcqOptions.classList.add('hidden');
+            eqAns.textContent = "?"; eqAns.className = "text-gray-400";
             updateUI(); updateCalculatorUI();
         }
 
@@ -484,16 +482,15 @@
                 tens++; ones -= 10; 
                 if(step === 2 && operation === '+') { initialTens++; initialOnes -= 10; }
                 playSound('magic'); updateUI(); updateCalculatorUI();
-                showNotification("Grouped 10 into 1 Ten!");
-            } else if (tens >= MAX_TENS) {
-                showNotification("Board is full!");
             }
         }
 
         function startDrag(e, type) {
-            e.preventDefault(); isDragging = true; dragType = type;
+            // e.preventDefault(); // Removed to allow click propagation
+            isDragging = true; dragType = type;
             const cx = e.touches ? e.touches[0].clientX : e.clientX;
             const cy = e.touches ? e.touches[0].clientY : e.clientY;
+            if (!dragPreviewContent) return;
             dragPreviewContent.innerHTML = '<span style="font-size: 32px">📏</span>';
             dragPreview.classList.remove('hidden');
             const move = (me) => {
@@ -508,7 +505,7 @@
                 const ex = se.changedTouches ? se.changedTouches[0].clientX : se.clientX;
                 const ey = se.changedTouches ? se.changedTouches[0].clientY : se.clientY;
                 const r = document.getElementById('ones-column').getBoundingClientRect();
-                if (ex>=r.left && ex<=r.right && ey>=r.top && ey<=r.bottom) { 
+                if (ex>=r.left && ex<=r.right && ey>=r.top && ey<=r.bottom && tens > 0) { 
                     tens--; ones += 10; 
                     if(step === 2 && operation === '+') { initialTens--; initialOnes += 10; }
                     playSound('pop'); 
