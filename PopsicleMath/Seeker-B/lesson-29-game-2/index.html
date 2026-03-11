@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Game: Subtracting Blocks</title>
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        'game-blue': '#79D1F3',
+                        'tens-cyan': '#00D2D3',
+                        'ones-peach': '#FFAD9F',
+                        'num-blue': '#3498db',
+                        'num-orange': '#ff6b6b'
+                    },
+                    keyframes: {
+                        shake: {
+                            '0%, 100%': { transform: 'translateX(0)' },
+                            '25%': { transform: 'translateX(-5px)' },
+                            '75%': { transform: 'translateX(5px)' }
+                        }
+                    },
+                    animation: {
+                        shake: 'shake 0.2s ease-in-out 0s 2'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #79D1F3;
+            font-family: 'Poppins', sans-serif;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .gummy-btn { box-shadow: 0 4px 0 rgba(0,0,0,0.1); }
+        .gummy-btn:active:not(:disabled) { box-shadow: 0 0 0 rgba(0,0,0,0); transform: translateY(4px); }
+        
+        /* Tower Builder Styles */
+        #gameCanvas {
+            background: #ffffff;
+            border-radius: 20px;
+            width: 100%;
+            height: 380px;
+            cursor: pointer;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
+            text-align: center;
+            border-radius: 24px;
+        }
+    </style>
+</head>
+<body class="w-full h-screen font-sans flex flex-col items-center p-2 sm:p-4">
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- CALCULATOR UI -->
+    <div id="calculator-ui" class="w-full h-full flex flex-col items-center gap-2 sm:gap-4">
+        <!-- HEADER -->
+        <div class="w-full max-w-4xl bg-white/95 rounded-3xl p-2 sm:p-3 shadow-md flex justify-between items-center shrink-0">
+            <h1 id="game-title" class="text-xl sm:text-2xl font-black text-blue-500 uppercase tracking-tight ml-4">Subtracting Blocks</h1>
+            <div class="flex items-center gap-2 sm:gap-4">
+                <button onclick="resetBoardFull()" class="bg-blue-100 hover:bg-blue-200 text-blue-600 p-2 rounded-xl transition-all shadow-sm">
+                    <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                </button>
+                <button onclick="speakNumber()" class="bg-yellow-100 hover:bg-yellow-200 text-yellow-600 p-2 rounded-xl transition-all shadow-sm">
+                    <i data-lucide="volume-2" class="w-5 h-5"></i>
+                </button>
+                <div class="bg-indigo-500 text-white px-4 py-1.5 rounded-full font-black text-sm uppercase shadow-sm">
+                    Score: <span id="display-score">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- OPERATION BAR -->
+        <div class="w-full max-w-3xl flex flex-col items-center shrink-0 gap-2">
+            <div id="op-selector" class="flex bg-white/60 rounded-full p-1 border-2 border-white/40 shadow-sm">
+                <button onclick="setOp('+')" id="btn-op-add" class="px-6 py-1.5 rounded-full text-blue-400 font-black text-sm sm:text-base transition-all">+ Addition</button>
+                <button onclick="setOp('-')" id="btn-op-sub" class="px-6 py-1.5 rounded-full bg-white shadow-sm text-blue-600 font-black text-sm sm:text-base transition-all">- Subtraction</button>
+            </div>
+
+            <div class="w-full bg-white rounded-3xl p-4 sm:p-6 shadow-xl flex flex-col items-center">
+                <div class="text-5xl sm:text-7xl font-black tracking-tight flex items-center">
+                    <span id="eq-num1" class="text-blue-500">_</span>
+                    <span id="eq-op" class="mx-4 text-gray-300">+</span>
+                    <span id="eq-num2" class="text-red-400">_</span>
+                    <span class="mx-4 text-gray-300">=</span>
+                    <span id="eq-ans" class="text-gray-400">?</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- NOTIFICATION / INSTRUCTIONS -->
+        <div id="notification-container" class="w-full max-w-3xl flex justify-center shrink-0">
+            <div class="bg-white rounded-2xl px-8 py-2 shadow-sm text-blue-500 font-bold text-center text-xs sm:text-sm">
+                Tap a block to remove it!<br>
+                Drag a Ten to Ones to break it!
+            </div>
+        </div>
+
+        <!-- BOARD -->
+        <div class="flex-1 w-full max-w-4xl flex flex-col overflow-hidden relative">
+            <div class="flex-1 bg-white rounded-[2.5rem] flex flex-col overflow-hidden shadow-2xl">
+                <div class="flex shrink-0">
+                    <div class="w-1/2 py-2 text-center text-blue-500 font-black text-lg bg-cyan-50/50 uppercase border-r border-gray-100">Tens</div>
+                    <div class="w-1/2 py-2 text-center text-orange-400 font-black text-lg bg-orange-50/50 uppercase">Ones</div>
+                </div>
+                <div class="flex-1 flex overflow-hidden relative">
+                    <div id="tens-column" class="w-1/2 border-r border-gray-100 p-4 overflow-y-auto flex flex-col items-center transition-colors">
+                        <div id="tens-container" class="flex flex-wrap justify-center gap-2 w-full content-start pb-20 relative z-10"></div>
+                        <div id="tens-zero" class="text-gray-100 font-black text-8xl opacity-50 absolute top-1/2 -translate-y-1/2">0</div>
+                    </div>
+                    <div id="ones-column" class="w-1/2 p-4 overflow-y-auto flex flex-col items-center transition-colors">
+                        <div id="ones-container" class="flex flex-wrap content-start justify-center gap-2 w-full pb-20 relative z-10"></div>
+                        <div id="ones-zero" class="text-gray-100 font-black text-8xl opacity-50 absolute top-1/2 -translate-y-1/2 w-full text-center">0</div>
+                        
+                        <!-- REGROUP BUTTON -->
+                        <div id="regroup-hint" class="sticky bottom-4 left-0 right-0 flex justify-center z-20 mt-auto hidden">
+                            <button onclick="regroupTen()" class="bg-white p-3 rounded-2xl border-4 border-orange-400 shadow-xl flex flex-col items-center gummy-btn">
+                                <span class="text-orange-500 font-black text-xs uppercase mb-1">Group 10!</span>
+                                <div class="bg-orange-50 p-1 rounded-lg border-2 border-orange-100 flex flex-wrap gap-1 w-12 justify-center" id="bundle-preview"></div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONTROLS -->
+        <div id="control-panel" class="w-full max-w-4xl flex flex-col gap-2 shrink-0">
+            <div id="action-area" class="flex justify-center mb-1">
+                <button id="btn-confirm-1" onclick="confirmStep1()" class="bg-green-500 hover:bg-green-400 text-white font-black py-2 px-10 rounded-2xl shadow-md uppercase tracking-widest text-sm transition-all gummy-btn">
+                    Set Starting Number
+                </button>
+            </div>
+
+            <!-- MCQ OPTIONS -->
+            <div id="mcq-options-container" class="grid grid-cols-2 gap-3 w-full hidden">
+                <!-- MCQ buttons injected via JS -->
+            </div>
+
+            <!-- MANUAL ADD CONTROLS -->
+            <div id="manual-controls" class="flex justify-center gap-3 w-full">
+                <div class="flex-1 flex gap-2">
+                    <button onclick="removeTen()" class="bg-white/40 text-white rounded-2xl p-3 gummy-btn"><i data-lucide="minus"></i></button>
+                    <button onclick="addTen()" id="btn-add-ten" class="flex-1 bg-purple-500 text-white rounded-2xl font-black uppercase text-sm gummy-btn">Add 10</button>
+                </div>
+                <div class="flex-1 flex gap-2">
+                    <button onclick="addOne()" id="btn-add-one" class="flex-1 bg-orange-400 text-white rounded-2xl font-black uppercase text-sm gummy-btn">Add 1</button>
+                    <button onclick="removeOne()" class="bg-white/40 text-white rounded-2xl p-3 gummy-btn"><i data-lucide="minus"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOWER MODAL -->
+    <div id="tower-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm hidden p-4">
+        <div class="game-container w-full max-w-md bg-white rounded-[2.5rem] p-6 shadow-2xl relative border-8 border-white">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-2xl font-black text-blue-500">BONUS GAME! 🏗️</h1>
+                <div class="text-sm font-bold text-gray-500">Height: <span id="tower-score-display" class="text-blue-600 text-2xl">0</span>/15</div>
+            </div>
+            <canvas id="gameCanvas"></canvas>
+            <div id="tower-overlay" class="overlay">
+                <h2 class="text-2xl font-black text-gray-800 mb-2">Build the tower!</h2>
+                <button class="bg-blue-500 text-white px-10 py-4 rounded-full font-black text-lg gummy-btn uppercase tracking-widest" onclick="startTowerGame()">START</button>
+            </div>
+            <div id="tower-result-overlay" class="overlay hidden">
+                <h2 id="tower-status-text" class="text-3xl font-black mb-4"></h2>
+                <button class="bg-green-500 text-white px-8 py-3 rounded-full font-black text-lg uppercase gummy-btn" onclick="closeTowerGame()">NEXT PROBLEM</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DRAG PREVIEW -->
+    <div id="drag-preview" class="fixed pointer-events-none z-50 flex items-center hidden" style="transform: translate(-50%, -50%) rotate(-5deg);">
+        <div id="drag-preview-content" class="p-2 rounded-xl shadow-2xl scale-125 border-4 border-white"></div>
+    </div>
+
+    <canvas id="fireworksCanvas" class="fixed inset-0 pointer-events-none z-[60] hidden"></canvas>
+
+    <script>
+        /* --- MATH CALCULATOR LOGIC --- */
+        let step = 1, operation = '-', num1 = 0, initialTens = 0, initialOnes = 0;
+        let tens = 0, ones = 0;
+        let globalScore = 0;
+        let isDragging = false, dragType = '', audioCtx = null, notificationTimeout = null;
+        const MAX_TENS = 20, MAX_ONES = 30;
+
+        const tensContainer = document.getElementById('tens-container');
+        const onesContainer = document.getElementById('ones-container');
+        const mcqOptions = document.getElementById('mcq-options-container');
+        const btnConfirm1 = document.getElementById('btn-confirm-1');
+        const eqAns = document.getElementById('eq-ans');
+        const gameTitle = document.getElementById('game-title');
+
+        function setOp(op) {
+            if (step === 2) return;
+            operation = op;
+            const btnAdd = document.getElementById('btn-op-add');
+            const btnSub = document.getElementById('btn-op-sub');
+            if (op === '+') {
+                btnAdd.className = "px-6 py-1.5 rounded-full bg-white shadow-sm text-blue-600 font-black text-sm sm:text-base transition-all";
+                btnSub.className = "px-6 py-1.5 rounded-full text-blue-400 font-black text-sm sm:text-base transition-all";
+                document.getElementById('eq-op').textContent = "+";
+                gameTitle.textContent = "ADDING BLOCKS";
+            } else {
+                btnSub.className = "px-6 py-1.5 rounded-full bg-white shadow-sm text-blue-600 font-black text-sm sm:text-base transition-all";
+                btnAdd.className = "px-6 py-1.5 rounded-full text-blue-400 font-black text-sm sm:text-base transition-all";
+                document.getElementById('eq-op').textContent = "-";
+                gameTitle.textContent = "SUBTRACTING BLOCKS";
+            }
+            playSound('pop');
+            updateCalculatorUI();
+        }
+
+        function confirmStep1() {
+            num1 = tens * 10 + ones;
+            if (num1 === 0) { showNotification("Enter a starting number!"); return; }
+            initialTens = tens; initialOnes = ones; step = 2;
+            playSound('magic');
+            document.getElementById('op-selector').classList.add('opacity-30', 'pointer-events-none');
+            btnConfirm1.classList.add('hidden');
+            mcqOptions.classList.remove('hidden');
+            updateUI(); updateCalculatorUI();
+        }
+
+        function updateCalculatorUI() {
+            let current = tens * 10 + ones;
+            if (step === 1) { 
+                document.getElementById('eq-num1').textContent = current || "_"; 
+                document.getElementById('eq-num2').textContent = "_";
+            }
+            else {
+                document.getElementById('eq-num1').textContent = num1;
+                let num2 = (operation === '+') ? (current - num1) : (num1 - current);
+                document.getElementById('eq-num2').textContent = num2 <= 0 ? "_" : num2;
+            }
+        }
+
+        function generateOptions() {
+            let correct = tens * 10 + ones;
+            let options = new Set([correct]);
+            while(options.size < 4) {
+                let dist = correct + (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 3) + 1);
+                if (dist >= 0) options.add(dist);
+            }
+            mcqOptions.innerHTML = '';
+            Array.from(options).sort(() => Math.random() - 0.5).forEach(v => {
+                const b = document.createElement('button');
+                b.className = "bg-white hover:bg-gray-50 border-gray-100 text-black font-black text-2xl py-3 rounded-2xl shadow-md gummy-btn transition-all";
+                b.textContent = v;
+                b.onclick = () => {
+                    if (v === correct) {
+                        b.classList.add('bg-green-500', 'text-white');
+                        eqAns.textContent = v;
+                        eqAns.className = "text-green-500 font-black";
+                        globalScore += 1;
+                        document.getElementById('display-score').textContent = globalScore;
+                        showNotification("Correct! Let's play! 🏗️");
+                        playSound('magic');
+                        setTimeout(() => { document.getElementById('tower-modal').classList.remove('hidden'); }, 1000);
+                    } else {
+                        b.classList.add('bg-red-500', 'text-white', 'animate-shake');
+                        playSound('delete');
+                    }
+                };
+                mcqOptions.appendChild(b);
+            });
+        }
+
+        function updateUI() {
+            tensContainer.innerHTML = '';
+            for (let i = 0; i < tens; i++) {
+                if (step === 2 && operation === '+' && i === initialTens && initialTens > 0) {
+                    const d = document.createElement('div'); d.className = "w-full basis-full border-b-4 border-dashed border-blue-100 my-2";
+                    tensContainer.appendChild(d);
+                }
+                tensContainer.appendChild(createRod());
+            }
+            onesContainer.innerHTML = '';
+            for (let i = 0; i < ones; i++) {
+                if (step === 2 && operation === '+' && i === initialOnes && initialOnes > 0) {
+                    const d = document.createElement('div'); d.className = "w-full basis-full border-b-4 border-dashed border-orange-100 my-2";
+                    onesContainer.appendChild(d);
+                }
+                onesContainer.appendChild(createCube());
+            }
+            let isSub2 = (step === 2 && operation === '-');
+            document.getElementById('btn-add-ten').disabled = isSub2 || tens >= MAX_TENS;
+            document.getElementById('btn-add-one').disabled = isSub2 || ones >= MAX_ONES;
+            document.getElementById('btn-add-ten').classList.toggle('opacity-20', isSub2);
+            document.getElementById('btn-add-one').classList.toggle('opacity-20', isSub2);
+            if (ones >= 10) { 
+                document.getElementById('regroup-hint').classList.remove('hidden'); 
+                const bp = document.getElementById('bundle-preview');
+                bp.innerHTML = '';
+                for(let i=0; i<10; i++) bp.innerHTML += `<div class="w-2 h-2 bg-ones-peach rounded-sm"></div>`;
+            } else document.getElementById('regroup-hint').classList.add('hidden');
+            
+            if (step === 2) generateOptions();
+            document.getElementById('tens-zero').style.display = tens === 0 ? 'block' : 'none';
+            document.getElementById('ones-zero').style.display = ones === 0 ? 'block' : 'none';
+        }
+
+        function createRod() {
+            const w = document.createElement('div'); w.className = "flex flex-col sm:flex-row gap-[1px] cursor-grab touch-none group";
+            w.onmousedown = (e) => startDrag(e, 'tenRod'); 
+            w.onclick = () => { if(step === 2 && operation === '+') return; if(tens>0) tens--; updateUI(); updateCalculatorUI(); playSound('delete'); };
+            const inner = document.createElement('div'); inner.className = "flex gap-[1px]";
+            for (let i = 0; i < 10; i++) {
+                const s = document.createElement('div'); s.className = "w-5 h-5 sm:w-6 sm:h-6 bg-tens-cyan border border-white/20 rounded-sm";
+                inner.appendChild(s);
+            }
+            w.appendChild(inner); return w;
+        }
+
+        function createCube() {
+            const e = document.createElement('div'); e.className = "w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-ones-peach border border-white/20 cursor-pointer shadow-sm";
+            e.onclick = () => { if(step === 2 && operation === '+') return; if(ones>0) ones--; updateUI(); updateCalculatorUI(); playSound('delete'); };
+            return e;
+        }
+
+        function addOne() { if (ones < MAX_ONES) { ones++; playSound('pop'); updateUI(); updateCalculatorUI(); } }
+        function removeOne() { if (ones > 0) { if(step === 2 && operation === '+') return; ones--; playSound('delete'); updateUI(); updateCalculatorUI(); } }
+        function addTen() { if (tens < MAX_TENS) { tens++; playSound('pop'); updateUI(); updateCalculatorUI(); } }
+        function removeTen() { if (tens > 0) { if(step === 2 && operation === '+') return; tens--; playSound('delete'); updateUI(); updateCalculatorUI(); } }
+
+        /* --- BONUS MINI GAME LOGIC --- */
+        const towerCanvas = document.getElementById('gameCanvas');
+        const tCtx = towerCanvas.getContext('2d');
+        const BLOCK_HEIGHT = 35;
+        const WIN_LIMIT = 15;
+        const COLORS = ['#00D2D3', '#FFAD9F', '#3498db', '#ff6b6b', '#feca57'];
+        
+        let towerBlocks = [], currentTBlock = null, towerScore = 0, towerSpeed = 1.2, towerCameraY = 0, towerGameState = 'START';
+
+        function initTowerCanvas() {
+            const r = towerCanvas.parentElement.getBoundingClientRect();
+            towerCanvas.width = r.width - 48; towerCanvas.height = 380;
+        }
+
+        class TBlock {
+            constructor(x, y, w, color, spd) {
+                this.x = x; this.y = y; this.w = w; this.h = BLOCK_HEIGHT; this.color = color; this.spd = spd; this.dir = 1; this.falling = false;
+            }
+            update() {
+                if (!this.falling) {
+                    this.x += this.spd * this.dir;
+                    if (this.x + this.w > towerCanvas.width || this.x < 0) this.dir *= -1;
+                } else this.y += 8;
+            }
+            draw(ctx, offset) {
+                ctx.fillStyle = this.color; ctx.fillRect(this.x, this.y + offset, this.w, this.h);
+                ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.strokeRect(this.x, this.y + offset, this.w, this.h);
+            }
+        }
+
+        function startTowerGame() {
+            initTowerCanvas();
+            towerGameState = 'PLAYING'; towerBlocks = []; towerScore = 0; towerCameraY = 0;
+            document.getElementById('tower-overlay').classList.add('hidden');
+            const base = new TBlock((towerCanvas.width - 120)/2, towerCanvas.height - 40, 120, '#546de5', 0);
+            towerBlocks.push(base); spawnTBlock(); requestAnimationFrame(animateTower);
+        }
+
+        function spawnTBlock() {
+            const last = towerBlocks[towerBlocks.length - 1];
+            currentTBlock = new TBlock(0, last.y - BLOCK_HEIGHT - 80, last.w, COLORS[towerScore % COLORS.length], 1.2 + (towerScore * 0.08));
+        }
+
+        function animateTower() {
+            if (towerGameState !== 'PLAYING') return;
+            tCtx.clearRect(0,0,towerCanvas.width, towerCanvas.height);
+            
+            const goalY = towerBlocks[0].y - (WIN_LIMIT * BLOCK_HEIGHT);
+            tCtx.setLineDash([5, 5]); tCtx.strokeStyle = '#F1C40F'; tCtx.beginPath();
+            tCtx.moveTo(0, goalY + towerCameraY); tCtx.lineTo(towerCanvas.width, goalY + towerCameraY); tCtx.stroke();
+
+            towerBlocks.forEach(b => b.draw(tCtx, towerCameraY));
+            currentTBlock.update(); currentTBlock.draw(tCtx, towerCameraY);
+
+            if (currentTBlock.falling) {
+                const last = towerBlocks[towerBlocks.length - 1];
+                if (currentTBlock.y + BLOCK_HEIGHT >= last.y) {
+                    const diff = currentTBlock.x - last.x;
+                    const overlap = currentTBlock.w - Math.abs(diff);
+                    if (overlap > 5) {
+                        currentTBlock.falling = false; currentTBlock.y = last.y - BLOCK_HEIGHT;
+                        currentTBlock.w = overlap; currentTBlock.x = diff > 0 ? last.x + diff : last.x;
+                        towerBlocks.push(currentTBlock); towerScore++;
+                        document.getElementById('tower-score-display').textContent = towerScore;
+                        if (currentTBlock.y + towerCameraY < 150) towerCameraY += BLOCK_HEIGHT;
+                        if (towerScore >= WIN_LIMIT) endTower('WIN'); else spawnTBlock();
+                    } else endTower('LOSE');
+                }
+            }
+            requestAnimationFrame(animateTower);
+        }
+
+        function endTower(res) {
+            towerGameState = res;
+            const ov = document.getElementById('tower-result-overlay');
+            const txt = document.getElementById('tower-status-text');
+            ov.classList.remove('hidden');
+            txt.textContent = res === 'WIN' ? "MASTER BUILDER! 🏆" : "OH NO! 💥";
+            txt.className = res === 'WIN' ? "text-3xl font-black text-yellow-500 mb-2" : "text-3xl font-black text-red-500 mb-2";
+        }
+
+        function closeTowerGame() {
+            document.getElementById('tower-modal').classList.add('hidden');
+            document.getElementById('tower-result-overlay').classList.add('hidden');
+            document.getElementById('tower-overlay').classList.remove('hidden');
+            resetBoardFull();
+        }
+
+        towerCanvas.addEventListener('mousedown', () => { if(currentTBlock && !currentTBlock.falling) currentTBlock.falling = true; });
+
+        /* --- UTILS --- */
+        function resetBoardFull() {
+            step = 1; tens = 0; ones = 0; num1 = 0; initialTens = 0; initialOnes = 0;
+            document.getElementById('op-selector').classList.remove('opacity-30', 'pointer-events-none');
+            btnConfirm1.classList.remove('hidden');
+            btnConfirm1.style.opacity = '1';
+            mcqOptions.classList.add('hidden');
+            eqAns.textContent = "?";
+            eqAns.className = "text-gray-400";
+            updateUI(); updateCalculatorUI();
+        }
+
+        function showNotification(m) {
+            const c = document.getElementById('notification-container');
+            c.innerHTML = `<div class="bg-blue-600 text-white px-8 py-2 rounded-full shadow-lg animate-bounce">${m}</div>`;
+            if(notificationTimeout) clearTimeout(notificationTimeout);
+            notificationTimeout = setTimeout(()=> c.innerHTML='', 2000);
+        }
+
+        function playSound(t) {
+            if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+            o.connect(g); g.connect(audioCtx.destination);
+            o.frequency.setValueAtTime(t==='pop'?400:200, audioCtx.currentTime);
+            g.gain.setValueAtTime(0.05, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+0.2);
+            o.start(); o.stop(audioCtx.currentTime+0.2);
+        }
+
+        function speakNumber() {
+            const u = new SpeechSynthesisUtterance(""+(tens*10+ones));
+            u.lang = 'en-US'; window.speechSynthesis.speak(u);
+        }
+
+        function regroupTen() {
+            if (tens < MAX_TENS && ones >= 10) { 
+                tens++; ones -= 10; 
+                if(step === 2 && operation === '+') { initialTens++; initialOnes -= 10; }
+                playSound('magic'); updateUI(); updateCalculatorUI();
+                showNotification("Grouped 10 into 1 Ten!");
+            } else if (tens >= MAX_TENS) {
+                showNotification("Board is full!");
+            }
+        }
+
+        function startDrag(e, type) {
+            e.preventDefault(); isDragging = true; dragType = type;
+            const cx = e.touches ? e.touches[0].clientX : e.clientX;
+            const cy = e.touches ? e.touches[0].clientY : e.clientY;
+            dragPreviewContent.innerHTML = '<span style="font-size: 32px">📏</span>';
+            dragPreview.classList.remove('hidden');
+            const move = (me) => {
+                const mx = me.touches ? me.touches[0].clientX : me.clientX;
+                const my = me.touches ? me.touches[0].clientY : me.clientY;
+                dragPreview.style.left = mx + 'px'; dragPreview.style.top = my + 'px';
+            };
+            const stop = (se) => {
+                window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', stop);
+                window.removeEventListener('touchmove', move); window.removeEventListener('touchend', stop);
+                isDragging = false; dragPreview.classList.add('hidden');
+                const ex = se.changedTouches ? se.changedTouches[0].clientX : se.clientX;
+                const ey = se.changedTouches ? se.changedTouches[0].clientY : se.clientY;
+                const r = document.getElementById('ones-column').getBoundingClientRect();
+                if (ex>=r.left && ex<=r.right && ey>=r.top && ey<=r.bottom) { 
+                    tens--; ones += 10; 
+                    if(step === 2 && operation === '+') { initialTens--; initialOnes += 10; }
+                    playSound('pop'); 
+                }
+                updateUI(); updateCalculatorUI();
+            };
+            window.addEventListener('mousemove', move); window.addEventListener('mouseup', stop);
+            window.addEventListener('touchmove', move, {passive:false}); window.addEventListener('touchend', stop);
+        }
+
+        lucide.createIcons();
+        updateUI();
+    </script>
+</body>
+</html>
