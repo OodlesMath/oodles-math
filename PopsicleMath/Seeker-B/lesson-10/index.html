@@ -113,7 +113,27 @@
             text-align: center;
             margin-bottom: 20px;
             font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
+
+        .mini-speaker-btn {
+            background: var(--c-yellow);
+            border: 2px solid #F1C40F;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 0 #D4AC0D;
+            transition: transform 0.1s;
+        }
+        .mini-speaker-btn:active { transform: scale(0.9); box-shadow: 0 1px 0 #D4AC0D; }
 
         /* --- Fruits Area --- */
         .fruits-grid {
@@ -152,6 +172,7 @@
             align-items: center;
             gap: 15px;
             margin-bottom: 10px;
+            transition: opacity 0.3s ease;
         }
 
         .row-label { font-size: 2rem; width: 50px; text-align: center; }
@@ -197,7 +218,7 @@
 
         .ans-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #cbd5e1; }
 
-        /* --- Sơ đồ Number Bond --- */
+        /* --- Number Bond Styling --- */
         .bond-container {
             position: relative;
             width: 320px;
@@ -340,19 +361,29 @@
 
     <main id="main-stage">
         <div id="counting-screen" class="screen active">
-            <div class="instruction-text">Count the fruits to fill your graph!</div>
+            <div class="instruction-text">
+                Count the fruits to fill your graph!
+                <button class="mini-speaker-btn" onclick="speakCurrentTask()">🔊</button>
+            </div>
             <div id="fruits-area" class="fruits-grid"></div>
             <div class="graph-display" id="graph-container"></div>
         </div>
 
         <div id="quiz-screen" class="screen">
-            <div class="instruction-text" id="quiz-instr">How many?</div>
-            <div id="quiz-fruits-preview" class="fruits-grid" style="min-height: 120px;"></div>
+            <div class="instruction-text">
+                <span id="quiz-instr">How many?</span>
+                <button class="mini-speaker-btn" onclick="speakCurrentTask()">🔊</button>
+            </div>
+            <!-- Container for the Picture Graph in Quiz -->
+            <div id="quiz-graph-container" class="graph-display" style="margin-bottom: 25px; width: 100%;"></div>
             <div class="answers-wrap" id="quiz-answers"></div>
         </div>
 
         <div id="addition-screen" class="screen">
-            <div class="instruction-text">Find the total number!</div>
+            <div class="instruction-text">
+                Find the total number!
+                <button class="mini-speaker-btn" onclick="speakCurrentTask()">🔊</button>
+            </div>
             <div class="bond-container">
                 <div class="bond-line" id="line1"></div>
                 <div class="bond-line" id="line2"></div>
@@ -396,7 +427,8 @@
         let state = {
             round: 1, score: 0, counts: {}, totalInRound: 0,
             countedInRound: 0, quizStep: 0, quizFruits: [], 
-            sliceActive: false
+            sliceActive: false,
+            currentTask: ""
         };
 
         const screens = {
@@ -420,9 +452,20 @@
             } catch(e) {}
         }
 
+        function speakCurrentTask() {
+            window.speechSynthesis.cancel();
+            const ut = new SpeechSynthesisUtterance(state.currentTask);
+            ut.lang = 'en-US';
+            ut.rate = 0.95;
+            window.speechSynthesis.speak(ut);
+        }
+
         function showScreen(name) {
             Object.values(screens).forEach(s => s.classList.remove('active'));
             screens[name].classList.add('active');
+            
+            if(name === 'counting') state.currentTask = "Count all the fruits to fill your graph.";
+            if(name === 'slice') state.currentTask = "Ninja bonus round! Slice the fruits but avoid the bombs.";
         }
 
         function showFeedback(text, color) {
@@ -465,16 +508,15 @@
             showScreen('counting');
         }
 
-        function createGraphRow(ft, isRef = false) {
+        function createGraphRow(ft, suffix = '') {
             const row = document.createElement('div');
             row.className = 'graph-row';
-            const suffix = isRef ? '-ref' : '';
             row.innerHTML = `
                 <div class="row-label">${ft.emoji}</div>
                 <div class="bar-container">
                     ${Array(10).fill(0).map((_, i) => `<div class="graph-box" id="box-${ft.type}-${i}${suffix}"></div>`).join('')}
                 </div>
-                <div class="count-badge" id="count-${ft.type}${suffix}">${isRef ? state.counts[ft.type] : '0'}</div>
+                <div class="count-badge" id="count-${ft.type}${suffix}">${suffix ? state.counts[ft.type] : '0'}</div>
             `;
             return row;
         }
@@ -493,18 +535,43 @@
             if (state.quizStep >= state.quizFruits.length) { setupAddition(); return; }
             const target = state.quizFruits[state.quizStep];
             const correct = state.counts[target.type];
-            document.getElementById('quiz-instr').innerText = `How many ${target.type}s?`;
-            const preview = document.getElementById('quiz-fruits-preview');
-            preview.innerHTML = '';
-            for(let i=0; i<correct; i++) {
-                const e = document.createElement('div'); e.className = 'fruit-item'; e.innerText = target.emoji;
-                preview.appendChild(e);
-            }
+            
+            // Set instruction text and task speech
+            const questionText = `Look at the graph. How many ${target.type}s?`;
+            document.getElementById('quiz-instr').innerText = questionText;
+            state.currentTask = questionText;
+            
+            // Render Picture Graph instead of individual emojis
+            const quizGraphContainer = document.getElementById('quiz-graph-container');
+            quizGraphContainer.innerHTML = '<div style="font-weight:800; text-align:center; color:#666; font-size:0.8rem; margin-bottom:10px;">Picture Graph:</div>';
+            
+            FRUIT_TYPES.forEach(ft => {
+                const row = createGraphRow(ft, '-quiz');
+                
+                // Highlight target row and fade others
+                if (ft.type === target.type) {
+                    row.style.background = 'rgba(255, 230, 109, 0.25)';
+                    row.style.borderRadius = '12px';
+                    row.style.opacity = '1';
+                } else {
+                    row.style.opacity = '0.3'; // Fading non-target rows
+                }
+
+                quizGraphContainer.appendChild(row);
+
+                // Fill the boxes based on counts
+                for(let i=0; i<state.counts[ft.type]; i++){
+                    const b = row.querySelector(`#box-${ft.type}-${i}-quiz`);
+                    if(b) { b.classList.add('filled'); b.style.backgroundColor = ft.color; }
+                }
+            });
+
             const answers = [correct];
             while(answers.length < 4) {
                 let w = correct + Math.floor(Math.random() * 5) - 2;
                 if(w > 0 && !answers.includes(w)) answers.push(w);
             }
+            
             renderAnswers('quiz-answers', answers, correct, () => {
                 updateScore(10); state.quizStep++;
                 setTimeout(state.quizStep < 2 ? setupQuiz : setupAddition, 800);
@@ -515,6 +582,9 @@
         function setupAddition() {
             const p1Type = state.quizFruits[0], p2Type = state.quizFruits[1];
             const p1 = state.counts[p1Type.type], p2 = state.counts[p2Type.type], sum = p1 + p2;
+            
+            state.currentTask = `Look at the graph. Add the ${p1Type.type}s and ${p2Type.type}s to find the total sum.`;
+
             document.querySelector('#node-part1 .val').innerText = p1;
             document.querySelector('#node-part2 .val').innerText = p2;
             document.getElementById('icon-part1').innerText = p1Type.emoji;
@@ -522,9 +592,17 @@
             document.getElementById('node-whole').innerText = '?';
 
             const ref = document.getElementById('addition-graph-ref');
-            ref.innerHTML = '';
+            ref.innerHTML = '<div style="font-weight:800; text-align:center; color:#666; font-size:0.75rem; margin-bottom:5px;">Reference Graph:</div>';
             FRUIT_TYPES.forEach(ft => {
-                const row = createGraphRow(ft, true); ref.appendChild(row);
+                const row = createGraphRow(ft, '-ref'); 
+                // Fade out fruits not in addition
+                if (ft.type !== p1Type.type && ft.type !== p2Type.type) {
+                    row.style.opacity = '0.3';
+                } else {
+                    row.style.background = 'rgba(78, 205, 196, 0.1)';
+                    row.style.borderRadius = '8px';
+                }
+                ref.appendChild(row);
                 for(let i=0; i<state.counts[ft.type]; i++){
                     const b = row.querySelector(`#box-${ft.type}-${i}-ref`);
                     if(b) { b.classList.add('filled'); b.style.backgroundColor = ft.color; }
@@ -586,7 +664,6 @@
             function spawn() {
                 if(!state.sliceActive) return;
                 const isBomb = Math.random() < 0.25;
-                // Spawn multiple items at once to increase intensity
                 const count = Math.floor(Math.random() * 2) + 1;
                 for(let i=0; i<count; i++) {
                     items.push({
@@ -600,7 +677,7 @@
                         rot: 0, vrot: (Math.random() - 0.5) * 0.1
                     });
                 }
-                setTimeout(spawn, 150 + Math.random() * 300); // Super fast spawning!
+                setTimeout(spawn, 150 + Math.random() * 300);
             }
             spawn();
 
