@@ -243,7 +243,6 @@
             padding-bottom: 5px;
         }
 
-        /* Đã thu nhỏ đồ vật trên đĩa cân */
         .scale-obj-left {
             position: absolute;
             bottom: 100%;
@@ -470,8 +469,8 @@
         </div>
     </div>
 
-    <!-- Instruction Box (Central container) -->
-    <div id="instruction-container" class="hidden absolute top-24 left-0 w-full flex justify-center z-30 px-4 pointer-events-none">
+    <!-- Instruction Box (Central container - will move up/down dynamically) -->
+    <div id="instruction-container" class="hidden absolute top-24 left-0 w-full flex justify-center z-30 px-4 pointer-events-none transition-all duration-500 ease-in-out">
         <div class="bg-white/95 backdrop-blur-md px-6 sm:px-10 py-3 sm:py-4 rounded-[2.5rem] shadow-2xl border-4 border-white flex items-center justify-center gap-4 pointer-events-auto pop-in">
             <h2 id="instruction-text" class="text-2xl sm:text-4xl font-black text-slate-700 text-center tracking-wide">
                 <!-- Instruction injected dynamically -->
@@ -525,8 +524,8 @@
     </main>
 
     <!-- 3. Screen: Compare Phase (Cards) -->
-    <main id="screen-compare" class="hidden flex-1 w-full flex flex-col justify-center items-center relative z-10 pt-32 pb-4">
-        <div id="compare-container" class="flex flex-wrap justify-center gap-6 sm:gap-12 w-full max-w-5xl px-4">
+    <main id="screen-compare" class="hidden flex-1 w-full flex flex-col justify-center items-center relative z-10 pt-16 pb-20">
+        <div id="compare-container" class="flex flex-wrap justify-center gap-6 sm:gap-12 w-full max-w-5xl px-4 mt-8">
             <!-- Buttons dynamically injected here -->
         </div>
     </main>
@@ -583,6 +582,7 @@
 
     <script>
         // --- GAME CONFIG & STATE ---
+        // Đảm bảo 15 item có khối lượng từ 1->15 hoàn toàn khác nhau để tránh bị trùng kết quả "nặng hơn/nhẹ hơn"
         const ITEMS = [
             { id: 'candy', name: 'Candy', emoji: '🍬', mass: 1 },
             { id: 'leaf', name: 'Leaf', emoji: '🍃', mass: 2 },
@@ -593,7 +593,12 @@
             { id: 'toy_bear', name: 'Toy Bear', emoji: '🧸', mass: 7 },
             { id: 'shoe', name: 'Shoe', emoji: '👟', mass: 8 },
             { id: 'book', name: 'Book', emoji: '📖', mass: 9 },
-            { id: 'watermelon', name: 'Watermelon', emoji: '🍉', mass: 10 }
+            { id: 'watermelon', name: 'Watermelon', emoji: '🍉', mass: 10 },
+            { id: 'key', name: 'Key', emoji: '🔑', mass: 11 },
+            { id: 'clock', name: 'Clock', emoji: '⏰', mass: 12 },
+            { id: 'hammer', name: 'Hammer', emoji: '🔨', mass: 13 },
+            { id: 'backpack', name: 'Backpack', emoji: '🎒', mass: 14 },
+            { id: 'anchor', name: 'Anchor', emoji: '⚓', mass: 15 }
         ];
 
         // Store Custom SVG/CSS units
@@ -609,6 +614,7 @@
             maxLevels: 6, 
             score: 0,
             questionType: '', 
+            shuffledItems: [],
             currentRoundItems: [],
             weighedCount: 0,
             rightMass: 0,
@@ -723,7 +729,10 @@
                 let currentObj = state.currentRoundItems[state.weighedCount];
                 text = `Let's weigh the ${currentObj.name}!`;
             } else if (document.getElementById('screen-compare').classList.contains('hidden') === false) {
-                text = `Which is ${state.questionType}?`;
+                if (state.questionType === 'heavier') text = "Which one is heavier?";
+                else if (state.questionType === 'lighter') text = "Which one is lighter?";
+                else if (state.questionType === 'heaviest') text = "Which one is the heaviest?";
+                else if (state.questionType === 'lightest') text = "Which one is the lightest?";
             }
             if(text) readTextOutLoud(text);
         }
@@ -755,14 +764,16 @@
         function selectUnit(unitId, name) {
             state.unit = { id: unitId, name: name };
             
-            // Set icon for the Add Button
             document.getElementById('add-unit-btn').innerHTML = `<div class="scale-[1.8] transform transition-transform pointer-events-none">${UNIT_ICONS[unitId]}</div>`;
             
             document.getElementById('game-ui').classList.remove('hidden');
             document.getElementById('instruction-container').classList.remove('hidden');
             
+            state.shuffledItems = [...ITEMS].sort(() => Math.random() - 0.5);
             state.level = 1;
             state.score = 0;
+            state.questionType = '';
+            
             startRound();
         }
 
@@ -777,13 +788,22 @@
             updateUI();
             
             let numItems = state.level <= 3 ? 2 : 3;
-            let shuffled = [...ITEMS].sort(() => Math.random() - 0.5);
-            state.currentRoundItems = shuffled.slice(0, numItems);
             
+            // Pop items to ensure no duplicate icons across all rounds
+            state.currentRoundItems = [];
+            for(let i=0; i<numItems; i++) {
+                state.currentRoundItems.push(state.shuffledItems.pop());
+            }
+            
+            // Alternating question logic to ensure no duplicates in consecutive rounds
             if(state.level <= 3) {
-                state.questionType = Math.random() > 0.5 ? 'heavier' : 'lighter';
+                let pool = ['heavier', 'lighter'];
+                let available = pool.filter(q => q !== state.questionType);
+                state.questionType = available.length > 0 ? available[0] : pool[Math.floor(Math.random()*pool.length)];
             } else {
-                state.questionType = Math.random() > 0.5 ? 'heaviest' : 'lightest';
+                let pool = ['heaviest', 'lightest'];
+                let available = pool.filter(q => q !== state.questionType);
+                state.questionType = available.length > 0 ? available[0] : pool[Math.floor(Math.random()*pool.length)];
             }
             
             state.weighedCount = 0;
@@ -808,6 +828,11 @@
             document.getElementById('mc-container').classList.add('hidden');
             document.getElementById('add-unit-container').classList.remove('hidden');
             document.getElementById('add-unit-container').classList.add('pop-in');
+            
+            // Position instruction box at Top for weighing
+            const instContainer = document.getElementById('instruction-container');
+            instContainer.classList.remove('bottom-8', 'top-24');
+            instContainer.classList.add('top-24');
             
             let currentObj = state.currentRoundItems[state.weighedCount];
             document.getElementById('instruction-text').innerHTML = `Let's weigh the <span class="text-rose-500 uppercase">${currentObj.name}</span>!`;
@@ -912,8 +937,18 @@
         function renderCompareCards() {
             changeScreen('screen-compare');
             
-            const colorClass = getCorrectColorClass();
-            document.getElementById('instruction-text').innerHTML = `Which is <span class="${colorClass} underline decoration-4 uppercase">${state.questionType}</span>?`;
+            // Position instruction box at Bottom for comparison
+            const instContainer = document.getElementById('instruction-container');
+            instContainer.classList.remove('top-24', 'bottom-8');
+            instContainer.classList.add('bottom-8');
+            
+            let questionText = "";
+            if (state.questionType === 'heavier') questionText = 'Which one is <span class="text-rose-500 underline decoration-4 uppercase">HEAVIER</span>?';
+            else if (state.questionType === 'lighter') questionText = 'Which one is <span class="text-sky-500 underline decoration-4 uppercase">LIGHTER</span>?';
+            else if (state.questionType === 'heaviest') questionText = 'Which one is the <span class="text-rose-500 underline decoration-4 uppercase">HEAVIEST</span>?';
+            else if (state.questionType === 'lightest') questionText = 'Which one is the <span class="text-sky-500 underline decoration-4 uppercase">LIGHTEST</span>?';
+            
+            document.getElementById('instruction-text').innerHTML = questionText;
 
             const container = document.getElementById('compare-container');
             container.innerHTML = '';
@@ -949,12 +984,10 @@
                 if(state.firstTry) state.score += 10;
                 updateUI();
                 
-                triggerSmallFireworks();
-                
                 setTimeout(() => {
                     state.level++;
                     startRound();
-                }, 2000);
+                }, 1500);
             } else {
                 playSfx('wrong');
                 state.firstTry = false;
