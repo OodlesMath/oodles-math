@@ -18,7 +18,7 @@
 
         /* --- BEAUTIFUL TYPOGRAPHY --- */
         .text-fun-title {
-            background: linear-gradient(to bottom, #fffbeb, #fde047, #f59e0b);
+            background: linear-gradient(to bottom, #ffffff, #fde047, #f59e0b);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             filter: drop-shadow(0px 6px 0px #b45309) drop-shadow(0px 8px 10px rgba(0,0,0,0.3));
@@ -271,7 +271,7 @@
             height: clamp(80px, 12vw, 110px); 
             border: 8px solid #eab308; 
             font-size: clamp(2.5rem, 4vw, 3.5rem); 
-            color: #0284c7; 
+            color: #0ea5e9; 
         }
 
         /* --- STUNNING 2.5D BOWLING --- */
@@ -647,11 +647,12 @@
             currentObj: null,
             rightMass: 0,
             firstTry: true,
-            compareType: 'heavier', // 'heavier' or 'lighter'
+            compareType: 'heavier',
             bowlingActive: false,
             pinsStatus: [],
             bowlingTime: 60,
-            bowlingTimer: null
+            bowlingTimer: null,
+            busy: false // Cờ chống click liên tiếp
         };
 
         // --- AUDIO SYSTEM ---
@@ -672,31 +673,34 @@
                 gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
                 osc.start(now); osc.stop(now + 0.5);
             } else if (type === 'correct') {
-                [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                // Nhạc phép thuật (Magic chime) sáng và vui tai
+                [659.25, 880.00, 1046.50, 1318.51].forEach((freq, i) => {
                     const osc = audioCtx.createOscillator();
                     const gain = audioCtx.createGain();
                     osc.connect(gain); gain.connect(audioCtx.destination);
                     osc.type = 'sine'; osc.frequency.value = freq;
                     gain.gain.setValueAtTime(0, now + i*0.08);
                     gain.gain.linearRampToValueAtTime(0.15, now + i*0.08 + 0.02);
-                    gain.gain.exponentialRampToValueAtTime(0.01, now + i*0.08 + 0.4);
-                    osc.start(now + i*0.08); osc.stop(now + i*0.08 + 0.5);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + i*0.08 + 0.5);
+                    osc.start(now + i*0.08); osc.stop(now + i*0.08 + 0.6);
                 });
             } else if (type === 'wrong') {
+                // Âm thanh Boing nhẹ nhàng
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.type = 'triangle'; osc.frequency.setValueAtTime(300, now);
-                osc.frequency.exponentialRampToValueAtTime(100, now + 0.4);
-                gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
-                osc.start(now); osc.stop(now + 0.4);
+                osc.type = 'sine'; osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(150, now + 0.3);
+                gain.gain.setValueAtTime(0.3, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
             } else if (type === 'add') {
+                // Tiếng bloop (giọt nước) dễ thương
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.type = 'sine'; osc.frequency.setValueAtTime(600, now);
+                osc.type = 'sine'; osc.frequency.setValueAtTime(400, now);
                 osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
-                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                gain.gain.setValueAtTime(0.3, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
                 osc.start(now); osc.stop(now + 0.1);
             }
         }
@@ -808,6 +812,7 @@
 
         // --- WEIGHING PHASE ---
         function startWeighing(objKey) {
+            state.busy = false;
             state.phase = objKey;
             state.firstTry = true;
             state.rightMass = 0;
@@ -828,7 +833,7 @@
         }
 
         function addUnit() {
-            if(state.rightMass >= 15) return; 
+            if(state.busy || state.rightMass >= 15) return; 
             state.rightMass++;
             playSfx('add');
             
@@ -843,7 +848,7 @@
         }
 
         function removeUnit(element) {
-            if(state.rightMass <= 0) return;
+            if(state.busy || state.rightMass <= 0) return;
             state.rightMass--;
             playSfx('add');
             element.remove();
@@ -910,7 +915,9 @@
         }
 
         function checkMCAnswer(selected, btnEl) {
+            if(state.busy) return;
             if(selected === state.currentObj.mass) {
+                state.busy = true; // Khóa tương tác
                 playSfx('correct');
                 if(state.firstTry) state.score += 10;
                 updateUI();
@@ -938,6 +945,7 @@
 
         // --- COMPARE & NUMBER BOND PHASE ---
         function startBondPhase() {
+            state.busy = false;
             changeScreen('screen-bond');
             document.getElementById('game-ui').classList.remove('hidden');
             
@@ -966,6 +974,7 @@
         }
 
         function checkCompare(choiceKey) {
+            if(state.busy) return;
             const rd = ROUNDS[state.roundIndex];
             const isObj1Heavier = rd.obj1.mass > rd.obj2.mass;
             
@@ -979,6 +988,7 @@
             const btnEl = document.getElementById(choiceKey === 'obj1' ? 'compare-btn-1' : 'compare-btn-2');
 
             if(choiceKey === correctKey) {
+                state.busy = true; // Khóa thao tác
                 playSfx('correct');
                 if(state.firstTry) state.score += 10;
                 updateUI();
@@ -997,6 +1007,7 @@
         }
 
         function setupBondFill() {
+            state.busy = false;
             const rd = ROUNDS[state.roundIndex];
             state.firstTry = true;
             document.getElementById('global-speaker-btn').onclick = readBondQuestion;
@@ -1029,7 +1040,9 @@
         }
 
         function checkBondAnswer(selected, correct, btnEl) {
+            if(state.busy) return;
             if(selected === correct) {
+                state.busy = true; // Khóa thao tác
                 playSfx('correct');
                 if(state.firstTry) state.score += 10;
                 updateUI();
@@ -1118,7 +1131,6 @@
 
             resetBallAndAim();
 
-            // Start Timer
             state.bowlingTimer = setInterval(() => {
                 state.bowlingTime--;
                 document.getElementById('bowling-timer').innerText = state.bowlingTime;
@@ -1228,10 +1240,12 @@
         }
 
         // --- END GAME ---
+        let fwInterval;
         function showGameOver() {
             changeScreen('screen-end');
             document.getElementById('final-score').innerText = state.score;
-            setInterval(triggerFireworks, 1000);
+            triggerFireworks(); // Nổ nhịp 1
+            fwInterval = setInterval(triggerFireworks, 2500); // Các nhịp sau thưa hơn để không lag
         }
 
         // --- FIREWORKS ---
@@ -1248,36 +1262,56 @@
 
         function animateFw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach((p, index) => {
-                p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.alpha -= 0.015;
-                ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color; 
-                ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-                if (p.alpha <= 0) particles.splice(index, 1);
-            });
+            // Duyệt mảng ngược để splice không bị sót phần tử
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx; p.y += p.vy; p.vy += 0.05; p.alpha -= 0.02; // Rơi chậm và mờ nhanh hơn
+                ctx.save(); 
+                ctx.globalAlpha = Math.max(0, p.alpha); 
+                ctx.fillStyle = p.color; 
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill(); 
+                ctx.restore();
+                if (p.alpha <= 0) particles.splice(i, 1);
+            }
             requestAnimationFrame(animateFw);
         }
         animateFw();
 
         function triggerFireworks() {
             const colors = ['#fde047', '#38bdf8', '#f43f5e', '#4ade80', '#c084fc', '#fb923c'];
-            for(let i=0; i<5; i++) {
+            for(let i=0; i<4; i++) { // Giảm số cụm pháo hoa mỗi lần nổ
                 setTimeout(() => {
                     const x = Math.random() * canvas.width;
                     const y = Math.random() * (canvas.height * 0.5); 
                     const color = colors[Math.floor(Math.random()*colors.length)];
-                    for(let j=0; j<30; j++) {
-                        particles.push({ x, y, vx: Math.cos(j)*Math.random()*12, vy: Math.sin(j)*Math.random()*12, color, alpha: 1 });
+                    for(let j=0; j<35; j++) {
+                        particles.push({ 
+                            x, y, 
+                            vx: Math.cos(j)*Math.random()*10, 
+                            vy: Math.sin(j)*Math.random()*10, 
+                            color, 
+                            alpha: 1,
+                            size: Math.random() * 4 + 3 // Hạt to nhỏ ngẫu nhiên
+                        });
                     }
-                }, i * 200);
+                }, i * 250);
             }
         }
+
         function triggerSmallFireworks() {
             const colors = ['#fde047', '#38bdf8', '#f43f5e', '#4ade80'];
             const x = canvas.width / 2;
             const y = canvas.height / 2;
             const color = colors[Math.floor(Math.random()*colors.length)];
-            for(let j=0; j<20; j++) {
-                particles.push({ x, y, vx: Math.cos(j)*Math.random()*8, vy: Math.sin(j)*Math.random()*8, color, alpha: 1 });
+            for(let j=0; j<25; j++) {
+                particles.push({ 
+                    x, y, 
+                    vx: Math.cos(j)*Math.random()*8, 
+                    vy: Math.sin(j)*Math.random()*8, 
+                    color, 
+                    alpha: 1,
+                    size: Math.random() * 4 + 2
+                });
             }
         }
     </script>
