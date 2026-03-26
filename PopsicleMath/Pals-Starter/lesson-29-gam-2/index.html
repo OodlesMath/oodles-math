@@ -1,1444 +1,248 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lava Leap v7</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mass Adventure - Environment Ver4</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #0b041c;
+        body {
             font-family: 'Poppins', sans-serif;
-            touch-action: none;
+            touch-action: manipulation;
             user-select: none;
+            overflow: hidden;
+            background: #bae6fd;
         }
 
-        #gameCanvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
+        /* --- BACKGROUND ELEMENTS --- */
+        .sky-bg {
+            background: linear-gradient(to bottom, #38bdf8 0%, #7dd3fc 50%, #bae6fd 100%);
+            position: relative;
         }
 
-        #ui-layer {
+        .sun {
             position: absolute;
-            top: 0;
+            top: -20px;
+            left: -20px;
+            width: clamp(100px, 15vw, 160px);
+            height: clamp(100px, 15vw, 160px);
+            background: radial-gradient(circle, #fff 10%, #fef08a 30%, #facc15 60%, transparent 75%);
+            border-radius: 50%;
+            box-shadow: 0 0 60px 30px rgba(253, 224, 71, 0.6);
+            animation: sun-glow 4s infinite alternate ease-in-out;
+            z-index: 0;
+        }
+
+        @keyframes sun-glow {
+            from { transform: scale(1); opacity: 0.8; }
+            to { transform: scale(1.15); opacity: 1; }
+        }
+
+        .cloud-container {
+            position: absolute;
+            z-index: 0;
+            filter: drop-shadow(0 15px 20px rgba(255, 255, 255, 0.5));
+        }
+        .cloud-float { animation: float-h 45s infinite linear; }
+        .cloud-bob { animation: bob 4s infinite alternate ease-in-out; }
+        
+        @keyframes float-h {
+            from { transform: translateX(-250px); }
+            to { transform: translateX(100vw); }
+        }
+        @keyframes bob {
+            from { transform: translateY(0px); }
+            to { transform: translateY(15px); }
+        }
+
+        /* --- ULTRA REALISTIC GRASS GROUND --- */
+        .grass-ground {
+            /* Gradient sắc nét hơn, đậm dần về đáy để tạo gốc sâu thẳm */
+            background: linear-gradient(to bottom, #4ade80 0%, #22c55e 12%, #16a34a 35%, #15803d 65%, #052e16 100%);
+            position: absolute;
+            bottom: 0;
             left: 0;
             width: 100%;
-            height: 100%;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
+            height: 25vh;
+            z-index: 0;
+            box-shadow: inset 0 30px 60px rgba(0,0,0,0.4);
         }
 
-        #top-bar {
+        /* Ánh nắng hắt vàng nhẹ trên mặt thảm cỏ */
+        .grass-glow {
             position: absolute;
-            top: 20px;
-            width: 100%;
-            display: flex;
-            justify-content: center; /* Center the board */
-            padding: 0 40px;
-            box-sizing: border-box;
-            pointer-events: none;
-            display: none;
+            top: 0; left: 0; width: 100%; height: 40px;
+            background: linear-gradient(to bottom, rgba(253, 224, 71, 0.25), transparent);
+            z-index: 5; pointer-events: none;
+            mix-blend-mode: overlay;
         }
 
-        #score-container {
+        /* LỚP CỎ 1: Lớp sau cùng (Màu đậm, cao nhất) */
+        .grass-edge-back {
+            position: absolute; top: -32px; left: 0; width: 100%; height: 35px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 35' preserveAspectRatio='none'%3E%3Cpath d='M0,35 L3,8 L7,35 L11,12 L15,35 L20,4 L25,35 L30,15 L35,35 L40,10 L45,35 L50,6 L55,35 L60,18 L65,35 L70,7 L75,35 L80,12 L85,35 L90,8 L95,35 L100,16 L105,35 L110,5 L115,35 L120,14 L125,35 L130,10 L135,35 L140,7 L145,35 L150,18 L155,35 L160,9 L165,35 L170,13 L175,35 L180,6 L185,35 L190,16 L195,35 L200,8 L200,35 Z' fill='%2316a34a'/%3E%3C/svg%3E");
+            background-size: 180px 100%; z-index: 1; opacity: 0.95;
+        }
+
+        /* LỚP CỎ 2: Lớp giữa (Màu trung bình) */
+        .grass-edge-mid {
+            position: absolute; top: -22px; left: 0; width: 100%; height: 25px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 150 25' preserveAspectRatio='none'%3E%3Cpath d='M0,25 L4,4 L8,25 L12,12 L16,25 L21,2 L26,25 L31,10 L36,25 L40,6 L45,25 L51,3 L56,25 L61,14 L66,25 L71,5 L76,25 L81,8 L86,25 L91,4 L96,25 L101,11 L106,25 L111,2 L116,25 L121,9 L126,25 L131,5 L136,25 L141,13 L146,25 L150,6 L150,25 Z' fill='%2322c55e'/%3E%3C/svg%3E");
+            background-size: 130px 100%; z-index: 2;
+        }
+
+        /* LỚP CỎ 3: Lớp trước (Màu xanh non, đổ bóng 3D) */
+        .grass-edge-front {
+            position: absolute; top: -14px; left: 0; width: 100%; height: 18px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 20' preserveAspectRatio='none'%3E%3Cpath d='M0,20 L3,2 L6,20 L10,8 L14,20 L18,3 L23,20 L27,11 L31,20 L36,5 L41,20 L45,2 L50,20 L54,10 L59,20 L64,4 L69,20 L73,9 L78,20 L83,3 L88,20 L92,12 L96,20 L100,5 L100,20 Z' fill='%234ade80'/%3E%3C/svg%3E");
+            background-size: 90px 100%; z-index: 3;
+            filter: drop-shadow(0 3px 4px rgba(0,0,0,0.25));
+        }
+
+        /* KHÓM CỎ ĐIỂM XUYẾT (Vươn cao tự nhiên) */
+        .grass-tuft {
             position: absolute;
-            left: 40px;
-            top: 0;
-            background: rgba(15, 5, 30, 0.6);
-            border: 2px solid rgba(0, 255, 255, 0.4);
-            padding: 10px 25px;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
+            transform-origin: bottom center;
+            animation: sway-anim 3.5s ease-in-out infinite alternate;
+            z-index: 4;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
         }
 
-        #score-display {
-            font-size: 2rem;
-            font-weight: 900;
-            color: #fff;
-            text-shadow: 0 0 15px rgba(0, 255, 255, 0.8), 2px 2px 0px #004d4d;
-        }
-        
-        #progress-display {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #ffcc00;
-            text-align: center;
-            margin-top: -5px;
+        /* Họa tiết đốm và sọc cỏ chi tiết */
+        .grass-texture {
+            position: absolute; inset: 0;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255,255,255,0.06) 1%, transparent 3%),
+                radial-gradient(circle at 90% 80%, rgba(0,0,0,0.12) 1.5%, transparent 3%),
+                radial-gradient(circle at 40% 60%, rgba(255,255,255,0.04) 1%, transparent 2.5%),
+                radial-gradient(circle at 70% 30%, rgba(0,0,0,0.08) 2%, transparent 4%);
+            background-size: 80px 60px; z-index: 1; pointer-events: none;
         }
 
-        #question-board {
-            background: rgba(20, 10, 40, 0.85);
-            border: 3px solid #ffcc00;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.8), inset 0 0 25px rgba(255, 200, 0, 0.4);
-            border-radius: 25px;
-            padding: 15px 40px;
-            display: flex;
-            align-items: center;
-            gap: 25px;
-            pointer-events: auto;
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            transform: translateY(0);
-            animation: floatBoard 3s ease-in-out infinite;
+        .grass-blades {
+            position: absolute; inset: 0;
+            background-image: 
+                repeating-linear-gradient(12deg, transparent, transparent 12px, rgba(255,255,255,0.02) 12px, rgba(255,255,255,0.02) 15px),
+                repeating-linear-gradient(-15deg, transparent, transparent 18px, rgba(0,0,0,0.03) 18px, rgba(0,0,0,0.03) 22px);
+            z-index: 1; pointer-events: none; mix-blend-mode: soft-light;
         }
 
-        @keyframes floatBoard {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
-        }
-
-        #question-text {
-            font-size: 3.8rem;
-            font-weight: 900;
-            /* Kid friendly colorful gradient */
-            background: linear-gradient(90deg, #ff3366, #ffcc00, #00ffcc, #0066ff);
-            background-size: 300% 300%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.4)) drop-shadow(3px 3px 0px rgba(0,0,0,0.8));
-            letter-spacing: 4px;
-            animation: gradientMove 5s ease infinite;
-        }
-
-        @keyframes gradientMove {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        #speaker-btn {
-            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), rgba(0, 255, 255, 0.15));
-            border: 2px solid rgba(0, 255, 255, 0.9);
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 2rem;
-            cursor: pointer;
-            box-shadow: 0 8px 15px rgba(0,0,0,0.6), inset 0 0 20px rgba(0, 255, 255, 0.6);
-            backdrop-filter: blur(8px);
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            color: #fff;
-            text-shadow: 0 0 12px #00ffff;
-        }
-
-        #speaker-btn:hover {
-            transform: scale(1.15) translateY(-2px);
-            box-shadow: 0 12px 25px rgba(0,0,0,0.8), inset 0 0 30px rgba(0, 255, 255, 0.9), 0 0 25px rgba(0, 255, 255, 0.8);
-            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.5), rgba(0, 255, 255, 0.3));
-        }
-
-        #speaker-btn:active {
-            transform: scale(0.95) translateY(4px);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.8), inset 0 0 10px rgba(0, 255, 255, 0.8);
-        }
-
-        .panel {
-            background: rgba(15, 5, 30, 0.85);
-            border: 2px solid rgba(0, 255, 255, 0.6);
-            box-shadow: 0 25px 60px rgba(0,0,0,0.9), inset 0 0 50px rgba(0, 255, 255, 0.25);
-            padding: 40px 60px;
-            border-radius: 30px;
-            text-align: center;
-            color: #fff;
-            pointer-events: auto;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            transform: scale(1);
-            max-width: 600px;
-        }
-
-        .panel.hidden {
-            display: none !important;
-            transform: scale(0.8) translateY(30px);
-            opacity: 0;
-        }
-
-        .title-colorful {
-            margin-top: 0;
-            background: linear-gradient(to right, #00ffff, #00ff66, #ffcc00);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.6));
-            font-size: 4rem;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            margin-bottom: 10px;
-        }
-
-        p {
-            font-size: 1.25rem;
-            color: #e0f8f8;
-            margin-bottom: 25px;
-            line-height: 1.6;
-            font-weight: 600;
-        }
-
-        .highlight {
-            color: #ff3366;
-            font-weight: 900;
-            font-size: 1.8rem;
-            text-shadow: 0 0 15px rgba(255, 51, 102, 0.8);
-        }
-
-        .settings-row {
-            background: rgba(0,0,0,0.4);
-            padding: 15px 25px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .settings-row label {
-            font-size: 1.2rem;
-            font-weight: 800;
-            color: #ffcc00;
-        }
-
-        select {
-            background: #110522;
-            color: #00ffff;
-            font-size: 1.3rem;
-            font-weight: 800;
-            font-family: 'Poppins', sans-serif;
-            border: 2px solid #00ffff;
-            border-radius: 10px;
-            padding: 8px 15px;
-            cursor: pointer;
-            outline: none;
-            box-shadow: 0 0 15px rgba(0,255,255,0.3);
-        }
-
-        select:focus {
-            box-shadow: 0 0 25px rgba(0,255,255,0.6);
-        }
-
-        button.main-btn {
-            background: linear-gradient(135deg, #00ffff, #00ff66);
-            border: none;
-            border-radius: 15px;
-            padding: 18px 60px;
-            font-size: 1.5rem;
-            color: #050208;
-            font-family: 'Poppins', sans-serif;
-            font-weight: 900;
-            cursor: pointer;
-            box-shadow: 0 8px 0 #006633, 0 15px 25px rgba(0,0,0,0.6);
-            transition: all 0.15s ease;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        button.main-btn:hover {
-            filter: brightness(1.2);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 0 #006633, 0 20px 30px rgba(0,0,0,0.7);
-        }
-
-        button.main-btn:active {
-            transform: translateY(8px);
-            box-shadow: 0 0px 0 #006633, 0 5px 10px rgba(0,0,0,0.5);
-        }
-
-        #instructions {
+        /* --- TINY WILDFLOWERS --- */
+        .wildflower {
             position: absolute;
-            bottom: 40px;
-            color: #fff;
-            font-size: 1.5rem;
-            font-weight: 800;
-            pointer-events: none;
-            text-shadow: 0 3px 15px #000, 0 0 25px #00ffff;
-            animation: pulse 1s infinite alternate;
-            background: rgba(0,0,0,0.6);
-            padding: 15px 40px;
-            border-radius: 40px;
-            backdrop-filter: blur(8px);
+            transform-origin: bottom center;
+            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.35));
+            animation: delicate-sway 3s ease-in-out infinite alternate;
+            z-index: 6;
         }
 
-        @keyframes pulse {
-            0% { transform: scale(0.95); opacity: 0.8; }
-            100% { transform: scale(1.05); opacity: 1; }
+        @keyframes sway-anim {
+            0% { transform: rotate(-5deg) skewX(-2deg); }
+            100% { transform: rotate(5deg) skewX(2deg); }
         }
+        @keyframes delicate-sway {
+            0% { transform: rotate(-8deg) translateX(-1px); }
+            100% { transform: rotate(8deg) translateX(1px); }
+        }
+
     </style>
 </head>
-<body>
-
-    <canvas id="gameCanvas"></canvas>
-
-    <div id="ui-layer">
-        <div id="top-bar">
-            <div id="score-container">
-                <div id="score-display">Score: 0</div>
-                <div id="progress-display">Question: 1/10</div>
-            </div>
-            
-            <div id="question-board">
-                <span id="question-text">12 + 3 = ?</span>
-                <button id="speaker-btn" onclick="playTTS()" title="Read aloud">🔊</button>
-            </div>
+<body class="sky-bg h-screen w-screen overflow-hidden flex flex-col relative text-slate-800">
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- Environment -->
+    <div class="sun"></div>
+    
+    <div class="cloud-container cloud-float" style="top: 8%; animation-duration: 45s; opacity: 0.85;">
+        <div class="cloud-bob">
+            <svg width="120" height="70" viewBox="0 0 180 100" fill="white">
+                <circle cx="40" cy="60" r="35"/><circle cx="85" cy="45" r="45"/><circle cx="135" cy="60" r="35"/><rect x="40" y="65" width="95" height="30"/>
+            </svg>
         </div>
-
-        <div id="start-panel" class="panel">
-            <h1 class="title-colorful">Lava Leap v7</h1>
-            <p>Magical Math Adventure!<br>Click the correct glowing rune to survive.<br>Complete 10 questions to win!</p>
-            
-            <div class="settings-row">
-                <label for="math-range">Math Range:</label>
-                <select id="math-range">
-                    <option value="10">Within 10</option>
-                    <option value="20" selected>Within 20</option>
-                    <option value="30">Within 30</option>
-                    <option value="40">Within 40</option>
-                    <option value="50">Within 50</option>
-                    <option value="100">Within 100</option>
-                </select>
-            </div>
-
-            <button class="main-btn" onclick="startGame()">Start Game</button>
+    </div>
+    <div class="cloud-container cloud-float" style="top: 15%; left: 30%; animation-duration: 60s; opacity: 0.6; transform: scale(0.7)">
+        <div class="cloud-bob" style="animation-delay: -2s">
+            <svg width="150" height="85" viewBox="0 0 180 100" fill="white">
+                <circle cx="40" cy="60" r="35"/><circle cx="85" cy="45" r="45"/><circle cx="135" cy="60" r="35"/><rect x="40" y="65" width="95" height="30"/>
+            </svg>
         </div>
-
-        <div id="game-over-panel" class="panel hidden">
-            <h1 class="title-colorful" style="background: linear-gradient(to right, #ff3333, #ffcc00); filter: drop-shadow(0 0 20px rgba(255, 51, 51, 0.6));">GAME OVER</h1>
-            <p>Oops! You fell into the lava.<br>You answered <span id="final-score" class="highlight">0</span> questions correctly.</p>
-            <button class="main-btn" onclick="resetGame()">Try Again</button>
-        </div>
-
-        <div id="win-panel" class="panel hidden">
-            <h1 class="title-colorful" style="background: linear-gradient(to right, #00ffcc, #ffcc00, #ff3366); font-size: 4.5rem;">VICTORY!</h1>
-            <p>Amazing! You completed all 10 challenges!</p>
-            <h2 style="color:#ffcc00; font-size:2rem; margin:10px 0 30px;">Total Score: <span id="win-score" style="color:#fff;">100</span></h2>
-            <button class="main-btn" onclick="resetGame()">Play Again</button>
-        </div>
+    </div>
+    
+    <!-- 3D Ultra Realistic Grass Ground -->
+    <div class="grass-ground">
+        <!-- 3 Layers of grass edges for Parallax Depth -->
+        <div class="grass-edge-back"></div>
+        <div class="grass-edge-mid"></div>
+        <div class="grass-edge-front"></div>
         
-        <div id="instructions" class="hidden">Click the platform with the correct answer!</div>
+        <!-- Sun Glow and Textures -->
+        <div class="grass-glow"></div>
+        <div class="grass-texture"></div>
+        <div class="grass-blades"></div>
+
+        <!-- === DETAILED GRASS TUFTS (Breaking the horizon) === -->
+        <div class="grass-tuft w-8 h-12 text-[#4ade80]" style="left: 15%; top: -25px; animation-delay: 0.1s;">
+            <svg viewBox="0 0 50 100" class="w-full h-full fill-current">
+                <path d="M25,100 Q15,40 5,10 Q20,30 25,100 Z"/><path d="M25,100 Q25,30 22,0 Q30,40 25,100 Z"/><path d="M25,100 Q35,45 45,15 Q30,40 25,100 Z"/>
+            </svg>
+        </div>
+        <div class="grass-tuft w-10 h-14 text-[#22c55e]" style="left: 38%; top: -28px; animation-delay: -1.2s; z-index: 2;">
+            <svg viewBox="0 0 50 100" class="w-full h-full fill-current">
+                <path d="M25,100 Q10,50 0,20 Q18,40 25,100 Z"/><path d="M25,100 Q22,35 25,5 Q32,45 25,100 Z"/><path d="M25,100 Q40,40 50,10 Q32,45 25,100 Z"/>
+            </svg>
+        </div>
+        <div class="grass-tuft w-6 h-10 text-[#4ade80]" style="left: 65%; top: -20px; animation-delay: -0.7s;">
+            <svg viewBox="0 0 50 100" class="w-full h-full fill-current">
+                <path d="M25,100 Q15,50 5,15 Q20,35 25,100 Z"/><path d="M25,100 Q25,35 20,5 Q30,45 25,100 Z"/><path d="M25,100 Q35,55 45,25 Q30,45 25,100 Z"/>
+            </svg>
+        </div>
+        <div class="grass-tuft w-9 h-12 text-[#16a34a]" style="left: 85%; top: -24px; animation-delay: -2.1s; z-index: 1;">
+            <svg viewBox="0 0 50 100" class="w-full h-full fill-current">
+                <path d="M25,100 Q12,45 2,15 Q18,35 25,100 Z"/><path d="M25,100 Q23,30 26,0 Q32,40 25,100 Z"/><path d="M25,100 Q38,45 48,12 Q32,40 25,100 Z"/>
+            </svg>
+        </div>
+
+        <!-- === TINY WILDFLOWERS SCATTERED === -->
+        
+        <!-- White Daisies -->
+        <div class="wildflower w-4 h-4 text-white" style="left: 12%; top: 10%; animation-delay: 0s;">
+            <svg viewBox="0 0 24 24" class="w-full h-full fill-current"><circle cx="12" cy="6" r="4.5"/><circle cx="18" cy="10" r="4.5"/><circle cx="16" cy="17" r="4.5"/><circle cx="8" cy="17" r="4.5"/><circle cx="6" cy="10" r="4.5"/><circle cx="12" cy="12" r="3.5" class="text-yellow-400" /></svg>
+        </div>
+        <div class="wildflower w-3 h-3 text-white" style="left: 28%; top: 35%; animation-delay: -1.2s;">
+            <svg viewBox="0 0 24 24" class="w-full h-full fill-current"><circle cx="12" cy="6" r="4.5"/><circle cx="18" cy="10" r="4.5"/><circle cx="16" cy="17" r="4.5"/><circle cx="8" cy="17" r="4.5"/><circle cx="6" cy="10" r="4.5"/><circle cx="12" cy="12" r="3.5" class="text-yellow-400" /></svg>
+        </div>
+        <div class="wildflower w-5 h-5 text-white" style="left: 75%; top: 15%; animation-delay: -0.5s;">
+            <svg viewBox="0 0 24 24" class="w-full h-full fill-current"><circle cx="12" cy="6" r="4.5"/><circle cx="18" cy="10" r="4.5"/><circle cx="16" cy="17" r="4.5"/><circle cx="8" cy="17" r="4.5"/><circle cx="6" cy="10" r="4.5"/><circle cx="12" cy="12" r="3.5" class="text-yellow-400" /></svg>
+        </div>
+
+        <!-- Yellow Buttercups -->
+        <div class="wildflower w-3 h-3 text-yellow-300" style="left: 8%; top: 50%; animation-delay: -0.8s;">
+            <svg viewBox="0 0 24 24" class="w-full h-full fill-current"><circle cx="12" cy="7" r="4.5"/><circle cx="17" cy="12" r="4.5"/><circle cx="12" cy="17" r="4.5"/><circle cx="7" cy="12" r="4.5"/><circle cx="12" cy="12" r="3" class="text-yellow-500" /></svg>
+        </div>
+        <div class="wildflower w-4 h-4 text-yellow-300" style="left: 45%; top: 8%; animation-delay: -2.5s;">
+            <svg viewBox="0 0 24 24" class="w-full h-full fill-current"><circle cx="12" cy="7" r="4.5"/><circle cx="17" cy="12" r="4.5"/><circle cx="12" cy="17" r="4.5"/><circle cx="7" cy="12" r="4.5"/><circle cx="12" cy="12" r="3" class="text-yellow-500" /></svg>
+        </div>
+
+        <!-- Pale Pink Flowers -->
+        <div class="wildflower w-4 h-4 text-pink-300" style="left: 20%; top: 70%; animation-delay: -1.8s;">
+            <svg viewBox="0 0 24 24" class="w-full h-full fill-current"><circle cx="12" cy="6" r="4.5"/><circle cx="18" cy="10" r="4.5"/><circle cx="16" cy="17" r="4.5"/><circle cx="8" cy="17" r="4.5"/><circle cx="6" cy="10" r="4.5"/><circle cx="12" cy="12" r="3.5" class="text-pink-500" /></svg>
+        </div>
+        <div class="wildflower w-5 h-5 text-pink-300" style="left: 82%; top: 80%; animation-delay: -2.2s;">
+            <svg viewBox="0 0 24 24" class="w-full h-full fill-current"><circle cx="12" cy="6" r="4.5"/><circle cx="18" cy="10" r="4.5"/><circle cx="16" cy="17" r="4.5"/><circle cx="8" cy="17" r="4.5"/><circle cx="6" cy="10" r="4.5"/><circle cx="12" cy="12" r="3.5" class="text-pink-500" /></svg>
+        </div>
+
+        <!-- Light Blue Flowers -->
+        <div class="wildflower w-4 h-4 text-blue-300" style="left: 68%; top: 75%; animation-delay: -1.5s;">
+            <svg viewBox="0 0 24 24" class="w-full h-full fill-current"><circle cx="12" cy="7" r="4.5"/><circle cx="17" cy="12" r="4.5"/><circle cx="12" cy="17" r="4.5"/><circle cx="7" cy="12" r="4.5"/><circle cx="12" cy="12" r="3" class="text-blue-500" /></svg>
+        </div>
+        <div class="wildflower w-3 h-3 text-blue-200" style="left: 92%; top: 20%; animation-delay: -0.1s;">
+            <svg viewBox="0 0 24 24" class="w-full h-full fill-current"><circle cx="12" cy="7" r="4.5"/><circle cx="17" cy="12" r="4.5"/><circle cx="12" cy="17" r="4.5"/><circle cx="7" cy="12" r="4.5"/><circle cx="12" cy="12" r="3" class="text-blue-400" /></svg>
+        </div>
+
     </div>
 
-<script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    
-    // Virtual resolution
-    const VW = 1600;
-    const VH = 900;
-    
-    let gameState = 'start'; 
-    let scale = 1, offsetX = 0, offsetY = 0;
-    
-    // Camera settings
-    let cameraX = 0;
-    let targetCameraX = 0;
-    let cameraShake = 0;
+    <!-- Nơi bạn có thể thêm các nội dung mới vào đây -->
 
-    // Game stats & Settings
-    let score = 0;
-    let questionsAnswered = 0;
-    let maxQuestions = 10;
-    let currentMathRange = 20;
-    let usedQuestions = new Set();
-    const gravity = 0.65;
-    
-    // Player object
-    let player = {
-        x: 0, y: 0, 
-        vx: 0, vy: 0,
-        width: 34, height: 98, 
-        state: 'idle', 
-        targetPlatform: null
-    };
-
-    let platforms = [];
-    let particles = [];
-    let backgroundElements = [];
-    let spores = [];
-    let fireworks = [];
-    let backgroundTime = 0;
-
-    let currentQuestion = null;
-
-    // --- SETUP & RESIZE ---
-    function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        scale = Math.min(canvas.width / VW, canvas.height / VH);
-        offsetX = (canvas.width - VW * scale) / 2;
-        offsetY = (canvas.height - VH * scale) / 2;
-    }
-    window.addEventListener('resize', resize);
-    resize();
-
-    // --- MATH & TTS ---
-    function generateMathQuestion() {
-        if (questionsAnswered >= maxQuestions) {
-            winGame();
-            return;
-        }
-
-        // Alternate + and -
-        let op = (questionsAnswered % 2 === 0) ? '+' : '-';
-        let num1, num2, ans, qString;
-        let attempts = 0;
-
-        do {
-            num1 = Math.floor(Math.random() * (currentMathRange + 1));
-            num2 = Math.floor(Math.random() * (currentMathRange + 1));
-
-            if (op === '-' && num1 < num2) {
-                let temp = num1; num1 = num2; num2 = temp;
-            }
-
-            ans = op === '+' ? num1 + num2 : num1 - num2;
-            
-            // Re-roll if answer exceeds range
-            if(ans > currentMathRange) continue;
-
-            qString = `${num1} ${op} ${num2}`;
-            attempts++;
-            if (attempts > 50) break; // Infinite loop safeguard
-        } while (usedQuestions.has(qString));
-
-        usedQuestions.add(qString);
-        
-        let options = [ans];
-        
-        // Generate 3 unique wrong answers within realistic bounds
-        while(options.length < 4) {
-            let offset = Math.floor(Math.random() * 9) - 4; // -4 to +4
-            if (offset === 0) offset = 5;
-            let fake = ans + offset;
-            
-            // Keep fake answer strictly >= 0
-            if (fake >= 0 && fake <= currentMathRange + 5 && !options.includes(fake)) {
-                options.push(fake);
-            }
-        }
-        
-        options.sort(() => Math.random() - 0.5);
-        
-        let spokenOp = op === '+' ? 'plus' : 'minus';
-        currentQuestion = {
-            text: `${num1} ${op} ${num2} = ?`,
-            ans: ans,
-            options: options,
-            spokenText: `${num1} ${spokenOp} ${num2} equals what?`
-        };
-        
-        document.getElementById('question-text').innerText = currentQuestion.text;
-        document.getElementById('progress-display').innerText = `Question: ${questionsAnswered + 1}/${maxQuestions}`;
-        
-        playTTS(); // Auto read new question
-    }
-
-    function playTTS() {
-        if (!currentQuestion || gameState !== 'playing') return;
-        if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel(); 
-            let msg = new SpeechSynthesisUtterance(currentQuestion.spokenText);
-            msg.lang = 'en-US';
-            msg.rate = 0.85; // Slightly slower for kids
-            window.speechSynthesis.speak(msg);
-        }
-    }
-
-    // --- PROCEDURAL GENERATION ---
-    function generateBackgroundElements() {
-        backgroundElements = [];
-        spores = [];
-        
-        for(let i=0; i<20; i++) {
-            backgroundElements.push({
-                type: 'crystal',
-                x: Math.random() * VW * 3, 
-                y: VH/2 + Math.random() * 250 - 120,
-                size: 30 + Math.random() * 80,
-                hue: Math.random() > 0.5 ? 190 : 310, 
-                parallax: 0.15 + Math.random() * 0.25
-            });
-        }
-        for(let i=0; i<10; i++) {
-            backgroundElements.push({
-                type: 'lavafall',
-                x: Math.random() * VW * 3,
-                width: 50 + Math.random() * 120,
-                parallax: 0.1
-            });
-        }
-        for(let i=0; i<15; i++) {
-            backgroundElements.push({
-                type: 'pillar_back',
-                x: Math.random() * VW * 3,
-                width: 180 + Math.random() * 300,
-                parallax: 0.2
-            });
-        }
-        for(let i=0; i<10; i++) {
-            backgroundElements.push({
-                type: 'pillar_front',
-                x: Math.random() * VW * 3,
-                width: 100 + Math.random() * 180,
-                parallax: 0.35
-            });
-        }
-        for(let i=0; i<80; i++) {
-            spores.push({
-                x: Math.random() * VW * 2,
-                y: Math.random() * VH,
-                size: Math.random() * 3 + 1,
-                speedX: (Math.random() - 0.5) * 1.5,
-                speedY: (Math.random() - 0.5) * 1.5,
-                hue: Math.random() > 0.5 ? 180 : 50, 
-                parallax: 0.4 + Math.random() * 0.4
-            });
-        }
-    }
-
-    function createPlatformObject(x, y, w, isBase, answerValue) {
-        let shape = [];
-        let segments = Math.floor(w / 15);
-        for(let i = 0; i <= segments; i++) {
-            let px = (i / segments) * w;
-            let py = (Math.random() * 14 - 7);
-            if(i === 0 || i === segments) py = 0; 
-            shape.push({ x: px, y: py });
-        }
-        
-        // Realistic Hanging Moss logic
-        let hangingMoss = [];
-        for(let i = 0; i <= segments; i++) {
-            hangingMoss.push(10 + Math.random() * 35);
-        }
-
-        let flora = null;
-        if(!isBase && Math.random() > 0.4) {
-            flora = {
-                x: w * (0.2 + Math.random() * 0.6),
-                size: 12 + Math.random() * 18,
-                hue: Math.random() > 0.5 ? 180 : 320 
-            };
-        }
-
-        return {
-            x: x, y: y, w: w, h: 800, 
-            shape: shape,
-            hangingMoss: hangingMoss,
-            isBase: isBase,
-            answer: answerValue,
-            isCrumbling: false,
-            vy: 0,
-            mossColor: `hsl(${90 + Math.random()*25}, 85%, 50%)`, // Super vibrant lime
-            flora: flora
-        };
-    }
-
-    function generateLevelSet(baseX) {
-        let baseY = VH - 220;
-        if (platforms.length === 0) {
-            platforms.push(createPlatformObject(baseX, baseY, 220, true, null));
-        } else {
-            baseY = platforms[0].y;
-        }
-
-        // Slightly wider gap for better framing
-        let startX = baseX + 350;
-        let yOffsets = [-40, -150, 30, -100]; 
-        
-        for(let i=0; i<4; i++) {
-            let platX = startX + i * 280;
-            let platY = baseY + yOffsets[i];
-            platforms.push(createPlatformObject(platX, platY, 160, false, currentQuestion.options[i]));
-        }
-    }
-
-    function initLevel() {
-        currentMathRange = parseInt(document.getElementById('math-range').value);
-        score = 0;
-        questionsAnswered = 0;
-        usedQuestions.clear();
-        
-        document.getElementById('score-display').innerText = `Score: 0`;
-        
-        platforms = [];
-        particles = [];
-        fireworks = [];
-        
-        generateBackgroundElements();
-        generateMathQuestion();
-        generateLevelSet(200);
-
-        player.x = platforms[0].x + platforms[0].w / 2;
-        player.y = platforms[0].y;
-        player.vx = 0;
-        player.vy = 0;
-        player.state = 'idle';
-        player.targetPlatform = null;
-        
-        cameraX = 0;
-        targetCameraX = 0;
-        cameraShake = 0;
-    }
-
-    // --- INPUT HANDLING ---
-    canvas.addEventListener('mousedown', handleClick);
-    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleClick(e.touches[0] || e); }, {passive: false});
-
-    function handleClick(e) {
-        if(gameState !== 'playing' || player.state !== 'idle') return;
-
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        
-        const scaledX = x - offsetX;
-        const scaledY = y - offsetY;
-        
-        const virtualX = scaledX / scale + cameraX;
-        const virtualY = scaledY / scale;
-
-        for(let i=1; i<platforms.length; i++) {
-            let p = platforms[i];
-            if (!p.isCrumbling && virtualX >= p.x && virtualX <= p.x + p.w && virtualY >= p.y - 150 && virtualY <= p.y + p.h) {
-                jumpTo(p);
-                break;
-            }
-        }
-    }
-
-    function jumpTo(target) {
-        player.state = 'jumping';
-        player.targetPlatform = target;
-        
-        let targetX = target.x + target.w/2;
-        let dx = targetX - player.x;
-        let dy = target.y - player.y;
-
-        let vx_speed = 19; // Slightly faster leap
-        let T = Math.abs(dx) / vx_speed;
-        
-        player.vx = vx_speed;
-        player.vy = (dy - 0.5 * gravity * T * T) / T;
-        
-        createDust(player.x, player.y, 30);
-    }
-
-    function screenShake(amount) {
-        cameraShake = amount;
-    }
-
-    // --- GAME LOGIC ---
-    function update() {
-        backgroundTime += 0.03;
-        if(cameraShake > 0) cameraShake *= 0.85;
-
-        // Smooth Camera pan
-        let desiredCamX = player.x - VW * 0.25; 
-        if(desiredCamX > targetCameraX) targetCameraX = desiredCamX; 
-        cameraX += (targetCameraX - cameraX) * 0.08; 
-
-        // Parallax Backgrounds
-        backgroundElements.forEach(bg => {
-            if(bg.x < cameraX * bg.parallax - VW) {
-                bg.x += VW * 2.5;
-                if(bg.type === 'crystal') bg.y = VH/2 + Math.random() * 250 - 100;
-            }
-        });
-
-        // Spores
-        spores.forEach(s => {
-            s.x += s.speedX + Math.sin(backgroundTime*2 + s.y)*0.6;
-            s.y += s.speedY + Math.cos(backgroundTime*1.5 + s.x)*0.6;
-            let px = s.x - cameraX * s.parallax;
-            if (px < -100) s.x += VW * 2;
-            if (s.y < -100) s.y += VH + 200;
-            if (s.y > VH + 100) s.y -= VH + 200;
-        });
-
-        // Fireworks
-        for (let i = fireworks.length - 1; i >= 0; i--) {
-            let f = fireworks[i];
-            f.x += f.vx;
-            f.y += f.vy;
-            f.vy += 0.06; 
-            f.life -= f.decay;
-            if (f.life <= 0) fireworks.splice(i, 1);
-        }
-
-        if (gameState !== 'playing') {
-            if ((gameState === 'gameover' || gameState === 'win') && Math.random() < (gameState==='win'?0.1:0.02)) {
-                createFirework(cameraX + VW/2 + (Math.random()-0.5)*1200, VH/2 + (Math.random()-0.5)*600);
-            }
-            return;
-        }
-
-        // Handle Jumping
-        if (player.state === 'jumping') {
-            player.x += player.vx;
-            player.vy += gravity;
-            player.y += player.vy;
-
-            let targetX = player.targetPlatform.x + player.targetPlatform.w/2;
-            
-            if (player.x >= targetX) {
-                player.x = targetX;
-                player.y = player.targetPlatform.y;
-                player.vx = 0;
-                player.vy = 0;
-                
-                createDust(player.x, player.y, 40);
-                screenShake(10);
-
-                if (player.targetPlatform.answer === currentQuestion.ans) {
-                    // CORRECT ANSWER
-                    player.state = 'idle';
-                    score += 10;
-                    questionsAnswered++;
-                    document.getElementById('score-display').innerText = `Score: ${score}`;
-                    
-                    platforms.forEach(p => {
-                        if (p !== player.targetPlatform && !p.isBase) {
-                            p.isCrumbling = true;
-                        }
-                    });
-
-                    // ERASES NUMBER ON CURRENT PLATFORM (Requirement)
-                    player.targetPlatform.isBase = true;
-                    player.targetPlatform.answer = null; 
-                    
-                    platforms = platforms.filter(p => p === player.targetPlatform || p.isCrumbling);
-                    
-                    generateMathQuestion();
-                    if(questionsAnswered < maxQuestions) {
-                        generateLevelSet(player.targetPlatform.x);
-                    }
-                    
-                } else {
-                    // WRONG ANSWER
-                    player.state = 'falling';
-                    player.targetPlatform.isCrumbling = true;
-                }
-            }
-        } 
-        else if (player.state === 'falling') {
-            if (player.targetPlatform) {
-                player.y = player.targetPlatform.y;
-                player.x = player.targetPlatform.x + player.targetPlatform.w/2;
-            } else {
-                player.vy += gravity;
-                player.y += player.vy;
-            }
-            
-            if (player.y > VH + 100) {
-                createSplash(player.x, VH - 50);
-                loseGame();
-            }
-        }
-
-        // Crumbling physics
-        platforms.forEach(p => {
-            if (p.isCrumbling) {
-                p.vy += gravity * 0.4; // Slightly slower dramatic fall
-                p.y += p.vy;
-            }
-        });
-
-        // Cleanup out of bounds
-        for (let i = platforms.length - 1; i >= 0; i--) {
-            if (platforms[i].y > VH + 300 || platforms[i].x < cameraX - 600) {
-                platforms.splice(i, 1);
-            }
-        }
-
-        for (let i = particles.length - 1; i >= 0; i--) {
-            let p = particles[i];
-            p.x += p.vx;
-            p.y += p.vy;
-            p.life -= p.decay;
-            if(p.type === 'lava' || p.type === 'splash') {
-                p.vy += 0.25; 
-            } else if (p.type === 'ember') {
-                p.vy -= 0.05; 
-                p.vx += Math.sin(backgroundTime * 5 + p.y) * 0.6;
-            } else {
-                p.vy += 0.06; 
-                p.x += cameraX * 0.001; 
-            }
-            if (p.life <= 0 || p.x < cameraX - 200) particles.splice(i, 1); 
-        }
-
-        if(Math.random() < 0.6) { // More embers
-            particles.push({
-                x: cameraX + Math.random() * VW,
-                y: VH - Math.random() * 150,
-                vx: (Math.random() - 0.5) * 3,
-                vy: -Math.random() * 6 - 2,
-                size: Math.random() * 6 + 2,
-                color: Math.random() > 0.3 ? '#ffea00' : '#ff4400', 
-                life: 1,
-                decay: 0.005 + Math.random() * 0.015,
-                type: 'ember'
-            });
-        }
-    }
-
-    function createDust(x, y, amount) {
-        for(let i=0; i<amount; i++) {
-            particles.push({
-                x: x + (Math.random() - 0.5) * 60,
-                y: y,
-                vx: (Math.random() - 0.5) * 10,
-                vy: -Math.random() * 6 - 1,
-                size: Math.random() * 9 + 4,
-                color: `rgba(160, 220, 200, ${Math.random()*0.5 + 0.4})`, // Brighter magic dust
-                life: 1,
-                decay: 0.02 + Math.random()*0.02,
-                type: 'dust'
-            });
-        }
-    }
-
-    function createSplash(x, y) {
-        for(let i=0; i<60; i++) {
-            particles.push({
-                x: x + (Math.random() - 0.5) * 100,
-                y: y,
-                vx: (Math.random() - 0.5) * 15,
-                vy: -Math.random() * 18 - 5,
-                size: Math.random() * 15 + 5,
-                color: Math.random() > 0.4 ? '#ffff00' : '#ff5500', 
-                life: 1,
-                decay: 0.015,
-                type: 'splash'
-            });
-        }
-    }
-
-    function createFirework(x, y) {
-        let count = 60 + Math.random()*40;
-        let hues = [0, 60, 180, 280, 320, 120]; // More colors
-        let hue = hues[Math.floor(Math.random()*hues.length)];
-        for(let i=0; i<count; i++) {
-            let angle = Math.random() * Math.PI * 2;
-            let speed = Math.random() * 12 + 3;
-            fireworks.push({
-                x: x, y: y,
-                vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed,
-                life: 1.0, decay: Math.random()*0.01 + 0.01,
-                color: `hsl(${hue + (Math.random()-0.5)*30}, 100%, 65%)`
-            });
-        }
-    }
-
-    // --- ENHANCED DRAWING ---
-    function darken(hex, percent) {
-        let num = parseInt(hex.replace("#",""),16),
-        amt = Math.round(2.55 * percent),
-        R = (num >> 16) - amt,
-        B = (num >> 8 & 0x00FF) - amt,
-        G = (num & 0x0000FF) - amt;
-        return "#" + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 + (B<255?B<1?0:B:255)*0x100 + (G<255?G<1?0:G:255)).toString(16).slice(1);
-    }
-
-    function drawLimb(ctx, startX, startY, thickness, length, angle, color1, highlight1) {
-        ctx.save();
-        ctx.translate(startX, startY);
-        ctx.rotate(angle);
-        
-        let grad1 = ctx.createLinearGradient(-thickness/2, 0, thickness/2, 0);
-        grad1.addColorStop(0, darken(color1, 40));
-        grad1.addColorStop(0.3, color1);
-        grad1.addColorStop(0.7, highlight1);
-        grad1.addColorStop(1, darken(color1, 25));
-
-        ctx.fillStyle = grad1;
-        ctx.beginPath();
-        ctx.roundRect(-thickness/2, 0, thickness, length/2 + 3, thickness/2);
-        ctx.fill();
-
-        ctx.translate(0, length/2);
-        ctx.rotate(-angle * 0.35); 
-        
-        let grad2 = ctx.createLinearGradient(-thickness/2, 0, thickness/2, 0);
-        grad2.addColorStop(0, darken(color1, 40));
-        grad2.addColorStop(0.4, color1);
-        grad2.addColorStop(0.8, highlight1);
-        grad2.addColorStop(1, darken(color1, 25));
-
-        ctx.fillStyle = grad2;
-        ctx.beginPath();
-        ctx.roundRect(-thickness/2 + 1, 0, thickness - 2, length/2, thickness/2);
-        ctx.fill();
-
-        ctx.translate(0, length/2);
-        if(color1 === "#1e2229") { // Pants -> Boot
-            let bootGrad = ctx.createLinearGradient(-thickness/2, 0, thickness, 15);
-            bootGrad.addColorStop(0, "#0a0a0a");
-            bootGrad.addColorStop(1, "#2a2a2a");
-            ctx.fillStyle = bootGrad;
-            ctx.beginPath();
-            ctx.roundRect(-thickness/2 - 2, 0, thickness + 9, 15, 6);
-            ctx.fill();
-            // Chunky Sole
-            ctx.fillStyle = "#000";
-            ctx.fillRect(-thickness/2 - 1, 13, thickness + 7, 5);
-        } else { // Hand
-            ctx.fillStyle = "#ffcc99";
-            ctx.beginPath();
-            ctx.arc(0, 4, thickness/2 + 1, 0, Math.PI*2);
-            ctx.fill();
-        }
-
-        ctx.restore();
-    }
-
-    function drawRealisticPlayer(ctx, px, py) {
-        ctx.save();
-        ctx.translate(px, py);
-        
-        const h = player.height;
-        const headR = 9.5;
-        const torsoH = 35;
-        const legH = 46;
-        
-        let legAngle1 = 0, legAngle2 = 0;
-        let armAngle1 = 0, armAngle2 = 0;
-        let bodyTilt = 0;
-
-        if (player.state === 'idle' || player.state === 'falling') {
-            legAngle1 = Math.PI / 15;
-            legAngle2 = -Math.PI / 12;
-            armAngle1 = -Math.PI / 10;
-            armAngle2 = Math.PI / 8;
-            if (player.state === 'falling') {
-                armAngle1 = -Math.PI / 1.5;
-                armAngle2 = -Math.PI / 1.2;
-                legAngle1 = -Math.PI / 4;
-            }
-        } else if (player.state === 'jumping') {
-            bodyTilt = Math.PI / 9;
-            if(player.vy < -5) {
-                legAngle1 = -Math.PI / 3.5; 
-                legAngle2 = Math.PI / 2.8;  
-                armAngle1 = Math.PI / 1.8;  
-                armAngle2 = -Math.PI / 2;
-            } else if (player.vy > 5) {
-                legAngle1 = Math.PI / 5; 
-                legAngle2 = Math.PI / 7;
-                armAngle1 = -Math.PI / 2.5;
-                armAngle2 = -Math.PI / 5;
-                bodyTilt = Math.PI / 15;
-            } else {
-                legAngle1 = -Math.PI / 15; 
-                legAngle2 = Math.PI / 5;
-                armAngle1 = Math.PI / 7; 
-                armAngle2 = -Math.PI / 4;
-            }
-        }
-
-        ctx.rotate(bodyTilt);
-
-        // Improved Realistic Palette
-        const skinColor = "#ffcc99";
-        const jacketColor = "#009999"; // Brighter Teal
-        const jacketHi = "#00ffff";
-        const pantsColor = "#1e2229"; // Darker pants for contrast
-        const pantsHi = "#3a424e";
-        const backpackMain = "#ff5050"; // Brighter Red/Orange
-        const backpackSub = "#ff8080";
-
-        ctx.shadowColor = "#ffea00";
-        ctx.shadowBlur = (player.y > VH - 250) ? 25 : 0; 
-
-        // Backpack Detail
-        let packGrad = ctx.createLinearGradient(-26, -h, -10, -h+30);
-        packGrad.addColorStop(0, darken(backpackMain, 20));
-        packGrad.addColorStop(1, backpackSub);
-        ctx.fillStyle = packGrad;
-        ctx.beginPath();
-        ctx.roundRect(-29, -h + headR*2 + 3, 22, 34, 7);
-        ctx.fill();
-        ctx.fillStyle = darken(backpackMain, 15);
-        ctx.beginPath();
-        ctx.roundRect(-34, -h + headR*2 + 10, 10, 20, 4);
-        ctx.fill();
-        
-        // Bedroll
-        ctx.fillStyle = "#1e272e"; 
-        ctx.beginPath();
-        ctx.roundRect(-32, -h + headR*2 + 36, 26, 16, 6);
-        ctx.fill();
-        ctx.strokeStyle = "#111"; ctx.lineWidth=3;
-        ctx.strokeRect(-26, -h + headR*2 + 36, 1, 16);
-        ctx.strokeRect(-18, -h + headR*2 + 36, 1, 16);
-
-        // Limbs Back
-        drawLimb(ctx, 2, -legH, 15, legH, legAngle2, darken(pantsColor, 15), darken(pantsHi, 15));
-        drawLimb(ctx, -2, -h + headR*2 + 5, 12, 32, armAngle2, darken(jacketColor, 20), darken(jacketHi, 20));
-
-        // Torso
-        let torsoGrad = ctx.createLinearGradient(-14, 0, 14, 0);
-        torsoGrad.addColorStop(0, darken(jacketColor, 50));
-        torsoGrad.addColorStop(0.3, jacketColor);
-        torsoGrad.addColorStop(0.7, jacketHi);
-        torsoGrad.addColorStop(1, darken(jacketColor, 15));
-        ctx.fillStyle = torsoGrad;
-        ctx.beginPath();
-        ctx.roundRect(-13, -h + headR*2, 26, torsoH, 9);
-        ctx.fill();
-
-        // Jacket Details
-        ctx.fillStyle = darken(jacketColor, 35);
-        ctx.fillRect(-13, -h + headR*2, 26, 8); // Collar
-        ctx.fillStyle = "#1a1a1a";
-        ctx.fillRect(-14, -h + headR*2 + torsoH - 8, 28, 8); // Belt
-        ctx.fillStyle = "#ffcc00"; // Gold buckle
-        ctx.fillRect(4, -h + headR*2 + torsoH - 7, 7, 6);
-
-        ctx.beginPath(); // Zipper/Strap
-        ctx.moveTo(-7, -h + headR*2); ctx.lineTo(-12, -h + headR*2 + torsoH/2);
-        ctx.lineWidth = 5; ctx.strokeStyle = "#111"; ctx.stroke();
-
-        ctx.fillStyle = darken(skinColor, 25);
-        ctx.fillRect(-3, -h + headR*1.8, 8, 7); 
-
-        // Head
-        let headGrad = ctx.createRadialGradient(2, -h+headR-2, 2, 0, -h+headR, headR+2);
-        headGrad.addColorStop(0, "#ffffff");
-        headGrad.addColorStop(1, skinColor);
-        ctx.fillStyle = headGrad;
-        ctx.beginPath();
-        ctx.arc(0, -h + headR, headR+1.5, 0, Math.PI*2);
-        ctx.fill();
-        ctx.beginPath(); // Nose
-        ctx.arc(headR+1.5, -h + headR + 2, 3, 0, Math.PI*2);
-        ctx.fill();
-
-        // Hair
-        const hairColor = "#2a1508"; // Very dark brown
-        const hairHi = "#5d321d";
-        ctx.fillStyle = hairColor;
-        ctx.beginPath(); 
-        ctx.arc(-1, -h + headR - 2.5, headR + 3.5, Math.PI*0.7, Math.PI*2.5);
-        ctx.fill();
-        
-        ctx.lineWidth = 8;
-        ctx.lineCap = "round";
-        let hairSway = player.state === 'jumping' ? player.vy * 1.5 : (Math.sin(backgroundTime*2.5)*3);
-        
-        // Braid outline
-        ctx.strokeStyle = hairColor;
-        ctx.beginPath();
-        ctx.moveTo(-headR, -h + headR + 2);
-        let controlX = -22 + hairSway*0.4;
-        let controlY = -h + headR + 20 + Math.abs(hairSway)*1.2;
-        ctx.quadraticCurveTo(-26, -h + headR + 15, controlX, controlY);
-        ctx.stroke();
-        
-        // Braid inner
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = hairHi;
-        ctx.beginPath();
-        ctx.moveTo(-headR, -h + headR + 2);
-        ctx.quadraticCurveTo(-26, -h + headR + 15, controlX, controlY);
-        ctx.stroke();
-
-        // Limbs Front
-        drawLimb(ctx, 0, -legH, 16, legH, legAngle1, pantsColor, pantsHi);
-        drawLimb(ctx, 7, -h + headR*2 + 5, 12, 33, armAngle1, jacketColor, jacketHi);
-
-        ctx.restore();
-    }
-
-    function drawCaveBackground() {
-        // Bright & Beautiful Magical Cave
-        let bgGrad = ctx.createLinearGradient(0, 0, 0, VH);
-        bgGrad.addColorStop(0, "#11052b"); // Deep royal purple
-        bgGrad.addColorStop(0.4, "#360b5a"); // Bright purple
-        bgGrad.addColorStop(0.7, "#7a1515"); // Vibrant red transition
-        bgGrad.addColorStop(1, "#4d0000"); 
-        ctx.fillStyle = bgGrad;
-        ctx.fillRect(0, 0, canvas.width/scale, canvas.height/scale); 
-
-        backgroundElements.forEach(el => {
-            let px = el.x - cameraX * el.parallax;
-            if(px + 400 < 0 || px > VW + 400) return;
-
-            if (el.type === 'lavafall') {
-                let fallGrad = ctx.createLinearGradient(px, 0, px + el.width, 0);
-                fallGrad.addColorStop(0, "rgba(255, 69, 0, 0)");
-                fallGrad.addColorStop(0.3, "rgba(255, 150, 0, 0.9)");
-                fallGrad.addColorStop(0.5, "rgba(255, 255, 180, 1)"); // Extremely bright core
-                fallGrad.addColorStop(0.7, "rgba(255, 150, 0, 0.9)");
-                fallGrad.addColorStop(1, "rgba(255, 69, 0, 0)");
-                
-                ctx.fillStyle = fallGrad;
-                ctx.beginPath();
-                ctx.moveTo(px, 0);
-                for(let y=0; y<VH; y+=40) {
-                    ctx.lineTo(px + Math.sin(y/25 + backgroundTime*4)*18, y);
-                }
-                ctx.lineTo(px + el.width, VH);
-                for(let y=VH; y>0; y-=40) {
-                    ctx.lineTo(px + el.width + Math.sin(y/25 + backgroundTime*4)*18, y);
-                }
-                ctx.fill();
-                
-                ctx.shadowBlur = 80;
-                ctx.shadowColor = "#ffcc00";
-                ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
-                ctx.fillRect(px + el.width*0.35, 0, el.width*0.3, VH);
-                ctx.shadowBlur = 0;
-            } 
-            else if (el.type.startsWith('pillar')) {
-                let isFront = el.type === 'pillar_front';
-                let pGrad = ctx.createLinearGradient(px, 0, px+el.width, 0);
-                if (isFront) {
-                    pGrad.addColorStop(0, "#220836");
-                    pGrad.addColorStop(0.5, "#410f63");
-                    pGrad.addColorStop(1, "#220836");
-                } else {
-                    pGrad.addColorStop(0, "#13031f");
-                    pGrad.addColorStop(0.5, "#25063d");
-                    pGrad.addColorStop(1, "#13031f");
-                }
-                
-                ctx.fillStyle = pGrad;
-                ctx.beginPath();
-                ctx.moveTo(px, 0);
-                for(let y=0; y<=VH; y+=60) {
-                    ctx.lineTo(px + Math.sin(y/(isFront?50:80))* (isFront?20:12), y);
-                }
-                ctx.lineTo(px + el.width, VH);
-                for(let y=VH; y>=0; y-=60) {
-                    ctx.lineTo(px + el.width + Math.sin(y/(isFront?40:70))* (isFront?20:12), y);
-                }
-                ctx.fill();
-            }
-            else if (el.type === 'crystal') {
-                let pulse = Math.sin(backgroundTime*2.5 + el.x)*0.3 + 0.7;
-                ctx.shadowBlur = 60 * pulse;
-                ctx.shadowColor = `hsl(${el.hue}, 100%, 65%)`;
-                
-                ctx.fillStyle = `hsla(${el.hue}, 95%, 55%, 0.6)`;
-                ctx.beginPath();
-                ctx.moveTo(px, el.y - el.size*1.8);
-                ctx.lineTo(px + el.size*0.8, el.y);
-                ctx.lineTo(px, el.y + el.size*2.2);
-                ctx.lineTo(px - el.size*0.8, el.y);
-                ctx.fill();
-
-                ctx.fillStyle = `hsla(${el.hue}, 100%, 95%, 0.95)`;
-                ctx.beginPath();
-                ctx.moveTo(px, el.y - el.size*1.2);
-                ctx.lineTo(px + el.size*0.4, el.y);
-                ctx.lineTo(px, el.y + el.size*1.5);
-                ctx.lineTo(px - el.size*0.4, el.y);
-                ctx.fill();
-                
-                ctx.shadowBlur = 0;
-            }
-        });
-
-        // Floating Spores
-        spores.forEach(s => {
-            let px = s.x - cameraX * s.parallax;
-            if(px < -50 || px > VW + 50) return;
-            
-            let pulse = Math.sin(backgroundTime*4 + s.x)*0.5 + 0.5;
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = `hsl(${s.hue}, 100%, 75%)`;
-            ctx.fillStyle = `hsla(${s.hue}, 100%, 85%, ${pulse})`;
-            ctx.beginPath();
-            ctx.arc(px, s.y, s.size, 0, Math.PI*2);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-        });
-
-        // Roof Stalactites
-        ctx.fillStyle = "#0c031c";
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        for(let x=0; x<=VW; x+=50) {
-            let rx = x + (cameraX * 0.4) % 100; 
-            let tipLength = 35 + Math.sin(rx/70) * 80 + Math.cos(rx/25) * 45;
-            if(tipLength < 15) tipLength = 15;
-            ctx.lineTo(x, tipLength);
-        }
-        ctx.lineTo(VW, 0);
-        ctx.fill();
-    }
-
-    function drawPlatform(p) {
-        let drawX = p.x;
-        if (drawX + p.w < cameraX - 250 || drawX > cameraX + VW + 250) return;
-
-        ctx.save();
-        ctx.translate(drawX, p.y);
-
-        if (p.isCrumbling) {
-            ctx.translate((Math.random()-0.5)*12, (Math.random()-0.5)*12);
-        }
-
-        let platGrad = ctx.createLinearGradient(0, 0, 0, 400);
-        platGrad.addColorStop(0, "#555566"); // Lighter top rock
-        platGrad.addColorStop(0.3, "#2a2a33");
-        platGrad.addColorStop(0.8, "#601500"); // Intense Lava reflection
-        platGrad.addColorStop(1, "#1a0400"); 
-        
-        ctx.fillStyle = platGrad;
-        ctx.beginPath();
-        ctx.moveTo(p.shape[0].x, p.shape[0].y);
-        for(let i=1; i<p.shape.length; i++) {
-            ctx.lineTo(p.shape[i].x, p.shape[i].y);
-        }
-        ctx.lineTo(p.w - 15, p.h);
-        ctx.lineTo(15, p.h);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.fillStyle = "rgba(0,0,0,0.65)";
-        ctx.beginPath();
-        ctx.moveTo(p.w * 0.7, 30);
-        ctx.lineTo(p.w, p.shape[p.shape.length-1].y);
-        ctx.lineTo(p.w - 25, p.h);
-        ctx.lineTo(p.w * 0.5, p.h);
-        ctx.lineTo(p.w * 0.6, 120);
-        ctx.fill();
-
-        // Realistic Hanging Moss
-        let mossGrad = ctx.createLinearGradient(0, -15, 0, 70);
-        mossGrad.addColorStop(0, p.mossColor); 
-        mossGrad.addColorStop(0.3, "#3a7a1c"); 
-        mossGrad.addColorStop(1, "rgba(20, 40, 10, 0)");
-        ctx.fillStyle = mossGrad;
-        
-        ctx.beginPath();
-        ctx.moveTo(p.shape[0].x, p.shape[0].y);
-        for(let i=1; i<p.shape.length; i++) {
-            ctx.lineTo(p.shape[i].x, p.shape[i].y);
-        }
-        // Draw hanging moss points
-        for(let i=p.shape.length-1; i>=0; i--) {
-            ctx.lineTo(p.shape[i].x, p.shape[i].y + p.hangingMoss[i] + Math.random()*10);
-        }
-        ctx.fill();
-
-        // Moss Top Highlight for 3D effect
-        ctx.strokeStyle = "rgba(220, 255, 120, 0.6)";
-        ctx.lineWidth = 3.5;
-        ctx.lineCap = "round";
-        ctx.beginPath();
-        ctx.moveTo(p.shape[0].x, p.shape[0].y);
-        for(let i=1; i<p.shape.length; i++) {
-            ctx.lineTo(p.shape[i].x, p.shape[i].y);
-        }
-        ctx.stroke();
-
-        // Glowing Flora
-        if(p.flora) {
-            let fx = p.flora.x;
-            let fs = p.flora.size;
-            let fPulse = Math.sin(backgroundTime*5 + p.x)*0.3 + 0.7;
-            
-            ctx.shadowBlur = 20 * fPulse;
-            ctx.shadowColor = `hsl(${p.flora.hue}, 100%, 65%)`;
-            
-            ctx.fillStyle = "#b3ffcc"; // stem
-            ctx.fillRect(fx - fs/6, -fs, fs/3, fs);
-            
-            ctx.fillStyle = `hsl(${p.flora.hue}, 95%, 70%)`;
-            ctx.beginPath();
-            ctx.arc(fx, -fs, fs, Math.PI, Math.PI*2);
-            ctx.fill();
-            
-            ctx.shadowBlur = 0;
-        }
-
-        // Hover effect Box
-        if (!p.isBase && !p.isCrumbling) {
-            let boxPulse = Math.sin(backgroundTime * 2.5 + p.x) * 0.2 + 0.8;
-            ctx.strokeStyle = `rgba(0, 255, 255, ${0.2 * boxPulse})`;
-            ctx.lineWidth = 4;
-            ctx.beginPath();
-            ctx.roundRect(-5, -30, p.w + 10, 160, 15);
-            ctx.stroke();
-        }
-
-        // Render Answer Text (Magical Glowing Runes)
-        if (p.answer !== null) {
-            let rx = p.w/2;
-            let ry = 80;
-            let pulse = Math.sin(backgroundTime * 4 + p.x) * 0.3 + 0.7;
-
-            ctx.font = "900 70px Poppins, sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-
-            // Layer 1: Deep carve shadow
-            ctx.fillStyle = "rgba(0, 0, 0, 0.9)";
-            ctx.fillText(p.answer, rx, ry + 7);
-
-            // Layer 2: Neon Glow
-            ctx.shadowBlur = 40 * pulse;
-            ctx.shadowColor = "#ffcc00";
-            ctx.fillStyle = `rgba(255, 220, 0, ${0.8 * pulse + 0.2})`;
-            ctx.fillText(p.answer, rx, ry);
-            
-            // Layer 3: White Hot Core
-            ctx.shadowBlur = 12;
-            ctx.fillStyle = "#ffffff";
-            ctx.fillText(p.answer, rx, ry);
-            
-            ctx.shadowBlur = 0;
-        }
-
-        ctx.restore();
-    }
-
-    function render() {
-        let shakeX = (Math.random() - 0.5) * cameraShake;
-        let shakeY = (Math.random() - 0.5) * cameraShake;
-        
-        ctx.save(); 
-        ctx.translate(offsetX, offsetY);
-        ctx.scale(scale, scale);
-        
-        drawCaveBackground();
-
-        ctx.save();
-        ctx.translate(-cameraX + shakeX, shakeY);
-
-        // Vibrant Hot Lava Sea
-        for(let j=0; j<3; j++) {
-            let lavaGrad = ctx.createLinearGradient(0, VH - 150 + j*45, 0, VH);
-            lavaGrad.addColorStop(0, j===0 ? '#ffea00' : '#ff5500'); // Much brighter yellow/orange
-            lavaGrad.addColorStop(0.2, '#ff2200'); 
-            lavaGrad.addColorStop(0.6, '#880000'); 
-            lavaGrad.addColorStop(1, '#2b0000'); 
-
-            ctx.fillStyle = lavaGrad;
-            ctx.beginPath();
-            
-            let startX = cameraX - 250;
-            let endX = cameraX + VW + 250;
-            
-            ctx.moveTo(startX, VH);
-            
-            let speed = backgroundTime * (1.8 + j*0.6);
-            let heightBase = VH - 100 + j * 45;
-            
-            for(let x = startX; x <= endX; x += 40) {
-                let wave = Math.sin((x + cameraX*0.2)/(70 + j*20) + speed) * (22 + j*8);
-                let crust = Math.cos((x + cameraX*0.1)/30 - speed*1.5) * 12; 
-                ctx.lineTo(x, heightBase + wave + crust);
-            }
-            ctx.lineTo(endX, VH);
-            ctx.fill();
-        }
-
-        platforms.forEach(p => drawPlatform(p));
-
-        drawRealisticPlayer(ctx, player.x, player.y);
-
-        particles.forEach(p => {
-            ctx.fillStyle = p.color;
-            ctx.globalAlpha = p.life;
-            if(p.type === 'ember' || p.type === 'splash') {
-                ctx.shadowBlur = 25;
-                ctx.shadowColor = p.color;
-            }
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-            ctx.globalAlpha = 1.0;
-        });
-
-        fireworks.forEach(f => {
-            ctx.fillStyle = f.color;
-            ctx.globalAlpha = f.life;
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = f.color;
-            ctx.beginPath();
-            ctx.arc(f.x, f.y, 4.5, 0, Math.PI*2);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-            ctx.globalAlpha = 1.0;
-        });
-
-        ctx.restore(); 
-        ctx.restore(); 
-    }
-
-    // --- GAME LOOP ---
-    function loop() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        update();
-        render();
-        requestAnimationFrame(loop);
-    }
-
-    // --- UI CONTROLS ---
-    function startGame() {
-        document.getElementById('start-panel').classList.add('hidden');
-        document.getElementById('instructions').classList.remove('hidden');
-        document.getElementById('top-bar').style.display = 'flex';
-        initLevel();
-        gameState = 'playing';
-        
-        setTimeout(() => {
-            document.getElementById('instructions').classList.add('hidden');
-        }, 5000);
-    }
-
-    function winGame() {
-        gameState = 'win';
-        document.getElementById('win-score').innerText = score;
-        setTimeout(() => {
-            document.getElementById('win-panel').classList.remove('hidden');
-            document.getElementById('top-bar').style.display = 'none';
-        }, 1200);
-    }
-
-    function loseGame() {
-        gameState = 'gameover';
-        document.getElementById('final-score').innerText = questionsAnswered;
-        setTimeout(() => {
-            document.getElementById('game-over-panel').classList.remove('hidden');
-            document.getElementById('top-bar').style.display = 'none';
-        }, 1200);
-    }
-
-    function resetGame() {
-        document.getElementById('game-over-panel').classList.add('hidden');
-        document.getElementById('win-panel').classList.add('hidden');
-        document.getElementById('start-panel').classList.remove('hidden');
-        gameState = 'start';
-    }
-
-    // Initial render
-    currentMathRange = 20;
-    generateBackgroundElements();
-    generateMathQuestion(); // Fixes Cannot read properties of null (reading 'options')
-    generateLevelSet(200);
-    requestAnimationFrame(loop);
-
-</script>
 </body>
 </html>
