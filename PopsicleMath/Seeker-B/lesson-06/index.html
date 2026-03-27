@@ -131,6 +131,14 @@
             background: rgba(99, 102, 241, 0.4);
             border-radius: 10px;
         }
+
+        /* Outline giả cho emoji trong game tìm đồ */
+        .emoji-outline {
+            filter: drop-shadow(0px 2px 0px rgba(0,0,0,0.8)) 
+                    drop-shadow(0px -2px 0px rgba(0,0,0,0.8)) 
+                    drop-shadow(2px 0px 0px rgba(0,0,0,0.8)) 
+                    drop-shadow(-2px 0px 0px rgba(0,0,0,0.8));
+        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
@@ -195,14 +203,25 @@
             </div>
         </div>
 
-        <!-- Vòng thưởng (Kho báu) -->
-        <div id="bonus-modal" class="absolute inset-0 bg-gradient-to-br from-indigo-500/95 to-purple-600/95 flex flex-col items-center justify-center z-30 hidden p-6 backdrop-blur-md">
-            <h2 class="text-6xl md:text-8xl font-black text-white mb-6 animate-bounce drop-shadow-xl text-glow">MAGIC CHEST!</h2>
-            <p class="text-3xl text-white/90 font-bold mb-14 drop-shadow-md">Pick a box to find a surprise!</p>
-            <div id="door-container" class="flex flex-wrap justify-center gap-8 md:gap-16">
-                <!-- Các rương báu -->
+        <!-- Vòng thưởng (Mini Game: Find hidden items) -->
+        <div id="minigame-modal" class="absolute inset-0 bg-gradient-to-br from-emerald-400 to-teal-500 flex flex-col items-center justify-center z-30 hidden p-6 backdrop-blur-md">
+            <!-- Search Bar -->
+            <div class="bg-white rounded-[2.5rem] py-3 px-8 shadow-2xl flex items-center gap-6 mb-8 border-[6px] border-yellow-300 bounce-pop">
+                <span class="text-5xl drop-shadow-sm">🔍</span>
+                <div id="minigame-targets" class="flex gap-4 text-6xl emoji-outline">
+                    <!-- Target icons go here -->
+                </div>
             </div>
-            <p id="bonus-result" class="text-5xl text-yellow-300 font-black mt-16 hidden drop-shadow-lg text-glow"></p>
+
+            <!-- Play Area -->
+            <div id="minigame-area" class="relative w-full max-w-3xl h-[55vh] bg-[#81e6d9] rounded-[3rem] border-8 border-white shadow-[inset_0_10px_30px_rgba(0,0,0,0.15)] overflow-hidden">
+                <!-- Random icons go here -->
+            </div>
+            
+            <div id="minigame-result" class="absolute bg-white/95 border-8 border-yellow-400 rounded-[3rem] p-8 flex-col items-center justify-center hidden z-40 shadow-2xl bounce-pop">
+                <p id="minigame-result-text" class="text-4xl md:text-5xl text-pink-500 font-black text-center mb-4"></p>
+                <div id="minigame-result-icon" class="text-[8rem] filter drop-shadow-xl animate-bounce"></div>
+            </div>
         </div>
 
         <!-- Màn hình kết thúc game -->
@@ -238,14 +257,16 @@
             { icon: "🔔", name: "Magic Bell" }
         ];
 
-        // 15 dãy số logic đa dạng cho bé - Tất cả số <= 20
+        const miniGameEmojis = ["🍕","🚂","🎨","🎁","🧩","🐳","🦒","🍓","🐙","⭐","🎒","🐧","🖍️","🍩","🎈","🌈","🐘","🍉","🚁","🧸","🚀","🍎","🐞","🐶"];
+
+        // 15 dãy số logic đa dạng cho bé - Tất cả số trong phạm vi TỪ 5 ĐẾN 20
         // Theo các định dạng: ABABAB, AABAAB, ABCABC
         const questions = [
-            // Q1: ABABAB (1, 2, 1, 2, 1, ?) -> Ans: 2
-            { pattern: [n(1, 'bg-rose-500'), n(2, 'bg-blue-500'), n(1, 'bg-rose-500'), n(2, 'bg-blue-500'), n(1, 'bg-rose-500')], options: [n(1, 'bg-rose-500'), n(2, 'bg-blue-500'), n(3, 'bg-emerald-500')], correct: n(2, 'bg-blue-500') },
+            // Q1: ABABAB (5, 6, 5, 6, 5, ?) -> Ans: 6
+            { pattern: [n(5, 'bg-rose-500'), n(6, 'bg-blue-500'), n(5, 'bg-rose-500'), n(6, 'bg-blue-500'), n(5, 'bg-rose-500')], options: [n(5, 'bg-rose-500'), n(6, 'bg-blue-500'), n(7, 'bg-emerald-500')], correct: n(6, 'bg-blue-500') },
             
-            // Q2: AABAAB (3, 3, 4, 3, 3, ?) -> Ans: 4
-            { pattern: [n(3, 'bg-amber-400'), n(3, 'bg-amber-400'), n(4, 'bg-purple-500'), n(3, 'bg-amber-400'), n(3, 'bg-amber-400')], options: [n(3, 'bg-amber-400'), n(4, 'bg-purple-500'), n(5, 'bg-pink-500')], correct: n(4, 'bg-purple-500') },
+            // Q2: AABAAB (7, 7, 8, 7, 7, ?) -> Ans: 8
+            { pattern: [n(7, 'bg-amber-400'), n(7, 'bg-amber-400'), n(8, 'bg-purple-500'), n(7, 'bg-amber-400'), n(7, 'bg-amber-400')], options: [n(7, 'bg-amber-400'), n(8, 'bg-purple-500'), n(9, 'bg-pink-500')], correct: n(8, 'bg-purple-500') },
             
             // Q3: ABCABC (5, 6, 7, 5, 6, ?) -> Ans: 7
             { pattern: [n(5, 'bg-indigo-500'), n(6, 'bg-teal-500'), n(7, 'bg-orange-500'), n(5, 'bg-indigo-500'), n(6, 'bg-teal-500')], options: [n(5, 'bg-indigo-500'), n(6, 'bg-teal-500'), n(7, 'bg-orange-500')], correct: n(7, 'bg-orange-500') },
@@ -262,11 +283,11 @@
             // Q7: ABABAB (7, 14, 7, 14, 7, ?) -> Ans: 14
             { pattern: [n(7, 'bg-orange-500'), n(14, 'bg-cyan-500'), n(7, 'bg-orange-500'), n(14, 'bg-cyan-500'), n(7, 'bg-orange-500')], options: [n(7, 'bg-orange-500'), n(14, 'bg-cyan-500'), n(20, 'bg-rose-500')], correct: n(14, 'bg-cyan-500') },
             
-            // Q8: AABAAB (1, 1, 10, 1, 1, ?) -> Ans: 10
-            { pattern: [n(1, 'bg-blue-500'), n(1, 'bg-blue-500'), n(10, 'bg-emerald-500'), n(1, 'bg-blue-500'), n(1, 'bg-blue-500')], options: [n(1, 'bg-blue-500'), n(5, 'bg-amber-400'), n(10, 'bg-emerald-500')], correct: n(10, 'bg-emerald-500') },
+            // Q8: AABAAB (9, 9, 10, 9, 9, ?) -> Ans: 10
+            { pattern: [n(9, 'bg-blue-500'), n(9, 'bg-blue-500'), n(10, 'bg-emerald-500'), n(9, 'bg-blue-500'), n(9, 'bg-blue-500')], options: [n(9, 'bg-blue-500'), n(5, 'bg-amber-400'), n(10, 'bg-emerald-500')], correct: n(10, 'bg-emerald-500') },
             
-            // Q9: ABCABC (2, 4, 6, 2, 4, ?) -> Ans: 6
-            { pattern: [n(2, 'bg-purple-500'), n(4, 'bg-pink-500'), n(6, 'bg-indigo-500'), n(2, 'bg-purple-500'), n(4, 'bg-pink-500')], options: [n(4, 'bg-pink-500'), n(6, 'bg-indigo-500'), n(8, 'bg-teal-500')], correct: n(6, 'bg-indigo-500') },
+            // Q9: ABCABC (10, 12, 14, 10, 12, ?) -> Ans: 14
+            { pattern: [n(10, 'bg-purple-500'), n(12, 'bg-pink-500'), n(14, 'bg-indigo-500'), n(10, 'bg-purple-500'), n(12, 'bg-pink-500')], options: [n(12, 'bg-pink-500'), n(14, 'bg-indigo-500'), n(16, 'bg-teal-500')], correct: n(14, 'bg-indigo-500') },
             
             // Q10: ABABAB (9, 18, 9, 18, 9, ?) -> Ans: 18
             { pattern: [n(9, 'bg-orange-500'), n(18, 'bg-cyan-500'), n(9, 'bg-orange-500'), n(18, 'bg-cyan-500'), n(9, 'bg-orange-500')], options: [n(9, 'bg-orange-500'), n(18, 'bg-cyan-500'), n(19, 'bg-rose-500')], correct: n(18, 'bg-cyan-500') },
@@ -280,8 +301,8 @@
             // Q13: ABABAB (13, 20, 13, 20, 13, ?) -> Ans: 20
             { pattern: [n(13, 'bg-teal-500'), n(20, 'bg-orange-500'), n(13, 'bg-teal-500'), n(20, 'bg-orange-500'), n(13, 'bg-teal-500')], options: [n(13, 'bg-teal-500'), n(15, 'bg-cyan-500'), n(20, 'bg-orange-500')], correct: n(20, 'bg-orange-500') },
             
-            // Q14: AABAAB (2, 2, 20, 2, 2, ?) -> Ans: 20
-            { pattern: [n(2, 'bg-rose-500'), n(2, 'bg-rose-500'), n(20, 'bg-blue-500'), n(2, 'bg-rose-500'), n(2, 'bg-rose-500')], options: [n(2, 'bg-rose-500'), n(10, 'bg-emerald-500'), n(20, 'bg-blue-500')], correct: n(20, 'bg-blue-500') },
+            // Q14: AABAAB (12, 12, 20, 12, 12, ?) -> Ans: 20
+            { pattern: [n(12, 'bg-rose-500'), n(12, 'bg-rose-500'), n(20, 'bg-blue-500'), n(12, 'bg-rose-500'), n(12, 'bg-rose-500')], options: [n(12, 'bg-rose-500'), n(10, 'bg-emerald-500'), n(20, 'bg-blue-500')], correct: n(20, 'bg-blue-500') },
             
             // Q15: ABCABC (8, 9, 10, 8, 9, ?) -> Ans: 10
             { pattern: [n(8, 'bg-amber-400'), n(9, 'bg-purple-500'), n(10, 'bg-pink-500'), n(8, 'bg-amber-400'), n(9, 'bg-purple-500')], options: [n(8, 'bg-amber-400'), n(9, 'bg-purple-500'), n(10, 'bg-pink-500')], correct: n(10, 'bg-pink-500') }
@@ -291,6 +312,8 @@
         let currentQuestionIndex = 0;
         let isChecking = false;
         let gameOverLoop = null;
+        let minigameFound = 0;
+        const minigameTargetCount = 3;
         const totalQuestions = questions.length;
 
         // Âm thanh
@@ -321,12 +344,11 @@
         const optionsDisplay = document.getElementById('options-display');
         const feedbackModal = document.getElementById('feedback-modal');
         const feedbackContent = document.getElementById('feedback-content');
-        const bonusModal = document.getElementById('bonus-modal');
+        const minigameModal = document.getElementById('minigame-modal');
         const gameOverModal = document.getElementById('game-over-modal');
         const scoreEl = document.getElementById('score');
         const progressTextEl = document.getElementById('progress-text');
         const progressBarEl = document.getElementById('progress-bar');
-        const doorContainer = document.getElementById('door-container');
         const fxContainer = document.getElementById('fx-container');
 
         // --- Hiệu ứng hình ảnh ---
@@ -444,11 +466,26 @@
                 feedbackContent.textContent = "GREAT!";
                 feedbackContent.className = "text-8xl md:text-[10rem] font-black text-green-500 drop-shadow-2xl transform scale-100 transition-transform duration-500";
                 feedbackModal.classList.remove('hidden');
-                setTimeout(() => {
-                    feedbackModal.classList.add('hidden');
-                    feedbackContent.classList.add('scale-0');
-                    showBonus();
-                }, 1400);
+                
+                // Kiểm tra xem đã trả lời đúng mỗi 3 câu chưa (câu 3, 6, 9, 12, 15)
+                if ((currentQuestionIndex + 1) % 3 === 0) {
+                    setTimeout(() => {
+                        feedbackModal.classList.add('hidden');
+                        feedbackContent.classList.add('scale-0');
+                        showMiniGame();
+                    }, 1400);
+                } else {
+                    setTimeout(() => {
+                        feedbackModal.classList.add('hidden');
+                        feedbackContent.classList.add('scale-0');
+                        currentQuestionIndex++;
+                        if (currentQuestionIndex >= totalQuestions) {
+                            showGameOver();
+                        } else {
+                            loadQuestion();
+                        }
+                    }, 1400);
+                }
             } else {
                 incorrectSynth.triggerAttackRelease(["C4", "B3"], "0.3");
                 document.getElementById('game-container').classList.add('shake');
@@ -468,54 +505,122 @@
             }
         }
 
-        function showBonus() {
-            bonusModal.classList.remove('hidden');
-            document.getElementById('bonus-result').classList.add('hidden');
+        // --- MINI GAME: FIND HIDDEN ITEMS ---
+        function showMiniGame() {
+            minigameModal.classList.remove('hidden');
+            minigameModal.classList.add('flex');
+            document.getElementById('minigame-result').classList.add('hidden');
+            document.getElementById('minigame-result').classList.remove('flex');
             
-            const pool = [...treasures].sort(() => Math.random() - 0.5).slice(0, 3);
-            doorContainer.innerHTML = '';
+            const area = document.getElementById('minigame-area');
+            const targetContainer = document.getElementById('minigame-targets');
+            area.innerHTML = '';
+            targetContainer.innerHTML = '';
+            minigameFound = 0;
+
+            // Pick a random target
+            const targetEmoji = miniGameEmojis[Math.floor(Math.random() * miniGameEmojis.length)];
             
-            pool.forEach((treasure, idx) => {
-                const chest = document.createElement('button');
-                chest.className = 'btn-candy w-44 h-44 bg-white/20 backdrop-blur-md rounded-[3rem] border-4 border-white/60 shadow-2xl flex items-center justify-center text-[6rem] hover:bg-white/40 active:scale-110 transition-all';
-                chest.innerHTML = `🎁`;
-                chest.onclick = () => {
-                    if (chest.disabled) return;
-                    bonusSynth.triggerAttackRelease(["G4", "B4", "D5"], "0.5");
-                    
-                    const allChests = doorContainer.querySelectorAll('button');
-                    allChests.forEach((c, i) => {
-                        c.disabled = true;
-                        const item = pool[i];
-                        c.innerHTML = item.icon;
-                        if (item === treasure) {
-                            c.classList.add('scale-125', 'bg-white/90', 'rotate-12');
-                        } else {
-                            // Đã loại bỏ class 'grayscale' để giữ nguyên màu sắc, tăng độ trong suốt lên một chút
-                            c.classList.add('opacity-40', 'scale-90');
+            // Draw targets in search bar (mờ đi nhưng vẫn giữ nguyên màu sắc, không dùng grayscale)
+            for(let i=0; i<minigameTargetCount; i++) {
+                const span = document.createElement('span');
+                span.textContent = targetEmoji;
+                span.className = 'opacity-30 transition-all duration-300 transform scale-90'; // Mờ và nhỏ hơn chút
+                span.id = `target-icon-${i}`;
+                targetContainer.appendChild(span);
+            }
+
+            // Generate icons in area
+            const itemsToPlace = [];
+            // 3 target items
+            for(let i=0; i<minigameTargetCount; i++) itemsToPlace.push({ isTarget: true, emoji: targetEmoji });
+            
+            // ~45 random distractor items
+            for(let i=0; i<45; i++) {
+                let randomEmoji;
+                do { randomEmoji = miniGameEmojis[Math.floor(Math.random() * miniGameEmojis.length)]; } while(randomEmoji === targetEmoji);
+                itemsToPlace.push({ isTarget: false, emoji: randomEmoji });
+            }
+
+            // Shuffle array
+            itemsToPlace.sort(() => Math.random() - 0.5);
+
+            // Place in area
+            itemsToPlace.forEach(item => {
+                const el = document.createElement('div');
+                el.textContent = item.emoji;
+                el.className = 'absolute text-5xl md:text-6xl cursor-pointer hover:scale-125 transition-transform select-none emoji-outline z-10';
+                
+                // Random position (padding 5% - 85% to avoid clipping edges completely)
+                el.style.left = `${5 + Math.random() * 80}%`;
+                el.style.top = `${5 + Math.random() * 80}%`;
+                // Random rotation
+                el.style.transform = `rotate(${Math.random() * 360}deg)`;
+                
+                el.onclick = () => {
+                    if (item.isTarget && !el.classList.contains('found')) {
+                        // Correct item found
+                        el.classList.add('found', 'scale-150', 'opacity-0', 'pointer-events-none');
+                        el.classList.remove('hover:scale-125');
+                        el.style.transition = 'all 0.5s ease-out';
+                        el.style.zIndex = '50'; // bring to front when animating out
+                        
+                        correctSynth.triggerAttackRelease("E5", "0.1");
+                        
+                        // Update search bar icon (làm rõ lên, phóng to)
+                        const targetIcon = document.getElementById(`target-icon-${minigameFound}`);
+                        targetIcon.classList.remove('opacity-30', 'scale-90');
+                        targetIcon.classList.add('opacity-100', 'scale-125', 'drop-shadow-md');
+                        
+                        minigameFound++;
+                        
+                        if (minigameFound === minigameTargetCount) {
+                            setTimeout(winMiniGame, 600);
                         }
-                    });
-
-                    score++;
-                    updateUI();
-                    
-                    // Xử lý ngữ pháp a/an (a cat, an apple)
-                    const firstChar = treasure.name.charAt(0).toLowerCase();
-                    const isVowel = ['a', 'e', 'i', 'o', 'u'].includes(firstChar);
-                    const article = isVowel ? 'an' : 'a';
-
-                    const resultText = document.getElementById('bonus-result');
-                    resultText.textContent = `You found ${article} ${treasure.name}!`;
-                    resultText.classList.remove('hidden');
-
-                    setTimeout(() => {
-                        bonusModal.classList.add('hidden');
-                        currentQuestionIndex++;
-                        loadQuestion();
-                    }, 2800);
+                    } else if (!item.isTarget) {
+                        // Wrong item clicked
+                        incorrectSynth.triggerAttackRelease(["C4"], "0.2");
+                        el.classList.add('shake');
+                        setTimeout(() => el.classList.remove('shake'), 500);
+                    }
                 };
-                doorContainer.appendChild(chest);
+                area.appendChild(el);
             });
+            
+            speak("Find the hidden items!");
+        }
+
+        function winMiniGame() {
+            bonusSynth.triggerAttackRelease(["G4", "B4", "D5"], "0.5");
+            score++;
+            updateUI();
+            
+            // Give a random treasure
+            const treasure = treasures[Math.floor(Math.random() * treasures.length)];
+            const firstChar = treasure.name.charAt(0).toLowerCase();
+            const article = ['a', 'e', 'i', 'o', 'u'].includes(firstChar) ? 'an' : 'a';
+
+            const resultContainer = document.getElementById('minigame-result');
+            const resultText = document.getElementById('minigame-result-text');
+            const resultIcon = document.getElementById('minigame-result-icon');
+            
+            resultText.textContent = `You found ${article} ${treasure.name}!`;
+            resultIcon.textContent = treasure.icon;
+            
+            resultContainer.classList.remove('hidden');
+            resultContainer.classList.add('flex');
+            createConfetti();
+
+            setTimeout(() => {
+                minigameModal.classList.add('hidden');
+                minigameModal.classList.remove('flex');
+                currentQuestionIndex++;
+                if (currentQuestionIndex >= totalQuestions) {
+                    showGameOver();
+                } else {
+                    loadQuestion();
+                }
+            }, 3500);
         }
 
         function updateUI() {
@@ -558,8 +663,8 @@
 
         document.getElementById('replay-speech-button').onclick = () => {
             initAudio();
-            if (!bonusModal.classList.contains('hidden')) {
-                speak("Bonus time! Pick a magic box!");
+            if (!minigameModal.classList.contains('hidden')) {
+                speak("Find the hidden items!");
             } else if (!gameOverModal.classList.contains('hidden')) {
                 speak("Super star! You found all the patterns!");
             } else {
