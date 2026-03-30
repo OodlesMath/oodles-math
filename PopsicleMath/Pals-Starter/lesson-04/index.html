@@ -1,38 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magical Shape Adventure</title>
+    <title>Make 10 Monkey Climb - V2</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
-    
-    <style>
-        :root {
-            --primary: #6366f1;
-            --secondary: #ec4899;
-            --accent: #f59e0b;
-        }
+    <!-- Font Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <!-- Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
+    <style>
         body {
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(180deg, #87ceeb 0%, #e0f2fe 100%);
             overflow: hidden;
+            /* Bright kid-friendly background */
+            background: linear-gradient(180deg, #60a5fa 0%, #bae6fd 60%, #86efac 60%, #4ade80 100%);
+            user-select: none;
             touch-action: manipulation;
         }
-
-        /* Hiệu ứng mây bay nền */
+        .font-game { font-family: 'Poppins', sans-serif; font-weight: 900; }
+        
+        /* Cloud Decorations */
         .cloud {
             position: absolute;
             background: white;
-            border-radius: 50px;
-            opacity: 0.8;
-            z-index: -1;
-            animation: move-clouds 30s linear infinite;
+            border-radius: 100px;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+            z-index: -10;
         }
         .cloud::before, .cloud::after {
             content: '';
@@ -40,484 +35,659 @@
             background: white;
             border-radius: 50%;
         }
-        .cloud:nth-child(1) { width: 100px; height: 40px; top: 10%; left: -150px; animation-duration: 40s; }
-        .cloud:nth-child(2) { width: 150px; height: 60px; top: 25%; left: -200px; animation-duration: 55s; animation-delay: 5s; }
-        .cloud:nth-child(3) { width: 120px; height: 50px; top: 60%; left: -180px; animation-duration: 45s; animation-delay: 15s; }
+        .cloud1 { width: 120px; height: 40px; top: 10%; left: 10%; animation: float 6s ease-in-out infinite; }
+        .cloud1::before { width: 60px; height: 60px; top: -30px; left: 15px; }
+        .cloud1::after { width: 40px; height: 40px; top: -15px; right: 20px; }
+        
+        .cloud2 { width: 160px; height: 50px; top: 25%; right: 15%; animation: float 8s ease-in-out infinite reverse; }
+        .cloud2::before { width: 80px; height: 80px; top: -40px; left: 20px; }
+        .cloud2::after { width: 60px; height: 60px; top: -20px; right: 25px; }
 
-        @keyframes move-clouds {
-            from { transform: translateX(0); }
-            to { transform: translateX(calc(100vw + 300px)); }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        /* Tree Styling - Moved to extreme edges */
+        .tree-container {
+            position: absolute;
+            bottom: 0;
+            width: 50px;
+            height: 100%; 
+            background: linear-gradient(to right, #78350f, #92400e, #78350f);
+            box-shadow: inset -4px 0 10px rgba(0,0,0,0.5), 8px 0 15px rgba(0,0,0,0.2);
+            z-index: 30;
+        }
+        @media (min-width: 768px) {
+            .tree-container { width: 80px; border-top-left-radius: 40px; border-top-right-radius: 40px; height: 90%; }
         }
         
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
-            20%, 40%, 60%, 80% { transform: translateX(10px); }
+        .climb-step {
+            position: absolute;
+            left: -10%;
+            width: 120%;
+            height: 8px;
+            background: linear-gradient(to bottom, #4ade80, #15803d);
+            border-radius: 10px;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.3);
         }
-        .shake { animation: shake 0.5s ease-in-out; }
+        
+        .monkey {
+            position: absolute;
+            width: 100%;
+            height: auto;
+            font-size: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: bottom 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 40;
+            filter: drop-shadow(0 6px 8px rgba(0,0,0,0.4));
+        }
+        @media (min-width: 768px) { .monkey { font-size: 4rem; } }
 
-        @keyframes bounce-pop {
-            0% { transform: scale(0.8); opacity: 0; }
-            70% { transform: scale(1.1); }
+        .goal-banana {
+            position: absolute;
+            top: 2%;
+            font-size: 2.5rem;
+            z-index: 50;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+            animation: bounce 1.5s infinite;
+        }
+        @media (min-width: 768px) { .goal-banana { font-size: 4rem; top: -5%; } }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.1); }
+        }
+
+        /* Toy-like Buttons */
+        .toy-btn {
+            transition: all 0.1s;
+            border: 4px solid rgba(255,255,255,0.4);
+            box-shadow: 0 8px 0 rgba(0,0,0,0.2), inset 0 -4px 0 rgba(0,0,0,0.1);
+        }
+        .toy-btn:active {
+            transform: translateY(8px);
+            box-shadow: 0 0px 0 rgba(0,0,0,0.2), inset 0 -2px 0 rgba(0,0,0,0.1);
+        }
+
+        .team-blue-btn { background: linear-gradient(180deg, #3b82f6, #2563eb); }
+        .team-red-btn { background: linear-gradient(180deg, #ef4444, #dc2626); }
+
+        .time-btn {
+            background: white;
+            color: #475569;
+            border: 4px solid #cbd5e1;
+            box-shadow: 0 6px 0 #94a3b8;
+            transition: all 0.2s;
+        }
+        .time-btn.active {
+            background: #10b981;
+            color: white;
+            border-color: #047857;
+            box-shadow: 0 6px 0 #064e3b;
+            transform: scale(1.1) translateY(-4px);
+        }
+
+        /* 3D Bubble/Token look for numbers */
+        .token {
+            background: white;
+            border: 4px solid #e2e8f0;
+            box-shadow: inset -4px -4px 10px rgba(0,0,0,0.1), inset 4px 4px 10px rgba(255,255,255,0.9), 0 6px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            color: #334155;
+        }
+
+        .bond-line {
+            stroke: #94a3b8; 
+            stroke-width: 8;
+            stroke-linecap: round;
+            fill: none;
+            transition: all 0.4s;
+            opacity: 0.4;
+        }
+        .bond-line-active {
+            stroke: #f59e0b;
+            opacity: 1;
+            stroke-width: 12;
+            stroke-dasharray: 10, 10;
+            animation: dash 1s linear infinite;
+        }
+        @keyframes dash { to { stroke-dashoffset: -20; } }
+
+        .pulse-target {
+            animation: pulse-glow 1.5s infinite;
+            border-color: #fbbf24 !important;
+            background-color: #fffbeb !important;
+        }
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 0 0px rgba(251, 191, 36, 0.5), inset -4px -4px 10px rgba(0,0,0,0.1); transform: scale(1); }
+            50% { box-shadow: 0 0 0 15px rgba(251, 191, 36, 0), inset -4px -4px 10px rgba(0,0,0,0.1); transform: scale(1.05); }
+            100% { box-shadow: 0 0 0 0px rgba(251, 191, 36, 0), inset -4px -4px 10px rgba(0,0,0,0.1); transform: scale(1); }
+        }
+
+        .completed-part {
+            background: #dcfce7 !important;
+            border-color: #22c55e !important;
+            color: #166534 !important;
+        }
+
+        .number-pop { animation: number-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes number-pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.2); }
             100% { transform: scale(1); opacity: 1; }
         }
-        .bounce-pop { animation: bounce-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 
-        /* Các khối hình có chiều sâu */
-        .shape-glossy {
-            position: relative;
-            overflow: hidden;
-        }
-        .shape-glossy::after {
-            content: '';
-            position: absolute;
-            top: 10%;
-            left: 10%;
-            width: 30%;
-            height: 30%;
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
+        .wrong-shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
         }
 
-        /* Nút bấm kiểu kẹo ngọt (3D) */
-        .btn-candy {
-            position: relative;
-            transition: all 0.2s;
-            border-bottom: 6px solid rgba(0,0,0,0.15);
-        }
-        .btn-candy:hover { transform: translateY(-2px); border-bottom-width: 8px; }
-        .btn-candy:active { transform: translateY(4px); border-bottom-width: 2px; }
-
-        .pedestal {
-            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
-            border-radius: 50%;
-        }
-
-        .treasure-item {
-            font-size: 4rem;
-            filter: drop-shadow(0 10px 10px rgba(0,0,0,0.1));
-            animation: treasure-float 3s ease-in-out infinite;
-        }
-        @keyframes treasure-float {
-            0%, 100% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-15px) scale(1.1); }
-        }
-
-        .particle {
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            pointer-events: none;
-            opacity: 0;
-            z-index: 100;
-        }
-
-        @keyframes firework-burst {
-            0% { transform: translate(0, 0) scale(1); opacity: 1; }
-            100% { transform: translate(var(--tw-x), var(--tw-y)) scale(0); opacity: 0; }
-        }
-
-        @keyframes fall {
-            0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(100vh) rotate(720deg); opacity: 1; }
-        }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
-    <!-- Hiệu ứng mây nền -->
-    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
-    <div class="cloud"></div>
-    <div class="cloud"></div>
-    <div class="cloud"></div>
+<body class="h-screen w-screen flex flex-col">
 
-    <div id="game-container" class="w-full max-w-4xl bg-white/90 backdrop-blur-md rounded-[3rem] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] p-6 md:p-10 text-center relative overflow-hidden border-8 border-white">
-        
-        <!-- Màn hình bắt đầu -->
-        <div id="start-screen" class="absolute inset-0 bg-white z-50 flex flex-col items-center justify-center p-6 text-center">
-            <div class="treasure-item mb-4">🌈</div>
-            <h1 class="text-6xl md:text-7xl font-black text-indigo-600 mb-2 drop-shadow-sm">Shape Fun!</h1>
-            <p class="text-2xl text-pink-400 mb-10 font-bold uppercase tracking-widest">A Magic Adventure</p>
-            <button id="start-button" class="btn-candy bg-indigo-500 text-white text-3xl font-black py-5 px-16 rounded-3xl shadow-lg hover:bg-indigo-600">
-                PLAY NOW!
-            </button>
-        </div>
+    <!-- Scenic Background -->
+    <div class="cloud cloud1"></div>
+    <div class="cloud cloud2"></div>
 
-        <!-- Thanh thông tin -->
-        <div class="flex justify-between items-center mb-6">
-            <div id="progress-text" class="bg-indigo-100 text-indigo-600 px-6 py-2 rounded-2xl font-black text-lg">LEVEL 1 / 15</div>
-            <div id="score" class="bg-pink-100 text-pink-500 px-6 py-2 rounded-2xl font-black text-lg">✨ TREASURES: 0</div>
-        </div>
-        
-        <!-- Thanh tiến trình với tên lửa -->
-        <div class="relative w-full h-8 mb-10 bg-slate-100 rounded-full p-1 shadow-inner">
-            <div id="progress-bar" class="h-full bg-gradient-to-r from-indigo-400 to-pink-400 rounded-full transition-all duration-700 flex justify-end items-center px-1" style="width: 0%;">
-                <div class="w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center text-xs">🚀</div>
-            </div>
-        </div>
-
-        <!-- Khu vực câu hỏi -->
-        <div id="question-area">
-            <div class="flex justify-center items-center gap-4 mb-8"> 
-                <h2 id="question-text" class="text-4xl md:text-5xl font-black text-slate-800">What's next?</h2>
-                <button id="replay-speech-button" class="btn-candy bg-yellow-400 text-yellow-900 p-4 rounded-3xl shadow-md hover:scale-110 active:scale-95 transition-all">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
-                    </svg>
-                </button>
+    <!-- Start Screen -->
+    <div id="start-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-sky-900/60 backdrop-blur-sm p-4">
+        <div class="text-center p-6 md:p-10 bg-white rounded-[2rem] md:rounded-[4rem] shadow-2xl border-[8px] md:border-[16px] border-sky-400 max-w-2xl w-full relative overflow-hidden">
+            <h1 class="text-5xl md:text-7xl font-game text-sky-500 mb-2 uppercase tracking-tighter drop-shadow-md">MONKEY CLIMB</h1>
+            <p class="text-xl md:text-3xl font-bold text-emerald-500 mb-8 tracking-wider">MAKE 10 MARATHON</p>
+            
+            <div class="mb-8">
+                <p class="text-base md:text-xl font-bold text-slate-500 mb-4 uppercase">Select Time</p>
+                <div class="flex justify-center gap-3 md:gap-6">
+                    <button onclick="setGameTime(120, this)" class="time-btn px-4 py-2 md:px-6 md:py-3 rounded-2xl font-game text-lg md:text-2xl active">2 MIN</button>
+                    <button onclick="setGameTime(300, this)" class="time-btn px-4 py-2 md:px-6 md:py-3 rounded-2xl font-game text-lg md:text-2xl">5 MIN</button>
+                    <button onclick="setGameTime(600, this)" class="time-btn px-4 py-2 md:px-6 md:py-3 rounded-2xl font-game text-lg md:text-2xl">10 MIN</button>
+                </div>
             </div>
             
-            <div id="pattern-display" class="flex flex-wrap justify-center items-center gap-4 min-h-[160px] bg-indigo-50/50 rounded-[3rem] p-10 mb-12 border-4 border-dashed border-indigo-200">
-                <!-- Nội dung được JS tạo -->
+            <div class="flex gap-8 md:gap-16 justify-center mb-8 md:mb-12">
+                <div class="flex flex-col items-center">
+                    <div class="w-16 h-16 md:w-24 md:h-24 bg-blue-400 rounded-full flex items-center justify-center text-3xl md:text-5xl mb-2 shadow-inner border-4 border-white">🐒</div>
+                    <span class="font-game text-base md:text-xl text-blue-500">TEAM 1</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div class="w-16 h-16 md:w-24 md:h-24 bg-red-400 rounded-full flex items-center justify-center text-3xl md:text-5xl mb-2 shadow-inner border-4 border-white">🐒</div>
+                    <span class="font-game text-base md:text-xl text-red-500">TEAM 2</span>
+                </div>
             </div>
-        </div>
-
-        <!-- Khu vực lựa chọn -->
-        <div id="options-display" class="flex flex-wrap justify-center gap-8">
-            <!-- Nội dung được JS tạo -->
-        </div>
-
-        <!-- Lớp phủ phản hồi -->
-        <div id="feedback-modal" class="absolute inset-0 bg-white/95 flex items-center justify-center z-20 hidden">
-            <div id="feedback-content" class="text-7xl md:text-9xl font-black drop-shadow-lg scale-0 transition-transform duration-500">
-                GREAT!
-            </div>
-        </div>
-
-        <!-- Vòng thưởng (Kho báu) -->
-        <div id="bonus-modal" class="absolute inset-0 bg-gradient-to-br from-indigo-500/95 to-purple-600/95 flex flex-col items-center justify-center z-30 hidden p-6">
-            <h2 class="text-5xl md:text-7xl font-black text-white mb-4 animate-bounce drop-shadow-md">MAGIC CHEST!</h2>
-            <p class="text-2xl text-white/90 font-bold mb-12">Pick a box to find a surprise!</p>
-            <div id="door-container" class="flex flex-wrap justify-center gap-8 md:gap-16">
-                <!-- Các rương báu -->
-            </div>
-            <p id="bonus-result" class="text-4xl text-yellow-300 font-black mt-12 hidden"></p>
-        </div>
-
-        <!-- Màn hình kết thúc game -->
-        <div id="game-over-modal" class="absolute inset-0 bg-indigo-600 flex flex-col items-center justify-center z-40 hidden p-6 text-white">
-            <div class="treasure-item mb-8">🏆</div>
-            <h2 class="text-6xl md:text-9xl font-black mb-4 drop-shadow-lg">SUPER STAR!</h2>
-            <p class="text-3xl font-bold mb-4">All patterns are solved!</p>
-            <p id="final-score" class="text-5xl text-yellow-300 font-black mb-14">Treasures: 0</p>
-            <button id="play-again-button" class="btn-candy bg-white text-indigo-600 text-3xl font-black py-6 px-16 rounded-full shadow-2xl hover:scale-105 active:scale-95">
-                PLAY AGAIN!
+            
+            <button onclick="startGame()" class="bg-yellow-400 hover:bg-yellow-300 text-yellow-900 px-12 py-4 md:px-20 md:py-6 rounded-full text-4xl md:text-6xl font-game shadow-[0_10px_0_#b45309] active:shadow-[0_0px_0_#b45309] active:translate-y-[10px] transition-all border-4 border-white">
+                START!
             </button>
         </div>
+    </div>
 
-        <div id="fx-container" class="absolute inset-0 pointer-events-none z-50"></div>
+    <!-- Game Over Screen -->
+    <div id="game-over" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 hidden p-4">
+        <div class="bg-white rounded-[3rem] md:rounded-[4rem] p-8 md:p-16 text-center max-w-3xl w-full border-[12px] md:border-[16px] border-yellow-400 shadow-[0_0_50px_rgba(250,204,21,0.5)]">
+            <div id="winner-emoji" class="text-7xl md:text-[10rem] mb-2 animate-bounce">🏆</div>
+            <h2 class="text-5xl md:text-7xl font-game mb-8 text-emerald-500" id="winner-text">TIME'S UP!</h2>
+            
+            <div class="flex justify-around mb-10 md:mb-12 gap-4">
+                <div class="text-blue-500 flex-1">
+                    <p class="text-xl md:text-3xl font-bold mb-2 uppercase">Team 1</p>
+                    <div class="bg-blue-50 p-4 md:p-8 rounded-3xl border-4 md:border-8 border-blue-200">
+                        <p id="final-score-1" class="text-6xl md:text-8xl font-game">0</p>
+                        <p class="text-sm md:text-lg font-bold text-blue-400 mt-2">POINTS</p>
+                    </div>
+                </div>
+                <div class="text-red-500 flex-1">
+                    <p class="text-xl md:text-3xl font-bold mb-2 uppercase">Team 2</p>
+                    <div class="bg-red-50 p-4 md:p-8 rounded-3xl border-4 md:border-8 border-red-200">
+                        <p id="final-score-2" class="text-6xl md:text-8xl font-game">0</p>
+                        <p class="text-sm md:text-lg font-bold text-red-400 mt-2">POINTS</p>
+                    </div>
+                </div>
+            </div>
+            <button onclick="location.reload()" class="bg-emerald-500 text-white px-10 py-4 md:px-16 md:py-6 rounded-full text-3xl md:text-5xl font-game shadow-[0_8px_0_#064e3b] active:shadow-none active:translate-y-[8px] transition-all border-4 border-white">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <!-- Main Gameplay Area -->
+    <div class="flex-1 flex flex-col relative w-full h-full">
+        
+        <!-- Top Bar: Timer -->
+        <div class="w-full z-20 pt-2 px-4 flex justify-center sticky top-0">
+            <div class="bg-white px-8 py-2 md:py-3 rounded-full border-4 border-slate-200 shadow-lg flex items-center gap-4">
+                <span class="text-3xl md:text-4xl">⏱️</span>
+                <span class="text-3xl md:text-5xl font-game text-slate-700 w-24 text-center" id="timer-text">2:00</span>
+            </div>
+        </div>
+
+        <!-- Trees on fixed absolute edges -->
+        <div class="absolute left-0 bottom-0 w-12 md:w-20 h-full flex flex-col justify-end items-center pointer-events-none z-10">
+            <div class="goal-banana">🍌</div>
+            <div class="tree-container left-0" id="tree-1"></div>
+            <div id="monkey-1" class="monkey">🐒</div>
+        </div>
+        
+        <div class="absolute right-0 bottom-0 w-12 md:w-20 h-full flex flex-col justify-end items-center pointer-events-none z-10">
+            <div class="goal-banana">🍌</div>
+            <div class="tree-container right-0" id="tree-2"></div>
+            <div id="monkey-2" class="monkey">🐒</div>
+        </div>
+
+        <!-- Center Game Area (Responsive Flex) -->
+        <!-- flex-col on mobile (stack top/bottom), flex-row on lg (side by side) -->
+        <div class="flex-1 flex flex-col lg:flex-row w-full h-full px-14 md:px-24 pb-4 pt-4 gap-4 overflow-hidden z-20">
+            
+            <!-- Team 1 Area -->
+            <div class="flex-1 flex flex-col items-center justify-center bg-white/60 backdrop-blur-md rounded-[2rem] p-2 md:p-6 shadow-xl border-4 border-white relative w-full h-1/2 lg:h-full">
+                <div class="absolute top-4 left-4 md:left-6 bg-blue-100 px-4 py-1 md:py-2 rounded-xl border-2 border-blue-200 shadow-sm flex items-center gap-2">
+                    <span class="text-blue-500 font-bold text-sm md:text-xl">TEAM 1</span>
+                    <span class="bg-blue-500 text-white px-3 py-1 rounded-lg font-game text-lg md:text-2xl" id="score-1">0</span>
+                </div>
+                
+                <div class="flex flex-col items-center w-full max-w-[400px] mt-8 md:mt-12" id="p1-eq-container">
+                    <!-- Equation layout: Top Number + Bond below = Total -->
+                    <div class="flex items-center justify-center gap-2 md:gap-4 w-full">
+                        <span class="text-5xl md:text-7xl font-game text-slate-700" id="p1-num1">?</span>
+                        <span class="text-3xl md:text-5xl font-game text-slate-400">+</span>
+                        
+                        <!-- Number Bond -->
+                        <div class="flex flex-col items-center relative w-[100px] md:w-[140px]">
+                            <div class="w-16 h-16 md:w-20 md:h-20 rounded-full token relative z-30 mb-6 md:mb-10 text-3xl md:text-5xl font-game" id="p1-num2-box">
+                                <span id="p1-num2">?</span>
+                            </div>
+                            
+                            <svg class="absolute top-[40px] md:top-[50px] left-0 w-full h-[60px] md:h-[80px] pointer-events-none z-10" viewBox="0 0 140 80">
+                                <line x1="70" y1="0" x2="30" y2="60" class="bond-line" id="p1-path1" />
+                                <line x1="70" y1="0" x2="110" y2="60" class="bond-line" id="p1-path2" />
+                            </svg>
+
+                            <div class="flex gap-4 md:gap-6 relative z-20">
+                                <div class="w-12 h-12 md:w-16 md:h-16 rounded-full token text-xl md:text-3xl font-game" id="p1-bond1-circle">
+                                    <span id="p1-bond1">?</span>
+                                </div>
+                                <div class="w-12 h-12 md:w-16 md:h-16 rounded-full token text-xl md:text-3xl font-game" id="p1-bond2-circle">
+                                    <span id="p1-bond2">?</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <span class="text-3xl md:text-5xl font-game text-slate-400">=</span>
+                        
+                        <div class="w-16 h-16 md:w-24 md:h-24 rounded-2xl token text-4xl md:text-6xl font-game text-blue-500 border-blue-200" id="p1-total-box">
+                            <span id="p1-total">?</span>
+                        </div>
+                    </div>
+
+                    <!-- Choices -->
+                    <div class="grid grid-cols-4 lg:grid-cols-2 gap-2 md:gap-4 w-full mt-6 md:mt-10" id="p1-choices"></div>
+                </div>
+            </div>
+
+            <!-- Team 2 Area -->
+            <div class="flex-1 flex flex-col items-center justify-center bg-white/60 backdrop-blur-md rounded-[2rem] p-2 md:p-6 shadow-xl border-4 border-white relative w-full h-1/2 lg:h-full">
+                <div class="absolute top-4 right-4 md:right-6 bg-red-100 px-4 py-1 md:py-2 rounded-xl border-2 border-red-200 shadow-sm flex items-center gap-2">
+                    <span class="text-red-500 font-bold text-sm md:text-xl">TEAM 2</span>
+                    <span class="bg-red-500 text-white px-3 py-1 rounded-lg font-game text-lg md:text-2xl" id="score-2">0</span>
+                </div>
+                
+                <div class="flex flex-col items-center w-full max-w-[400px] mt-8 md:mt-12" id="p2-eq-container">
+                    <div class="flex items-center justify-center gap-2 md:gap-4 w-full">
+                        <span class="text-5xl md:text-7xl font-game text-slate-700" id="p2-num1">?</span>
+                        <span class="text-3xl md:text-5xl font-game text-slate-400">+</span>
+                        
+                        <div class="flex flex-col items-center relative w-[100px] md:w-[140px]">
+                            <div class="w-16 h-16 md:w-20 md:h-20 rounded-full token relative z-30 mb-6 md:mb-10 text-3xl md:text-5xl font-game" id="p2-num2-box">
+                                <span id="p2-num2">?</span>
+                            </div>
+                            
+                            <svg class="absolute top-[40px] md:top-[50px] left-0 w-full h-[60px] md:h-[80px] pointer-events-none z-10" viewBox="0 0 140 80">
+                                <line x1="70" y1="0" x2="30" y2="60" class="bond-line" id="p2-path1" />
+                                <line x1="70" y1="0" x2="110" y2="60" class="bond-line" id="p2-path2" />
+                            </svg>
+
+                            <div class="flex gap-4 md:gap-6 relative z-20">
+                                <div class="w-12 h-12 md:w-16 md:h-16 rounded-full token text-xl md:text-3xl font-game" id="p2-bond1-circle">
+                                    <span id="p2-bond1">?</span>
+                                </div>
+                                <div class="w-12 h-12 md:w-16 md:h-16 rounded-full token text-xl md:text-3xl font-game" id="p2-bond2-circle">
+                                    <span id="p2-bond2">?</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <span class="text-3xl md:text-5xl font-game text-slate-400">=</span>
+                        
+                        <div class="w-16 h-16 md:w-24 md:h-24 rounded-2xl token text-4xl md:text-6xl font-game text-red-500 border-red-200" id="p2-total-box">
+                            <span id="p2-total">?</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-4 lg:grid-cols-2 gap-2 md:gap-4 w-full mt-6 md:mt-10" id="p2-choices"></div>
+                </div>
+            </div>
+
+        </div>
     </div>
 
     <script>
-        // --- Cấu hình & Dữ liệu ---
-        const shapes = {
-            RED_CIRCLE: { shape: 'circle', color: 'bg-red-500', value: 'Red Circle' },
-            BLUE_SQUARE: { shape: 'square', color: 'bg-blue-500', value: 'Blue Square' },
-            GREEN_TRIANGLE: { shape: 'triangle', color: 'border-b-green-500', value: 'Green Triangle' },
-            YELLOW_STAR: { shape: 'star', color: 'text-yellow-400', value: 'Yellow Star' },
-            PURPLE_CIRCLE: { shape: 'circle', color: 'bg-purple-500', value: 'Purple Circle' },
-            ORANGE_SQUARE: { shape: 'square', color: 'bg-orange-500', value: 'Orange Square' },
-            PINK_TRIANGLE: { shape: 'triangle', color: 'border-b-pink-500', value: 'Pink Triangle' },
-            TEAL_STAR: { shape: 'star', color: 'text-teal-400', value: 'Teal Star' }
+        // --- AUDIO SYSTEM ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playTone(freq, type, duration, vol=0.1) {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        const sfx = {
+            click: () => playTone(600, 'sine', 0.1, 0.1),
+            correct: () => { 
+                playTone(523.25, 'sine', 0.1, 0.1); // C5
+                setTimeout(()=>playTone(659.25, 'sine', 0.1, 0.1), 100); // E5
+                setTimeout(()=>playTone(783.99, 'sine', 0.2, 0.1), 200); // G5
+            },
+            wrong: () => { 
+                playTone(200, 'sawtooth', 0.2, 0.1); 
+                setTimeout(()=>playTone(150, 'sawtooth', 0.3, 0.1), 150); 
+            },
+            win: () => {
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((f, i) => setTimeout(() => playTone(f, 'square', 0.15, 0.1), i * 150));
+                setTimeout(() => playTone(1046.50, 'square', 0.6, 0.1), 600);
+                setTimeout(() => playTone(1046.50, 'square', 0.6, 0.1), 800);
+            }
         };
 
-        const treasures = [
-            { icon: "🧸", name: "Teddy" },
-            { icon: "🌈", name: "Rainbow" },
-            { icon: "🦄", name: "Unicorn" },
-            { icon: "🍭", name: "Candy" },
-            { icon: "🚀", name: "Rocket" },
-            { icon: "🍦", name: "Ice Cream" },
-            { icon: "💎", name: "Diamond" },
-            { icon: "🐱", name: "Kitty" },
-            { icon: "🎨", name: "Art" },
-            { icon: "🔔", name: "Magic Bell" }
-        ];
 
-        const questions = [
-            { pattern: [shapes.RED_CIRCLE, shapes.BLUE_SQUARE, shapes.RED_CIRCLE, shapes.BLUE_SQUARE], options: [shapes.RED_CIRCLE, shapes.GREEN_TRIANGLE, shapes.BLUE_SQUARE], correct: shapes.RED_CIRCLE },
-            { pattern: [shapes.GREEN_TRIANGLE, shapes.GREEN_TRIANGLE, shapes.YELLOW_STAR, shapes.YELLOW_STAR], options: [shapes.YELLOW_STAR, shapes.GREEN_TRIANGLE, shapes.RED_CIRCLE], correct: shapes.GREEN_TRIANGLE },
-            { pattern: [shapes.RED_CIRCLE, shapes.BLUE_SQUARE, shapes.GREEN_TRIANGLE, shapes.RED_CIRCLE, shapes.BLUE_SQUARE], options: [shapes.RED_CIRCLE, shapes.BLUE_SQUARE, shapes.GREEN_TRIANGLE], correct: shapes.GREEN_TRIANGLE },
-            { pattern: [shapes.PURPLE_CIRCLE, shapes.PURPLE_CIRCLE, shapes.ORANGE_SQUARE, shapes.PURPLE_CIRCLE, shapes.PURPLE_CIRCLE], options: [shapes.PURPLE_CIRCLE, shapes.TEAL_STAR, shapes.ORANGE_SQUARE], correct: shapes.ORANGE_SQUARE },
-            { pattern: [shapes.YELLOW_STAR, shapes.PINK_TRIANGLE, shapes.PINK_TRIANGLE, shapes.YELLOW_STAR, shapes.PINK_TRIANGLE], options: [shapes.YELLOW_STAR, shapes.PINK_TRIANGLE, shapes.PURPLE_CIRCLE], correct: shapes.PINK_TRIANGLE },
-            { pattern: [shapes.BLUE_SQUARE, shapes.BLUE_SQUARE, shapes.RED_CIRCLE, shapes.RED_CIRCLE], options: [shapes.BLUE_SQUARE, shapes.RED_CIRCLE, shapes.GREEN_TRIANGLE], correct: shapes.BLUE_SQUARE },
-            { pattern: [shapes.TEAL_STAR, shapes.ORANGE_SQUARE, shapes.PINK_TRIANGLE, shapes.TEAL_STAR, shapes.ORANGE_SQUARE], options: [shapes.PINK_TRIANGLE, shapes.TEAL_STAR, shapes.ORANGE_SQUARE], correct: shapes.PINK_TRIANGLE },
-            { pattern: [shapes.RED_CIRCLE, shapes.RED_CIRCLE, shapes.BLUE_SQUARE, shapes.RED_CIRCLE, shapes.RED_CIRCLE], options: [shapes.RED_CIRCLE, shapes.BLUE_SQUARE, shapes.YELLOW_STAR], correct: shapes.BLUE_SQUARE },
-            { pattern: [shapes.GREEN_TRIANGLE, shapes.PURPLE_CIRCLE, shapes.PURPLE_CIRCLE, shapes.GREEN_TRIANGLE, shapes.PURPLE_CIRCLE], options: [shapes.PURPLE_CIRCLE, shapes.GREEN_TRIANGLE, shapes.RED_CIRCLE], correct: shapes.PURPLE_CIRCLE },
-            { pattern: [shapes.YELLOW_STAR, shapes.PURPLE_CIRCLE, shapes.YELLOW_STAR, shapes.PURPLE_CIRCLE], options: [shapes.PURPLE_CIRCLE, shapes.YELLOW_STAR, shapes.BLUE_SQUARE], correct: shapes.YELLOW_STAR },
-            { pattern: [shapes.TEAL_STAR, shapes.TEAL_STAR, shapes.RED_CIRCLE, shapes.TEAL_STAR, shapes.TEAL_STAR], options: [shapes.TEAL_STAR, shapes.RED_CIRCLE, shapes.ORANGE_SQUARE], correct: shapes.RED_CIRCLE },
-            { pattern: [shapes.RED_CIRCLE, shapes.BLUE_SQUARE, shapes.RED_CIRCLE, shapes.BLUE_SQUARE], options: [shapes.RED_CIRCLE, shapes.BLUE_SQUARE, shapes.GREEN_TRIANGLE], correct: shapes.RED_CIRCLE },
-            { pattern: [shapes.PINK_TRIANGLE, shapes.PINK_TRIANGLE, shapes.TEAL_STAR, shapes.PINK_TRIANGLE, shapes.PINK_TRIANGLE], options: [shapes.TEAL_STAR, shapes.PINK_TRIANGLE, shapes.RED_CIRCLE], correct: shapes.TEAL_STAR },
-            { pattern: [shapes.PURPLE_CIRCLE, shapes.GREEN_TRIANGLE, shapes.PURPLE_CIRCLE, shapes.GREEN_TRIANGLE], options: [shapes.PURPLE_CIRCLE, shapes.GREEN_TRIANGLE, shapes.YELLOW_STAR], correct: shapes.PURPLE_CIRCLE },
-            { pattern: [shapes.ORANGE_SQUARE, shapes.ORANGE_SQUARE, shapes.RED_CIRCLE, shapes.ORANGE_SQUARE], options: [shapes.ORANGE_SQUARE, shapes.RED_CIRCLE, shapes.BLUE_SQUARE], correct: shapes.ORANGE_SQUARE }
-        ];
+        // --- GAME LOGIC ---
+        let p1Score = 0, p2Score = 0;
+        let p1State = 'bond1', p2State = 'bond1';
+        let p1CurrentProblem = null, p2CurrentProblem = null;
+        let selectedTotalTime = 120; // 2 minutes default
+        let timeLeft = 120, timerInterval;
+        let gameActive = false;
 
-        let score = 0;
-        let currentQuestionIndex = 0;
-        let isChecking = false;
-        let gameOverLoop = null;
-        const totalQuestions = questions.length;
-
-        // Âm thanh
-        let correctSynth, incorrectSynth, bonusSynth, clickSynth;
-        function initAudio() {
-            if (correctSynth) return;
-            correctSynth = new Tone.PolySynth(Tone.Synth).toDestination();
-            incorrectSynth = new Tone.PolySynth(Tone.Synth).toDestination();
-            bonusSynth = new Tone.PolySynth(Tone.Synth).toDestination();
-            clickSynth = new Tone.MembraneSynth().toDestination();
-            Tone.start();
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return `${m}:${s < 10 ? '0' : ''}${s}`;
         }
 
-        const speechSynth = window.speechSynthesis;
-        function speak(text) {
-            speechSynth.cancel();
-            const u = new SpeechSynthesisUtterance(text);
-            u.lang = 'en-US';
-            u.rate = 1.0;
-            u.pitch = 1.3;
-            speechSynth.speak(u);
+        function setGameTime(seconds, btn) {
+            sfx.click();
+            selectedTotalTime = seconds;
+            document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
         }
 
-        // --- DOM Elements ---
-        const startScreen = document.getElementById('start-screen');
-        const startBtn = document.getElementById('start-button');
-        const patternDisplay = document.getElementById('pattern-display');
-        const optionsDisplay = document.getElementById('options-display');
-        const feedbackModal = document.getElementById('feedback-modal');
-        const feedbackContent = document.getElementById('feedback-content');
-        const bonusModal = document.getElementById('bonus-modal');
-        const gameOverModal = document.getElementById('game-over-modal');
-        const scoreEl = document.getElementById('score');
-        const progressTextEl = document.getElementById('progress-text');
-        const progressBarEl = document.getElementById('progress-bar');
-        const doorContainer = document.getElementById('door-container');
-        const fxContainer = document.getElementById('fx-container');
-
-        // --- Hiệu ứng hình ảnh ---
-        function createConfetti() {
-            const colors = ['#818cf8', '#f472b6', '#34d399', '#fbbf24', '#a78bfa'];
-            for (let i = 0; i < 60; i++) {
-                const c = document.createElement('div');
-                c.className = 'particle';
-                c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                c.style.left = `${Math.random() * 100}%`;
-                c.style.top = `-20px`;
-                c.style.animation = `fall ${2 + Math.random() * 2}s ease-out forwards`;
-                c.style.opacity = '1';
-                fxContainer.appendChild(c);
-                setTimeout(() => c.remove(), 4000);
-            }
-        }
-
-        function launchFirework() {
-            const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#FFA500'];
-            const x = 10 + Math.random() * 80;
-            const y = 20 + Math.random() * 60;
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            
-            for (let i = 0; i < 40; i++) {
-                const p = document.createElement('div');
-                const angle = (Math.PI * 2 * i) / 40;
-                const distance = 80 + Math.random() * 200;
-                const tx = Math.cos(angle) * distance;
-                const ty = Math.sin(angle) * distance;
-
-                p.className = 'particle';
-                p.style.backgroundColor = color;
-                p.style.left = `${x}%`;
-                p.style.top = `${y}%`;
-                p.style.setProperty('--tw-x', `${tx}px`);
-                p.style.setProperty('--tw-y', `${ty}px`);
-                p.style.animation = `firework-burst 1.2s cubic-bezier(0.1, 0.5, 0.5, 1) forwards`;
-                fxContainer.appendChild(p);
-                setTimeout(() => p.remove(), 1200);
-            }
-        }
-
-        // --- Hàm hỗ trợ vẽ hình ---
-        function getShapeHtml(item, isLarge = true) {
-            const size = isLarge ? "w-20 h-20" : "w-16 h-16";
-            const triSize = isLarge ? "border-l-[40px] border-r-[40px] border-b-[70px]" : "border-l-[32px] border-r-[32px] border-b-[56px]";
-            
-            let shapeInner = '';
-            if (item.shape === 'circle') shapeInner = `<div class="${size} ${item.color} rounded-full shadow-[inset_-4px_-4px_8px_rgba(0,0,0,0.2)] shape-glossy"></div>`;
-            if (item.shape === 'square') shapeInner = `<div class="${size} ${item.color} rounded-3xl shadow-[inset_-4px_-4px_8px_rgba(0,0,0,0.2)] shape-glossy"></div>`;
-            if (item.shape === 'triangle') shapeInner = `<div class="w-0 h-0 ${triSize} ${item.color} drop-shadow-lg filter brightness-110"></div>`;
-            if (item.shape === 'star') shapeInner = `<svg class="w-24 h-24 ${item.color} fill-current drop-shadow-lg" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>`;
-            
-            return `<div class="shape-container p-2 pedestal flex items-center justify-center">${shapeInner}</div>`;
-        }
-
-        // --- Logic chính ---
-        function loadQuestion() {
-            if (currentQuestionIndex >= totalQuestions) {
-                showGameOver();
-                return;
-            }
-            isChecking = false;
-            const q = questions[currentQuestionIndex];
-            
-            patternDisplay.innerHTML = '';
-            q.pattern.forEach((item, idx) => {
-                const el = document.createElement('div');
-                el.className = 'bounce-pop';
-                el.style.animationDelay = `${idx * 0.1}s`;
-                el.innerHTML = getShapeHtml(item);
-                patternDisplay.appendChild(el);
+        function createSteps() {
+            [1, 2].forEach(p => {
+                const tree = document.getElementById(`tree-${p}`);
+                tree.innerHTML = '';
+                for(let i=0; i<100; i++) {
+                    const step = document.createElement('div');
+                    step.className = 'climb-step';
+                    // Spread steps appropriately
+                    step.style.bottom = `${i * 60 + 50}px`;
+                    tree.appendChild(step);
+                }
             });
-            
-            const questionMark = document.createElement('div');
-            questionMark.className = 'bounce-pop';
-            questionMark.style.animationDelay = `${q.pattern.length * 0.1}s`;
-            questionMark.innerHTML = `
-                <div class="shape-container pedestal">
-                    <div class="w-20 h-20 bg-white border-4 border-dashed border-indigo-200 rounded-[2rem] flex items-center justify-center text-5xl font-black text-indigo-100">?</div>
-                </div>
-            `;
-            patternDisplay.appendChild(questionMark);
+        }
+        createSteps();
 
-            optionsDisplay.innerHTML = '';
-            [...q.options].sort(() => Math.random() - 0.5).forEach(opt => {
+        function startGame() {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            sfx.click();
+            document.getElementById('start-screen').classList.add('hidden');
+            gameActive = true;
+            timeLeft = selectedTotalTime;
+            document.getElementById('timer-text').innerText = formatTime(timeLeft);
+            nextProblem(1);
+            nextProblem(2);
+            startGlobalTimer();
+        }
+
+        function generateProblem() {
+            const n1 = Math.floor(Math.random() * 3) + 7; // 7, 8, 9
+            const toMake10 = 10 - n1;
+            const extra = Math.floor(Math.random() * 5) + 1; // 1 to 5
+            const n2 = toMake10 + extra;
+            const total = n1 + n2;
+            return { n1, n2, toMake10, extra, total };
+        }
+
+        function shuffle(arr) { return arr.sort(() => Math.random() - 0.5); }
+
+        function nextProblem(p) {
+            if (!gameActive) return;
+            const problem = generateProblem();
+            if (p === 1) { p1CurrentProblem = problem; p1State = 'bond1'; }
+            else { p2CurrentProblem = problem; p2State = 'bond1'; }
+            updatePlayerUI(p);
+        }
+
+        function updatePlayerUI(p) {
+            const state = p === 1 ? p1State : p2State;
+            const prob = p === 1 ? p1CurrentProblem : p2CurrentProblem;
+
+            document.getElementById(`p${p}-num1`).innerText = prob.n1;
+            document.getElementById(`p${p}-num2`).innerText = prob.n2;
+
+            const b1c = document.getElementById(`p${p}-bond1-circle`);
+            const b2c = document.getElementById(`p${p}-bond2-circle`);
+            const totalBox = document.getElementById(`p${p}-total-box`);
+            const num2Box = document.getElementById(`p${p}-num2-box`);
+            
+            const b1t = document.getElementById(`p${p}-bond1`);
+            const b2t = document.getElementById(`p${p}-bond2`);
+            const tt = document.getElementById(`p${p}-total`);
+
+            const path1 = document.getElementById(`p${p}-path1`);
+            const path2 = document.getElementById(`p${p}-path2`);
+
+            // Reset UI states
+            [b1c, b2c, totalBox, num2Box].forEach(el => el.classList.remove('pulse-target', 'completed-part'));
+            path1.classList.remove('bond-line-active');
+            path2.classList.remove('bond-line-active');
+
+            if (state === 'bond1') {
+                b1t.innerText = '?'; b2t.innerText = '?'; tt.innerText = '?';
+                b1c.classList.add('pulse-target');
+                num2Box.classList.add('pulse-target');
+                path1.classList.add('bond-line-active');
+                renderChoices(p, prob.toMake10, 'bond1');
+            } else if (state === 'bond2') {
+                b1t.innerText = prob.toMake10;
+                b1c.classList.add('completed-part');
+                b2t.innerText = '?'; tt.innerText = '?';
+                b2c.classList.add('pulse-target');
+                num2Box.classList.add('pulse-target');
+                path2.classList.add('bond-line-active');
+                renderChoices(p, prob.extra, 'bond2');
+            } else {
+                b1t.innerText = prob.toMake10;
+                b2t.innerText = prob.extra;
+                b1c.classList.add('completed-part');
+                b2c.classList.add('completed-part');
+                tt.innerText = '?';
+                totalBox.classList.add('pulse-target');
+                renderChoices(p, prob.total, 'total');
+            }
+        }
+
+        function renderChoices(p, correctVal, type) {
+            const container = document.getElementById(`p${p}-choices`);
+            container.innerHTML = '';
+            container.style.pointerEvents = 'auto';
+            
+            const choices = new Set([correctVal]);
+            while(choices.size < 4) {
+                let val = correctVal + (Math.floor(Math.random() * 7) - 3);
+                if (val >= 0 && val <= 20) choices.add(val);
+            }
+
+            const btnClass = p === 1 ? 'team-blue-btn' : 'team-red-btn';
+
+            shuffle(Array.from(choices)).forEach(val => {
                 const btn = document.createElement('button');
-                btn.className = 'btn-candy bg-white rounded-[2.5rem] p-8 shadow-xl border-4 border-slate-50 hover:bg-slate-50 active:bg-indigo-50 transition-colors';
-                btn.innerHTML = getShapeHtml(opt, false);
-                btn.onclick = () => handleChoice(opt, btn);
-                optionsDisplay.appendChild(btn);
+                btn.className = `toy-btn h-12 md:h-16 rounded-2xl text-2xl md:text-3xl font-game text-white ${btnClass}`;
+                btn.innerText = val;
+                btn.onclick = () => handleInput(p, val, btn, type);
+                container.appendChild(btn);
             });
-
-            updateUI();
-            // ĐÃ XÓA TỰ ĐỘNG speak()
         }
 
-        function handleChoice(selected, btn) {
-            if (isChecking) return;
-            isChecking = true;
-            initAudio();
-            clickSynth.triggerAttackRelease('C4', '8n');
-
-            const correct = questions[currentQuestionIndex].correct;
-            const isMatch = JSON.stringify(selected) === JSON.stringify(correct);
-
-            if (isMatch) {
-                correctSynth.triggerAttackRelease(["C5", "E5", "G5"], "0.3");
-                createConfetti();
-                feedbackContent.textContent = "GREAT!";
-                feedbackContent.className = "text-8xl md:text-9xl font-black text-green-500 drop-shadow-lg transform scale-100 transition-transform duration-500";
-                feedbackModal.classList.remove('hidden');
-                setTimeout(() => {
-                    feedbackModal.classList.add('hidden');
-                    feedbackContent.classList.add('scale-0');
-                    showBonus();
-                }, 1200);
-            } else {
-                incorrectSynth.triggerAttackRelease(["C4", "B3"], "0.3");
-                document.getElementById('game-container').classList.add('shake');
-                btn.classList.add('bg-red-50', 'border-red-100');
-                
-                feedbackContent.textContent = "TRY AGAIN!";
-                feedbackContent.className = "text-8xl md:text-9xl font-black text-red-500 drop-shadow-lg transform scale-100 transition-transform duration-500";
-                feedbackModal.classList.remove('hidden');
-                // ĐÃ XÓA TỰ ĐỘNG speak()
-
-                setTimeout(() => {
-                    document.getElementById('game-container').classList.remove('shake');
-                    btn.classList.remove('bg-red-50', 'border-red-100');
-                    feedbackModal.classList.add('hidden');
-                    feedbackContent.classList.add('scale-0');
-                    isChecking = false;
-                }, 1000);
-            }
-        }
-
-        function showBonus() {
-            bonusModal.classList.remove('hidden');
-            document.getElementById('bonus-result').classList.add('hidden');
+        function handleInput(p, val, btn, type) {
+            if (!gameActive) return;
+            const prob = p === 1 ? p1CurrentProblem : p2CurrentProblem;
+            let correct = type === 'bond1' ? prob.toMake10 : (type === 'bond2' ? prob.extra : prob.total);
             
-            const pool = [...treasures].sort(() => Math.random() - 0.5).slice(0, 3);
-            doorContainer.innerHTML = '';
-            
-            pool.forEach((treasure, idx) => {
-                const chest = document.createElement('button');
-                chest.className = 'btn-candy w-40 h-40 bg-white/20 backdrop-blur-md rounded-[2.5rem] border-4 border-white shadow-2xl flex items-center justify-center text-7xl hover:bg-white/40 active:scale-110 transition-all';
-                chest.innerHTML = `🎁`;
-                chest.onclick = () => {
-                    if (chest.disabled) return;
-                    bonusSynth.triggerAttackRelease("G4", "0.2");
+            if (val === correct) {
+                sfx.click(); // Short pop for intermediate steps
+                if (type === 'bond1') {
+                    if (p === 1) p1State = 'bond2'; else p2State = 'bond2';
+                    triggerPop(document.getElementById(`p${p}-bond1`));
+                    updatePlayerUI(p);
+                } else if (type === 'bond2') {
+                    if (p === 1) p1State = 'total'; else p2State = 'total';
+                    triggerPop(document.getElementById(`p${p}-bond2`));
+                    updatePlayerUI(p);
+                } else {
+                    // Fully correct
+                    sfx.correct();
+                    if (p === 1) {
+                        p1Score++;
+                        document.getElementById('score-1').innerText = p1Score;
+                        updateMonkey(1, p1Score);
+                    } else {
+                        p2Score++;
+                        document.getElementById('score-2').innerText = p2Score;
+                        updateMonkey(2, p2Score);
+                    }
                     
-                    const allChests = doorContainer.querySelectorAll('button');
-                    allChests.forEach((c, i) => {
-                        c.disabled = true;
-                        const item = pool[i];
-                        c.innerHTML = item.icon;
-                        if (item === treasure) {
-                            c.classList.add('scale-125', 'bg-white', 'rotate-6');
-                        } else {
-                            c.classList.add('opacity-40', 'scale-90');
-                        }
-                    });
-
-                    score++;
-                    updateUI();
-                    document.getElementById('bonus-result').textContent = `You found a ${treasure.name}!`;
-                    document.getElementById('bonus-result').classList.remove('hidden');
-                    // ĐÃ XÓA TỰ ĐỘNG speak()
-
-                    setTimeout(() => {
-                        bonusModal.classList.add('hidden');
-                        currentQuestionIndex++;
-                        loadQuestion();
-                    }, 2500);
-                };
-                doorContainer.appendChild(chest);
-            });
-            // ĐÃ XÓA TỰ ĐỘNG speak()
-        }
-
-        function updateUI() {
-            scoreEl.textContent = `✨ TREASURES: ${score}`;
-            progressTextEl.textContent = `LEVEL ${Math.min(currentQuestionIndex + 1, totalQuestions)} / ${totalQuestions}`;
-            progressBarEl.style.width = `${(currentQuestionIndex / totalQuestions) * 100}%`;
-        }
-
-        function showGameOver() {
-            document.getElementById('final-score').textContent = `Treasures Found: ${score}`;
-            gameOverModal.classList.remove('hidden');
-            // ĐÃ XÓA TỰ ĐỘNG speak()
-            
-            if (gameOverLoop) clearInterval(gameOverLoop);
-            gameOverLoop = setInterval(() => {
-                launchFirework();
-                if (Math.random() > 0.4) createConfetti();
-            }, 500);
-        }
-
-        // --- Khởi tạo sự kiện ---
-        startBtn.onclick = () => {
-            initAudio();
-            startScreen.classList.add('hidden');
-            loadQuestion();
-        };
-
-        document.getElementById('play-again-button').onclick = () => {
-            if (gameOverLoop) clearInterval(gameOverLoop);
-            score = 0;
-            currentQuestionIndex = 0;
-            gameOverModal.classList.add('hidden');
-            loadQuestion();
-        };
-
-        // CHỈ PHÁT GIỌNG NÓI KHI BẤM NÚT LOA
-        document.getElementById('replay-speech-button').onclick = () => {
-            initAudio();
-            // Kiểm tra trạng thái hiện tại để đọc lời thoại phù hợp
-            if (!bonusModal.classList.contains('hidden')) {
-                speak("Bonus time! Pick a magic gift!");
-            } else if (!gameOverModal.classList.contains('hidden')) {
-                speak("Wonderful! You are a pattern superstar!");
+                    btn.classList.remove('team-blue-btn', 'team-red-btn');
+                    btn.style.background = '#22c55e';
+                    btn.style.boxShadow = '0 8px 0 #166534, inset 0 -4px 0 rgba(0,0,0,0.1)';
+                    document.getElementById(`p${p}-choices`).style.pointerEvents = 'none';
+                    
+                    const totalSpan = document.getElementById(`p${p}-total`);
+                    totalSpan.innerText = prob.total;
+                    triggerPop(totalSpan);
+                    document.getElementById(`p${p}-total-box`).classList.add('completed-part');
+                    
+                    setTimeout(() => nextProblem(p), 600);
+                }
             } else {
-                speak("What's next?");
+                sfx.wrong();
+                btn.classList.add('opacity-40', 'pointer-events-none');
+                const box = document.getElementById(`p${p}-eq-container`);
+                box.classList.remove('wrong-shake');
+                void box.offsetWidth; // trigger reflow
+                box.classList.add('wrong-shake');
             }
-        };
+        }
+
+        function triggerPop(el) {
+            el.classList.remove('number-pop');
+            void el.offsetWidth;
+            el.classList.add('number-pop');
+        }
+
+        function updateMonkey(p, count) {
+            const monkey = document.getElementById(`monkey-${p}`);
+            const tree = document.getElementById(`tree-${p}`);
+            
+            // Climb 50px per point
+            const totalHeight = count * 50;
+            monkey.style.bottom = totalHeight + 'px';
+            
+            // Auto-scroll tree if monkey goes too high
+            const viewportH = window.innerHeight;
+            if (totalHeight > viewportH - 150) {
+                 const offset = totalHeight - (viewportH - 150);
+                 tree.style.transform = `translateY(${offset}px)`;
+                 monkey.style.transform = `translateY(${offset}px)`;
+            }
+        }
+
+        function startGlobalTimer() {
+            clearInterval(timerInterval);
+            const text = document.getElementById('timer-text');
+            
+            timerInterval = setInterval(() => {
+                timeLeft -= 1;
+                text.innerText = formatTime(timeLeft);
+                
+                if (timeLeft <= 0) { 
+                    clearInterval(timerInterval); 
+                    endGame(); 
+                } else if (timeLeft <= 10) {
+                    text.style.color = '#ef4444'; // turn red last 10s
+                    sfx.click(); // tick tock
+                }
+            }, 1000);
+        }
+
+        function shootFireworks() {
+            var duration = 3 * 1000;
+            var animationEnd = Date.now() + duration;
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+
+            function randomInRange(min, max) {
+                return Math.random() * (max - min) + min;
+            }
+
+            var interval = setInterval(function() {
+                var timeLeft = animationEnd - Date.now();
+                if (timeLeft <= 0) { return clearInterval(interval); }
+                var particleCount = 50 * (timeLeft / duration);
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+            }, 250);
+        }
+
+        function endGame() {
+            gameActive = false;
+            document.getElementById('game-over').classList.remove('hidden');
+            document.getElementById('final-score-1').innerText = p1Score;
+            document.getElementById('final-score-2').innerText = p2Score;
+            
+            const winEl = document.getElementById('winner-text');
+            const emojiEl = document.getElementById('winner-emoji');
+            
+            if (p1Score > p2Score) {
+                winEl.innerText = "TEAM 1 WINS!";
+                winEl.className = "text-5xl md:text-7xl font-game mb-8 text-blue-500";
+                emojiEl.innerText = "🏆🐒";
+            } else if (p2Score > p1Score) {
+                winEl.innerText = "TEAM 2 WINS!";
+                winEl.className = "text-5xl md:text-7xl font-game mb-8 text-red-500";
+                emojiEl.innerText = "🐒🏆";
+            } else {
+                winEl.innerText = "IT'S A TIE!";
+                winEl.className = "text-5xl md:text-7xl font-game mb-8 text-yellow-500";
+                emojiEl.innerText = "🍌🤝🍌";
+            }
+
+            sfx.win();
+            shootFireworks();
+        }
     </script>
 </body>
 </html>
