@@ -1,832 +1,977 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Number Circle Race</title>
+    <title>Math Battle V7: Beautiful World & Smart AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #FF9F43;
-            --secondary-color: #54a0ff;
-            --accent-color: #ff6b6b;
-            --bg-gradient: linear-gradient(135deg, #feca57 0%, #ff9ff3 100%);
-            --glass-bg: rgba(255, 255, 255, 0.95);
-            --shadow: 0 10px 25px rgba(0,0,0,0.15);
-            --btn-shadow: 0 8px 0 rgba(0,0,0,0.15);
-        }
-
+        /* Thiết lập font chữ mặc định */
         body {
-            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
             margin: 0;
             padding: 0;
-            font-family: 'Poppins', sans-serif;
-            background: var(--bg-gradient);
-            min-height: 100vh;
-            width: 100%;
-            overflow-x: hidden;
-            -webkit-tap-highlight-color: transparent;
+            overflow: hidden;
+            background-color: #87CEEB;
+            touch-action: manipulation;
         }
 
-        * {
-            box-sizing: border-box;
-            user-select: none;
-        }
+        /* SVG Sprite ẩn để dùng chung icon */
+        .svg-defs { display: none; }
 
-        /* Fireworks Canvas */
-        #fireworksCanvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 9999;
-            display: none;
-        }
-
-        .app-container {
-            width: 100%;
-            min-height: 100vh;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .screen {
-            display: none;
-            width: 100%;
-            max-width: 1000px;
-            animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-
-        @keyframes bounceIn {
-            0% { transform: scale(0.8); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        .screen.active {
-            display: block;
-        }
-
-        /* Typography & Header */
-        .main-title {
-            font-size: 3rem;
-            font-weight: 800;
-            color: #ffffff;
-            text-shadow: 4px 4px 0px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-            text-align: center;
-            line-height: 1.2;
-        }
-
-        .section-title {
-            font-size: 1.5rem;
-            color: #5f27cd;
-            margin-bottom: 15px;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        /* Menu Container */
-        .menu-container {
-            background: var(--glass-bg);
-            border-radius: 40px;
-            padding: 40px;
-            box-shadow: var(--shadow);
-            border: 8px solid #ffffff;
-        }
-
-        .menu-section {
-            margin-bottom: 30px;
-            background: #f1f2f6;
-            padding: 20px;
-            border-radius: 25px;
-        }
-
-        /* Chunky Buttons */
-        .option-grid {
-            display: grid;
-            gap: 15px;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        }
-
-        .option-btn {
-            background: #ffffff;
-            color: #576574;
-            border: 3px solid #c8d6e5;
-            padding: 15px;
-            border-radius: 20px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            font-family: 'Poppins', sans-serif;
-            cursor: pointer;
-            transition: all 0.2s;
+        /* Hình nền Game (Bầu trời rực rỡ) */
+        .bg-landscape {
+            background: linear-gradient(to bottom, #3b82f6 0%, #60a5fa 30%, #99f6e4 70%, #fef08a 100%);
             position: relative;
-            top: 0;
+            overflow: hidden;
         }
 
-        .option-btn:hover {
-            transform: translateY(-2px);
-            border-color: var(--secondary-color);
-            color: var(--secondary-color);
+        /* Đồi núi & Thảm cỏ */
+        .grass-ground {
+            position: absolute; bottom: 0; width: 100%; height: 46vh;
+            background: linear-gradient(to bottom, #22c55e 0%, #166534 100%);
+            z-index: 1; box-shadow: inset 0 15px 15px -10px rgba(0,0,0,0.3);
+        }
+        .grass-blades {
+            position: absolute; bottom: 46vh; width: 100%; height: 20px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20" viewBox="0 0 40 20"><path d="M0 20 L5 5 L10 20 L15 10 L20 20 L25 0 L30 20 L35 8 L40 20 Z" fill="%2322c55e"/></svg>');
+            background-repeat: repeat-x; z-index: 2;
+        }
+        
+        /* Lớp Hoa Mới (Flowers Pattern) */
+        .grass-flowers {
+            position: absolute; bottom: 0; width: 100%; height: 46vh;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><g transform="translate(20, 30)"><circle cx="0" cy="0" r="4" fill="%23fde047"/><circle cx="-5" cy="-5" r="4" fill="%23ffffff"/><circle cx="5" cy="-5" r="4" fill="%23ffffff"/><circle cx="-5" cy="5" r="4" fill="%23ffffff"/><circle cx="5" cy="5" r="4" fill="%23ffffff"/></g><g transform="translate(80, 80)"><circle cx="0" cy="0" r="5" fill="%23fde047"/><circle cx="-6" cy="-6" r="5" fill="%23f472b6"/><circle cx="6" cy="-6" r="5" fill="%23f472b6"/><circle cx="-6" cy="6" r="5" fill="%23f472b6"/><circle cx="6" cy="6" r="5" fill="%23f472b6"/></g><g transform="translate(90, 20) scale(0.6)"><circle cx="0" cy="0" r="4" fill="%23fde047"/><circle cx="-5" cy="-5" r="4" fill="%23ffffff"/><circle cx="5" cy="-5" r="4" fill="%23ffffff"/><circle cx="-5" cy="5" r="4" fill="%23ffffff"/><circle cx="5" cy="5" r="4" fill="%23ffffff"/></g><g transform="translate(30, 90) scale(0.7)"><circle cx="0" cy="0" r="5" fill="%23fde047"/><circle cx="-6" cy="-6" r="5" fill="%2360a5fa"/><circle cx="6" cy="-6" r="5" fill="%2360a5fa"/><circle cx="-6" cy="6" r="5" fill="%2360a5fa"/><circle cx="6" cy="6" r="5" fill="%2360a5fa"/></g></svg>');
+            background-repeat: repeat; z-index: 2; opacity: 0.8; pointer-events: none;
         }
 
-        .option-btn.selected {
-            background: var(--secondary-color);
-            color: white;
-            border-color: #2e86de;
-            box-shadow: 0 4px 0 #2e86de;
-            top: -2px;
-            transform: scale(1.02);
+        .hills-front {
+            position: absolute; bottom: 46vh; width: 100%; height: 25vh;
+            background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1440 320" xmlns="http://www.w3.org/2000/svg"><path fill="%2316a34a" fill-opacity="1" d="M0,256L60,245.3C120,235,240,213,360,218.7C480,224,600,256,720,256C840,256,960,224,1080,208C1200,192,1320,192,1380,192L1440,192L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"></path></svg>');
+            background-size: cover; background-repeat: no-repeat; background-position: bottom; z-index: 1;
+        }
+        .hills-back {
+            position: absolute; bottom: 50vh; width: 100%; height: 35vh;
+            background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1440 320" xmlns="http://www.w3.org/2000/svg"><path fill="%2315803d" fill-opacity="1" d="M0,160L48,170.7C96,181,192,203,288,181.3C384,160,480,96,576,90.7C672,85,768,139,864,165.3C960,192,1056,192,1152,176C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>');
+            background-size: cover; background-repeat: no-repeat; background-position: bottom; z-index: 0;
         }
 
-        .option-btn:active {
-            top: 2px;
-            box-shadow: none;
+        /* Mặt trời và Mây */
+        .sun {
+            position: absolute; top: 8%; left: 50%; transform: translateX(-50%); width: 110px; height: 110px;
+            background: radial-gradient(circle, #FFF 0%, #fef08a 40%, #f59e0b 100%);
+            border-radius: 50%; box-shadow: 0 0 60px #f59e0b, 0 0 100px #fef08a;
+            animation: pulse 3s infinite alternate; z-index: 0;
         }
+        @keyframes pulse { 0% { box-shadow: 0 0 40px #f59e0b; transform: translateX(-50%) scale(1); } 100% { box-shadow: 0 0 80px #fcd34d; transform: translateX(-50%) scale(1.05); } }
 
-        .start-btn {
-            background: #1dd1a1;
-            color: white;
-            border: none;
-            padding: 20px;
-            border-radius: 50px;
-            font-size: 2rem;
-            font-weight: 800;
-            font-family: 'Poppins', sans-serif;
-            cursor: pointer;
-            width: 100%;
-            max-width: 400px;
-            margin: 20px auto 0;
-            display: block;
-            box-shadow: 0 8px 0 #10ac84;
-            transition: all 0.2s;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+        .cloud {
+            position: absolute; background: rgba(255,255,255,0.9); border-radius: 50px;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.05)); animation: floatCloud linear infinite; z-index: 1;
         }
+        .cloud::before, .cloud::after { content: ''; position: absolute; background: inherit; border-radius: 50%; }
+        .cloud1 { width: 150px; height: 50px; top: 12%; left: -200px; animation-duration: 45s; }
+        .cloud1::before { width: 65px; height: 65px; top: -30px; left: 20px; }
+        .cloud1::after { width: 85px; height: 85px; top: -45px; right: 20px; }
+        .cloud2 { width: 110px; height: 35px; top: 22%; left: -200px; animation-duration: 35s; animation-delay: 15s; opacity: 0.8;}
+        .cloud2::before { width: 45px; height: 45px; top: -20px; left: 15px; }
+        .cloud2::after { width: 60px; height: 60px; top: -30px; right: 15px; }
+        @keyframes floatCloud { 0% { transform: translateX(-200px); } 100% { transform: translateX(110vw); } }
 
-        .start-btn:hover:not(:disabled) {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 0 #10ac84;
+        /* Nút UI Màn Hình Chính */
+        .btn-flat {
+            transition: transform 0.1s, filter 0.1s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-
-        .start-btn:active:not(:disabled) {
-            transform: translateY(4px);
-            box-shadow: 0 0 0 #10ac84;
+        .btn-flat:active, .btn-flat.simulated-active {
+            transform: scale(0.95);
         }
+        .btn-disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); transform: none !important; box-shadow: none !important; }
 
-        .start-btn:disabled {
-            background: #bdc3c7;
-            box-shadow: 0 8px 0 #95a5a6;
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
+        /* Nút cho Game (Có viền 3D) */
+        .btn-bubbly { transition: all 0.1s; box-shadow: 0 6px 0 rgba(0,0,0,0.2); position: relative; top: 0; }
+        .btn-bubbly:active, .btn-bubbly.simulated-active { top: 6px; box-shadow: 0 0 0 rgba(0,0,0,0.2) !important; }
 
-        /* Game Board */
-        .game-container {
-            background: var(--glass-bg);
-            border-radius: 40px;
-            padding: 30px;
-            box-shadow: var(--shadow);
-            border: 8px solid white;
-            width: 100%;
-        }
-
-        .game-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            background: #fff;
-            padding: 15px 25px;
-            border-radius: 25px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .timer-display {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: #ff6b6b;
-            background: #fff0f0;
-            padding: 8px 20px;
-            border-radius: 50px;
-        }
-
-        .player-turn-indicator {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            background: #f1f2f6;
-            padding: 8px 20px;
-            border-radius: 50px;
-            font-weight: 700;
-            color: #576574;
-        }
-
-        .turn-countdown {
-            width: 40px;
-            height: 40px;
-            background: #ff6b6b;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            font-weight: 800;
-        }
-
-        /* Grid & Numbers */
-        .number-grid {
-            display: grid;
-            gap: 15px;
-            justify-content: center;
-            margin: 20px auto;
-            padding: 10px;
-        }
-
-        .grid-level1 { grid-template-columns: repeat(4, 1fr); max-width: 500px; }
-        .grid-level2 { grid-template-columns: repeat(5, 1fr); max-width: 700px; }
-        .grid-level3 { grid-template-columns: repeat(10, 1fr); max-width: 900px; }
-
-        @media (max-width: 600px) {
-            .grid-level3 { grid-template-columns: repeat(5, 1fr); }
-            .number-circle { font-size: 1.5rem !important; }
-        }
-
-        .number-circle {
-            aspect-ratio: 1;
-            border-radius: 50%;
-            background: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            font-weight: 800;
-            cursor: pointer;
-            color: #576574;
-            box-shadow: 0 6px 0 #dfe6e9;
-            border: 2px solid #dfe6e9;
-            transition: all 0.1s;
-            position: relative;
-            top: 0;
-        }
-
-        .number-circle:active {
-            top: 6px;
-            box-shadow: none;
-        }
-
-        .number-circle.correct {
-            background: #1dd1a1;
-            color: white;
-            border-color: #10ac84;
-            box-shadow: 0 0 0 transparent;
-            top: 6px;
-            animation: popSuccess 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .number-circle.wrong {
-            background: #ff6b6b;
-            color: white;
-            border-color: #ee5253;
-            animation: shake 0.4s;
-        }
-
-        /* Result Screen */
-        .result-container {
-            background: white;
-            border-radius: 40px;
-            padding: 50px;
-            text-align: center;
-            box-shadow: var(--shadow);
-            border: 8px solid #ff9ff3;
-        }
-
-        .result-stats {
-            background: #f8f9fa;
-            border-radius: 30px;
-            padding: 30px;
-            margin: 30px 0;
-        }
-
-        .big-stat {
-            font-size: 4rem;
-            font-weight: 800;
-            color: #5f27cd;
-            line-height: 1;
-        }
-
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: 30px;
-        }
-
-        .control-btn {
-            background: #fff;
-            color: #576574;
-            border: 2px solid #c8d6e5;
-            padding: 12px 30px;
-            border-radius: 50px;
-            font-weight: 700;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .control-btn:hover {
-            background: #f1f2f6;
-            transform: translateY(-2px);
-        }
-
-        @keyframes popSuccess {
-            0% { transform: scale(0.5); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
-
+        /* Nhân vật */
+        .idle-anim { animation: bounceIdle 2s infinite ease-in-out; }
+        @keyframes bounceIdle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        .hit-anim { animation: shake 0.4s; }
         @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            20% { transform: translateX(-8px); }
-            40% { transform: translateX(8px); }
-            60% { transform: translateX(-8px); }
-            80% { transform: translateX(8px); }
+            0% { transform: translateX(0) scale(1); filter: brightness(1); }
+            25% { transform: translateX(-15px) rotate(-5deg) scale(0.95); filter: brightness(0.7) sepia(1) hue-rotate(-50deg) drop-shadow(0 0 20px red); }
+            50% { transform: translateX(15px) rotate(5deg) scale(1.05); filter: brightness(1.3); }
+            75% { transform: translateX(-15px) rotate(-5deg) scale(0.95); filter: brightness(0.7) sepia(1) hue-rotate(-50deg) drop-shadow(0 0 20px red); }
+            100% { transform: translateX(0) scale(1); filter: brightness(1); }
         }
+        .character-svg { filter: drop-shadow(0 20px 15px rgba(0,0,0,0.5)); transform-origin: bottom center; }
+
+        /* Đạn đạo */
+        .projectile { position: absolute; z-index: 50; pointer-events: none; filter: drop-shadow(5px 5px 8px rgba(0,0,0,0.5)); }
+        .projectile span { display: flex; justify-content: center; align-items: center; transition: transform 0.2s; }
+        .throw-r { animation: flyR 0.7s cubic-bezier(.36,-0.32,.58,1.3) forwards; }
+        @keyframes flyR {
+            0% { left: 15vw; top: 35vh; transform: rotate(0deg); opacity: 1;}
+            50% { left: 50vw; top: 5vh; transform: rotate(360deg); opacity: 1;}
+            95% { left: 80vw; top: 35vh; transform: rotate(720deg); opacity: 1;}
+            100% { left: 80vw; top: 35vh; transform: rotate(720deg); opacity: 0;}
+        }
+        .throw-l { animation: flyL 0.7s cubic-bezier(.36,-0.32,.58,1.3) forwards; }
+        @keyframes flyL {
+            0% { left: 80vw; top: 35vh; transform: rotate(0deg); opacity: 1;}
+            50% { left: 50vw; top: 5vh; transform: rotate(-360deg); opacity: 1;}
+            95% { left: 15vw; top: 35vh; transform: rotate(-720deg); opacity: 1;}
+            100% { left: 15vw; top: 35vh; transform: rotate(-720deg); opacity: 0;}
+        }
+
+        /* Hiệu ứng vỡ nát (Splash) */
+        .splash-effect { position: absolute; z-index: 45; pointer-events: none; width: 140px; height: 140px; transform: translate(-50%, -50%); animation: splashAnim 0.6s ease-out forwards; }
+        @keyframes splashAnim {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); }
+            50% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); }
+            100% { transform: translate(-50%, -50%) scale(1.6) translateY(30px); opacity: 0; }
+        }
+
+        /* Thanh máu */
+        .health-bar-container { border: 3px solid white; border-radius: 999px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5), 0 4px 8px rgba(0,0,0,0.3); background-color: rgba(0,0,0,0.3); overflow: hidden; height: 25px; }
+        .health-bar { height: 100%; transition: width 0.3s ease-out, background-color 0.3s; }
+
+        /* Chữ nổi bật */
+        .text-stroke { -webkit-text-stroke: 2px white; }
+
+        canvas { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 100; }
+
+        /* Background Pattern cho Start Screen */
+        .bg-pattern {
+            background-color: #fef08a; /* Vàng nhạt */
+            background-image: radial-gradient(#fbbf24 2px, transparent 2px);
+            background-size: 30px 30px;
+        }
+
+        /* Overlay Freeze/Stun */
+        .overlay-frozen { background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); border-radius: inherit; }
+
+        /* Power Bar UI */
+        .power-bar-wrapper { width: 100%; height: 40px; background: #e5e7eb; border-radius: 999px; border: 4px solid #4b5563; overflow: hidden; position: relative; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2); }
+        .power-bar-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #3b82f6 0%, #22c55e 50%, #ef4444 100%); transition: width 0.05s linear;}
+        .power-indicator { position: absolute; top: -5px; bottom: -5px; width: 8px; background: white; border: 2px solid black; border-radius: 4px; left: 0%; transform: translateX(-50%); box-shadow: 0 0 5px rgba(0,0,0,0.5);}
+        
+        /* Damage Popup */
+        .dmg-popup { position: absolute; font-size: 3.5rem; font-weight: 900; color: #ef4444; -webkit-text-stroke: 2px white; animation: floatUp 1s forwards; pointer-events: none; z-index: 60; text-shadow: 3px 3px 0px rgba(0,0,0,0.5); }
+        .heal-popup { color: #22c55e; }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-120px) scale(1.5); } }
+
+        /* End Screen Mượt Mà */
+        .bg-celebrate { background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); }
     </style>
 </head>
-<body>
+<body class="w-screen h-screen flex items-center justify-center">
     <img src="../assets/logo-oodles-math.png" class="oodles-logo">
-    <canvas id="fireworksCanvas"></canvas>
-    
-    <div class="app-container">
+    <!-- Kho chứa các biểu tượng SVG siêu thực (Sprite) -->
+    <svg class="svg-defs">
+        <symbol id="icon-tomato" viewBox="0 0 100 100">
+            <circle cx="50" cy="55" r="40" fill="#ef4444" stroke="#b91c1c" stroke-width="2"/>
+            <circle cx="35" cy="40" r="10" fill="#f87171" opacity="0.8"/>
+            <path d="M50 15 Q60 35 70 20 Q60 40 50 35 Q40 40 30 20 Q40 35 50 15" fill="#22c55e" stroke="#16a34a" stroke-width="1.5"/>
+            <path d="M50 15 L50 5 Q52 0 55 5" fill="none" stroke="#16a34a" stroke-width="4" stroke-linecap="round"/>
+        </symbol>
+        <symbol id="icon-egg" viewBox="0 0 100 100">
+            <ellipse cx="50" cy="55" rx="35" ry="43" fill="#fff7ed" stroke="#fed7aa" stroke-width="3"/>
+            <ellipse cx="40" cy="40" rx="10" ry="15" fill="#ffffff" opacity="0.9" transform="rotate(-20 40 40)"/>
+        </symbol>
+        <symbol id="icon-boom" viewBox="0 0 100 100">
+            <path d="M50 5 L60 35 L95 25 L75 50 L95 75 L60 65 L50 95 L40 65 L5 75 L25 50 L5 25 L40 35 Z" fill="#fbbf24" stroke="#d97706" stroke-width="3"/>
+            <path d="M50 20 L55 40 L80 35 L65 50 L80 65 L55 60 L50 80 L45 60 L20 65 L35 50 L20 35 L45 40 Z" fill="#ef4444"/>
+        </symbol>
+        <symbol id="icon-heal" viewBox="0 0 100 100">
+            <rect x="25" y="20" width="50" height="60" rx="25" fill="#fca5a5" stroke="#ef4444" stroke-width="3"/>
+            <path d="M 25 50 L 75 50 A 25 25 0 0 1 25 50" fill="#ef4444"/>
+            <rect x="45" y="25" width="10" height="20" fill="#ffffff" rx="5" opacity="0.8"/>
+            <rect x="42" y="60" width="16" height="16" fill="#ffffff" rx="2"/>
+            <rect x="42" y="60" width="16" height="16" fill="#ffffff" rx="2" transform="rotate(45 50 68)"/>
+        </symbol>
+        <!-- Icon Cúp Vàng cho Màn hình kết thúc -->
+        <symbol id="icon-trophy" viewBox="0 0 100 100">
+            <path d="M20 25 L80 25 L70 60 Q50 80 30 60 Z" fill="#fbbf24" stroke="#d97706" stroke-width="4"/>
+            <path d="M10 25 Q10 40 25 45 L20 25 Z" fill="none" stroke="#fbbf24" stroke-width="6" stroke-linecap="round"/>
+            <path d="M90 25 Q90 40 75 45 L80 25 Z" fill="none" stroke="#fbbf24" stroke-width="6" stroke-linecap="round"/>
+            <rect x="45" y="65" width="10" height="20" fill="#d97706"/>
+            <rect x="30" y="85" width="40" height="10" fill="#78350f" rx="3"/>
+            <path d="M30 25 L70 25 L65 50 Q50 65 35 50 Z" fill="#fde047" opacity="0.5"/>
+            <circle cx="50" cy="40" r="8" fill="#ffffff" opacity="0.4"/>
+            <path d="M48 32 L52 32 L50 28 Z" fill="#ffffff" opacity="0.8"/>
+        </symbol>
+    </svg>
+
+    <!-- MÀN HÌNH BẮT ĐẦU (Giao diện mới: Nền vàng chấm bi, thẻ gọn gàng) -->
+    <div id="start-screen" class="absolute inset-0 bg-pattern flex flex-col items-center justify-center z-50 p-4">
         
-        <!-- Menu Screen -->
-        <div id="menuScreen" class="screen active">
-            <h1 class="main-title">
-                🌈 Number<br>Circle Race
-            </h1>
-            <div class="menu-container">
-                <div class="menu-section">
-                    <div class="section-title">🐣 Choose Level</div>
-                    <div class="option-grid">
-                        <button class="option-btn" data-option="level" data-value="1">Level 1 (1-20)</button>
-                        <button class="option-btn" data-option="level" data-value="2">Level 2 (1-50)</button>
-                        <button class="option-btn" data-option="level" data-value="3">Level 3 (1-100)</button>
-                    </div>
-                </div>
+        <h1 class="text-5xl md:text-7xl font-black mb-4 text-stroke text-pink-500 drop-shadow-[4px_4px_0_rgba(0,0,0,0.15)] tracking-wide">
+            MATH BATTLE
+        </h1>
+        
+        <div class="bg-white border-[3px] border-yellow-400 rounded-full px-6 py-2 mb-8 inline-flex items-center gap-2 font-bold text-gray-700 shadow-md text-sm md:text-base">
+            ✨ Beautiful World & AI Magic ✨
+        </div>
+        
+        <div class="bg-white p-8 rounded-[2.5rem] shadow-[0_20px_40px_rgba(0,0,0,0.1)] w-full max-w-xl border-4 border-yellow-400 relative">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 text-center">1. Choose Mode</h2>
+            <div class="flex gap-4 justify-center mb-8">
+                <button onclick="setMode('pvc')" id="btn-pvc" class="flex-1 py-4 px-2 rounded-2xl font-black text-lg md:text-xl text-white bg-blue-500 hover:bg-blue-400 btn-flat transform scale-[1.02] ring-4 ring-blue-200">
+                    1 Player<br><span class="text-sm font-semibold block mt-1 opacity-90">(vs Computer)</span>
+                </button>
+                <button onclick="setMode('pvp')" id="btn-pvp" class="flex-1 py-4 px-2 rounded-2xl font-black text-lg md:text-xl text-white bg-gray-400 hover:bg-gray-300 btn-flat">
+                    2 Players<br><span class="text-sm font-semibold block mt-1 opacity-90">(Girl vs Boy)</span>
+                </button>
+            </div>
 
-                <div class="menu-section">
-                    <div class="section-title">👫 Players</div>
-                    <div class="option-grid">
-                        <button class="option-btn" data-option="players" data-value="1">1 Player</button>
-                        <button class="option-btn" data-option="players" data-value="2">2 Players</button>
-                    </div>
-                </div>
+            <h2 class="text-xl font-bold text-gray-800 mb-4 text-center">2. Choose Math Range</h2>
+            <div class="grid grid-cols-3 gap-3 mb-8">
+                <button onclick="setRange(10)" class="range-btn py-3 rounded-xl font-bold text-white bg-pink-500 hover:bg-pink-400 btn-flat ring-4 ring-pink-200 transform scale-105">Up to 10</button>
+                <button onclick="setRange(20)" class="range-btn py-3 rounded-xl font-bold text-white bg-purple-500 hover:bg-purple-400 btn-flat">Up to 20</button>
+                <button onclick="setRange(30)" class="range-btn py-3 rounded-xl font-bold text-white bg-green-500 hover:bg-green-400 btn-flat">Up to 30</button>
+                <button onclick="setRange(40)" class="range-btn py-3 rounded-xl font-bold text-white bg-orange-500 hover:bg-orange-400 btn-flat">Up to 40</button>
+                <button onclick="setRange(50)" class="range-btn py-3 rounded-xl font-bold text-white bg-teal-500 hover:bg-teal-400 btn-flat">Up to 50</button>
+                <button onclick="setRange(100)" class="range-btn py-3 rounded-xl font-bold text-white bg-red-500 hover:bg-red-400 btn-flat">Up to 100</button>
+            </div>
 
-                <div class="menu-section">
-                    <div class="section-title">🚀 Direction</div>
-                    <div class="option-grid">
-                        <button class="option-btn" data-option="direction" data-value="forward">Count Up ⬆️</button>
-                        <button class="option-btn" data-option="direction" data-value="backward">Count Down ⬇️</button>
-                    </div>
-                </div>
+            <button onclick="startGame()" class="w-full py-5 rounded-2xl font-black text-3xl text-white bg-green-500 hover:bg-green-400 btn-flat shadow-lg mt-2 tracking-widest flex justify-center items-center gap-3">
+                PLAY NOW! 🚀
+            </button>
+        </div>
+    </div>
 
-                <button class="start-btn" id="startGameBtn" disabled>Play Now! ▶</button>
+    <!-- MÀN HÌNH CHƠI GAME -->
+    <div id="game-screen" class="absolute inset-0 bg-landscape hidden flex-col justify-between">
+        
+        <!-- Các lớp cảnh nền -->
+        <div class="hills-back"></div>
+        <div class="hills-front"></div>
+        <div class="grass-blades"></div>
+        <div class="grass-ground"></div>
+        <div class="grass-flowers"></div> <!-- Lớp Hoa Mới -->
+        <div class="sun"></div>
+        <div class="cloud cloud1"></div>
+        <div class="cloud cloud2"></div>
+        
+        <!-- Thanh máu Header (Không có chữ VS) -->
+        <div class="w-full px-6 py-4 flex justify-between items-start z-20 h-[10vh]">
+            <!-- Máu Nữ -->
+            <div class="w-[45%] md:w-[40%] bg-white/60 backdrop-blur-md p-3 rounded-2xl border-2 border-white/80 shadow-lg">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="font-black text-pink-700 text-xl md:text-2xl drop-shadow-md">GIRL</span>
+                    <span class="text-sm md:text-base bg-pink-200 px-3 py-0.5 rounded-full font-bold text-pink-800" id="hp-text-girl">100/100</span>
+                </div>
+                <div class="health-bar-container w-full">
+                    <div id="health-girl" class="health-bar bg-pink-500" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <!-- Máu Nam -->
+            <div class="w-[45%] md:w-[40%] bg-white/60 backdrop-blur-md p-3 rounded-2xl border-2 border-white/80 shadow-lg text-right">
+                <div class="flex items-center justify-end gap-2 mb-1">
+                    <span class="text-sm md:text-base bg-blue-200 px-3 py-0.5 rounded-full font-bold text-blue-800" id="hp-text-boy">100/100</span>
+                    <span class="font-black text-blue-700 text-xl md:text-2xl drop-shadow-md">BOY</span>
+                </div>
+                <div class="health-bar-container w-full">
+                    <div id="health-boy" class="health-bar bg-blue-500" style="width: 100%;"></div>
+                </div>
             </div>
         </div>
 
-        <!-- Game Screen -->
-        <div id="gameScreen" class="screen">
-            <div class="game-container">
-                <div class="game-header">
-                    <div class="timer-display" id="timer">⏱️ 00:00</div>
-                    <div class="player-turn-indicator" id="playerTurn" style="display:none;">
-                        <span id="playerTurnText" style="font-size: 1.2rem;">Player 1</span>
-                        <div class="turn-countdown" id="turnTimer">5</div>
-                    </div>
-                </div>
+        <!-- Khu vực Nhân vật chiến đấu (Nằm trên thảm cỏ đầy hoa) -->
+        <div class="flex-1 relative w-full flex items-end justify-between px-[10vw] pb-[2vh] z-10" id="battle-area">
+            
+            <!-- Character Girl (Ultra Realistic Cartoon Style) -->
+            <div id="char-girl" class="idle-anim w-[130px] md:w-[160px] relative">
+                <svg class="character-svg w-full h-auto" viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="skinG" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffe4e1"/><stop offset="100%" stop-color="#f4a460"/></linearGradient>
+                        <linearGradient id="hairG" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#3e2723"/><stop offset="100%" stop-color="#1a1007"/></linearGradient>
+                        <linearGradient id="skirtG" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#1e40af"/><stop offset="100%" stop-color="#172554"/></linearGradient>
+                        <linearGradient id="shirtG" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#e2e8f0"/></linearGradient>
+                    </defs>
+                    <path d="M 50 70 Q 10 160 40 200 Q 70 150 75 90 Z" fill="url(#hairG)"/>
+                    <path d="M 150 70 Q 190 160 160 200 Q 130 150 125 90 Z" fill="url(#hairG)"/>
+                    <rect x="75" y="190" width="14" height="80" fill="url(#skinG)" rx="7"/>
+                    <rect x="111" y="190" width="14" height="80" fill="url(#skinG)" rx="7"/>
+                    <rect x="75" y="230" width="14" height="40" fill="#fff"/><rect x="111" y="230" width="14" height="40" fill="#fff"/>
+                    <path d="M 65 270 Q 75 255 85 285 L 65 285 Z" fill="#831843" rx="3"/><path d="M 135 270 Q 125 255 115 285 L 135 285 Z" fill="#831843" rx="3"/>
+                    <path d="M 65 140 L 135 140 L 160 200 Q 100 210 40 200 Z" fill="url(#skirtG)"/>
+                    <line x1="80" y1="140" x2="70" y2="202" stroke="#1e3a8a" stroke-width="2"/><line x1="100" y1="140" x2="100" y2="205" stroke="#1e3a8a" stroke-width="2"/><line x1="120" y1="140" x2="130" y2="202" stroke="#1e3a8a" stroke-width="2"/>
+                    <path d="M 70 90 L 130 90 L 135 140 L 65 140 Z" fill="url(#shirtG)"/>
+                    <path d="M 70 90 L 100 125 L 130 90 L 140 100 L 100 140 L 60 100 Z" fill="#1e40af"/>
+                    <path d="M 95 125 L 105 125 L 100 160 Z" fill="#be123c"/>
+                    <path d="M 70 100 Q 30 130 40 160" stroke="url(#skinG)" stroke-width="14" stroke-linecap="round" fill="none"/>
+                    <path d="M 130 100 Q 170 130 160 160" stroke="url(#skinG)" stroke-width="14" stroke-linecap="round" fill="none"/>
+                    <circle cx="40" cy="160" r="9" fill="url(#skinG)"/><circle cx="160" cy="160" r="9" fill="url(#skinG)"/>
+                    <circle cx="100" cy="65" r="42" fill="url(#skinG)"/>
+                    <path d="M 70 65 Q 80 55 90 65" stroke="#000" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    <path d="M 110 65 Q 120 55 130 65" stroke="#000" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    <ellipse cx="80" cy="70" rx="7" ry="10" fill="#fff"/><ellipse cx="120" cy="70" rx="7" ry="10" fill="#fff"/>
+                    <ellipse cx="80" cy="70" rx="4" ry="7" fill="#831843"/><ellipse cx="120" cy="70" rx="4" ry="7" fill="#831843"/>
+                    <circle cx="82" cy="66" r="2" fill="#fff"/><circle cx="122" cy="66" r="2" fill="#fff"/>
+                    <circle cx="78" cy="72" r="1" fill="#fff"/><circle cx="118" cy="72" r="1" fill="#fff"/>
+                    <ellipse cx="68" cy="80" rx="6" ry="3" fill="#f43f5e" opacity="0.6"/><ellipse cx="132" cy="80" rx="6" ry="3" fill="#f43f5e" opacity="0.6"/>
+                    <path d="M 95 85 Q 100 92 105 85" stroke="#000" stroke-width="2" stroke-linecap="round" fill="none"/>
+                    <path d="M 60 25 Q 100 -10 140 25 L 145 55 Q 120 30 100 35 Q 80 30 55 55 Z" fill="url(#hairG)"/>
+                    <path d="M 50 65 Q 40 40 60 25 Z" fill="url(#hairG)"/><path d="M 150 65 Q 160 40 140 25 Z" fill="url(#hairG)"/>
+                    <path d="M 45 65 L 55 75 L 45 85 Z" fill="#be123c"/><path d="M 55 65 L 45 75 L 55 85 Z" fill="#be123c"/>
+                    <path d="M 155 65 L 145 75 L 155 85 Z" fill="#be123c"/><path d="M 145 65 L 155 75 L 145 85 Z" fill="#be123c"/>
+                </svg>
+            </div>
 
-                <div style="text-align: center; margin-bottom: 20px; font-weight: 600; color: #576574; font-size: 1.5rem;" id="instructionText">
-                    Find number 1
-                </div>
-
-                <div class="number-grid" id="numberGrid"></div>
-
-                <div class="controls">
-                    <button class="control-btn" id="backToMenuBtn">🏠 Home</button>
-                    <button class="control-btn" id="resetGameBtn">🔄 Restart</button>
-                </div>
+            <!-- Character Boy (Ultra Realistic Cartoon Style) -->
+            <div id="char-boy" class="idle-anim w-[130px] md:w-[160px] relative" style="animation-delay: 0.5s;">
+                <svg class="character-svg w-full h-auto" viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="skinB" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffedd5"/><stop offset="100%" stop-color="#fdba74"/></linearGradient>
+                        <linearGradient id="hairB" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#78350f"/><stop offset="100%" stop-color="#451a03"/></linearGradient>
+                        <linearGradient id="shirtB" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#1d4ed8"/></linearGradient>
+                        <linearGradient id="pantsB" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#4b5563"/><stop offset="100%" stop-color="#1f2937"/></linearGradient>
+                    </defs>
+                    <rect x="75" y="200" width="14" height="70" fill="url(#skinB)" rx="7"/><rect x="111" y="200" width="14" height="70" fill="url(#skinB)" rx="7"/>
+                    <rect x="75" y="250" width="14" height="20" fill="#fff"/><rect x="111" y="250" width="14" height="20" fill="#fff"/>
+                    <path d="M 65 270 L 85 270 L 90 285 L 60 285 Z" fill="#ef4444" rx="3"/><path d="M 60 280 L 90 280 L 90 285 L 60 285 Z" fill="#fff"/>
+                    <path d="M 135 270 L 115 270 L 110 285 L 140 285 Z" fill="#ef4444" rx="3"/><path d="M 140 280 L 110 280 L 110 285 L 140 285 Z" fill="#fff"/>
+                    <path d="M 65 150 L 135 150 L 140 215 L 100 190 L 60 215 Z" fill="url(#pantsB)"/>
+                    <rect x="65" y="90" width="70" height="65" rx="8" fill="url(#shirtB)"/>
+                    <path d="M 65 95 L 40 125 L 50 135 L 75 105 Z" fill="url(#shirtB)"/><path d="M 135 95 L 160 125 L 150 135 L 125 105 Z" fill="url(#shirtB)"/>
+                    <path d="M 105 105 L 90 125 L 105 125 L 95 145 L 115 120 L 100 120 Z" fill="#fde047"/>
+                    <path d="M 45 130 Q 30 145 35 165" stroke="url(#skinB)" stroke-width="14" stroke-linecap="round" fill="none"/>
+                    <path d="M 155 130 Q 170 145 165 165" stroke="url(#skinB)" stroke-width="14" stroke-linecap="round" fill="none"/>
+                    <circle cx="35" cy="165" r="9" fill="url(#skinB)"/><circle cx="165" cy="165" r="9" fill="url(#skinB)"/>
+                    <circle cx="100" cy="60" r="42" fill="url(#skinB)"/>
+                    <circle cx="58" cy="65" r="8" fill="url(#skinB)"/><circle cx="142" cy="65" r="8" fill="url(#skinB)"/>
+                    <path d="M 50 45 L 60 15 L 75 30 L 95 5 L 110 30 L 135 15 L 145 45 Q 100 20 50 45 Z" fill="url(#hairB)"/>
+                    <path d="M 55 50 Q 100 20 145 50 Z" fill="url(#hairB)"/>
+                    <path d="M 75 60 Q 80 55 85 60" stroke="#000" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    <path d="M 115 60 Q 120 55 125 60" stroke="#000" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    <circle cx="80" cy="65" r="4" fill="#000"/><circle cx="120" cy="65" r="4" fill="#000"/>
+                    <circle cx="81" cy="64" r="1.5" fill="#fff"/><circle cx="121" cy="64" r="1.5" fill="#fff"/>
+                    <path d="M 85 80 Q 100 90 115 78" stroke="#000" stroke-width="2" fill="none" stroke-linecap="round"/>
+                </svg>
             </div>
         </div>
 
-        <!-- Result Screen -->
-        <div id="resultScreen" class="screen">
-            <div class="result-container">
-                <div class="result-title" style="font-size: 3rem; color: #1dd1a1; font-weight: 800;">🎉 Amazing!</div>
-                <div class="result-stats" id="resultStats"></div>
-                <div class="controls">
-                    <button class="start-btn" id="playAgainBtn" style="font-size: 1.5rem; padding: 15px;">Play Again 🔄</button>
+        <!-- Khu vực Bảng điều khiển (Cố định chiều cao ở dưới cùng) -->
+        <div class="w-full flex flex-row gap-2 md:gap-4 px-2 md:px-4 pb-4 z-20 h-[40vh] items-stretch">
+            
+            <!-- Bảng Nữ -->
+            <div id="board-girl" class="w-1/2 bg-white/95 backdrop-blur-md rounded-3xl shadow-xl p-3 md:p-4 border-[6px] border-pink-400 relative flex flex-col">
+                <div class="flex justify-between gap-1 md:gap-2 mb-2 h-[50px]">
+                    <button id="btn-dmg-girl" onclick="usePowerup('girl', 'dmg')" class="flex-1 bg-yellow-400 text-yellow-900 font-bold text-xs md:text-sm rounded-xl btn-bubbly border-b-4 border-yellow-600 shadow-sm flex flex-col items-center justify-center">
+                        <svg class="w-5 h-5 md:w-6 md:h-6"><use href="#icon-boom"></use></svg><span class="hidden md:inline">x2 DMG</span>
+                    </button>
+                    <button id="btn-size-girl" onclick="usePowerup('girl', 'size')" class="flex-1 bg-green-400 text-green-900 font-bold text-xs md:text-sm rounded-xl btn-bubbly border-b-4 border-green-600 shadow-sm flex flex-col items-center justify-center">
+                        <svg class="w-5 h-5 md:w-6 md:h-6"><use href="#icon-tomato"></use></svg><span class="hidden md:inline">BIG</span>
+                    </button>
+                    <button id="btn-heal-girl" onclick="usePowerup('girl', 'heal')" class="flex-1 bg-pink-400 text-pink-900 font-bold text-xs md:text-sm rounded-xl btn-bubbly border-b-4 border-pink-600 shadow-sm flex flex-col items-center justify-center">
+                        <svg class="w-5 h-5 md:w-6 md:h-6"><use href="#icon-heal"></use></svg><span class="hidden md:inline">HEAL</span>
+                    </button>
                 </div>
-                <div style="margin-top: 20px;">
-                     <button class="control-btn" id="backToMenuBtn2">🏠 Home Menu</button>
+
+                <div id="overlay-girl" class="absolute inset-0 overlay-frozen z-20 flex flex-col items-center justify-center hidden rounded-[1.25rem]">
+                    <span class="text-4xl md:text-6xl mb-2" id="icon-freeze-girl">❄️</span>
+                    <span class="text-base md:text-xl font-bold text-white bg-red-600 px-4 py-1 rounded-full shadow-lg text-center" id="text-freeze-girl">Frozen! 3s</span>
+                </div>
+
+                <div id="math-ui-girl" class="flex-1 flex flex-col justify-center text-center">
+                    <div id="math-question-girl" class="text-4xl md:text-6xl font-black text-gray-800 my-2 tracking-widest text-stroke drop-shadow-md">? + ?</div>
+                    <div id="answers-container-girl" class="grid grid-cols-2 gap-2 mt-auto"></div>
+                </div>
+
+                <div id="power-ui-girl" class="flex-1 flex flex-col justify-center text-center hidden">
+                    <h3 class="text-pink-600 font-black text-lg md:text-xl mb-2 uppercase">Power Bar</h3>
+                    <div class="power-bar-wrapper mb-4">
+                        <div class="power-bar-fill"></div>
+                        <div id="power-indicator-girl" class="power-indicator"></div>
+                    </div>
+                    <button onclick="throwWeapon('girl')" class="w-full py-3 rounded-2xl font-black text-xl text-white bg-red-500 border-b-6 border-red-700 btn-bubbly animate-pulse text-stroke flex items-center justify-center gap-2" style="-webkit-text-stroke: 1px #7f1d1d;">
+                        THROW! <svg class="w-6 h-6"><use href="#icon-tomato"></use></svg>
+                    </button>
                 </div>
             </div>
+
+            <!-- Bảng Nam -->
+            <div id="board-boy" class="w-1/2 bg-white/95 backdrop-blur-md rounded-3xl shadow-xl p-3 md:p-4 border-[6px] border-blue-400 relative flex flex-col">
+                <div class="flex justify-between gap-1 md:gap-2 mb-2 h-[50px]">
+                    <button id="btn-dmg-boy" onclick="usePowerup('boy', 'dmg')" class="flex-1 bg-yellow-400 text-yellow-900 font-bold text-xs md:text-sm rounded-xl btn-bubbly border-b-4 border-yellow-600 shadow-sm flex flex-col items-center justify-center">
+                        <svg class="w-5 h-5 md:w-6 md:h-6"><use href="#icon-boom"></use></svg><span class="hidden md:inline">x2 DMG</span>
+                    </button>
+                    <button id="btn-size-boy" onclick="usePowerup('boy', 'size')" class="flex-1 bg-green-400 text-green-900 font-bold text-xs md:text-sm rounded-xl btn-bubbly border-b-4 border-green-600 shadow-sm flex flex-col items-center justify-center">
+                        <svg class="w-5 h-5 md:w-6 md:h-6"><use href="#icon-egg"></use></svg><span class="hidden md:inline">BIG</span>
+                    </button>
+                    <button id="btn-heal-boy" onclick="usePowerup('boy', 'heal')" class="flex-1 bg-blue-400 text-blue-900 font-bold text-xs md:text-sm rounded-xl btn-bubbly border-b-4 border-blue-600 shadow-sm flex flex-col items-center justify-center">
+                        <svg class="w-5 h-5 md:w-6 md:h-6"><use href="#icon-heal"></use></svg><span class="hidden md:inline">HEAL</span>
+                    </button>
+                </div>
+
+                <div id="overlay-boy" class="absolute inset-0 overlay-frozen z-20 flex flex-col items-center justify-center hidden rounded-[1.25rem]">
+                    <span class="text-4xl md:text-6xl mb-2" id="icon-freeze-boy">❄️</span>
+                    <span class="text-base md:text-xl font-bold text-white bg-red-600 px-4 py-1 rounded-full shadow-lg text-center" id="text-freeze-boy">Frozen! 3s</span>
+                </div>
+
+                <div id="math-ui-boy" class="flex-1 flex flex-col justify-center text-center">
+                    <div id="math-question-boy" class="text-4xl md:text-6xl font-black text-gray-800 my-2 tracking-widest text-stroke drop-shadow-md">? + ?</div>
+                    <div id="answers-container-boy" class="grid grid-cols-2 gap-2 mt-auto"></div>
+                </div>
+
+                <div id="power-ui-boy" class="flex-1 flex flex-col justify-center text-center hidden">
+                    <h3 class="text-blue-600 font-black text-lg md:text-xl mb-2 uppercase">Power Bar</h3>
+                    <div class="power-bar-wrapper mb-4">
+                        <div class="power-bar-fill"></div>
+                        <div id="power-indicator-boy" class="power-indicator"></div>
+                    </div>
+                    <button onclick="throwWeapon('boy')" id="btn-throw-boy" class="w-full py-3 rounded-2xl font-black text-xl text-white bg-red-500 border-b-6 border-red-700 btn-bubbly animate-pulse text-stroke flex items-center justify-center gap-2" style="-webkit-text-stroke: 1px #7f1d1d;">
+                        THROW! <svg class="w-6 h-6"><use href="#icon-egg"></use></svg>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MÀN HÌNH KẾT THÚC (Gọn gàng, màu sắc bắt mắt, chỉ có cúp vàng) -->
+    <div id="end-screen" class="absolute inset-0 bg-celebrate hidden flex-col items-center justify-center z-50 p-4">
+        <!-- Overlay trắng mờ giúp làm nổi bật thẻ -->
+        <div class="absolute inset-0 bg-white/20"></div>
+        <canvas id="fireworks" class="absolute inset-0 z-0"></canvas>
+        
+        <div class="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.15)] text-center z-10 border-4 border-yellow-400 transform transition-transform scale-0 flex flex-col items-center max-w-md w-full relative" id="end-modal">
+            
+            <!-- Chỉ để lại Cúp Vàng -->
+            <div class="flex justify-center items-center mb-4">
+                <svg class="w-32 h-32 drop-shadow-xl transform hover:scale-110 transition-transform duration-300"><use href="#icon-trophy"></use></svg>
+            </div>
+
+            <!-- Tên người chiến thắng -->
+            <h2 class="text-xl md:text-2xl font-black text-purple-500 uppercase tracking-widest mb-1 drop-shadow-sm" id="congrats-sub">AMAZING JOB!</h2>
+            <h1 id="winner-text" class="text-5xl md:text-6xl font-black mb-6 text-stroke drop-shadow-md">TEAM GIRL!</h1>
+            
+            <!-- Khối máu còn lại (Background màu sắc xinh xắn) -->
+            <div id="hp-block" class="bg-pink-50 rounded-3xl p-4 w-full mb-4 shadow-sm border-2 border-pink-200">
+                <p class="text-sm font-bold text-gray-600 mb-1 uppercase tracking-wide">Remaining Health</p>
+                <p id="score-text" class="text-3xl font-black text-pink-500">100 HP left</p>
+            </div>
+
+            <!-- Khối Gemini AI (Background màu phép thuật) -->
+            <div class="bg-indigo-50 rounded-3xl p-4 w-full mb-8 border-2 border-indigo-200 shadow-sm">
+                <p class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2 flex justify-center items-center gap-1">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> GEMINI AI CHEER
+                </p>
+                <p id="ai-message" class="text-base font-bold text-indigo-800 leading-snug">
+                    ✨ Magic AI is thinking... ✨
+                </p>
+            </div>
+
+            <!-- Nút Chơi Lại -->
+            <button onclick="resetGame()" class="w-full py-4 rounded-2xl font-black text-xl text-white bg-blue-500 hover:bg-blue-400 transition-colors btn-flat flex justify-center items-center gap-2 tracking-widest shadow-md">
+                PLAY AGAIN 
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            </button>
         </div>
     </div>
 
     <script>
-        // --- Game Configuration & State ---
-        let gameSettings = {
-            level: null,
-            players: null,
-            direction: null
-        };
-
-        let gameState = {
-            currentNumber: 1,
-            startTime: null,
-            timerInterval: null,
-            turnTimerInterval: null,
-            turnTimeLeft: 5,
-            player1Correct: 0,
-            player2Correct: 0,
-            currentPlayer: 1,
-            maxNumber: 20,
-            isGameOver: false
-        };
-
-        const levelMaxNumbers = { 1: 20, 2: 50, 3: 100 };
-        const playerColors = { 1: '#ff9f43', 2: '#54a0ff' };
+        // === CẤU HÌNH & TRẠNG THÁI GAME ===
+        let gameMode = 'pvc'; 
+        let mathRange = 10;
+        const BASE_DAMAGE = 10;
+        const apiKey = ""; // Gemini API Key
         
-        // --- Audio System ---
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let p1 = { id: 'girl', hp: 100, isStunned: false, dmgMult: 1, sizeMult: 1, ans: 0, power: 0, powerDir: 1, powerAnim: null, usedItems: {dmg:false, size:false, heal:false} };
+        let p2 = { id: 'boy', hp: 100, isStunned: false, dmgMult: 1, sizeMult: 1, ans: 0, power: 0, powerDir: 1, powerAnim: null, usedItems: {dmg:false, size:false, heal:false} };
         
+        let isGameOver = false;
+
+        // === ÂM THANH ===
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+        function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); }
+
         function playSound(type) {
-            if (audioContext.state === 'suspended') audioContext.resume();
-            
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            osc.connect(gain);
-            gain.connect(audioContext.destination);
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
 
-            const now = audioContext.currentTime;
-
-            if (type === 'correct') {
-                // Happy "Ding"
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(523.25, now);
-                osc.frequency.exponentialRampToValueAtTime(1046.5, now + 0.1);
-                gain.gain.setValueAtTime(0.3, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-                osc.start(now);
-                osc.stop(now + 0.3);
+            if (type === 'click') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'correct') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.setValueAtTime(600, audioCtx.currentTime + 0.1); osc.frequency.setValueAtTime(800, audioCtx.currentTime + 0.2); gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4); osc.start(); osc.stop(audioCtx.currentTime + 0.4);
             } else if (type === 'wrong') {
-                // Dull "Thud"
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(150, now);
-                osc.frequency.linearRampToValueAtTime(100, now + 0.1);
-                gain.gain.setValueAtTime(0.2, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-                osc.start(now);
-                osc.stop(now + 0.3);
-            } else if (type === 'complete') {
-                // Victory Fanfare
-                [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((freq, i) => {
-                    const o = audioContext.createOscillator();
-                    const g = audioContext.createGain();
-                    o.connect(g);
-                    g.connect(audioContext.destination);
-                    o.type = 'triangle';
-                    o.frequency.value = freq;
-                    g.gain.setValueAtTime(0.2, now + i*0.1);
-                    g.gain.exponentialRampToValueAtTime(0.01, now + i*0.1 + 0.5);
-                    o.start(now + i*0.1);
-                    o.stop(now + i*0.1 + 0.5);
-                });
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, audioCtx.currentTime); osc.frequency.linearRampToValueAtTime(150, audioCtx.currentTime + 0.3); gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'throw') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(200, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.5); gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime); gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5); osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            } else if (type === 'hit') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.2); gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2); osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+            } else if (type === 'powerup') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime); osc.frequency.linearRampToValueAtTime(1200, audioCtx.currentTime + 0.3); gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime); gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'win') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.setValueAtTime(500, audioCtx.currentTime + 0.1); osc.frequency.setValueAtTime(600, audioCtx.currentTime + 0.2); osc.frequency.setValueAtTime(800, audioCtx.currentTime + 0.4); gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1); osc.start(); osc.stop(audioCtx.currentTime + 1);
             }
         }
 
-        // --- Menu Logic ---
-        document.querySelectorAll('.option-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const option = this.dataset.option;
-                const value = this.dataset.value;
-                
-                // Select visual
-                document.querySelectorAll(`[data-option="${option}"]`).forEach(b => b.classList.remove('selected'));
-                this.classList.add('selected');
-                
-                // Update settings
-                gameSettings[option] = (option === 'level' || option === 'players') ? parseInt(value) : value;
-                
-                // Check if ready
-                const ready = gameSettings.level && gameSettings.players && gameSettings.direction;
-                document.getElementById('startGameBtn').disabled = !ready;
-            });
-        });
-
-        // --- Navigation ---
-        document.getElementById('startGameBtn').addEventListener('click', () => {
-            showScreen('gameScreen');
-            initGame();
-        });
-        document.getElementById('backToMenuBtn').addEventListener('click', goToMenu);
-        document.getElementById('backToMenuBtn2').addEventListener('click', goToMenu);
-        document.getElementById('resetGameBtn').addEventListener('click', () => {
-            resetGameState();
-            initGame();
-        });
-        document.getElementById('playAgainBtn').addEventListener('click', () => {
-            resetGameState();
-            initGame();
-            showScreen('gameScreen');
-        });
-
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+        // === GEMINI API CHEER ===
+        async function getAICheer(winnerName) {
+            const aiMessageEl = document.getElementById('ai-message');
+            aiMessageEl.innerText = "✨ Magic AI is thinking... ✨";
             
-            // Stop fireworks if leaving result screen
-            if(id !== 'resultScreen') stopFireworks();
-        }
-
-        function goToMenu() {
-            showScreen('menuScreen');
-            resetGameState();
-        }
-
-        // --- Game Logic ---
-        function initGame() {
-            const { level, players, direction } = gameSettings;
-            gameState.maxNumber = levelMaxNumbers[level];
-            gameState.currentNumber = direction === 'forward' ? 1 : gameState.maxNumber;
-            gameState.currentPlayer = 1;
-            gameState.isGameOver = false;
-
-            // Update Instructions
-            updateInstructionText();
-
-            // Setup Players UI
-            const playerTurnUI = document.getElementById('playerTurn');
-            if (players === 2) {
-                playerTurnUI.style.display = 'flex';
-                updatePlayerTurnUI();
-            } else {
-                playerTurnUI.style.display = 'none';
-            }
-
-            generateGrid();
-            if (players === 1) startTimer();
-        }
-
-        function updateInstructionText() {
-            document.getElementById('instructionText').innerHTML = 
-                `Find number <span style="font-size: 2.2rem; color: #ff6b6b; font-weight: 800;">${gameState.currentNumber}</span>`;
-        }
-
-        function generateGrid() {
-            const grid = document.getElementById('numberGrid');
-            grid.innerHTML = '';
-            grid.className = `number-grid grid-level${gameSettings.level}`;
-
-            const numbers = Array.from({length: gameState.maxNumber}, (_, i) => i + 1);
-            // Shuffle
-            for (let i = numbers.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
-            }
-
-            numbers.forEach(num => {
-                const circle = document.createElement('div');
-                circle.className = 'number-circle';
-                circle.textContent = num;
+            try {
+                const prompt = `Write a short, fun, enthusiastic congratulatory message (just 1 sentence) for a 5-year-old kid who just won a math game as Team ${winnerName}. Use simple English and emojis. Don't use quotes.`;
                 
-                // Interaction
-                const handleTap = (e) => {
-                    e.preventDefault();
-                    if(gameState.isGameOver) return;
-                    
-                    if (num === gameState.currentNumber) {
-                        // Correct
-                        playSound('correct');
-                        circle.classList.add('correct');
-                        
-                        // Style for 2 players
-                        if (gameSettings.players === 2) {
-                            circle.style.backgroundColor = playerColors[gameState.currentPlayer];
-                            circle.style.borderColor = playerColors[gameState.currentPlayer];
-                            if(gameState.currentPlayer === 1) gameState.player1Correct++;
-                            else gameState.player2Correct++;
-                            switchPlayer();
-                        }
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { temperature: 0.8, maxOutputTokens: 60 }
+                    })
+                });
+                
+                if(!res.ok) throw new Error("API call failed");
+                const data = await res.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                if(text) {
+                    aiMessageEl.innerText = text.replace(/\"/g, '');
+                } else {
+                    aiMessageEl.innerText = "✨ You are a math superstar! Keep it up! ✨";
+                }
+            } catch(e) {
+                console.error(e);
+                aiMessageEl.innerText = "✨ You are a math superstar! Keep it up! ✨";
+            }
+        }
 
-                        // Next number
-                        if (gameSettings.direction === 'forward') gameState.currentNumber++;
-                        else gameState.currentNumber--;
-                        
-                        updateInstructionText();
-                        checkWin();
-                    } else {
-                        // Wrong
-                        if (!circle.classList.contains('correct')) {
-                            playSound('wrong');
-                            circle.classList.add('wrong');
-                            setTimeout(() => circle.classList.remove('wrong'), 400);
-                        }
+        // === MENU CHÍNH ===
+        function setMode(mode) {
+            initAudio(); playSound('click'); gameMode = mode;
+            document.getElementById('btn-pvc').className = `flex-1 py-4 px-2 rounded-2xl font-black text-lg md:text-xl text-white bg-${mode === 'pvc' ? 'blue-500 hover:bg-blue-400 ring-4 ring-blue-200 transform scale-[1.02]' : 'gray-400 hover:bg-gray-300'} btn-flat`;
+            document.getElementById('btn-pvp').className = `flex-1 py-4 px-2 rounded-2xl font-black text-lg md:text-xl text-white bg-${mode === 'pvp' ? 'blue-500 hover:bg-blue-400 ring-4 ring-blue-200 transform scale-[1.02]' : 'gray-400 hover:bg-gray-300'} btn-flat`;
+        }
+
+        function setRange(range) {
+            initAudio(); playSound('click'); mathRange = range;
+            document.querySelectorAll('.range-btn').forEach(btn => {
+                btn.classList.remove('ring-4', 'transform', 'scale-105');
+                if (parseInt(btn.innerText.split(' ')[2]) === range) btn.classList.add('ring-4', 'transform', 'scale-105');
+            });
+        }
+
+        function startGame() {
+            initAudio(); playSound('correct');
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('game-screen').classList.add('flex');
+            
+            p1 = { id: 'girl', hp: 100, isStunned: false, dmgMult: 1, sizeMult: 1, ans: 0, power: 0, powerDir: 1, powerAnim: null, usedItems: {dmg:false, size:false, heal:false} };
+            p2 = { id: 'boy', hp: 100, isStunned: false, dmgMult: 1, sizeMult: 1, ans: 0, power: 0, powerDir: 1, powerAnim: null, usedItems: {dmg:false, size:false, heal:false} };
+            isGameOver = false;
+
+            resetPowerupUI('girl'); resetPowerupUI('boy');
+            updateHealthBars();
+            
+            document.getElementById('math-ui-girl').classList.remove('hidden');
+            document.getElementById('power-ui-girl').classList.add('hidden');
+            document.getElementById('math-ui-boy').classList.remove('hidden');
+            document.getElementById('power-ui-boy').classList.add('hidden');
+            
+            document.getElementById('overlay-girl').classList.add('hidden');
+            document.getElementById('overlay-boy').classList.add('hidden');
+
+            generateQuestion(p1); generateQuestion(p2);
+
+            if(gameMode === 'pvc') {
+                document.getElementById('btn-dmg-boy').classList.add('btn-disabled');
+                document.getElementById('btn-size-boy').classList.add('btn-disabled');
+                document.getElementById('btn-heal-boy').classList.add('btn-disabled');
+                document.getElementById('btn-throw-boy').classList.add('btn-disabled'); 
+                botLoop();
+            }
+        }
+
+        // === LOGIC GAME ===
+        function updateHealthBars() {
+            document.getElementById('health-girl').style.width = `${p1.hp}%`;
+            document.getElementById('health-boy').style.width = `${p2.hp}%`;
+            document.getElementById('hp-text-girl').innerText = `${p1.hp}/100`;
+            document.getElementById('hp-text-boy').innerText = `${p2.hp}/100`;
+            
+            document.getElementById('health-girl').style.backgroundColor = p1.hp > 50 ? '#ec4899' : (p1.hp > 25 ? '#f59e0b' : '#ef4444');
+            document.getElementById('health-boy').style.backgroundColor = p2.hp > 50 ? '#3b82f6' : (p2.hp > 25 ? '#f59e0b' : '#ef4444');
+        }
+
+        function generateQuestion(p) {
+            if(isGameOver) return;
+            const isAddition = Math.random() > 0.5;
+            let num1, num2;
+
+            if (isAddition) {
+                num1 = Math.floor(Math.random() * (mathRange - 1)) + 1; 
+                let maxNum2 = mathRange - num1;
+                if (maxNum2 < 1) maxNum2 = 1; 
+                num2 = Math.floor(Math.random() * maxNum2) + 1;
+                p.ans = num1 + num2;
+                document.getElementById(`math-question-${p.id}`).innerText = `${num1} + ${num2}`;
+            } else {
+                num1 = Math.floor(Math.random() * (mathRange - 1)) + 2; 
+                num2 = Math.floor(Math.random() * (num1 - 1)) + 1; 
+                p.ans = num1 - num2;
+                document.getElementById(`math-question-${p.id}`).innerText = `${num1} - ${num2}`;
+            }
+
+            let answers = new Set([p.ans]);
+            while(answers.size < 4) {
+                let offset = Math.floor(Math.random() * 5) + 1;
+                let wrongAns = p.ans + offset * (Math.random() > 0.5 ? 1 : -1);
+                if (wrongAns > 0 && wrongAns <= mathRange + 10) answers.add(wrongAns); 
+            }
+
+            let answersArray = Array.from(answers).sort(() => Math.random() - 0.5);
+            const container = document.getElementById(`answers-container-${p.id}`);
+            container.innerHTML = '';
+            
+            const btnColor = p.id === 'girl' ? 'bg-pink-500 border-pink-700' : 'bg-blue-500 border-blue-700';
+
+            answersArray.forEach((ans) => {
+                const btn = document.createElement('button');
+                btn.dataset.answer = ans;
+                btn.className = `py-2 md:py-3 text-2xl md:text-3xl font-black text-white rounded-2xl border-b-[6px] btn-bubbly ${btnColor} hover:brightness-110 shadow-md`;
+                btn.innerText = ans;
+                btn.onclick = () => checkAnswer(ans, btn, p);
+                container.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selectedAnswer, btnElement, p) {
+            if (p.isStunned || isGameOver) return;
+
+            const container = document.getElementById(`answers-container-${p.id}`);
+            container.querySelectorAll('button').forEach(b => b.disabled = true);
+
+            if (selectedAnswer === p.ans) {
+                playSound('correct');
+                btnElement.classList.add('ring-4', 'ring-white', 'simulated-active');
+                
+                setTimeout(() => {
+                    document.getElementById(`math-ui-${p.id}`).classList.add('hidden');
+                    document.getElementById(`power-ui-${p.id}`).classList.remove('hidden');
+                    startPowerBar(p);
+                }, 400);
+
+            } else {
+                playSound('wrong');
+                btnElement.classList.remove('border-b-[6px]');
+                btnElement.classList.add('bg-gray-500', 'border-gray-700', 'translate-y-[6px]');
+                stunPlayer(p, 3, "Wrong! ❄️", "❄️");
+            }
+        }
+
+        function stunPlayer(p, seconds, msgText, iconEmoji) {
+            p.isStunned = true;
+            const overlay = document.getElementById(`overlay-${p.id}`);
+            const textEl = document.getElementById(`text-freeze-${p.id}`);
+            document.getElementById(`icon-freeze-${p.id}`).innerText = iconEmoji;
+            
+            overlay.classList.remove('hidden');
+            
+            let time = seconds;
+            textEl.innerText = `${msgText} ${time}s`;
+            
+            const interval = setInterval(() => {
+                time--;
+                if(time > 0) {
+                    textEl.innerText = `${msgText} ${time}s`;
+                } else {
+                    clearInterval(interval);
+                    p.isStunned = false;
+                    overlay.classList.add('hidden');
+                    if(document.getElementById(`math-ui-${p.id}`).classList.contains('hidden') === false) {
+                        generateQuestion(p);
                     }
-                };
-
-                circle.addEventListener('mousedown', handleTap);
-                circle.addEventListener('touchstart', handleTap);
-                grid.appendChild(circle);
-            });
-        }
-
-        function checkWin() {
-            const done = gameSettings.direction === 'forward' 
-                ? gameState.currentNumber > gameState.maxNumber 
-                : gameState.currentNumber < 1;
-            
-            if (done) {
-                gameState.isGameOver = true;
-                playSound('complete');
-                stopTimer();
-                clearInterval(gameState.turnTimerInterval);
-                setTimeout(showResults, 800);
-            }
-        }
-
-        function switchPlayer() {
-            gameState.currentPlayer = gameState.currentPlayer === 1 ? 2 : 1;
-            updatePlayerTurnUI();
-        }
-
-        function updatePlayerTurnUI() {
-            const txt = document.getElementById('playerTurnText');
-            const timer = document.getElementById('turnTimer');
-            const box = document.getElementById('playerTurn');
-            
-            txt.textContent = gameState.currentPlayer === 1 ? "🔴 Player 1" : "🔵 Player 2";
-            txt.style.color = playerColors[gameState.currentPlayer];
-            timer.style.backgroundColor = playerColors[gameState.currentPlayer];
-            
-            // Reset Turn Timer
-            clearInterval(gameState.turnTimerInterval);
-            gameState.turnTimeLeft = 5;
-            timer.textContent = 5;
-            
-            gameState.turnTimerInterval = setInterval(() => {
-                gameState.turnTimeLeft--;
-                timer.textContent = gameState.turnTimeLeft;
-                if(gameState.turnTimeLeft <= 0) {
-                    switchPlayer();
                 }
             }, 1000);
         }
 
-        // --- Timer Logic ---
-        function startTimer() {
-            gameState.startTime = Date.now();
-            gameState.timerInterval = setInterval(() => {
-                const delta = Math.floor((Date.now() - gameState.startTime) / 1000);
-                const m = Math.floor(delta / 60).toString().padStart(2, '0');
-                const s = (delta % 60).toString().padStart(2, '0');
-                document.getElementById('timer').textContent = `⏱️ ${m}:${s}`;
-            }, 1000);
-        }
-
-        function stopTimer() {
-            clearInterval(gameState.timerInterval);
-        }
-
-        function resetGameState() {
-            stopTimer();
-            clearInterval(gameState.turnTimerInterval);
-            document.getElementById('timer').textContent = "⏱️ 00:00";
-            gameState.player1Correct = 0;
-            gameState.player2Correct = 0;
-        }
-
-        // --- Results & Fireworks ---
-        function showResults() {
-            showScreen('resultScreen');
-            startFireworks();
+        // === CĂN LỰC ===
+        function startPowerBar(p) {
+            p.power = 0; p.powerDir = 1;
+            const indicator = document.getElementById(`power-indicator-${p.id}`);
             
-            const content = document.getElementById('resultStats');
-            if (gameSettings.players === 1) {
-                const time = document.getElementById('timer').textContent;
-                content.innerHTML = `
-                    <div style="font-size: 1.5rem; color: #576574;">You finished in</div>
-                    <div class="big-stat">${time.replace('⏱️', '')}</div>
-                    <div style="color: #ff9f43; font-weight: 600;">Great Job! 🌟</div>
+            function animate() {
+                if(isGameOver || p.isStunned || document.getElementById(`power-ui-${p.id}`).classList.contains('hidden')) {
+                    cancelAnimationFrame(p.powerAnim); return;
+                }
+                p.power += (2.5 * p.powerDir);
+                if (p.power >= 100) { p.power = 100; p.powerDir = -1; }
+                if (p.power <= 0) { p.power = 0; p.powerDir = 1; }
+                
+                indicator.style.left = `${p.power}%`;
+                p.powerAnim = requestAnimationFrame(animate);
+            }
+            p.powerAnim = requestAnimationFrame(animate);
+        }
+
+        function throwWeapon(playerId) {
+            const p = playerId === 'girl' ? p1 : p2;
+            const target = playerId === 'girl' ? p2 : p1;
+            
+            if(p.isStunned || isGameOver) return;
+            cancelAnimationFrame(p.powerAnim); 
+
+            playSound('throw');
+            
+            document.getElementById(`power-ui-${p.id}`).classList.add('hidden');
+            document.getElementById(`math-ui-${p.id}`).classList.remove('hidden');
+
+            let powerRatio = Math.max(0.1, p.power / 100);
+            let finalDmg = Math.ceil(BASE_DAMAGE * powerRatio) * p.dmgMult;
+            
+            const throwClass = p.id === 'girl' ? 'throw-r' : 'throw-l';
+            const battleArea = document.getElementById('battle-area');
+            
+            const proj = document.createElement('div');
+            proj.className = `projectile ${throwClass}`;
+            
+            const span = document.createElement('span');
+            span.innerHTML = p.id === 'girl' ? '<svg class="w-[4.5rem] h-[4.5rem] drop-shadow-lg"><use href="#icon-tomato"></use></svg>' : '<svg class="w-[4.5rem] h-[4.5rem] drop-shadow-lg"><use href="#icon-egg"></use></svg>';
+            if(p.sizeMult > 1) span.style.transform = `scale(${p.sizeMult})`;
+            
+            proj.appendChild(span);
+            battleArea.appendChild(proj);
+
+            // Xử lý khi đạn trúng
+            setTimeout(() => {
+                if(isGameOver) return;
+                proj.remove(); 
+                playSound('hit');
+                
+                createSplashEffect(target.id, p.id, p.sizeMult);
+
+                const targetChar = document.getElementById(`char-${target.id}`);
+                targetChar.classList.add('hit-anim');
+                setTimeout(() => targetChar.classList.remove('hit-anim'), 400);
+
+                target.hp -= finalDmg;
+                if(target.hp < 0) target.hp = 0;
+                updateHealthBars();
+                showPopup(target.id, `-${finalDmg}`, 'dmg-popup');
+
+                p.dmgMult = 1; p.sizeMult = 1;
+
+                if (target.hp === 0) endGame();
+                else generateQuestion(p); 
+
+            }, 700);
+        }
+
+        // === HIỆU ỨNG SPLASH (Cà chua / Trứng) ===
+        function createSplashEffect(targetId, attackerId, sizeMult) {
+            const battleArea = document.getElementById('battle-area');
+            const splash = document.createElement('div');
+            splash.className = 'splash-effect';
+            
+            splash.style.left = targetId === 'girl' ? '15vw' : '85vw';
+            splash.style.bottom = '10vh'; 
+            if(sizeMult > 1) splash.style.transform = `translate(-50%, -50%) scale(1.5)`;
+
+            if (attackerId === 'girl') {
+                splash.innerHTML = `
+                    <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                        <path d="M50 10 Q60 30 80 20 Q70 40 90 50 Q70 60 80 80 Q60 70 50 90 Q40 70 20 80 Q30 60 10 50 Q30 40 20 20 Q40 30 50 10" fill="#ef4444" opacity="0.9"/>
+                        <circle cx="30" cy="30" r="6" fill="#ef4444"/><circle cx="70" cy="70" r="8" fill="#ef4444"/>
+                        <circle cx="20" cy="60" r="5" fill="#ef4444"/><circle cx="80" cy="30" r="9" fill="#dc2626"/>
+                    </svg>
                 `;
             } else {
-                const p1 = gameState.player1Correct;
-                const p2 = gameState.player2Correct;
-                let winner = p1 > p2 ? "Player 1 Wins! 🔴" : (p2 > p1 ? "Player 2 Wins! 🔵" : "It's a Tie! 🤝");
-                
-                content.innerHTML = `
-                    <div style="font-size: 2rem; font-weight: 800; color: #5f27cd; margin-bottom: 20px;">${winner}</div>
-                    <div style="display:flex; justify-content:space-around; font-size: 1.5rem; font-weight: 700;">
-                        <div style="color: ${playerColors[1]}">P1: ${p1}</div>
-                        <div style="color: ${playerColors[2]}">P2: ${p2}</div>
-                    </div>
+                splash.innerHTML = `
+                    <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md">
+                        <path d="M50 15 Q70 10 85 30 Q90 50 80 75 Q60 90 40 85 Q15 75 15 50 Q10 25 35 20 Q40 10 50 15" fill="#f8fafc" opacity="0.95"/>
+                        <circle cx="55" cy="45" r="16" fill="#fbbf24"/>
+                        <circle cx="30" cy="80" r="6" fill="#f8fafc"/><circle cx="85" cy="20" r="5" fill="#f8fafc"/>
+                    </svg>
                 `;
             }
+
+            battleArea.appendChild(splash);
+            setTimeout(() => splash.remove(), 600);
         }
 
-        // --- Fireworks System ---
-        let fireworksActive = false;
-        let particles = [];
-        const canvas = document.getElementById('fireworksCanvas');
-        const ctx = canvas.getContext('2d');
-
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        function createParticle(x, y) {
-            const count = 30;
-            for (let i = 0; i < count; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const velocity = Math.random() * 6 + 2;
-                particles.push({
-                    x: x, 
-                    y: y,
-                    vx: Math.cos(angle) * velocity,
-                    vy: Math.sin(angle) * velocity,
-                    life: 1,
-                    color: `hsl(${Math.random() * 360}, 100%, 60%)`
-                });
-            }
+        function showPopup(targetId, text, className) {
+            const el = document.createElement('div');
+            el.className = className;
+            el.innerText = text;
+            el.style.left = targetId === 'girl' ? '15vw' : '80vw';
+            el.style.bottom = '30vh';
+            document.getElementById('battle-area').appendChild(el);
+            setTimeout(() => el.remove(), 1000);
         }
 
-        function animateFireworks() {
-            if (!fireworksActive) return;
+        // === VẬT PHẨM ===
+        function usePowerup(playerId, type) {
+            const p = playerId === 'girl' ? p1 : p2;
+            if (p.usedItems[type] || p.isStunned || isGameOver) return; 
             
-            // Semi-transparent clear for trails
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; 
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // actually clear to be safe with transparent bg
+            playSound('powerup');
+            p.usedItems[type] = true;
+            document.getElementById(`btn-${type}-${p.id}`).classList.add('btn-disabled');
 
-            for (let i = 0; i < particles.length; i++) {
-                const p = particles[i];
-                p.x += p.vx;
-                p.y += p.vy;
-                p.vy += 0.1; // gravity
-                p.life -= 0.02;
+            if (type === 'dmg') {
+                p.dmgMult = 2; showPopup(p.id, "x2 DMG!", 'heal-popup text-yellow-500');
+            } else if (type === 'size') {
+                p.sizeMult = 2; showPopup(p.id, "BIG WPN!", 'heal-popup text-green-500');
+            } else if (type === 'heal') {
+                p.hp += 50; if(p.hp > 100) p.hp = 100;
+                updateHealthBars(); showPopup(p.id, "+50 HP", 'heal-popup');
+                
+                document.getElementById(`power-ui-${p.id}`).classList.add('hidden');
+                document.getElementById(`math-ui-${p.id}`).classList.remove('hidden');
+                cancelAnimationFrame(p.powerAnim);
 
-                ctx.fillStyle = p.color;
-                ctx.globalAlpha = p.life;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-                ctx.fill();
-
-                if (p.life <= 0) {
-                    particles.splice(i, 1);
-                    i--;
-                }
+                stunPlayer(p, 10, "Healing... 💊", "💊");
             }
-            ctx.globalAlpha = 1;
+        }
 
-            // Random explosions
-            if (Math.random() < 0.05) {
-                createParticle(
-                    Math.random() * canvas.width, 
-                    Math.random() * canvas.height * 0.6
-                );
+        function resetPowerupUI(playerId) {
+            ['dmg', 'size', 'heal'].forEach(type => { document.getElementById(`btn-${type}-${playerId}`).classList.remove('btn-disabled'); });
+        }
+
+        // === BOT CHƠI ===
+        function botLoop() {
+            if(gameMode !== 'pvc' || isGameOver) return;
+            if(p2.isStunned) { setTimeout(botLoop, 1000); return; }
+
+            const thinkTime = Math.random() * 3000 + 2000;
+            
+            setTimeout(() => {
+                if(p2.isStunned || isGameOver || document.getElementById(`math-ui-boy`).classList.contains('hidden') === false) {
+                    const container = document.getElementById('answers-container-boy');
+                    const correctBtn = container.querySelector(`button[data-answer="${p2.ans}"]`);
+                    if(correctBtn) {
+                        correctBtn.classList.add('ring-4', 'ring-white', 'simulated-active'); playSound('correct');
+                        
+                        setTimeout(() => {
+                            if(isGameOver) return;
+                            document.getElementById('math-ui-boy').classList.add('hidden');
+                            document.getElementById('power-ui-boy').classList.remove('hidden');
+                            startPowerBar(p2);
+                            
+                            setTimeout(() => {
+                                p2.power = Math.floor(Math.random() * 40) + 60; throwWeapon('boy'); botLoop(); 
+                            }, Math.random() * 1000 + 500);
+                        }, 400);
+                    } else { botLoop(); }
+                } else { botLoop(); }
+            }, thinkTime);
+        }
+
+        // === KẾT THÚC & HIỆU ỨNG ===
+        function endGame() {
+            if(isGameOver) return;
+            isGameOver = true; playSound('win');
+            
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('flex');
+            
+            const endScreen = document.getElementById('end-screen');
+            endScreen.classList.remove('hidden'); endScreen.classList.add('flex');
+
+            const modal = document.getElementById('end-modal');
+            setTimeout(() => { modal.classList.remove('scale-0'); modal.classList.add('scale-100'); }, 100);
+
+            const winnerText = document.getElementById('winner-text');
+            const scoreText = document.getElementById('score-text');
+            const hpBlock = document.getElementById('hp-block');
+            
+            let winName = "GIRL";
+
+            if (p2.hp === 0 && p1.hp > 0) {
+                winName = "GIRL";
+                winnerText.innerText = "TEAM GIRL!";
+                winnerText.className = "text-5xl md:text-6xl font-black mb-6 text-pink-500 drop-shadow-md tracking-wider";
+                
+                hpBlock.className = "bg-pink-50 rounded-3xl p-4 w-full mb-4 shadow-sm border-2 border-pink-200";
+                scoreText.innerText = `${p1.hp} HP left`; 
+                scoreText.className = "text-3xl font-black text-pink-500";
+                
+            } else if (p1.hp === 0 && p2.hp > 0) {
+                winName = gameMode === 'pvc' ? "COMPUTER" : "BOY";
+                winnerText.innerText = winName === "COMPUTER" ? "COMPUTER!" : "TEAM BOY!";
+                winnerText.className = "text-5xl md:text-6xl font-black mb-6 text-blue-500 drop-shadow-md tracking-wider";
+                
+                hpBlock.className = "bg-blue-50 rounded-3xl p-4 w-full mb-4 shadow-sm border-2 border-blue-200";
+                scoreText.innerText = `${p2.hp} HP left`; 
+                scoreText.className = "text-3xl font-black text-blue-500";
+                
+            } else {
+                winName = "EVERYONE";
+                winnerText.innerText = "IT'S A DRAW!"; 
+                winnerText.className = "text-5xl md:text-6xl font-black mb-6 text-yellow-500 drop-shadow-md tracking-wider";
+                
+                hpBlock.className = "bg-yellow-50 rounded-3xl p-4 w-full mb-4 shadow-sm border-2 border-yellow-200";
+                scoreText.innerText = `0 HP`;
+                scoreText.className = "text-3xl font-black text-yellow-500";
             }
 
-            requestAnimationFrame(animateFireworks);
+            // Gọi Gemini API để sinh câu chúc mừng
+            getAICheer(winName);
+            startFireworks();
         }
 
-        function startFireworks() {
-            fireworksActive = true;
-            canvas.style.display = 'block';
-            particles = [];
-            // Initial blast
-            createParticle(canvas.width/2, canvas.height/2);
-            animateFireworks();
+        function resetGame() {
+            playSound('click');
+            document.getElementById('end-screen').classList.add('hidden'); document.getElementById('end-screen').classList.remove('flex');
+            document.getElementById('end-modal').classList.remove('scale-100'); document.getElementById('end-modal').classList.add('scale-0');
+            
+            stopFireworks();
+            document.getElementById('start-screen').classList.remove('hidden'); document.getElementById('start-screen').classList.add('flex');
+            document.querySelectorAll('.projectile').forEach(e => e.remove()); document.querySelectorAll('.splash-effect').forEach(e => e.remove());
         }
 
-        function stopFireworks() {
-            fireworksActive = false;
-            canvas.style.display = 'none';
+        /* --- PHÁO HOA TỔNG KẾT --- */
+        const canvas = document.getElementById('fireworks'); const ctx = canvas.getContext('2d');
+        let particles = []; let isFireworksActive = false;
+
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resizeCanvas); resizeCanvas();
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x; this.y = y; this.color = color;
+                const angle = Math.random() * Math.PI * 2; const speed = Math.random() * 8 + 4;
+                this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed;
+                this.alpha = 1; this.decay = Math.random() * 0.01 + 0.01;
+            }
+            update() { this.vy += 0.05; this.x += this.vx; this.y += this.vy; this.alpha -= this.decay; }
+            draw() {
+                ctx.save(); ctx.globalAlpha = this.alpha; ctx.beginPath();
+                ctx.arc(this.x, this.y, 5, 0, Math.PI * 2); ctx.fillStyle = this.color; ctx.fill(); ctx.restore();
+            }
         }
 
+        function createExplosion(x, y) {
+            const colors = ['#FF1461', '#18FF92', '#5A87FF', '#FBF38C', '#FF8A00', '#FF00FF', '#ffffff'];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            for (let i = 0; i < 80; i++) particles.push(new Particle(x, y, color));
+        }
+
+        function loopFireworks() {
+            if (!isFireworksActive) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (Math.random() < 0.08) { createExplosion(Math.random() * canvas.width, Math.random() * (canvas.height * 0.6)); playSound('hit'); }
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i]; p.update(); p.draw();
+                if (p.alpha <= 0) particles.splice(i, 1);
+            }
+            requestAnimationFrame(loopFireworks);
+        }
+
+        function startFireworks() { isFireworksActive = true; particles = []; ctx.clearRect(0, 0, canvas.width, canvas.height); loopFireworks(); }
+        function stopFireworks() { isFireworksActive = false; ctx.clearRect(0, 0, canvas.width, canvas.height); }
     </script>
 </body>
 </html>
