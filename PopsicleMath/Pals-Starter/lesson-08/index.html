@@ -1,943 +1,1018 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
- <head>
-  <link rel="stylesheet" href="../assets/brand.css">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fruit Math Adventure</title>
-  
-  <!-- FIX FONT: Font Poppins -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jungle Tug: Math Challenge v10</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sky-top: #38bdf8;
+            --sky-bot: #bae6fd;
+            --grass-top: #a3e635;
+            --grass-bot: #22c55e;
+            --dirt-1: #fde047;
+            --dirt-2: #facc15;
+            --dirt-3: #eab308;
+        }
 
-  <script src="/_sdk/element_sdk.js"></script>
-  <style>
         body {
-            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+            touch-action: manipulation;
+            user-select: none;
+            overflow: hidden;
+            background: var(--sky-bot);
             margin: 0;
             padding: 0;
-            font-family: 'Poppins', sans-serif;
-            font-weight: 600;
-            /* Pastel rainbow background */
-            background: linear-gradient(180deg, #E0F7FA 0%, #E1F5FE 50%, #F3E5F5 100%);
-            background-attachment: fixed;
-            min-height: 100vh;
-            overflow-x: hidden;
-            user-select: none;
         }
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 15px;
-            text-align: center;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+        /* Format Elements */
+        .kid-text { text-shadow: 2px 2px 0px #fff, 0 4px 10px rgba(0,0,0,0.15); }
+        .modal-card { background: #ffffff; border: 8px solid #facc15; box-shadow: 0 25px 50px rgba(0,0,0,0.4); border-radius: 40px; }
+
+        /* ================= SCENERY BACKGROUND ================= */
+        .sky-area {
+            position: absolute; inset: 0;
+            background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bot) 55%, var(--grass-top) 55%, var(--grass-bot) 100%);
+            z-index: 0;
         }
 
-        .screen {
-            display: none;
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .screen.active {
-            display: block;
-        }
-
-        @keyframes popIn {
-            from { opacity: 0; transform: scale(0.8); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        .title {
-            font-size: 2.2rem;
-            color: #FF6B6B;
-            text-shadow: 2px 2px 0px white, 4px 4px 0px rgba(0,0,0,0.1);
-            margin: 10px 0 20px 0;
-            font-weight: 800;
-            letter-spacing: 1px;
-        }
-
-        /* Cute Progress Bar */
-        .progress-container {
-            background: white;
-            padding: 8px;
-            border-radius: 50px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-        }
-        .progress-bar {
-            width: 100%;
-            height: 16px;
-            background: #F0F0F0;
-            border-radius: 10px;
-            overflow: hidden;
-            border: none;
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #FF9A9E 0%, #FECFEF 99%, #FECFEF 100%);
-            border-radius: 10px;
-            transition: width 0.5s cubic-bezier(0.4, 0.0, 0.2, 1);
-            width: 0%;
-        }
-
-        /* Fruit Display Area */
-        .fruit-area {
-            background: white;
-            border-radius: 30px;
-            padding: 20px;
-            margin: 10px 0;
-            box-shadow: 0 10px 25px rgba(100, 181, 246, 0.2);
-            border: 4px solid white;
-            position: relative;
-            min-height: 200px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .fruit-group {
-            display: inline-flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: center;
-            margin: 5px;
-            background: #F8F9FA;
-            border-radius: 20px;
-            padding: 10px;
-        }
-
-        .fruit-emoji {
-            font-size: 3rem; 
-            margin: 3px;
-            animation: float 3s ease-in-out infinite;
-            filter: drop-shadow(2px 2px 0px rgba(0,0,0,0.1));
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        
-        .fruit-emoji:hover {
-            transform: scale(1.2);
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
-        }
-
-        .plus-sign {
-            font-size: 3rem;
-            color: #4DB6AC;
-            margin: 0 10px;
-            font-weight: 800;
-        }
-
-        /* Number Bond */
-        .number-bond {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: 20px;
-            gap: 10px;
-        }
-        .bond-row {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-        }
-        .bond-circle {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: white;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
-        }
-        .bond-part { background: #4FC3F7; }
-        .bond-whole { background: #FFB74D; width: 80px; height: 80px; font-size: 2.2rem; }
-        .bond-lines {
-            width: 4px;
-            height: 20px;
-            background: #B0BEC5;
-            border-radius: 2px;
-        }
-        
-        /* Question & Audio */
-        .question-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin: 20px 0;
-        }
-
-        .question-text {
-            font-size: 1.4rem;
-            color: #455A64;
-            background: white;
-            padding: 15px 25px;
-            border-radius: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            flex: 1;
-            font-weight: 700;
-        }
-
-        .audio-icon {
-            background: #FFD54F;
-            color: white;
-            border: none;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            font-size: 1.5rem;
-            cursor: pointer;
-            box-shadow: 0 4px 0 #FFCA28;
-            transition: transform 0.1s;
-        }
-        .audio-icon:active { transform: translateY(4px); box-shadow: none; }
-
-        /* Answer Buttons */
-        .answer-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }
-
-        .answer-btn {
-            background: white;
-            color: #455A64;
-            border: 2px solid #ECEFF1;
-            padding: 15px 30px;
-            border-radius: 20px;
-            font-size: 2rem;
-            font-weight: 800;
-            cursor: pointer;
-            min-width: 90px;
-            box-shadow: 0 6px 0 #CFD8DC;
-            transition: all 0.1s;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .answer-btn:active {
-            transform: translateY(6px);
-            box-shadow: none;
-        }
-
-        .answer-btn.correct {
-            background: #66BB6A;
-            color: white;
-            border-color: #66BB6A;
-            box-shadow: 0 6px 0 #43A047;
-        }
-        
-        .answer-btn.incorrect {
-            background: #EF5350;
-            color: white;
-            border-color: #EF5350;
-            box-shadow: 0 6px 0 #E53935;
-            animation: shake 0.4s;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
-
-        .feedback {
-            font-size: 1.3rem;
-            font-weight: 700;
-            min-height: 40px;
-            margin-top: 10px;
-            color: #66BB6A;
-        }
-
-        .next-btn {
-            background: #29B6F6;
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            border-radius: 50px;
-            font-size: 1.5rem;
-            font-weight: 800;
-            cursor: pointer;
-            box-shadow: 0 6px 0 #0288D1;
-            transition: all 0.1s;
-            display: none;
-            margin-top: 10px;
-            font-family: 'Poppins', sans-serif;
-        }
-        .next-btn:active { transform: translateY(6px); box-shadow: none; }
-
-        /* --- BUTTERFLY GAME --- */
-        .butterfly-game-container {
-            background: linear-gradient(180deg, #81D4FA 0%, #B3E5FC 80%, #C8E6C9 80%, #A5D6A7 100%); /* Sky to Grass */
-            border-radius: 20px;
-            height: 400px;
-            position: relative;
-            overflow: hidden;
-            border: 4px solid #4FC3F7;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
-            /* Custom cursor to look like a net target */
-            cursor: crosshair; 
-        }
-        
-        /* Clouds */
-        .cloud {
-            position: absolute;
-            font-size: 3rem;
-            opacity: 0.8;
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-            animation: moveCloud 20s linear infinite;
+        /* SUN - MOVED HIGHER */
+        .sun {
+            position: absolute; top: 15px; left: 50px;
+            width: 120px; height: 120px;
+            background: #fde047; border-radius: 50%;
+            box-shadow: 0 0 30px #fef08a, 0 0 80px #facc15, 0 0 120px #eab308;
+            animation: sun-glow 3s infinite alternate ease-in-out;
             z-index: 1;
         }
-        @keyframes moveCloud {
-            from { left: -100px; }
-            to { left: 100%; }
-        }
+        @keyframes sun-glow { 0% { transform: scale(1); opacity: 0.9; } 100% { transform: scale(1.05); opacity: 1; } }
 
-        /* Flowers at the bottom */
-        .flower-bed {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 40px;
-            display: flex;
-            justify-content: space-around;
-            font-size: 1.5rem;
-            z-index: 2;
-            pointer-events: none;
+        .cloud {
+            position: absolute; background: rgba(255, 255, 255, 1);
+            border-radius: 100px; animation: float-cloud linear infinite; z-index: 1;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.05);
         }
-
-        /* Flying Butterfly */
-        .butterfly {
-            position: absolute;
-            width: 70px;
-            height: 70px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3.5rem;
-            cursor: pointer;
-            user-select: none;
-            z-index: 10;
-            /* Smooth movement */
-            transition: top 1.5s ease-in-out, left 1.5s ease-in-out;
-        }
-
-        .butterfly-inner {
-            display: block;
-            animation: flutter 0.3s infinite alternate;
-        }
-
-        @keyframes flutter {
-            0% { transform: scaleX(1) rotate(0deg); }
-            100% { transform: scaleX(0.6) rotate(10deg); }
-        }
-
-        .butterfly:active { transform: scale(0.9); }
+        .cloud::before, .cloud::after { content: ''; position: absolute; background: inherit; border-radius: 50%; }
+        .cloud-1 { width: 160px; height: 60px; top: 10%; left: 15%; animation-duration: 40s; }
+        .cloud-1::before { width: 70px; height: 70px; top: -30px; left: 25px; }
+        .cloud-1::after { width: 80px; height: 80px; top: -40px; right: 25px; }
         
-        .butterfly.caught {
-            pointer-events: none;
-            transition: none;
-            animation: netCatch 0.4s forwards;
+        .cloud-2 { width: 240px; height: 70px; top: 20%; left: 60%; animation-duration: 50s; animation-delay: -15s; }
+        .cloud-2::before { width: 90px; height: 90px; top: -45px; left: 35px; }
+        .cloud-2::after { width: 100px; height: 100px; top: -50px; right: 35px; }
+        @keyframes float-cloud { from { transform: translateX(-350px); } to { transform: translateX(110vw); } }
+
+        .mountain {
+            position: absolute; bottom: 58vh; z-index: 1;
+            background: linear-gradient(135deg, #bef264 0%, #65a30d 100%);
+            clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
         }
-        @keyframes netCatch {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(0.5) rotate(180deg); opacity: 0.8; }
-            100% { transform: scale(0); opacity: 0; }
+        .mt-1 { left: -10%; width: 45vw; height: 28vh; z-index: 2; background: linear-gradient(135deg, #a3e635 0%, #4d7c0f 100%); }
+        .mt-2 { left: 10%; width: 55vw; height: 38vh; }
+        .mt-3 { right: 15%; width: 40vw; height: 24vh; z-index: 2; background: linear-gradient(135deg, #a3e635 0%, #4d7c0f 100%);}
+        .mt-4 { right: -10%; width: 50vw; height: 34vh; }
+
+        /* ================= TREES ================= */
+        .green-tree { 
+            position: absolute; bottom: 57vh; z-index: 4; 
+            width: 320px; height: 320px;
+            filter: drop-shadow(15px 15px 20px rgba(0,0,0,0.35));
+        }
+        .green-tree.left { left: 8%; transform: scale(0.95); transform-origin: bottom center; }
+        .green-tree.right { right: 8%; transform: scaleX(-0.95) scaleY(0.95); transform-origin: bottom center; }
+
+        /* PINE TREES - RIGHT TREE IS NOW SHORTER */
+        .pine-tree { 
+            position: absolute; bottom: 58vh; z-index: 3; 
+            display: flex; flex-direction: column; align-items: center; 
+            filter: drop-shadow(10px 10px 15px rgba(0,0,0,0.3)); 
+        }
+        .pine-tree.left { left: 0%; transform: scale(0.65); transform-origin: bottom; }
+        .pine-tree.right { right: -2%; transform: scale(0.72); transform-origin: bottom; } /* Changed from 0.85 to 0.72 */
+        .pine-layer { 
+            background: linear-gradient(135deg, #4ade80 0%, #16a34a 60%, #065f46 100%); 
+            clip-path: polygon(50% 0%, 100% 100%, 0% 100%); width: 100%; position: relative; 
+        }
+        .pl-1 { width: 100px; height: 100px; z-index: 4; margin-bottom: -35px; }
+        .pl-2 { width: 140px; height: 120px; z-index: 3; margin-bottom: -40px; }
+        .pl-3 { width: 180px; height: 140px; z-index: 2; margin-bottom: -45px; }
+        .pl-4 { width: 220px; height: 160px; z-index: 1; }
+        .pine-trunk { width: 40px; height: 70px; background: linear-gradient(90deg, #92400e, #78350f); margin-top: -15px; z-index: 0; clip-path: polygon(20% 0, 80% 0, 100% 100%, 0% 100%);}
+
+        /* ================= GROUND AREA & DIRT ================= */
+        .ground-area {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 60vh;
+            background: linear-gradient(180deg, var(--grass-top) 0%, var(--grass-bot) 100%);
+            border-top: 8px solid #bef264; z-index: 5; overflow: hidden;
+        }
+        .dirt-track {
+            position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+            width: 140%; height: 100%;
+            background: radial-gradient(ellipse at top, var(--dirt-1) 0%, var(--dirt-2) 40%, var(--dirt-3) 100%);
+            clip-path: ellipse(65% 100% at 50% 100%);
+            border-top: 12px dashed rgba(202, 138, 4, 0.4);
+        }
+        .speck { position: absolute; background: #b45309; border-radius: 50%; opacity: 0.5; }
+
+        /* ================= GAME STAGE & RESPONSIVE ================= */
+        .stage-anchor {
+            position: absolute; bottom: 53vh; left: 50%; transform: translateX(-50%);
+            width: 100%; display: flex; justify-content: center; align-items: flex-end; z-index: 10;
+        }
+        .scale-wrapper {
+            transform-origin: center bottom; transition: transform 0.3s ease;
+            position: relative; display: flex; justify-content: center; align-items: flex-end;
+            height: 250px; width: 1400px;
+        }
+        @media (max-width: 1600px) { .scale-wrapper { transform: scale(0.85); } }
+        @media (max-width: 1300px) { .scale-wrapper { transform: scale(0.7); } }
+        @media (max-width: 1000px) { .scale-wrapper { transform: scale(0.55); } }
+        @media (max-width: 768px) { .scale-wrapper { transform: scale(0.42); } }
+        @media (max-width: 480px) { .scale-wrapper { transform: scale(0.32); } }
+
+        .tug-group {
+            display: flex; align-items: flex-end; position: relative; width: 100%; justify-content: center;
+            gap: 250px; transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-origin: center bottom;
         }
 
-        .game-stats {
-            display: flex;
-            justify-content: space-between;
-            background: rgba(255,255,255,0.9);
-            padding: 10px 20px;
-            border-radius: 15px;
-            margin-bottom: 10px;
-            font-weight: 800;
-            font-size: 1.2rem;
-            color: #0277BD;
+        .center-mark {
+            position: absolute; left: 50%; bottom: -10px; height: 200px; width: 8px;
+            background: repeating-linear-gradient(180deg, rgba(255,255,255,0.9) 0, rgba(255,255,255,0.9) 20px, transparent 20px, transparent 40px);
+            transform: translateX(-50%); z-index: 5; border-radius: 4px;
         }
 
-        .start-game-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 20;
-            border-radius: 16px;
+        /* STRIPED ROPE */
+        .rope-container {
+            position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%);
+            width: 1400px; height: 28px;
+            background: repeating-linear-gradient(45deg, #3f250b 0 15px, #1a1a1a 15px 30px); 
+            border-radius: 14px; 
+            box-shadow: 0 10px 15px rgba(0,0,0,0.5), inset 0 4px 6px rgba(255,255,255,0.15); 
+            z-index: 15;
+            border: 3px solid #000;
+        }
+        .ribbon {
+            position: absolute; left: 50%; top: -20px; transform: translateX(-50%);
+            width: 44px; height: 90px; background: #ef4444; border: 5px solid #7f1d1d;
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
+            z-index: 25; animation: sway 2s infinite alternate ease-in-out;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+        }
+        @keyframes sway { from { transform: translateX(-50%) rotate(-10deg); } to { transform: translateX(-50%) rotate(10deg); } }
+
+        /* ================= HIGH-DETAIL CSS ANIMALS ================= */
+        .team { display: flex; align-items: flex-end; z-index: 20; position: relative; gap: -15px; }
+        .team.right { flex-direction: row-reverse; }
+
+        .animal {
+            width: 130px; height: 190px; position: relative; flex-shrink: 0;
+            transform-origin: bottom center; filter: drop-shadow(0 12px 10px rgba(0,0,0,0.3));
         }
         
-        .start-btn {
-            background: #FF7043;
-            color: white;
-            font-size: 1.5rem;
-            padding: 15px 30px;
-            border-radius: 50px;
-            border: none;
-            font-weight: 800;
-            box-shadow: 0 6px 0 #D84315;
-            cursor: pointer;
-            font-family: 'Poppins', sans-serif;
-        }
-        .start-btn:active { transform: translateY(6px); box-shadow: none; }
+        .animal.pull-l { animation: tug-l 0.4s ease; }
+        .animal.pull-r { animation: tug-r 0.4s ease; }
+        @keyframes tug-l { 0%, 100% {transform: rotate(0);} 50% {transform: translateX(-20px) rotate(-12deg) scaleY(0.95);} }
+        @keyframes tug-r { 0%, 100% {transform: rotate(0);} 50% {transform: translateX(20px) rotate(12deg) scaleY(0.95);} }
 
-        /* --- FIREWORKS --- */
-        .firework {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            pointer-events: none;
-            animation: firework-explode 1s ease-out forwards;
-        }
-        @keyframes firework-explode {
-            0% { transform: translate(0, 0) scale(1); opacity: 1; }
-            100% { transform: translate(var(--dx), var(--dy)) scale(0.5); opacity: 0; }
-        }
+        .character { position: relative; width: 100%; height: 100%; }
 
-        /* Responsive */
-        @media (max-width: 600px) {
-            .title { font-size: 1.8rem; }
-            .fruit-emoji { font-size: 2.5rem; }
-            .plus-sign { font-size: 2rem; }
-            .butterfly-game-container { height: 300px; }
+        .head { 
+            position: absolute; top: 10px; left: 50%; transform: translateX(-50%); 
+            width: 105px; height: 95px; background: radial-gradient(circle at 35% 35%, var(--light), var(--main)); 
+            border: 3px solid rgba(0,0,0,0.2); border-radius: 45% 45% 40% 40%; z-index: 4; 
+            box-shadow: inset -6px -6px 15px rgba(0,0,0,0.15); 
         }
+        .body { 
+            position: absolute; top: 85px; left: 50%; transform: translateX(-50%); 
+            width: 85px; height: 75px; background: radial-gradient(circle at 30% 30%, var(--light), var(--main)); 
+            border: 3px solid rgba(0,0,0,0.2); border-radius: 40px 40px 20px 20px;
+            z-index: 2; overflow: hidden; box-shadow: inset -6px -6px 15px rgba(0,0,0,0.2);
+        }
+        
+        .shirt { position: absolute; top: 0; left: 0; right: 0; height: 60%; background: var(--shirt); }
+        .shorts { position: absolute; bottom: 0; left: 0; right: 0; height: 40%; background: var(--shorts); box-shadow: inset 0 6px 6px rgba(0,0,0,0.2); }
+
+        .eye { position: absolute; top: 40px; width: 16px; height: 26px; background: #1a0b00; border-radius: 50%; z-index: 6; }
+        .eye.l { left: 24px; } .eye.r { right: 24px; }
+        .eye::before { content:''; position:absolute; top:3px; left:4px; width:6px; height:8px; background:#fff; border-radius:50%; box-shadow: 0 0 2px #fff; }
+        .eye::after { content:''; position:absolute; bottom:4px; right:3px; width:3px; height:3px; background:#fff; border-radius:50%; opacity: 0.8; }
+        
+        .cheek { position: absolute; top: 58px; width: 18px; height: 10px; background: #ff4785; border-radius: 50%; z-index: 6; opacity: 0.6; filter: blur(2px); }
+        .cheek.l { left: 10px; } .cheek.r { right: 10px; }
+
+        .ear { position: absolute; width: 34px; height: 34px; background: var(--main); border: 3px solid rgba(0,0,0,0.2); border-radius: 50%; top: -2px; z-index: 3; box-shadow: inset -3px -3px 6px rgba(0,0,0,0.2); }
+        .ear.l { left: -5px; } .ear.r { right: -5px; }
+        
+        .snout { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); width: 50px; height: 34px; background: var(--snout); border-radius: 20px; z-index: 5; box-shadow: inset -2px -4px 8px rgba(0,0,0,0.15); }
+        .nose { position: absolute; top: 2px; left: 50%; transform: translateX(-50%); width: 18px; height: 10px; background: #222; border-radius: 10px; }
+        .mouth { position: absolute; top: 68px; left: 50%; transform: translateX(-50%); width: 22px; height: 16px; border-bottom: 5px solid #3a0000; border-radius: 50%; z-index: 6; }
+
+        /* ARMS PROMINENTLY POSITIONED TO HOLD THE ROPE */
+        .arm { position: absolute; background: var(--main); border: 3px solid rgba(0,0,0,0.2); border-radius: 15px; box-shadow: inset -4px -4px 8px rgba(0,0,0,0.2); }
+        .arm::after { content:''; position:absolute; top:-3px; left:-3px; right:-3px; height:24px; background: var(--shirt); border-radius: 15px 15px 0 0;}
+        
+        .team.left .arm.front { left: 45px; top: 110px; transform: rotate(-60deg); width: 32px; height: 55px; z-index: 25; }
+        .team.left .arm.back { left: 25px; top: 105px; transform: rotate(-45deg); width: 30px; height: 45px; z-index: 1; }
+        
+        .team.right .arm.front { right: 45px; top: 110px; transform: rotate(60deg); width: 32px; height: 55px; z-index: 25; }
+        .team.right .arm.back { right: 25px; top: 105px; transform: rotate(45deg); width: 30px; height: 45px; z-index: 1; }
+
+        /* HAND FISTS WRAPPING THE ROPE */
+        .hand { position: absolute; bottom: -12px; left: -4px; width: 34px; height: 34px; background: var(--main); border-radius: 50%; border: 3px solid rgba(0,0,0,0.2); box-shadow: inset -2px -2px 5px rgba(0,0,0,0.3); z-index: 26;}
+
+        .leg { position: absolute; top: 135px; width: 28px; height: 45px; background: var(--main); z-index: 1; border-radius: 5px; box-shadow: inset -3px -3px 6px rgba(0,0,0,0.2); }
+        .leg::before { content:''; position:absolute; top:0; left:0; right:0; height:22px; background: var(--shorts); border-radius: 5px 5px 0 0; box-shadow: inset 0 -3px 4px rgba(0,0,0,0.3);}
+        .leg.l { left: 26px; } .leg.r { right: 26px; }
+
+        .shoe { position: absolute; top: 32px; left: -4px; width: 36px; height: 18px; background: var(--shoe); border-radius: 15px 15px 5px 5px; box-shadow: inset 0 -4px 0 rgba(255,255,255,0.8), 0 4px 5px rgba(0,0,0,0.2);}
+        .shoe::before { content:''; position:absolute; left:0; top:0; bottom:0; width:10px; background: rgba(255,255,255,0.9); border-radius: 15px 0 0 5px;}
+
+        /* FIXED TAILS */
+        .tiger-tail { position: absolute; top: 110px; left: -10px; width: 50px; height: 16px; border-radius: 10px; background: repeating-linear-gradient(90deg, #f97316 0 10px, #451a03 10px 20px); transform: rotate(-30deg); z-index: 1; box-shadow: 0 4px 5px rgba(0,0,0,0.3); }
+        .elephant-tail { position: absolute; top: 120px; left: 0px; width: 35px; height: 10px; background: #94a3b8; border-radius: 10px; transform: rotate(-40deg); z-index: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.2);}
+        .bear-tail { position: absolute; top: 120px; right: 5px; width: 25px; height: 25px; background: #b45309; border-radius: 50%; z-index: 1; box-shadow: 0 4px 5px rgba(0,0,0,0.2); }
+        .lion-tail { position: absolute; top: 110px; right: -15px; width: 45px; height: 12px; background: #fbbf24; border-radius: 10px; transform: rotate(30deg); z-index: 1; box-shadow: 0 4px 5px rgba(0,0,0,0.2); }
+        .lion-tail::after { content:''; position:absolute; right: -8px; top: -5px; width: 22px; height: 22px; background: #ea580c; border-radius: 50%;}
+
+        /* --- TIGER --- */
+        .tiger { --main: #f97316; --light: #fb923c; --snout: #fff; --shirt: #0ea5e9; --shorts: #1e293b; --shoe: #0ea5e9; }
+        .tiger .ear::after { content:''; position:absolute; inset:5px; background:#fff; border-radius:50%; }
+        .tiger .head::after { content:''; position:absolute; width: 6px; height: 18px; background: #451a03; border-radius: 5px; top: 5px; left: 50%; transform: translateX(-50%); box-shadow: -15px 5px 0 #451a03, 15px 5px 0 #451a03; z-index: 5;}
+        .tiger .head::before { content:''; position:absolute; width: 15px; height: 6px; background: #451a03; border-radius: 5px; top: 45px; left: -2px; box-shadow: 94px 0 0 #451a03, 0 15px 0 #451a03, 94px 15px 0 #451a03; z-index: 5;}
+        .tiger .snout { width: 60px; height: 40px; top: 48px; border-radius: 50%; box-shadow: inset -2px -4px 8px rgba(0,0,0,0.1); }
+        .tiger .mouth { top: 70px; width: 24px; border-bottom: 4px solid #3a0000; }
+
+        /* --- ELEPHANT --- */
+        .elephant { --main: #94a3b8; --light: #cbd5e1; --snout: #94a3b8; --shirt: #f97316; --shorts: #1e293b; --shoe: #3b82f6; }
+        .elephant .head { width: 115px; }
+        .elephant .ear { width: 55px; height: 60px; top: 10px; border-radius: 40%; }
+        .elephant .ear.l { left: -22px; } .elephant .ear.r { right: -22px; }
+        .elephant .ear::after { content:''; position:absolute; inset:8px; background:#fbcfe8; border-radius:40%; }
+        .elephant .snout { width: 28px; height: 55px; top: 45px; border-radius: 14px 14px 20px 20px; z-index: 7; background: repeating-linear-gradient(180deg, #94a3b8 0, #94a3b8 8px, #64748b 8px, #64748b 10px); }
+        .elephant .nose { display: none; }
+        .elephant .tusk { position: absolute; top: 58px; width: 10px; height: 22px; background: #fff; border-radius: 50% 50% 50% 50% / 80% 80% 20% 20%; z-index: 6; border: 1px solid #cbd5e1; border-top:none; box-shadow: inset -2px 0 2px rgba(0,0,0,0.1); }
+        .elephant .tusk.l { left: 32px; transform: rotate(25deg); }
+        .elephant .tusk.r { right: 32px; transform: rotate(-25deg); }
+
+        /* --- BUFFALO --- */
+        .buffalo { --main: #3e3631; --light: #524741; --snout: #2c2825; --shirt: #ef4444; --shorts: #1e293b; --shoe: #3b82f6; }
+        .buffalo .head { border-radius: 40% 40% 50% 50%; }
+        .buffalo .horn { position: absolute; top: -10px; width: 55px; height: 40px; border-bottom: 18px solid #f8fafc; border-radius: 50%; z-index: 2; background: transparent; filter: drop-shadow(0 4px 3px rgba(0,0,0,0.4)); }
+        .buffalo .horn.l { left: -35px; transform: rotate(25deg); } 
+        .buffalo .horn.r { right: -35px; transform: rotate(-25deg); }
+        .buffalo .ear { top: 25px; width: 24px; height: 16px; border-radius: 50%; }
+        .buffalo .ear.l { left: -10px; transform: rotate(-20deg); } .buffalo .ear.r { right: -10px; transform: rotate(20deg); }
+        .buffalo .snout { width: 65px; height: 42px; top: 48px; border-radius: 25px; }
+        .buffalo .nose::after { content:''; position:absolute; top: 14px; left: 50%; transform: translateX(-50%); width: 20px; height: 20px; border: 4px solid #facc15; border-radius: 50%; z-index: 10; box-shadow: 0 4px 6px rgba(0,0,0,0.4);}
+        .buffalo .bull-tuft { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 28px; height: 20px; background: var(--main); border-radius: 50% 50% 0 0; z-index: 7; box-shadow: inset 0 2px 2px rgba(255,255,255,0.1); }
+
+        /* --- BEAR --- */
+        .bear { --main: #b45309; --light: #d97706; --snout: #fef3c7; --shirt: #22c55e; --shorts: #1e293b; --shoe: #22c55e; }
+        .bear .ear { border-radius: 50%; top: -5px; }
+        .bear .ear::after { content:''; position:absolute; inset:6px; background:#fef3c7; border-radius:50%; }
+        .bear .belly { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 50px; height: 40px; background: #fef3c7; border-radius: 50% 50% 0 0; z-index: 1; opacity: 0.9; }
+
+        /* --- LION --- */
+        .lion { --main: #fbbf24; --light: #fde047; --snout: #fef3c7; --shirt: #9333ea; --shorts: #1e293b; --shoe: #9333ea; }
+        .lion-mane-wrap { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); width: 140px; height: 130px; z-index: 3; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.3)); }
+        .lion .ear { z-index: 5; }
+
+        /* --- RHINO --- */
+        .rhino { --main: #64748b; --light: #94a3b8; --snout: #cbd5e1; --shirt: #a855f7; --shorts: #1e293b; --shoe: #a855f7; }
+        .rhino .head { border-radius: 40% 40% 45% 45%; }
+        .rhino .ear { border-radius: 50% 50% 50% 10%; transform: rotate(15deg); }
+        .rhino .ear.r { transform: scaleX(-1) rotate(15deg); }
+        .rhino .snout { width: 58px; height: 45px; top: 45px; border-radius: 25px 25px 20px 20px;}
+        .rhino-horn { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); width: 20px; height: 45px; background: linear-gradient(90deg, #f8fafc, #cbd5e1); border-radius: 50% 50% 10% 10%; z-index: 8; box-shadow: -2px 2px 5px rgba(0,0,0,0.2); }
+        .rhino-horn-small { position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%) translate(-14px, -10px); width: 12px; height: 22px; background: #e2e8f0; border-radius: 50% 50% 10% 10%; z-index: 7; }
+
+        /* ================= MATH UI & BUTTONS ================= */
+        .math-ui-container {
+            position: absolute; bottom: 0; width: 100%; height: 42vh;
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px);
+            border-top: 10px solid rgba(255,255,255,1);
+            box-shadow: 0 -20px 50px rgba(0,0,0,0.15);
+            border-radius: 40px 40px 0 0;
+            padding: 10px 15px 20px; z-index: 30; display: flex; flex-direction: column;
+        }
+        
+        .btn-math { 
+            transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1); 
+            box-shadow: 0 6px 0 rgba(0,0,0,0.15); 
+            border-radius: 1.5rem;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .btn-math:active { 
+            transform: translateY(6px); 
+            box-shadow: 0 0px 0 transparent !important; 
+        }
+        .btn-math:disabled { opacity: 0.7; transform: translateY(6px); box-shadow: none; cursor: not-allowed; }
+
+        /* Icon SVG Styling */
+        .svg-icon { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
+
+        #fireworksCanvas { position: fixed; inset: 0; z-index: 9999; pointer-events: none; }
+
+        @keyframes shake-kid {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px) rotate(-3deg); }
+            75% { transform: translateX(8px) rotate(3deg); }
+        }
+        .animate-shake-kid { animation: shake-kid 0.3s cubic-bezier(.36,.07,.19,.97) both; }
+        
+        @keyframes bounce-in {
+            0% { transform: scale(0.8); opacity: 0; }
+            60% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        .animate-bounce-in { animation: bounce-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
     </style>
- </head>
- <body>
-  <img src="../assets/logo-oodles-math.png" class="oodles-logo">
-  <div class="container">
-   
-   <!-- Question Screen -->
-   <div id="questionScreen" class="screen active">
-    <div class="progress-container">
-        <div class="progress-bar">
-            <div id="progressFill" class="progress-fill"></div>
+</head>
+<body>
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- SCENERY LAYER -->
+    <div class="sky-area">
+        <div class="sun"></div>
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+        
+        <!-- Mountains -->
+        <div class="mountain mt-1"></div>
+        <div class="mountain mt-2"></div>
+        <div class="mountain mt-3"></div>
+        <div class="mountain mt-4"></div>
+
+        <!-- TREES -->
+        <div class="green-tree left">
+            <svg viewBox="0 0 400 400" class="w-full h-full drop-shadow-2xl">
+                <path d="M 200 240 C 200 240 180 340 120 400 C 160 390 180 360 190 340 L 210 340 C 220 360 240 390 280 400 C 220 340 200 240 200 240 Z" fill="#b46a32"/>
+                <path d="M 190 340 C 170 380 130 390 90 400 C 130 400 160 390 180 370 Z" fill="#8b4a1c"/>
+                <path d="M 210 340 C 230 380 270 390 310 400 C 270 400 240 390 220 370 Z" fill="#8b4a1c"/>
+                <path d="M 200 250 C 150 200 100 220 80 250" fill="none" stroke="#b46a32" stroke-width="25" stroke-linecap="round"/>
+                <path d="M 200 250 C 250 200 300 220 320 250" fill="none" stroke="#b46a32" stroke-width="25" stroke-linecap="round"/>
+                <path d="M 200 250 C 180 180 150 160 120 150" fill="none" stroke="#b46a32" stroke-width="22" stroke-linecap="round"/>
+                <path d="M 200 250 C 220 180 250 160 280 150" fill="none" stroke="#b46a32" stroke-width="22" stroke-linecap="round"/>
+                <path d="M 200 250 L 200 140" fill="none" stroke="#b46a32" stroke-width="30" stroke-linecap="round"/>
+                <g fill="#14532d" stroke="#064e3b" stroke-width="6">
+                    <circle cx="200" cy="180" r="110"/>
+                    <circle cx="120" cy="220" r="80"/>
+                    <circle cx="280" cy="220" r="80"/>
+                    <circle cx="100" cy="160" r="70"/>
+                    <circle cx="300" cy="160" r="70"/>
+                    <circle cx="200" cy="110" r="90"/>
+                </g>
+                <g fill="#22c55e">
+                    <circle cx="200" cy="175" r="105"/>
+                    <circle cx="120" cy="215" r="75"/>
+                    <circle cx="280" cy="215" r="75"/>
+                    <circle cx="100" cy="155" r="65"/>
+                    <circle cx="300" cy="155" r="65"/>
+                    <circle cx="200" cy="105" r="85"/>
+                </g>
+                <g fill="#4ade80">
+                    <circle cx="200" cy="150" r="95"/>
+                    <circle cx="120" cy="195" r="60"/>
+                    <circle cx="280" cy="195" r="60"/>
+                    <circle cx="100" cy="140" r="55"/>
+                    <circle cx="300" cy="140" r="55"/>
+                    <circle cx="200" cy="95" r="75"/>
+                </g>
+                <g fill="none" stroke="#14532d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M 130 150 L 140 160 L 150 150"/>
+                    <path d="M 250 140 L 260 150 L 270 140"/>
+                    <path d="M 190 190 L 200 200 L 210 190"/>
+                    <path d="M 100 220 L 110 230 L 120 220"/>
+                    <path d="M 280 210 L 290 220 L 300 210"/>
+                    <path d="M 210 110 L 220 120 L 230 110"/>
+                </g>
+            </svg>
+        </div>
+        
+        <div class="green-tree right">
+            <svg viewBox="0 0 400 400" class="w-full h-full drop-shadow-2xl">
+                <path d="M 200 240 C 200 240 180 340 120 400 C 160 390 180 360 190 340 L 210 340 C 220 360 240 390 280 400 C 220 340 200 240 200 240 Z" fill="#b46a32"/>
+                <path d="M 190 340 C 170 380 130 390 90 400 C 130 400 160 390 180 370 Z" fill="#8b4a1c"/>
+                <path d="M 210 340 C 230 380 270 390 310 400 C 270 400 240 390 220 370 Z" fill="#8b4a1c"/>
+                <path d="M 200 250 C 150 200 100 220 80 250" fill="none" stroke="#b46a32" stroke-width="25" stroke-linecap="round"/>
+                <path d="M 200 250 C 250 200 300 220 320 250" fill="none" stroke="#b46a32" stroke-width="25" stroke-linecap="round"/>
+                <path d="M 200 250 C 180 180 150 160 120 150" fill="none" stroke="#b46a32" stroke-width="22" stroke-linecap="round"/>
+                <path d="M 200 250 C 220 180 250 160 280 150" fill="none" stroke="#b46a32" stroke-width="22" stroke-linecap="round"/>
+                <path d="M 200 250 L 200 140" fill="none" stroke="#b46a32" stroke-width="30" stroke-linecap="round"/>
+                <g fill="#14532d" stroke="#064e3b" stroke-width="6">
+                    <circle cx="200" cy="180" r="110"/>
+                    <circle cx="120" cy="220" r="80"/>
+                    <circle cx="280" cy="220" r="80"/>
+                    <circle cx="100" cy="160" r="70"/>
+                    <circle cx="300" cy="160" r="70"/>
+                    <circle cx="200" cy="110" r="90"/>
+                </g>
+                <g fill="#22c55e">
+                    <circle cx="200" cy="175" r="105"/>
+                    <circle cx="120" cy="215" r="75"/>
+                    <circle cx="280" cy="215" r="75"/>
+                    <circle cx="100" cy="155" r="65"/>
+                    <circle cx="300" cy="155" r="65"/>
+                    <circle cx="200" cy="105" r="85"/>
+                </g>
+                <g fill="#4ade80">
+                    <circle cx="200" cy="150" r="95"/>
+                    <circle cx="120" cy="195" r="60"/>
+                    <circle cx="280" cy="195" r="60"/>
+                    <circle cx="100" cy="140" r="55"/>
+                    <circle cx="300" cy="140" r="55"/>
+                    <circle cx="200" cy="95" r="75"/>
+                </g>
+                <g fill="none" stroke="#14532d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M 130 150 L 140 160 L 150 150"/>
+                    <path d="M 250 140 L 260 150 L 270 140"/>
+                    <path d="M 190 190 L 200 200 L 210 190"/>
+                    <path d="M 100 220 L 110 230 L 120 220"/>
+                    <path d="M 280 210 L 290 220 L 300 210"/>
+                    <path d="M 210 110 L 220 120 L 230 110"/>
+                </g>
+            </svg>
+        </div>
+        <div class="pine-tree left"><div class="pine-layer pl-1"></div><div class="pine-layer pl-2"></div><div class="pine-layer pl-3"></div><div class="pine-layer pl-4"></div><div class="pine-trunk"></div></div>
+        <div class="pine-tree right"><div class="pine-layer pl-1"></div><div class="pine-layer pl-2"></div><div class="pine-layer pl-3"></div><div class="pine-layer pl-4"></div><div class="pine-trunk"></div></div>
+    </div>
+
+    <!-- GROUND LAYER -->
+    <div class="ground-area">
+        <div class="dirt-track">
+            <div class="speck w-6 h-3 top-[20%] left-[30%]"></div>
+            <div class="speck w-10 h-4 top-[50%] left-[70%]"></div>
+            <div class="speck w-5 h-2 bottom-[25%] left-[40%]"></div>
         </div>
     </div>
     
-    <h1 id="gameTitle" class="title">Fruit Math Adventure</h1>
-    
-    <div class="fruit-area">
-     <div id="fruitDisplay"></div>
-     
-     <div id="numberBond" class="number-bond" style="display: none;">
-      <div class="bond-row">
-       <div class="bond-circle bond-part" id="bondPart1">?</div>
-       <div class="bond-lines"></div>
-       <div class="bond-circle bond-part" id="bondPart2">?</div>
-      </div>
-      <div class="bond-lines" style="height: 10px; width: 40px; margin: -5px 0;"></div>
-      <div class="bond-row">
-       <div class="bond-circle bond-whole" id="bondWhole">?</div>
-      </div>
-     </div>
+    <!-- NEW REALISTIC FOREGROUND GRASS & FLOWERS (SVG PATTERN) -->
+    <svg width="0" height="0" class="hidden">
+        <defs>
+            <pattern id="grass-pattern" viewBox="0 0 400 100" width="400" height="100" patternUnits="userSpaceOnUse">
+                <!-- Back layer (dark green) -->
+                <path d="M0,100 Q10,40 20,10 Q30,50 40,100 Q50,30 60,15 Q70,40 80,100 Q90,20 100,5 Q110,30 120,100 Q130,40 140,20 Q150,60 160,100 Q170,25 180,10 Q190,50 200,100 Q210,35 220,15 Q230,45 240,100 Q250,20 260,5 Q270,50 280,100 Q290,30 300,10 Q310,60 320,100 Q330,20 340,5 Q350,50 360,100 Q370,40 380,20 Q390,60 400,100 L400,100 L0,100 Z" fill="#16a34a"/>
+                <!-- Middle layer (medium green) -->
+                <path d="M0,100 Q15,50 25,25 Q35,60 45,100 Q55,40 65,20 Q75,55 85,100 Q95,30 105,10 Q115,45 125,100 Q135,50 145,30 Q155,70 165,100 Q175,35 185,15 Q195,55 205,100 Q215,40 225,20 Q235,60 245,100 Q255,25 265,10 Q275,50 285,100 Q295,45 305,25 Q315,65 325,100 Q335,35 345,15 Q355,50 365,100 Q375,40 385,20 Q395,60 405,100 L0,100 Z" fill="#22c55e"/>
+                <!-- Front layer (light green) -->
+                <path d="M-10,100 Q5,60 15,35 Q25,70 35,100 Q45,50 55,30 Q65,65 75,100 Q85,40 95,20 Q105,55 115,100 Q125,60 135,40 Q145,80 155,100 Q165,45 175,25 Q185,65 195,100 Q205,50 215,30 Q225,70 235,100 Q245,35 255,20 Q265,60 275,100 Q285,55 295,35 Q305,75 315,100 Q325,45 335,25 Q345,60 355,100 Q365,50 375,30 Q385,70 395,100 L-10,100 Z" fill="#4ade80"/>
+                
+                <!-- Detailed Pink Flowers (Daisy-like) -->
+                <g transform="translate(50, 70) scale(0.8)">
+                    <path d="M0,0 Q10,-15 0,-20 Q-10,-15 0,0" fill="#f472b6"/><path d="M0,0 Q15,-10 20,0 Q15,10 0,0" fill="#f472b6"/><path d="M0,0 Q10,15 0,20 Q-10,15 0,0" fill="#f472b6"/><path d="M0,0 Q-15,-10 -20,0 Q-15,10 0,0" fill="#f472b6"/><path d="M0,0 Q15,15 20,20 Q5,25 0,0" fill="#f472b6"/><path d="M0,0 Q-15,15 -20,20 Q-5,25 0,0" fill="#f472b6"/><path d="M0,0 Q15,-15 20,-20 Q5,-25 0,0" fill="#f472b6"/><path d="M0,0 Q-15,-15 -20,-20 Q-5,-25 0,0" fill="#f472b6"/><circle cx="0" cy="0" r="7" fill="#facc15"/>
+                </g>
+                <g transform="translate(180, 85) scale(0.6)">
+                     <path d="M0,0 Q10,-15 0,-20 Q-10,-15 0,0" fill="#f472b6"/><path d="M0,0 Q15,-10 20,0 Q15,10 0,0" fill="#f472b6"/><path d="M0,0 Q10,15 0,20 Q-10,15 0,0" fill="#f472b6"/><path d="M0,0 Q-15,-10 -20,0 Q-15,10 0,0" fill="#f472b6"/><path d="M0,0 Q15,15 20,20 Q5,25 0,0" fill="#f472b6"/><path d="M0,0 Q-15,15 -20,20 Q-5,25 0,0" fill="#f472b6"/><path d="M0,0 Q15,-15 20,-20 Q5,-25 0,0" fill="#f472b6"/><path d="M0,0 Q-15,-15 -20,-20 Q-5,-25 0,0" fill="#f472b6"/><circle cx="0" cy="0" r="7" fill="#facc15"/>
+                </g>
+                <g transform="translate(320, 65) scale(0.9)">
+                     <path d="M0,0 Q10,-15 0,-20 Q-10,-15 0,0" fill="#f472b6"/><path d="M0,0 Q15,-10 20,0 Q15,10 0,0" fill="#f472b6"/><path d="M0,0 Q10,15 0,20 Q-10,15 0,0" fill="#f472b6"/><path d="M0,0 Q-15,-10 -20,0 Q-15,10 0,0" fill="#f472b6"/><path d="M0,0 Q15,15 20,20 Q5,25 0,0" fill="#f472b6"/><path d="M0,0 Q-15,15 -20,20 Q-5,25 0,0" fill="#f472b6"/><path d="M0,0 Q15,-15 20,-20 Q5,-25 0,0" fill="#f472b6"/><path d="M0,0 Q-15,-15 -20,-20 Q-5,-25 0,0" fill="#f472b6"/><circle cx="0" cy="0" r="7" fill="#facc15"/>
+                </g>
+                <circle cx="100" cy="90" r="3" fill="#fff"/><circle cx="250" cy="75" r="4" fill="#fff"/><circle cx="380" cy="85" r="3" fill="#fff"/>
+            </pattern>
+        </defs>
+    </svg>
+    <div class="absolute bottom-[41.5vh] w-full h-[15vh] z-30 pointer-events-none">
+        <svg width="100%" height="100%" preserveAspectRatio="none">
+            <rect width="100%" height="100%" fill="url(#grass-pattern)" />
+        </svg>
     </div>
 
-    <div class="question-container">
-     <button class="audio-icon" onclick="playAudio()">🔊</button>
-     <div id="questionText" class="question-text">
-      How many apples?
-     </div>
+    <!-- ZERO LAG CONFETTI CANVAS -->
+    <canvas id="fireworksCanvas"></canvas>
+
+    <!-- HEADER (Timer & Sound) -->
+    <header class="absolute top-0 w-full p-4 sm:p-6 flex justify-center items-center z-50 pointer-events-none">
+        <div class="flex items-center gap-3 sm:gap-4 pointer-events-auto">
+            <div class="bg-white px-4 sm:px-6 py-2 sm:py-3 rounded-full border-4 border-yellow-400 shadow-[0_4px_15px_rgba(0,0,0,0.15)] flex items-center gap-2 sm:gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 sm:w-10 sm:h-10 text-amber-500 animate-pulse svg-icon" viewBox="0 0 24 24" fill="#fef08a" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="13" r="8"></circle>
+                    <polyline points="12 9 12 13 14 15"></polyline>
+                    <line x1="10" y1="3" x2="14" y2="3"></line>
+                </svg>
+                <span id="timer" class="text-2xl sm:text-3xl font-black text-amber-500 tabular-nums tracking-widest drop-shadow-sm">03:00</span>
+            </div>
+            <button id="muteBtn" class="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-full border-4 border-sky-400 shadow-[0_4px_15px_rgba(0,0,0,0.15)] hover:scale-110 hover:bg-sky-50 transition-all flex items-center justify-center text-sky-500">
+                <svg id="speakerIcon" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 sm:w-8 sm:h-8 svg-icon" viewBox="0 0 24 24" fill="#bae6fd" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- STAGE -->
+    <div class="stage-anchor">
+        <div class="scale-wrapper">
+            <div class="center-mark"></div>
+            <div id="tugGroup" class="tug-group" style="transform: translateX(0px) rotate(0deg);">
+                
+                <!-- BLUE SQUAD -->
+                <div class="team left" id="team1">
+                    <div class="animal buffalo" style="z-index: 1;">
+                        <div class="character"><div class="head"><div class="bull-tuft"></div><div class="horn l"></div><div class="horn r"></div><div class="ear l"></div><div class="ear r"></div><div class="eye l"></div><div class="eye r"></div><div class="cheek l"></div><div class="cheek r"></div><div class="snout"><div class="nose"></div></div><div class="mouth"></div></div><div class="body"><div class="shirt"></div><div class="shorts"></div><div class="arm back"><div class="hand"></div></div><div class="arm front"><div class="hand"></div></div></div><div class="leg l"><div class="shoe"></div></div><div class="leg r"><div class="shoe"></div></div></div>
+                    </div>
+                    <div class="animal elephant" style="z-index: 2;">
+                        <div class="character"><div class="elephant-tail"></div><div class="head"><div class="tusk l"></div><div class="tusk r"></div><div class="ear l"></div><div class="ear r"></div><div class="eye l"></div><div class="eye r"></div><div class="cheek l"></div><div class="cheek r"></div><div class="snout"></div><div class="mouth" style="top:78px;"></div></div><div class="body"><div class="shirt"></div><div class="shorts"></div><div class="arm back"><div class="hand"></div></div><div class="arm front"><div class="hand"></div></div></div><div class="leg l"><div class="shoe"></div></div><div class="leg r"><div class="shoe"></div></div></div>
+                    </div>
+                    <div class="animal tiger" style="z-index: 3;">
+                        <div class="character"><div class="tiger-tail"></div><div class="head"><div class="ear l"></div><div class="ear r"></div><div class="eye l"></div><div class="eye r"></div><div class="cheek l"></div><div class="cheek r"></div><div class="snout"><div class="nose"></div></div><div class="mouth"></div></div><div class="body"><div class="shirt"></div><div class="shorts"></div><div class="arm back"><div class="hand"></div></div><div class="arm front"><div class="hand"></div></div></div><div class="leg l"><div class="shoe"></div></div><div class="leg r"><div class="shoe"></div></div></div>
+                    </div>
+                </div>
+
+                <!-- ROPE & RED RIBBON -->
+                <div class="rope-container"><div class="ribbon"></div></div>
+
+                <!-- RED SQUAD -->
+                <div class="team right" id="team2">
+                    <div class="animal rhino" style="z-index: 1;">
+                        <div class="character"><div class="head"><div class="ear l"></div><div class="ear r"></div><div class="eye l"></div><div class="eye r"></div><div class="cheek l"></div><div class="cheek r"></div><div class="snout"><div class="rhino-horn-small"></div><div class="rhino-horn"></div><div class="nose"></div></div><div class="mouth"></div></div><div class="body"><div class="shirt"></div><div class="shorts"></div><div class="arm back"><div class="hand"></div></div><div class="arm front"><div class="hand"></div></div></div><div class="leg l"><div class="shoe"></div></div><div class="leg r"><div class="shoe"></div></div></div>
+                    </div>
+                    <div class="animal lion" style="z-index: 2;">
+                        <div class="character">
+                            <div class="lion-tail"></div>
+                            <div class="lion-mane-wrap">
+                                <svg viewBox="0 0 100 100" class="w-full h-full">
+                                    <path d="M50,0 A15,15 0 0,1 65,10 A20,20 0 0,1 95,30 A20,20 0 0,1 90,65 A20,20 0 0,1 65,95 A15,15 0 0,1 35,95 A20,20 0 0,1 10,65 A20,20 0 0,1 5,30 A20,20 0 0,1 35,10 A15,15 0 0,1 50,0 Z" fill="#ea580c"/>
+                                    <path d="M50,15 A12,12 0 0,1 60,22 A15,15 0 0,1 80,38 A15,15 0 0,1 78,60 A15,15 0 0,1 60,80 A12,12 0 0,1 40,80 A15,15 0 0,1 22,60 A15,15 0 0,1 20,38 A15,15 0 0,1 40,22 A12,12 0 0,1 50,15 Z" fill="#f97316"/>
+                                </svg>
+                            </div>
+                            <div class="head"><div class="ear l"></div><div class="ear r"></div><div class="eye l"></div><div class="eye r"></div><div class="cheek l"></div><div class="cheek r"></div><div class="snout"><div class="nose"></div></div><div class="mouth"></div></div>
+                            <div class="body"><div class="shirt"></div><div class="shorts"></div><div class="arm back"><div class="hand"></div></div><div class="arm front"><div class="hand"></div></div></div>
+                            <div class="leg l"><div class="shoe"></div></div><div class="leg r"><div class="shoe"></div></div>
+                        </div>
+                    </div>
+                    <div class="animal bear" style="z-index: 3;">
+                        <div class="character"><div class="bear-tail"></div><div class="head"><div class="ear l"></div><div class="ear r"></div><div class="eye l"></div><div class="eye r"></div><div class="cheek l"></div><div class="cheek r"></div><div class="snout"><div class="nose"></div></div><div class="mouth"></div></div><div class="body"><div class="belly"></div><div class="shirt"></div><div class="shorts"></div><div class="arm back"><div class="hand"></div></div><div class="arm front"><div class="hand"></div></div></div><div class="leg l"><div class="shoe"></div></div><div class="leg r"><div class="shoe"></div></div></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
     </div>
 
-    <div id="answerButtons" class="answer-buttons"></div>
-    <div id="feedback" class="feedback"></div>
-    <button id="nextBtn" class="next-btn" onclick="nextStep()">Next Step ➜</button>
-   </div>
-
-   <!-- Butterfly Game Screen -->
-   <div id="butterflyGameScreen" class="screen">
-    <h1 class="title">Break Time: Catch Butterflies! 🦋</h1>
-    
-    <div class="game-stats">
-        <span id="gameTimer">Time: 20s</span>
-        <span id="gameScore">Score: 0</span>
-    </div>
-
-    <div class="butterfly-game-container" id="butterflyGameArea">
-        <div class="cloud" style="top: 20px; animation-duration: 25s;">☁️</div>
-        <div class="cloud" style="top: 100px; left: 50%; animation-duration: 30s;">☁️</div>
+    <!-- MATH UI OVERLAY -->
+    <main class="math-ui-container">
         
-        <!-- Flowers for garden vibe -->
-        <div class="flower-bed">
-            <span>🌸</span><span>🌻</span><span>🌷</span><span>🌹</span><span>🌼</span><span>🌺</span>
+        <!-- Progress Bar -->
+        <div class="max-w-3xl mx-auto w-full h-8 sm:h-10 bg-slate-200 rounded-full mb-2 sm:mb-4 border-4 border-slate-300 relative shadow-inner flex-shrink-0 z-30">
+            <div id="progBlue" class="absolute top-0 bottom-0 left-0 bg-gradient-to-r from-blue-400 to-blue-500 rounded-l-full transition-all duration-500 shadow-inner" style="width: 50%;"></div>
+            <div id="progRed" class="absolute top-0 bottom-0 right-0 bg-gradient-to-l from-red-400 to-red-500 rounded-r-full transition-all duration-500 shadow-inner" style="width: 50%;"></div>
+            <div id="progMarker" class="absolute top-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-yellow-400 border-4 border-white rounded-full shadow-lg transition-all duration-500 z-10 flex items-center justify-center font-black text-xs sm:text-sm text-yellow-800" style="left: 50%; transform: translate(-50%, -50%);">VS</div>
+            
+            <div class="absolute inset-0 flex justify-between px-4 items-center text-[10px] sm:text-[14px] font-black uppercase pointer-events-none z-20 text-white drop-shadow-md">
+                <span class="tracking-widest">Blue Team</span>
+                <span class="tracking-widest">Red Team</span>
+            </div>
         </div>
 
-        <div id="startOverlay" class="start-game-overlay">
-            <h2 style="color: white; margin-bottom: 20px; font-size: 1.5rem; text-align: center;">Use your net to<br>catch them! 🕸️</h2>
-            <button class="start-btn" onclick="startButterflyGameLogic()">Play Now! ▶️</button>
+        <div id="gameControls" class="max-w-5xl mx-auto w-full flex-1 flex flex-col justify-center relative z-30 h-full">
+            
+            <!-- 1 Player -->
+            <div id="singlePlayerView" class="hidden flex-col items-center gap-3 sm:gap-4 h-full justify-center">
+                <div class="bg-blue-50/90 w-full max-w-2xl rounded-[2rem] sm:rounded-[2.5rem] p-2 sm:p-4 border-[4px] sm:border-[6px] border-blue-300 flex items-center justify-center gap-2 sm:gap-6 text-5xl sm:text-8xl font-black text-slate-700 shadow-lg">
+                    <span id="spN1" class="text-pink-500 drop-shadow-sm">0</span>
+                    <span id="spOp" class="text-sky-500 drop-shadow-sm">+</span>
+                    <span id="spN2" class="text-amber-500 drop-shadow-sm">0</span>
+                    <span class="text-slate-300">=</span>
+                    <div id="spAns" class="w-16 h-16 sm:w-24 sm:h-24 bg-white rounded-2xl sm:rounded-3xl border-4 border-dashed border-sky-400 flex items-center justify-center text-sky-500 animate-pulse shadow-inner text-4xl sm:text-6xl transition-all">?</div>
+                </div>
+                <div id="spGrid" class="grid grid-cols-4 gap-2 sm:gap-4 w-full max-w-3xl"></div>
+            </div>
+
+            <!-- 2 Players -->
+            <div id="twoPlayerView" class="hidden grid-cols-2 gap-3 sm:gap-6 h-full items-center">
+                <div class="bg-blue-50/90 rounded-[1.5rem] sm:rounded-[2.5rem] p-2 sm:p-4 border-[4px] sm:border-[6px] border-blue-300 flex flex-col gap-2 sm:gap-4 shadow-lg h-full justify-center">
+                    <div class="bg-white rounded-xl sm:rounded-[2rem] p-2 sm:p-3 flex justify-center items-center gap-2 sm:gap-3 text-3xl md:text-5xl lg:text-6xl font-black text-slate-700 border-4 border-blue-100 shadow-inner">
+                        <span id="p1N1" class="text-blue-600">0</span><span id="p1Op" class="text-slate-300 mx-1 sm:mx-2">+</span><span id="p1N2" class="text-blue-600">0</span><span class="text-slate-300">=</span>
+                        <div id="p1Ans" class="w-12 h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-blue-50 rounded-xl sm:rounded-2xl border-4 border-dashed border-blue-400 flex items-center justify-center text-blue-500 animate-pulse text-2xl md:text-4xl shadow-inner transition-all">?</div>
+                    </div>
+                    <div id="p1Grid" class="grid grid-cols-2 gap-2 sm:gap-3 flex-1"></div>
+                </div>
+                <div class="bg-red-50/90 rounded-[1.5rem] sm:rounded-[2.5rem] p-2 sm:p-4 border-[4px] sm:border-[6px] border-red-300 flex flex-col gap-2 sm:gap-4 shadow-lg h-full justify-center">
+                    <div class="bg-white rounded-xl sm:rounded-[2rem] p-2 sm:p-3 flex justify-center items-center gap-2 sm:gap-3 text-3xl md:text-5xl lg:text-6xl font-black text-slate-700 border-4 border-red-100 shadow-inner">
+                        <span id="p2N1" class="text-red-600">0</span><span id="p2Op" class="text-slate-300 mx-1 sm:mx-2">+</span><span id="p2N2" class="text-red-600">0</span><span class="text-slate-300">=</span>
+                        <div id="p2Ans" class="w-12 h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-red-50 rounded-xl sm:rounded-2xl border-4 border-dashed border-red-400 flex items-center justify-center text-red-500 animate-pulse text-2xl md:text-4xl shadow-inner transition-all">?</div>
+                    </div>
+                    <div id="p2Grid" class="grid grid-cols-2 gap-2 sm:gap-3 flex-1"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- NEW SETUP START MENU -->
+    <div id="startScreen" class="fixed inset-0 bg-sky-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+        <div class="modal-card w-full max-w-[550px] p-6 sm:p-8 text-center relative transform transition-transform animate-bounce-in flex flex-col max-h-[95vh] overflow-y-auto">
+            <h1 class="text-[2.5rem] sm:text-[3.5rem] font-black leading-tight uppercase kid-text text-sky-500 mb-1">Jungle Tug</h1>
+            <p class="text-amber-500 font-black text-lg sm:text-xl mb-5 uppercase tracking-widest drop-shadow-sm">Math Challenge</p>
+            
+            <div class="bg-white rounded-3xl p-5 mb-5 border-4 border-slate-100 shadow-sm text-left">
+                <!-- Operations -->
+                <p class="text-[11px] sm:text-xs font-black text-slate-400 uppercase mb-2 tracking-wider text-center">Select Operation:</p>
+                <div class="flex gap-2 sm:gap-3 mb-5">
+                    <button id="opAdd" onclick="setOp('add')" class="flex-1 py-2 sm:py-3 font-black rounded-xl sm:rounded-[1rem] border-b-[4px] text-sm sm:text-lg bg-blue-500 text-white border-blue-700 transform transition active:translate-y-1 active:border-b-0">Add (+)</button>
+                    <button id="opSub" onclick="setOp('sub')" class="flex-1 py-2 sm:py-3 font-black rounded-xl sm:rounded-[1rem] border-b-[4px] text-sm sm:text-lg bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100 transform transition active:translate-y-1 active:border-b-0">Sub (-)</button>
+                    <button id="opMixed" onclick="setOp('mixed')" class="flex-1 py-2 sm:py-3 font-black rounded-xl sm:rounded-[1rem] border-b-[4px] text-sm sm:text-lg bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100 transform transition active:translate-y-1 active:border-b-0">Mixed</button>
+                </div>
+
+                <!-- Math Range -->
+                <p class="text-[11px] sm:text-xs font-black text-slate-400 uppercase mb-2 tracking-wider text-center">Math Range:</p>
+                <div class="flex justify-center gap-2 sm:gap-3 mb-5">
+                    <button id="range5" onclick="setRange(5)" class="flex-1 aspect-square sm:aspect-auto sm:py-3 flex items-center justify-center font-black rounded-xl sm:rounded-[1rem] border-b-[4px] text-base sm:text-xl bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100 transform transition active:translate-y-1 active:border-b-0">5</button>
+                    <button id="range10" onclick="setRange(10)" class="flex-1 aspect-square sm:aspect-auto sm:py-3 flex items-center justify-center font-black rounded-xl sm:rounded-[1rem] border-b-[4px] text-base sm:text-xl bg-blue-500 text-white border-blue-700 transform transition active:translate-y-1 active:border-b-0">10</button>
+                    <button id="range20" onclick="setRange(20)" class="flex-1 aspect-square sm:aspect-auto sm:py-3 flex items-center justify-center font-black rounded-xl sm:rounded-[1rem] border-b-[4px] text-base sm:text-xl bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100 transform transition active:translate-y-1 active:border-b-0">20</button>
+                    <button id="range30" onclick="setRange(30)" class="flex-1 aspect-square sm:aspect-auto sm:py-3 flex items-center justify-center font-black rounded-xl sm:rounded-[1rem] border-b-[4px] text-base sm:text-xl bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100 transform transition active:translate-y-1 active:border-b-0">30</button>
+                    <button id="range50" onclick="setRange(50)" class="flex-1 aspect-square sm:aspect-auto sm:py-3 flex items-center justify-center font-black rounded-xl sm:rounded-[1rem] border-b-[4px] text-base sm:text-xl bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100 transform transition active:translate-y-1 active:border-b-0">50</button>
+                    <button id="range100" onclick="setRange(100)" class="flex-1 aspect-square sm:aspect-auto sm:py-3 flex items-center justify-center font-black rounded-xl sm:rounded-[1rem] border-b-[4px] text-base sm:text-xl bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100 transform transition active:translate-y-1 active:border-b-0">100</button>
+                </div>
+                
+                <!-- Match Duration -->
+                <div class="bg-blue-50 rounded-2xl p-4 border-2 border-blue-100">
+                    <p class="text-[11px] sm:text-xs font-black text-blue-500 uppercase mb-2 tracking-wider text-center">Race Duration:</p>
+                    <div class="flex items-center gap-3">
+                        <input type="range" id="timeSlider" min="1" max="10" value="3" class="flex-1 accent-blue-500 h-3 rounded-full bg-blue-200 cursor-pointer">
+                        <p id="timeLabel" class="text-2xl font-black text-blue-600 w-12 text-right">3m</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Start Buttons -->
+            <div class="flex flex-col gap-3">
+                <button onclick="bootGame('cpu')" class="btn-math w-full bg-green-500 text-white font-black py-4 sm:py-4 rounded-[1.5rem] text-xl sm:text-2xl border-b-[6px] border-green-700 hover:brightness-110 flex items-center justify-center gap-2">
+                    VS CPU <span class="text-3xl ml-1 drop-shadow-md">🤖</span>
+                </button>
+                <button onclick="bootGame('pvp')" class="btn-math w-full bg-orange-500 text-white font-black py-4 sm:py-4 rounded-[1.5rem] text-xl sm:text-2xl border-b-[6px] border-orange-700 hover:brightness-110 flex items-center justify-center gap-2">
+                    2 PLAYERS <span class="text-3xl ml-1 drop-shadow-md">👨‍👦</span>
+                </button>
+            </div>
         </div>
     </div>
 
-    <div id="gameResult" style="display: none; margin-top: 20px;">
-        <h2 style="color: #0277BD;">Time's up! You caught <span id="finalScore" style="color: #FF7043; font-size: 2rem;">0</span> butterflies!</h2>
-        <button class="next-btn" onclick="continueMainGame()" style="display: inline-block;">Continue Learning ➜</button>
+    <!-- GAME OVER SCREEN -->
+    <div id="endScreen" class="fixed inset-0 bg-black/75 backdrop-blur-xl z-[1000] hidden items-center justify-center p-4">
+        <div class="modal-card w-full max-w-[500px] p-8 sm:p-12 text-center relative animate-bounce-in">
+            
+            <h2 id="resultTitle" class="text-6xl sm:text-8xl font-black uppercase kid-text text-yellow-400 mb-8 leading-tight drop-shadow-xl">
+                VICTORY!
+            </h2>
+
+            <button onclick="location.reload()" class="btn-math w-full bg-gradient-to-b from-sky-400 to-sky-500 text-white font-black py-4 sm:py-6 rounded-[2rem] sm:rounded-[2.5rem] text-3xl border-b-[8px] border-sky-700 hover:brightness-110 transition-all duration-200">
+                <span class="flex items-center justify-center gap-3">
+                    PLAY AGAIN
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 2v6h-6"></path>
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                    </svg>
+                </span>
+            </button>
+
+        </div>
     </div>
-   </div>
 
-   <!-- Celebration Screen -->
-   <div id="celebrationScreen" class="screen" style="position: relative; overflow: hidden;">
-    <h1 class="title" style="color: #FFCA28; font-size: 3rem;">Mission Complete! 🏆</h1>
-    
-    <div style="font-size: 2rem; margin: 30px 0;">🎉 🎊 🎈</div>
-    
-    <div style="font-size: 1.5rem; color: #455A64; margin: 20px 0; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); z-index: 10; position: relative;">
-     You answered all questions correctly!<br>
-     <b>You are a Math Master!</b>
-    </div>
-    
-    <button class="next-btn" onclick="restartGame()" style="display: inline-block; background: #66BB6A; border-bottom-color: #43A047; z-index: 10; position: relative;">Play Again ↺</button>
-   </div>
+    <script>
+        let gameMode = 'cpu', isMuted = false, timeLeft = 180, gameActive = false;
+        let offset = 0; const MAX_OFFSET = 8;
+        let p1Correct = 0, p2Correct = 0;
+        let qSP = {}, qP1 = {}, qP2 = {};
 
-  </div>
+        // Settings State
+        let selectedOp = 'add'; // 'add', 'sub', 'mixed'
+        let selectedRange = 10; // 5, 10, 20, 30, 50, 100
 
-  <script>
-        // --- CONFIG ---
-        const fruits = ['🍎', '🍌', '🍊', '🍇', '🍓', '🍑', '🍐', '🥭'];
-        const fruitNames = {
-            '🍎': 'apples', '🍌': 'bananas', '🍊': 'oranges', 
-            '🍇': 'grapes', '🍓': 'strawberries', '🍑': 'peaches', 
-            '🍐': 'pears', '🥭': 'mangoes'
-        };
+        // SVGs for Audio Toggle
+        const speakerSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 sm:w-8 sm:h-8 svg-icon" viewBox="0 0 24 24" fill="#bae6fd" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>`;
+        const muteSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 sm:w-8 sm:h-8 svg-icon text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>`;
 
-        // Math Game State
-        let currentQuestion = 0;
-        let currentStep = 0; 
-        let totalQuestions = 3; 
-        let questions = [];
-        
-        // Butterfly Game State
-        let butterflyScore = 0;
-        let timeLeft = 20; 
-        let gameInterval;
-        let spawnInterval;
-        let isGameRunning = false;
-
-        // Butterfly Emojis & Friends (Butterflies, Bee, Ladybug)
-        const butterflies = ['🦋', '🐝', '🐞']; 
-        // We will rotate hues for '🦋' to make different colored butterflies
-
-        // --- MATH GAME INIT ---
-        function initGame() {
-            generateQuestions();
-            showQuestion();
-        }
-
-        function generateQuestions() {
-            questions = [];
-            for (let i = 0; i < totalQuestions; i++) {
-                const fruit1 = fruits[Math.floor(Math.random() * fruits.length)];
-                let fruit2 = fruits[Math.floor(Math.random() * fruits.length)];
-                while (fruit2 === fruit1) fruit2 = fruits[Math.floor(Math.random() * fruits.length)];
-                
-                // Range 10-20
-                let count1 = Math.floor(Math.random() * 6) + 5; 
-                let count2 = Math.floor(Math.random() * 6) + 5;
-                
-                questions.push({
-                    fruit1, fruit2, count1, count2,
-                    total: count1 + count2
-                });
-            }
-        }
-
-        function showQuestion() {
-            const question = questions[currentQuestion];
-            const progress = (currentQuestion / totalQuestions) * 100;
-            document.getElementById('progressFill').style.width = progress + '%';
-            
-            // Reset UI
-            document.getElementById('feedback').textContent = '';
-            document.getElementById('nextBtn').style.display = 'none';
-            document.getElementById('numberBond').style.display = 'none';
-            
-            showStep();
-        }
-
-        function showStep() {
-            const q = questions[currentQuestion];
-            const display = document.getElementById('fruitDisplay');
-            const text = document.getElementById('questionText');
-            
-            let html = '';
-            let targetCount = 0;
-            let targetName = '';
-
-            if (currentStep === 0) {
-                // Step 1
-                for(let i=0; i<q.count1; i++) html += `<span class="fruit-emoji" onclick="speak('${fruitNames[q.fruit1]}')">${q.fruit1}</span>`;
-                display.innerHTML = `<div class="fruit-group">${html}</div>`;
-                targetCount = q.count1;
-                targetName = fruitNames[q.fruit1];
-                text.textContent = `How many ${targetName}?`;
-
-            } else if (currentStep === 1) {
-                // Step 2
-                for(let i=0; i<q.count2; i++) html += `<span class="fruit-emoji" onclick="speak('${fruitNames[q.fruit2]}')">${q.fruit2}</span>`;
-                display.innerHTML = `<div class="fruit-group">${html}</div>`;
-                targetCount = q.count2;
-                targetName = fruitNames[q.fruit2];
-                text.textContent = `How many ${targetName}?`;
-
-            } else if (currentStep === 2) {
-                // Step 3
-                let h1 = '', h2 = '';
-                for(let i=0; i<q.count1; i++) h1 += `<span class="fruit-emoji">${q.fruit1}</span>`;
-                for(let i=0; i<q.count2; i++) h2 += `<span class="fruit-emoji">${q.fruit2}</span>`;
-                
-                display.innerHTML = `
-                    <div class="fruit-group">${h1}</div>
-                    <div class="plus-sign">+</div>
-                    <div class="fruit-group">${h2}</div>
-                `;
-                
-                document.getElementById('numberBond').style.display = 'flex';
-                document.getElementById('bondPart1').textContent = q.count1;
-                document.getElementById('bondPart2').textContent = q.count2;
-                document.getElementById('bondWhole').textContent = '?';
-                
-                targetCount = q.total;
-                text.textContent = 'How many fruits altogether?';
-            }
-            
-            generateButtons(targetCount);
-        }
-
-        function generateButtons(correct) {
-            const container = document.getElementById('answerButtons');
-            container.innerHTML = '';
-            
-            let opts = [correct];
-            while(opts.length < 3) {
-                let r = Math.floor(Math.random() * 20) + 5; 
-                if(!opts.includes(r) && r !== correct) opts.push(r);
-            }
-            opts.sort(() => Math.random() - 0.5);
-            
-            opts.forEach(num => {
-                const btn = document.createElement('button');
-                btn.className = 'answer-btn';
-                btn.textContent = num;
-                btn.onclick = () => checkAnswer(num, correct, btn);
-                container.appendChild(btn);
-            });
-        }
-
-        function checkAnswer(selected, correct, btn) {
-            const feedback = document.getElementById('feedback');
-            const btns = document.querySelectorAll('.answer-btn');
-            
-            if(selected === correct) {
-                playSound('success');
-                btn.classList.add('correct');
-                btns.forEach(b => b.disabled = true);
-                feedback.textContent = 'Correct! You are amazing! 🎉';
-                
-                if(currentStep === 2) document.getElementById('bondWhole').textContent = correct;
-                
-                setTimeout(() => {
-                    if(currentStep < 2) {
-                        currentStep++;
-                        showStep();
-                    } else {
-                        document.getElementById('nextBtn').style.display = 'inline-block';
-                    }
-                }, 1000);
-            } else {
-                playSound('error');
-                btn.classList.add('incorrect');
-                feedback.textContent = 'Oops, try again!';
-                feedback.style.color = '#EF5350';
-                setTimeout(() => {
-                    btn.classList.remove('incorrect');
-                    feedback.textContent = '';
-                }, 1000);
-            }
-        }
-
-        function nextStep() {
-            currentQuestion++;
-            currentStep = 0;
-            
-            if(currentQuestion <= totalQuestions) {
-                // Switch to Butterfly Game
-                showScreen('butterflyGameScreen');
-                prepareButterflyGame();
-            } else {
-                showCelebration();
-            }
-        }
-
-        function continueMainGame() {
-            if(currentQuestion < totalQuestions) {
-                showScreen('questionScreen');
-                showQuestion();
-            } else {
-                showCelebration();
-            }
-        }
-
-        // --- BUTTERFLY GAME LOGIC ---
-        
-        function prepareButterflyGame() {
-            document.getElementById('startOverlay').style.display = 'flex';
-            document.getElementById('gameResult').style.display = 'none';
-            document.getElementById('gameTimer').textContent = "Time: 20s"; 
-            document.getElementById('gameScore').textContent = "Score: 0";
-            
-            const area = document.getElementById('butterflyGameArea');
-            const oldButterflies = area.querySelectorAll('.butterfly');
-            oldButterflies.forEach(b => b.remove());
-        }
-
-        function startButterflyGameLogic() {
-            document.getElementById('startOverlay').style.display = 'none';
-            butterflyScore = 0;
-            timeLeft = 20; 
-            isGameRunning = true;
-            document.getElementById('gameScore').textContent = "Score: 0";
-            
-            gameInterval = setInterval(() => {
-                timeLeft--;
-                document.getElementById('gameTimer').textContent = `Time: ${timeLeft}s`;
-                if(timeLeft <= 0) endGame();
-            }, 1000);
-
-            spawnInterval = setInterval(spawnButterfly, 800); 
-        }
-
-        function spawnButterfly() {
-            if(!isGameRunning) return;
-            
-            const area = document.getElementById('butterflyGameArea');
-            const bDiv = document.createElement('div');
-            bDiv.className = 'butterfly';
-            
-            const span = document.createElement('span');
-            span.className = 'butterfly-inner';
-            
-            // Random type
-            const type = butterflies[Math.floor(Math.random() * butterflies.length)];
-            span.textContent = type;
-            
-            // Random color for butterfly type
-            if(type === '🦋') {
-                const hue = Math.floor(Math.random() * 360);
-                span.style.filter = `hue-rotate(${hue}deg)`;
-            }
-            
-            bDiv.appendChild(span);
-            
-            const maxLeft = area.offsetWidth - 70;
-            const maxTop = area.offsetHeight - 70; // Stay above flowers mostly
-            
-            bDiv.style.left = Math.random() * maxLeft + 'px';
-            bDiv.style.top = Math.random() * (maxTop - 40) + 'px';
-            
-            bDiv.onclick = (e) => catchButterfly(e, bDiv);
-            area.appendChild(bDiv);
-
-            // Move logic
-            const moveInterval = setInterval(() => {
-                if(!isGameRunning || bDiv.classList.contains('caught')) {
-                    clearInterval(moveInterval);
-                    return;
-                }
-                const newLeft = Math.random() * maxLeft;
-                const newTop = Math.random() * (maxTop - 40);
-                bDiv.style.left = newLeft + 'px';
-                bDiv.style.top = newTop + 'px';
-            }, 1000);
-            
-            // Disappear logic
-            setTimeout(() => {
-                if(bDiv.parentNode && !bDiv.classList.contains('caught')) {
-                    bDiv.style.opacity = '0';
-                    setTimeout(() => { 
-                        bDiv.remove(); 
-                        clearInterval(moveInterval);
-                    }, 500);
-                }
-            }, 3000);
-        }
-
-        function catchButterfly(e, el) {
-            if(!isGameRunning || el.classList.contains('caught')) return;
-            e.stopPropagation();
-            
-            // Net swish sound
-            playSound('swish');
-            
-            butterflyScore++;
-            document.getElementById('gameScore').textContent = `Score: ${butterflyScore}`;
-            
-            el.classList.add('caught');
-            setTimeout(() => el.remove(), 400);
-        }
-
-        function endGame() {
-            isGameRunning = false;
-            clearInterval(gameInterval);
-            clearInterval(spawnInterval);
-            
-            document.getElementById('finalScore').textContent = butterflyScore;
-            document.getElementById('gameResult').style.display = 'block';
-            playSound('success');
-        }
-
-        // --- FIREWORKS ---
-        
-        function showCelebration() {
-            showScreen('celebrationScreen');
-            startFireworks();
-        }
-
-        function startFireworks() {
-            const colors = ['#FF6B6B', '#FFD93D', '#6BCB77', '#4D96FF', '#F473B9'];
-            const container = document.getElementById('celebrationScreen');
-            
-            const fireworkInterval = setInterval(() => {
-                if(!container.classList.contains('active')) {
-                    clearInterval(fireworkInterval);
-                    return;
-                }
-                
-                const x = Math.random() * 100 + '%';
-                const y = Math.random() * 60 + 10 + '%';
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                
-                createExplosion(container, x, y, color);
-            }, 500);
-        }
-
-        function createExplosion(container, x, y, color) {
-            const particles = 20;
-            for(let i=0; i<particles; i++) {
-                const p = document.createElement('div');
-                p.className = 'firework';
-                p.style.left = x;
-                p.style.top = y;
-                p.style.backgroundColor = color;
-                
-                const angle = (Math.PI * 2 * i) / particles;
-                const velocity = 100 + Math.random() * 100;
-                const dx = Math.cos(angle) * velocity + 'px';
-                const dy = Math.sin(angle) * velocity + 'px';
-                
-                p.style.setProperty('--dx', dx);
-                p.style.setProperty('--dy', dy);
-                
-                container.appendChild(p);
-                setTimeout(() => p.remove(), 1000);
-            }
-            playSound('pop'); 
-        }
-
-
-        // --- COMMON SYSTEM ---
-
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => {
-                s.classList.remove('active');
-            });
-            document.getElementById(id).classList.add('active');
-        }
-
-        function restartGame() {
-            currentQuestion = 0;
-            currentStep = 0;
-            showScreen('questionScreen');
-            initGame();
-        }
-
-        // Audio
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
-        function playSound(type) {
-            if(audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
+        function playSfx(freqs, type = 'sine', duration = 0.2) {
+            if (isMuted) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const freqsArray = Array.isArray(freqs) ? freqs : [freqs];
+            
+            freqsArray.forEach((freq, i) => {
+                setTimeout(() => {
+                    const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+                    osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                    osc.connect(gain); gain.connect(audioCtx.destination);
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                    osc.start(); osc.stop(audioCtx.currentTime + duration);
+                }, i * 100);
+            });
+        }
 
-            if(type === 'success') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(500, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 0.1);
-                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.5);
-            } else if(type === 'error') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.2);
-                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.3);
-            } else if(type === 'pop') {
-                // Short pop
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.1);
-            } else if (type === 'swish') {
-                // Net swish effect (noise-like)
-                // Web Audio noise is complex, using simple low sine swipe
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.15);
-                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.15);
+        // ================ ZERO-LAG CONFETTI ================
+        const canvas = document.getElementById('fireworksCanvas'), ctx = canvas.getContext('2d');
+        let particles = [];
+        let fwAnimationId = null;
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+
+        function triggerConfetti() {
+            const colors = ['#fce18a', '#ff726d', '#b48def', '#f4306d', '#84cc16', '#38bdf8', '#facc15'];
+            const pCount = window.innerWidth < 600 ? 60 : 120;
+            
+            for (let i = 0; i < pCount; i++) {
+                particles.push({ 
+                    x: canvas.width / 2, 
+                    y: canvas.height / 2 + (Math.random() * 50 - 25), 
+                    vx: (Math.random() - 0.5) * 25, 
+                    vy: (Math.random() - 1) * 20 - 5, 
+                    w: Math.random() * 8 + 6,
+                    h: Math.random() * 8 + 6,
+                    color: colors[Math.floor(Math.random()*colors.length)],
+                    rot: Math.random() * 360,
+                    rotSpeed: (Math.random() - 0.5) * 20
+                });
+            }
+            if(!fwAnimationId) animateConfetti();
+        }
+        
+        function animateConfetti() {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            
+            particles.forEach((p, i) => {
+                p.vy += 0.4; 
+                p.x += p.vx; 
+                p.y += p.vy; 
+                p.rot += p.rotSpeed;
+                
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rot * Math.PI / 180);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+                ctx.restore();
+                
+                if(p.y > canvas.height + 20) particles.splice(i, 1);
+            });
+            
+            if(particles.length > 0) { 
+                fwAnimationId = requestAnimationFrame(animateConfetti); 
+            } else { 
+                fwAnimationId = null; 
             }
         }
 
-        function playAudio() {
-            const text = document.getElementById('questionText').textContent;
-            speak(text);
+        // ================ SETTINGS UI LOGIC ================
+        function updateMenuUI() {
+            ['add', 'sub', 'mixed'].forEach(o => {
+                const el = document.getElementById('op' + o.charAt(0).toUpperCase() + o.slice(1));
+                if(o === selectedOp) {
+                    el.className = "flex-1 py-2 sm:py-3 font-black rounded-xl sm:rounded-[1rem] border-b-[4px] text-sm sm:text-lg bg-blue-500 text-white border-blue-700 transform transition active:translate-y-1 active:border-b-0";
+                } else {
+                    el.className = "flex-1 py-2 sm:py-3 font-black rounded-xl sm:rounded-[1rem] border-b-[4px] text-sm sm:text-lg bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100 transform transition active:translate-y-1 active:border-b-0";
+                }
+            });
+
+            [5, 10, 20, 30, 50, 100].forEach(r => {
+                const el = document.getElementById('range' + r);
+                if(r === selectedRange) {
+                    el.className = "flex-1 aspect-square sm:aspect-auto sm:py-3 flex items-center justify-center font-black rounded-xl sm:rounded-[1rem] border-b-[4px] text-base sm:text-xl bg-blue-500 text-white border-blue-700 transform transition active:translate-y-1 active:border-b-0";
+                } else {
+                    el.className = "flex-1 aspect-square sm:aspect-auto sm:py-3 flex items-center justify-center font-black rounded-xl sm:rounded-[1rem] border-b-[4px] text-base sm:text-xl bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100 transform transition active:translate-y-1 active:border-b-0";
+                }
+            });
         }
 
-        function speak(text) {
-            if('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const u = new SpeechSynthesisUtterance(text);
-                u.lang = 'en-US'; 
-                u.rate = 0.9;
-                window.speechSynthesis.speak(u);
+        function setOp(op) { selectedOp = op; updateMenuUI(); }
+        function setRange(val) { selectedRange = val; updateMenuUI(); }
+
+        document.getElementById('timeSlider').oninput = (e) => {
+            const val = e.target.value;
+            document.getElementById('timeLabel').innerText = `${val}m`;
+            timeLeft = val * 60;
+        };
+
+        function bootGame(mode) {
+            gameMode = mode; gameActive = true;
+            document.getElementById('startScreen').classList.add('hidden');
+            if (mode === 'cpu') {
+                document.getElementById('singlePlayerView').classList.remove('hidden');
+                document.getElementById('singlePlayerView').classList.add('flex');
+                startCpu(); gen('sp');
+            } else {
+                document.getElementById('twoPlayerView').classList.remove('hidden');
+                document.getElementById('twoPlayerView').classList.add('grid');
+                gen('p1'); gen('p2');
+            }
+            setInterval(tick, 1000); updateVisuals();
+            playSfx([400, 600, 800], 'triangle', 0.3);
+        }
+
+        function tick() {
+            if(!gameActive) return;
+            timeLeft--;
+            const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            const s = (timeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('timer').innerText = `${m}:${s}`;
+            
+            if(timeLeft <= 10 && timeLeft > 0) {
+                document.getElementById('timer').classList.add('text-red-500');
+                if(timeLeft % 2 === 0) playSfx(800, 'sine', 0.1);
+            }
+            
+            if(timeLeft <= 0) end('draw');
+        }
+
+        function startCpu() {
+            setInterval(() => {
+                if(!gameActive || gameMode !== 'cpu') return;
+                offset++; p2Correct++; triggerAnim('right'); updateVisuals(); check();
+            }, 5500);
+        }
+
+        function getQ() {
+            let isAdd = true;
+            if (selectedOp === 'sub') isAdd = false;
+            else if (selectedOp === 'mixed') isAdd = Math.random() > 0.5;
+
+            if (isAdd) {
+                // Addition: n1 + n2 = ans (ans <= selectedRange)
+                const maxAns = Math.max(2, selectedRange);
+                const ans = Math.floor(Math.random() * (maxAns - 1)) + 2; // Range [2, maxAns]
+                const n1 = Math.floor(Math.random() * (ans - 1)) + 1; // Range [1, ans-1]
+                return { n1: n1, n2: ans - n1, op: '+', ans: ans };
+            } else {
+                // Subtraction: n1 - n2 = ans (n1 <= selectedRange)
+                const maxN1 = Math.max(2, selectedRange);
+                const n1 = Math.floor(Math.random() * (maxN1 - 1)) + 2; // Range [2, maxN1]
+                const n2 = Math.floor(Math.random() * (n1 - 1)) + 1; // Range [1, n1-1]
+                return { n1: n1, n2: n2, op: '-', ans: n1 - n2 };
             }
         }
 
-        // Start
-        initGame();
-  </script>
- </body>
+        function gen(t) {
+            let p = getQ();
+            const os = [p.ans];
+            
+            // Dynamic variance based on range for plausible options
+            const variance = Math.max(4, Math.floor(selectedRange * 0.2));
+            let attempts = 0;
+            while(os.length < 4 && attempts < 100) {
+                const alt = p.ans + (Math.floor(Math.random() * (variance * 2 + 1)) - variance);
+                if(alt >= 0 && !os.includes(alt)) os.push(alt);
+                attempts++;
+            }
+            // Fallback if tight range like 5
+            let fallbackVal = 0;
+            while(os.length < 4) {
+                if(!os.includes(fallbackVal)) os.push(fallbackVal);
+                fallbackVal++;
+            }
+            
+            os.sort(()=>Math.random()-0.5);
+
+            document.getElementById(t+'N1').innerText = p.n1;
+            document.getElementById(t+'Op').innerText = p.op;
+            document.getElementById(t+'N2').innerText = p.n2;
+            
+            const ansBox = document.getElementById(t+'Ans');
+            if (ansBox) {
+                ansBox.innerText = '?';
+                if(t==='sp') ansBox.className = 'w-16 h-16 sm:w-24 sm:h-24 bg-white rounded-2xl sm:rounded-3xl border-4 border-dashed border-sky-400 flex items-center justify-center text-sky-500 animate-pulse shadow-inner text-4xl sm:text-6xl transition-all';
+                else {
+                    const color = t==='p1' ? 'blue' : 'red';
+                    ansBox.className = `w-12 h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-${color}-50 rounded-xl sm:rounded-2xl border-4 border-dashed border-${color}-400 flex items-center justify-center text-${color}-500 animate-pulse text-2xl md:text-4xl shadow-inner transition-all`;
+                }
+            }
+            
+            if(t==='sp') qSP=p; else if(t==='p1') qP1=p; else qP2=p;
+
+            const grid = document.getElementById(t+'Grid');
+            grid.innerHTML = '';
+            
+            const spColors = [
+                'border-pink-500 text-pink-600', 
+                'border-blue-500 text-blue-600', 
+                'border-green-500 text-green-600', 
+                'border-purple-500 text-purple-600'
+            ];
+
+            os.forEach((o, index) => {
+                const btn = document.createElement('button');
+                
+                if(t==='sp') {
+                    const colorCls = spColors[index % 4];
+                    btn.className = `btn-math bg-white border-b-[6px] ${colorCls} font-black py-2 sm:py-4 text-3xl sm:text-5xl shadow-sm hover:bg-slate-50 w-full h-full`;
+                } else {
+                    const colorCls = t==='p1' ? 'border-blue-300 text-blue-700 hover:bg-blue-50' : 'border-red-300 text-red-700 hover:bg-red-50';
+                    btn.className = `btn-math bg-white border-b-[6px] ${colorCls} font-black py-2 sm:py-3 text-2xl md:text-4xl shadow-sm w-full h-full`;
+                }
+
+                btn.innerText = o;
+                btn.onclick = () => solve(o, t, btn);
+                grid.appendChild(btn);
+            });
+        }
+
+        function triggerAnim(side) {
+            const els = document.querySelectorAll(side === 'left' ? '#team1 .animal' : '#team2 .animal');
+            const cls = side === 'left' ? 'pull-l' : 'pull-r';
+            els.forEach(e => { e.classList.remove(cls); void e.offsetWidth; e.classList.add(cls); });
+        }
+
+        function solve(v, t, btn) {
+            if(!gameActive) return;
+            const correct = (t==='sp'?qSP:t==='p1'?qP1:qP2).ans === v;
+            const ansBox = document.getElementById(t+'Ans');
+            
+            if(correct) {
+                playSfx([600, 800], 'sine', 0.15); 
+                
+                btn.className = btn.className.replace('bg-white', 'bg-green-400 text-white').replace(/border-\w+-500|border-\w+-300/g, 'border-green-600').replace(/text-\w+-600|text-\w+-700/g, 'text-white');
+                
+                if(ansBox) {
+                    ansBox.innerText = v;
+                    if(t==='sp') ansBox.className = 'w-16 h-16 sm:w-24 sm:h-24 bg-green-400 rounded-2xl sm:rounded-3xl border-4 border-green-500 flex items-center justify-center text-white shadow-inner text-4xl sm:text-6xl transition-all scale-110';
+                    else ansBox.className = 'w-12 h-12 md:w-16 md:h-16 lg:w-20 lg:h-20 bg-green-400 rounded-xl sm:rounded-2xl border-4 border-green-500 flex items-center justify-center text-white text-2xl md:text-4xl shadow-inner transition-all scale-110';
+                }
+
+                if(t==='sp' || t==='p1') { offset--; p1Correct++; triggerAnim('left'); } 
+                else { offset++; p2Correct++; triggerAnim('right'); }
+                
+                updateVisuals(); check();
+                setTimeout(() => { if(gameActive) gen(t); }, 600);
+            } else {
+                playSfx(150, 'sawtooth', 0.3);
+                
+                btn.classList.add('animate-shake-kid', 'bg-red-400', 'text-white', 'border-red-600');
+                btn.classList.remove('bg-white');
+                btn.className = btn.className.replace(/text-\w+-\d00/g, 'text-white');
+                btn.disabled = true; 
+                
+                if(t==='sp' || t==='p1') offset++; else offset--;
+                updateVisuals();
+            }
+        }
+
+        function updateVisuals() {
+            const step = window.innerWidth < 600 ? 15 : 22; 
+            const tilt = offset * 0.6; 
+            
+            document.getElementById('tugGroup').style.transform = `translateX(${offset * step}px) rotate(${tilt}deg)`;
+            
+            const percentage = ((offset + MAX_OFFSET) / (MAX_OFFSET * 2)) * 100; 
+            const pClamp = Math.max(5, Math.min(95, percentage));
+            
+            document.getElementById('progBlue').style.width = `${100 - pClamp}%`;
+            document.getElementById('progRed').style.width = `${pClamp}%`;
+            document.getElementById('progMarker').style.left = `${pClamp}%`;
+        }
+
+        function check() { 
+            if(offset <= -MAX_OFFSET) end('p1');
+            else if(offset >= MAX_OFFSET) end('p2');
+        }
+
+        function end(w) {
+            gameActive = false;
+            document.getElementById('endScreen').classList.remove('hidden');
+            document.getElementById('endScreen').classList.add('flex');
+            
+            const title = document.getElementById('resultTitle');
+            
+            if(w==='p1') { 
+                title.innerText="BLUE WINS!"; 
+                title.className="text-6xl sm:text-8xl font-black uppercase kid-text text-blue-500 mb-8 leading-tight drop-shadow-xl"; 
+                playSfx([400, 600, 800, 1000], 'triangle', 0.2); 
+            }
+            else if(w==='p2') { 
+                title.innerText=gameMode==='cpu'?"BOT WINS!":"RED WINS!"; 
+                title.className="text-6xl sm:text-8xl font-black uppercase kid-text text-red-500 mb-8 leading-tight drop-shadow-xl"; 
+                playSfx([300, 200, 150], 'sawtooth', 0.3); 
+            }
+            else { 
+                title.innerText="IT'S A TIE!"; 
+                title.className="text-6xl sm:text-8xl font-black uppercase kid-text text-slate-400 mb-8 leading-tight drop-shadow-xl"; 
+                playSfx([400, 400], 'sine', 0.3);
+            }
+
+            // Fire Zero-Lag Confetti Multiple Times
+            triggerConfetti();
+            setTimeout(triggerConfetti, 1000);
+            setTimeout(triggerConfetti, 2500);
+        }
+
+        // Mute button logic
+        document.getElementById('muteBtn').onclick = function() { 
+            isMuted = !isMuted; 
+            this.innerHTML = isMuted ? muteSvg : speakerSvg; 
+            if(isMuted) {
+                this.classList.remove('text-sky-500', 'border-sky-400');
+                this.classList.add('border-slate-300', 'bg-slate-100');
+            } else {
+                this.classList.add('text-sky-500', 'border-sky-400');
+                this.classList.remove('border-slate-300', 'bg-slate-100');
+            }
+        };
+        
+        window.onload = () => document.body.addEventListener('click', () => { if(audioCtx.state==='suspended') audioCtx.resume(); }, {once:true});
+    </script>
+</body>
 </html>
