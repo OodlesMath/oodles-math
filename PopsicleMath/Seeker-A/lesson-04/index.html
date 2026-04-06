@@ -132,7 +132,7 @@
             position: relative; z-index: 10; align-items: center;
         }
 
-        @media (min-width: 1024px) {
+        @media (min-width: 800px) {
             .game-container { flex-direction: row; align-items: flex-start; justify-content: space-evenly; padding: 20px 50px; }
             .play-area { width: 55%; max-width: 550px; }
             .bond-area { width: 40%; max-width: 400px; }
@@ -261,6 +261,7 @@
             background: white; padding: 40px; border-radius: 30px; text-align: center;
             border: 8px solid #ff9f43; transform: scale(0.5); transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            width: 90%; max-width: 400px;
         }
         .modal.active .modal-content { transform: scale(1); }
         
@@ -280,9 +281,9 @@
             text-shadow: 2px 2px 0px rgba(0,0,0,0.1);
         }
 
-        .modal-content h2 { font-size: 3rem; color: #ff6b6b; margin-bottom: 10px; }
-        .modal-content p { font-size: 1.5rem; font-weight: bold; color: #333; margin-bottom: 20px; }
-        .btn-large { font-size: 1.5rem; padding: 15px 40px; }
+        .modal-content h2 { font-size: 2.5rem; color: #ff6b6b; margin-bottom: 10px; }
+        .modal-content p { font-size: 1.3rem; font-weight: bold; color: #333; margin-bottom: 20px; }
+        .btn-large { font-size: 1.5rem; padding: 15px 40px; width: 100%;}
 
         /* Fireworks */
         .fw-particle {
@@ -293,6 +294,24 @@
             0% { transform: translate(0, 0) scale(1); opacity: 1; }
             80% { opacity: 1; }
             100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+
+        /* --- Media Queries for Responsive Design (Mobile / Tablet) --- */
+        @media (max-width: 480px) {
+            .tree-container { transform: scale(0.8); transform-origin: top center; margin-bottom: -70px; }
+            .baskets-wrapper { gap: 15px; transform: scale(0.9); transform-origin: top center; margin-top: 0; }
+            .number-bond { transform: scale(0.9); transform-origin: top center; margin-bottom: -20px;}
+            .score-board { transform: scale(0.9); }
+            h1 { font-size: 2rem; }
+            #message-board { font-size: 1.2rem; }
+            .controls button { font-size: 1rem; padding: 8px 20px; }
+        }
+
+        @media (max-width: 380px) {
+            .tree-container { transform: scale(0.7); transform-origin: top center; margin-bottom: -110px; }
+            .baskets-wrapper { transform: scale(0.8); transform-origin: top center; }
+            .number-bond { transform: scale(0.8); transform-origin: top center; margin-bottom: -40px;}
+            .score-board { transform: scale(0.8); }
         }
 
     </style>
@@ -563,7 +582,7 @@
             elements.treeLeaves.appendChild(apple);
         }
 
-        // Feature 1: Even Distribution using Fibonacci Lattice (Golden Angle)
+        // Even Distribution using Fibonacci Lattice (Golden Angle)
         function positionAppleOnTree(apple, index = -1, total = 1) {
             const centerX = 180, centerY = 130;
             const maxRadiusX = 140, maxRadiusY = 100;
@@ -664,18 +683,31 @@
             updateUI();
         }
 
-        // Feature 2: Click Basket to move apple
+        // Feature: Enhanced Click to move apple
         function moveAppleToBasket(basketNum) {
-            if (applesOnTree <= 0 || currentDraggedApple) return;
+            if (currentDraggedApple) return;
             
-            const treeApples = Array.from(document.querySelectorAll('.apple')).filter(a => a.dataset.location === 'tree');
-            if (treeApples.length === 0) return;
+            // Try to get an apple from the tree first
+            let sourceApples = Array.from(document.querySelectorAll('.apple')).filter(a => a.dataset.location === 'tree');
+            
+            // If tree is empty, get from the OTHER basket
+            if (sourceApples.length === 0) {
+                const otherBasketNum = basketNum === 1 ? 2 : 1;
+                sourceApples = Array.from(document.querySelectorAll('.apple')).filter(a => a.dataset.location === `basket${otherBasketNum}`);
+            }
 
-            // Pick a random apple from the tree for natural feel
-            const appleToMove = treeApples[Math.floor(Math.random() * treeApples.length)];
+            if (sourceApples.length === 0) return; // No apples available to move
+
+            // Pick a random apple from the source for natural feel
+            const appleToMove = sourceApples[Math.floor(Math.random() * sourceApples.length)];
             const targetBasket = basketNum === 1 ? elements.basket1 : elements.basket2;
 
-            applesOnTree--;
+            // Update source count
+            if (appleToMove.dataset.location === 'tree') applesOnTree--;
+            else if (appleToMove.dataset.location === 'basket1') basket1Count--;
+            else if (appleToMove.dataset.location === 'basket2') basket2Count--;
+
+            // Update destination count
             if (basketNum === 1) basket1Count++;
             else basket2Count++;
 
@@ -704,7 +736,7 @@
         }
 
         function updateUI(isInit = false) {
-            // Feature 3: Hide Total (Show '?') if apples are not fully sorted
+            // Hide Total (Show '?') if apples are not fully sorted
             if (applesOnTree === 0) {
                 if (elements.bTotal.innerText != totalApples) {
                     elements.bTotal.innerText = totalApples;
