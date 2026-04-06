@@ -170,7 +170,12 @@
             display: flex; gap: 40px; width: 100%; justify-content: center; position: relative; z-index: 5; margin-top: 10px;
         }
 
-        .basket-container { display: flex; flex-direction: column; align-items: center; }
+        .basket-container { 
+            display: flex; flex-direction: column; align-items: center; cursor: pointer;
+        }
+        .basket-container:active .basket {
+            transform: scale(0.95);
+        }
 
         .basket {
             width: 150px; height: 110px;
@@ -311,7 +316,7 @@
             <button onclick="resetCurrentGame()" class="btn-reset">Reset</button>
             <button onclick="openSetup()">Setup</button>
         </div>
-        <div id="message-board">Drag apples into the baskets!</div>
+        <div id="message-board">Drag or click apples to the baskets!</div>
     </header>
 
     <div class="game-container">
@@ -371,11 +376,11 @@
             </div>
 
             <div class="baskets-wrapper">
-                <div class="basket-container">
+                <div class="basket-container" id="basket-zone-1">
                     <div class="basket" id="basket-1"></div>
                     <div class="basket-label-bottom">Basket 1</div>
                 </div>
-                <div class="basket-container">
+                <div class="basket-container" id="basket-zone-2">
                     <div class="basket" id="basket-2"></div>
                     <div class="basket-label-bottom">Basket 2</div>
                 </div>
@@ -392,7 +397,7 @@
                 </svg>
 
                 <div class="bond-title">Number Bond</div>
-                <div class="circle circle-total" id="bond-total">5</div>
+                <div class="circle circle-total" id="bond-total">?</div>
                 <div class="circle circle-part1" id="bond-part1">0</div>
                 <div class="circle circle-part2" id="bond-part2">0</div>
             </div>
@@ -538,34 +543,45 @@
             elements.basket2.innerHTML = '';
             
             for (let i = 0; i < totalApples; i++) {
-                createApple(i);
+                createApple(i, totalApples);
             }
 
             updateUI(true);
-            elements.msgBoard.innerHTML = "Drag apples into the baskets!";
+            elements.msgBoard.innerHTML = "Drag or click apples to the baskets!";
             elements.msgBoard.className = '';
         }
 
-        function createApple(id) {
+        function createApple(index, total) {
             const apple = document.createElement('div');
             apple.className = 'apple';
             apple.innerHTML = SVG_APPLE;
-            apple.dataset.id = id;
+            apple.dataset.id = index;
             apple.dataset.location = 'tree';
             
-            positionAppleOnTree(apple);
+            positionAppleOnTree(apple, index, total);
             apple.addEventListener('pointerdown', handleDragStart);
             elements.treeLeaves.appendChild(apple);
         }
 
-        function positionAppleOnTree(apple) {
-            // Wide spread for the new gorgeous tree
-            const centerX = 180, centerY = 130, rX = 150, rY = 100;
-            const angle = Math.random() * 2 * Math.PI;
-            const distance = Math.sqrt(Math.random());
+        // Feature 1: Even Distribution using Fibonacci Lattice (Golden Angle)
+        function positionAppleOnTree(apple, index = -1, total = 1) {
+            const centerX = 180, centerY = 130;
+            const maxRadiusX = 140, maxRadiusY = 100;
+            let rRatio, theta;
+
+            if (index === -1) {
+                // Random position when putting an apple back
+                rRatio = Math.sqrt(Math.random());
+                theta = Math.random() * 2 * Math.PI;
+            } else {
+                // Evenly distribute based on total apples
+                const goldenAngle = 137.508 * (Math.PI / 180);
+                rRatio = Math.sqrt((index + 0.5) / total);
+                theta = index * goldenAngle;
+            }
             
-            apple.style.left = `${centerX + distance * rX * Math.cos(angle) - 22}px`; 
-            apple.style.top = `${centerY + distance * rY * Math.sin(angle) - 22}px`;
+            apple.style.left = `${centerX + rRatio * maxRadiusX * Math.cos(theta) - 22}px`; 
+            apple.style.top = `${centerY + rRatio * maxRadiusY * Math.sin(theta) - 22}px`;
             apple.style.position = 'absolute';
             apple.style.transform = `rotate(${getRandomInt(-15, 15)}deg)`;
             apple.style.zIndex = getRandomInt(10, 50);
@@ -639,7 +655,7 @@
             } else {
                 applesOnTree++;
                 elements.treeLeaves.appendChild(currentDraggedApple);
-                positionAppleOnTree(currentDraggedApple);
+                positionAppleOnTree(currentDraggedApple); // index=-1 assigns random position
                 playSound('drop');
             }
 
@@ -647,6 +663,35 @@
             currentDraggedApple = null;
             updateUI();
         }
+
+        // Feature 2: Click Basket to move apple
+        function moveAppleToBasket(basketNum) {
+            if (applesOnTree <= 0 || currentDraggedApple) return;
+            
+            const treeApples = Array.from(document.querySelectorAll('.apple')).filter(a => a.dataset.location === 'tree');
+            if (treeApples.length === 0) return;
+
+            // Pick a random apple from the tree for natural feel
+            const appleToMove = treeApples[Math.floor(Math.random() * treeApples.length)];
+            const targetBasket = basketNum === 1 ? elements.basket1 : elements.basket2;
+
+            applesOnTree--;
+            if (basketNum === 1) basket1Count++;
+            else basket2Count++;
+
+            appleToMove.dataset.location = `basket${basketNum}`;
+            placeInBasket(targetBasket, appleToMove);
+            playSound('drop');
+            updateUI();
+        }
+
+        // Event listeners for clicking baskets
+        document.getElementById('basket-zone-1').addEventListener('pointerdown', (e) => {
+            if (!currentDraggedApple) moveAppleToBasket(1);
+        });
+        document.getElementById('basket-zone-2').addEventListener('pointerdown', (e) => {
+            if (!currentDraggedApple) moveAppleToBasket(2);
+        });
 
         function placeInBasket(basket, apple) {
             basket.appendChild(apple);
@@ -659,7 +704,15 @@
         }
 
         function updateUI(isInit = false) {
-            elements.bTotal.innerText = totalApples;
+            // Feature 3: Hide Total (Show '?') if apples are not fully sorted
+            if (applesOnTree === 0) {
+                if (elements.bTotal.innerText != totalApples) {
+                    elements.bTotal.innerText = totalApples;
+                    if(!isInit) triggerPop(elements.bTotal);
+                }
+            } else {
+                elements.bTotal.innerText = '?';
+            }
             
             if (elements.bPart1.innerText != basket1Count) {
                 elements.bPart1.innerText = basket1Count;
