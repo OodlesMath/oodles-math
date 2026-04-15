@@ -4,7 +4,7 @@
     <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Frog Leap v20 - Perfect Lotus Adventure</title>
+    <title>Frog Leap v21 - Beautiful Lotus Adventure</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -586,38 +586,66 @@
         mgFlowers = [];
         fishBubbles = [];
         
-        // Puffy Clouds (Reduced count)
-        for(let i=0; i<4; i++) {
-            backgroundElements.push({
-                type: 'cloud',
-                x: Math.random() * VW * 4, 
-                y: Math.random() * (WATER_LEVEL * 0.4),
-                size: 50 + Math.random() * 50,
-                speed: Math.random() * 0.4 + 0.15, 
-                parallax: 0.1
-            });
-        }
-
-        // Overlapping Mountains (Perfectly centered per segment)
+        // --- LAYER 1: The 3 Majestic Mountains ---
+        // Span = 3000. (6 items = 18000 wrap distance)
         for(let i=0; i<6; i++) {
             backgroundElements.push({
-                type: 'mountain_pair',
+                type: 'mountain_trio',
                 x: i * 3000, 
                 y: WATER_LEVEL, 
                 parallax: 0.05
             });
         }
 
-        // Decor Fishes
+        // --- LAYER 2: Mid Hills ---
+        for(let i=0; i<20; i++) {
+            backgroundElements.push({
+                type: 'hill_mid',
+                x: i * 400 - 1000,
+                y: WATER_LEVEL - 30 + Math.random() * 20,
+                width: 600 + Math.random() * 200,
+                height: 250 + Math.random() * 50,
+                color: '#65ad45',
+                parallax: 0.25
+            });
+        }
+
+        // --- LAYER 3: Foreground Hills ---
+        for(let i=0; i<25; i++) {
+            backgroundElements.push({
+                type: 'hill_front',
+                x: i * 300 - 1000,
+                y: WATER_LEVEL - 15 + Math.random() * 15,
+                width: 500 + Math.random() * 200,
+                height: 150 + Math.random() * 50,
+                color: '#499b2e',
+                parallax: 0.35
+            });
+        }
+
+        // --- CLOUDS (Drawn later so they overlay the mountains) ---
+        for(let i=0; i<8; i++) {
+            backgroundElements.push({
+                type: 'cloud',
+                x: Math.random() * VW * 5, 
+                y: Math.random() * (WATER_LEVEL * 0.4),
+                size: 40 + Math.random() * 60,
+                speed: Math.random() * 0.4 + 0.15, 
+                parallax: 0.1
+            });
+        }
+
+        // --- DECOR FISHES ---
         let fishColors = [
             {body: '#ff9900', stripe: '#ffd633'}, 
             {body: '#00b4d8', stripe: '#74c69d'},
             {body: '#ce82ff', stripe: '#ffb2d1'},
             {body: '#ff4b4b', stripe: '#ffc800'}
         ];
+        // Exactly 40 fishes spaced out evenly across 12000 pixels
         for(let i=0; i<40; i++) {
             decorFishes.push({
-                x: Math.random() * VW * 5,
+                x: i * 300 - 1000 + Math.random() * 100,
                 y: WATER_LEVEL + 20 + Math.random() * 40, 
                 speed: 0.2 + Math.random() * 0.4, 
                 dir: Math.random() > 0.5 ? 1 : -1,
@@ -627,7 +655,8 @@
             });
         }
 
-        // Standing Lotus Flowers
+        // --- STANDING LOTUS FLOWERS ---
+        // 40 lotuses spread over 12000 pixels
         for(let i=0; i<40; i++) {
             standingLotuses.push({
                 x: i * 300 - 1000 + Math.random()*100,
@@ -638,7 +667,8 @@
             });
         }
 
-        // Floating leaves
+        // --- FLOATING LEAVES ---
+        // 40 leaves spread over 10000 pixels
         for(let i=0; i<40; i++) {
             floatingLeaves.push({
                 x: i * 250 - 1000 + Math.random()*100,
@@ -648,11 +678,12 @@
             });
         }
 
-        // Grass Flowers (Minigame & Shoreline)
+        // --- MINIGAME GRASS FLOWERS ---
+        // 50 flowers spread over 7500 pixels
         for(let i=0; i<50; i++) {
             mgFlowers.push({
                 x: i * 150 - 1000 + Math.random()*100, 
-                y: WATER_LEVEL - 20 + Math.random() * 30,
+                y: WATER_LEVEL - 20 + Math.random() * 30, // Fits nicely on mounds
                 scale: 0.4 + Math.random() * 0.6,
                 color: Math.random() > 0.5 ? '#ff7eb3' : (Math.random() > 0.5 ? '#ffeb3b' : '#ffffff')
             });
@@ -807,47 +838,58 @@
             cameraX += (targetCameraX - cameraX) * 0.08; 
         }
 
-        // Independent Cloud Movement
-        backgroundElements.forEach(bg => {
-            if(bg.type === 'cloud') {
-                bg.x -= bg.speed; 
-                let px = bg.x - (gameState==='minigame'? 0 : cameraX * bg.parallax);
-                if (px < -1000) {
-                    bg.x += 8000; 
-                }
-            }
-        });
-
-        // Background Wrapping (Flawless Infinite Scroll)
+        // Flawless Wrap-around Mathematics
         if (gameState !== 'minigame') {
+            
             backgroundElements.forEach(el => {
-                if (el.type === 'mountain_pair') {
+                if (el.type === 'mountain_trio') {
                     let px = el.x - cameraX * el.parallax;
-                    while (px < -3000) { el.x += 12000; px = el.x - cameraX * el.parallax; }
-                    while (px > 9000) { el.x -= 12000; px = el.x - cameraX * el.parallax; }
+                    if (px < -3000) el.x += 18000;
+                    else if (px > 15000) el.x -= 18000;
+                }
+                else if (el.type === 'hill_mid') {
+                    let px = el.x - cameraX * el.parallax;
+                    if (px < -1000) el.x += 8000;
+                    else if (px > 7000) el.x -= 8000;
+                }
+                else if (el.type === 'hill_front') {
+                    let px = el.x - cameraX * el.parallax;
+                    if (px < -1000) el.x += 7500;
+                    else if (px > 6500) el.x -= 7500;
+                }
+                else if (el.type === 'cloud') {
+                    el.x -= el.speed;
+                    let px = el.x - cameraX * el.parallax;
+                    if (px < -1000) { el.x += 8000; }
                 }
             });
 
+            // True wrap-around calculation for lotuses so they never disappear
             const LOTUS_SPAN = 40 * 300; // 12000
             standingLotuses.forEach(lotus => {
                 let px = lotus.x - cameraX * 0.2;
-                while (px < -1000) { lotus.x += LOTUS_SPAN; px = lotus.x - cameraX * 0.2; lotus.y = WATER_LEVEL - 20 + Math.random()*10; }
-                while (px > LOTUS_SPAN - 1000) { lotus.x -= LOTUS_SPAN; px = lotus.x - cameraX * 0.2; }
+                if (px < -1000) { lotus.x += LOTUS_SPAN; lotus.y = WATER_LEVEL - 20 + Math.random()*10; }
+                else if (px > LOTUS_SPAN - 1000) { lotus.x -= LOTUS_SPAN; }
             });
 
             const LEAF_SPAN = 40 * 250; // 10000
             floatingLeaves.forEach(leaf => {
                 let px = leaf.x - cameraX * 0.2;
-                while (px < -1000) { leaf.x += LEAF_SPAN; px = leaf.x - cameraX * 0.2; }
-                while (px > LEAF_SPAN - 1000) { leaf.x -= LEAF_SPAN; px = leaf.x - cameraX * 0.2; }
+                if (px < -1000) { leaf.x += LEAF_SPAN; }
+                else if (px > LEAF_SPAN - 1000) { leaf.x -= LEAF_SPAN; }
             });
 
-            const FISH_SPAN = 40 * 200; // 8000
+            const FISH_SPAN = 40 * 300; // 12000
             decorFishes.forEach(f => {
                 f.x += f.speed * f.dir;
                 let px = f.x - cameraX * 0.1;
-                while (px < -1000) { f.x += FISH_SPAN; px = f.x - cameraX * 0.1; f.y = WATER_LEVEL + 20 + Math.random()*40; }
-                while (px > FISH_SPAN - 1000) { f.x -= FISH_SPAN; px = f.x - cameraX * 0.1; }
+                if(f.dir === 1 && px > FISH_SPAN - 1000) {
+                    f.x -= FISH_SPAN;
+                    f.y = WATER_LEVEL + 20 + Math.random()*40;
+                } else if(f.dir === -1 && px < -1000) {
+                    f.x += FISH_SPAN;
+                    f.y = WATER_LEVEL + 20 + Math.random()*40;
+                }
             });
 
             // Patrol Shark Logic
@@ -859,6 +901,22 @@
                 patrolShark.dir = 1;
                 patrolShark.y = WATER_LEVEL + 150 + Math.random() * 50;
             }
+        } else {
+            // Minigame Wrap
+            const FLOWER_SPAN = 50 * 150; // 7500
+            mgFlowers.forEach(flower => {
+                let px = flower.x - cameraX;
+                if (px < -1000) { flower.x += FLOWER_SPAN; }
+                else if (px > FLOWER_SPAN - 1000) { flower.x -= FLOWER_SPAN; }
+            });
+
+            backgroundElements.forEach(el => {
+                if (el.type === 'cloud') {
+                    el.x -= el.speed;
+                    let px = el.x;
+                    if (px < -1000) { el.x += 8000; }
+                }
+            });
         }
 
         // Attack Fish Logic
@@ -918,13 +976,6 @@
         // --- STATE: MINIGAME ---
         if (gameState === 'minigame') {
             bonusTimer++;
-            
-            const FLOWER_SPAN = 50 * 150; 
-            mgFlowers.forEach(flower => {
-                let px = flower.x - cameraX;
-                while (px < -1000) { flower.x += FLOWER_SPAN; px = flower.x - cameraX; }
-                while (px > FLOWER_SPAN - 1000) { flower.x -= FLOWER_SPAN; px = flower.x - cameraX; }
-            });
 
             let targetPx = pointerX;
             if(targetPx < 50) targetPx = 50;
@@ -1279,6 +1330,7 @@
         let peakX = mx + mw/2;
         let peakY = my;
 
+        // Left half 
         ctx.fillStyle = colorLight;
         ctx.beginPath();
         ctx.moveTo(mx, my + mh);
@@ -1286,6 +1338,7 @@
         ctx.lineTo(peakX, my + mh);
         ctx.fill();
 
+        // Right half 
         ctx.fillStyle = colorDark;
         ctx.beginPath();
         ctx.moveTo(peakX, peakY);
@@ -1321,7 +1374,6 @@
     }
 
     function drawDayBackground(includeMountains = true, startDraw, endDraw) {
-        // Sky gradient
         let topBound = -offsetY/scale; 
         let skyGrad = ctx.createLinearGradient(0, topBound, 0, WATER_LEVEL);
         skyGrad.addColorStop(0, "#48c0f0"); 
@@ -1347,26 +1399,45 @@
             
             backgroundElements.forEach(el => {
                 let px = el.x - cameraX * el.parallax;
-                if (el.type === 'mountain_pair') {
-                    if(px + 4000 < startDraw || px > endDraw) return; 
+                if (el.type === 'mountain_trio') {
+                    if(px + 4500 < startDraw || px > endDraw) return; 
                     
-                    let mHeight1 = skyHeight * 0.85; 
-                    let mHeight2 = skyHeight * 0.70;
+                    // The 3 overlapping mountains
+                    let mHeight1 = skyHeight * 0.70; // Left Back
+                    let mHeight2 = skyHeight * 0.65; // Right Back
+                    let mHeight3 = skyHeight * 0.85; // Center Front
+                    
                     let mWidth1 = mHeight1 * 2.5; 
                     let mWidth2 = mHeight2 * 2.5;
+                    let mWidth3 = mHeight3 * 2.5;
 
-                    // Centering calculation to guarantee they sit directly in middle of a 1600px block
-                    // Center of 1600 is 800
-                    let peak1X = 600; 
-                    let peak2X = 1000;
-                    let m1X = peak1X - mWidth1/2;
-                    let m2X = peak2X - mWidth2/2;
+                    let peak1X = 400;  // Left
+                    let peak2X = 1200; // Right
+                    let peak3X = 800;  // Center
 
-                    // Draw Right Mountain (Back)
-                    drawMountain(ctx, px + m2X, WATER_LEVEL - mHeight2, mWidth2, mHeight2, "#8cd136", "#5cb823");
-                    // Draw Left Mountain (Front overlapping)
-                    drawMountain(ctx, px + m1X, WATER_LEVEL - mHeight1, mWidth1, mHeight1, "#a1e535", "#7ab823");
+                    // Draw Back Right
+                    drawMountain(ctx, px + peak2X - mWidth2/2, WATER_LEVEL - mHeight2, mWidth2, mHeight2, "#8cd136", "#5cb823");
+                    // Draw Back Left
+                    drawMountain(ctx, px + peak1X - mWidth1/2, WATER_LEVEL - mHeight1, mWidth1, mHeight1, "#a1e535", "#7ab823");
+                    // Draw Center Front
+                    drawMountain(ctx, px + peak3X - mWidth3/2, WATER_LEVEL - mHeight3, mWidth3, mHeight3, "#b5ea54", "#499b2e");
                 } 
+                else if (el.type === 'hill_mid') {
+                    if(px + el.width < startDraw || px > endDraw) return;
+                    ctx.fillStyle = el.color;
+                    ctx.beginPath();
+                    ctx.moveTo(px, el.y + el.height);
+                    ctx.quadraticCurveTo(px + el.width/2, el.y, px + el.width, el.y + el.height);
+                    ctx.fill();
+                }
+                else if (el.type === 'hill_front') {
+                    if(px + el.width < startDraw || px > endDraw) return;
+                    ctx.fillStyle = el.color;
+                    ctx.beginPath();
+                    ctx.moveTo(px, el.y + el.height);
+                    ctx.quadraticCurveTo(px + el.width/2, el.y, px + el.width, el.y + el.height);
+                    ctx.fill();
+                }
             });
         }
 
@@ -1505,7 +1576,7 @@
             ctx.lineWidth = 10;
             ctx.strokeStyle = "#1a4d00"; 
             ctx.strokeText(p.answer, 0, ry);
-            ctx.fillStyle = "#ffde00"; 
+            ctx.fillStyle = "#ffde00"; // Yellow numbers
             ctx.fillText(p.answer, 0, ry);
         }
 
@@ -1844,7 +1915,7 @@
             let renderStartDraw = startDraw + cameraX - 200;
             let renderEndDraw = endDraw + cameraX + 200;
 
-            // Shoreline mounds
+            // Shoreline mounds 
             ctx.fillStyle = "#5cb823"; 
             ctx.beginPath();
             ctx.moveTo(renderStartDraw, WATER_LEVEL); 
@@ -1892,7 +1963,7 @@
                 ctx.beginPath(); ctx.ellipse(x + Math.sin(x)*40, botBound - 50, 30 + Math.sin(x)*10, 15, 0, 0, Math.PI*2); ctx.fill();
             }
 
-            // Back Water Layer
+            // Back Water Layer (Calmer waves)
             ctx.fillStyle = "rgba(100, 200, 255, 0.4)"; 
             ctx.beginPath();
             ctx.moveTo(renderStartDraw, botBound);
@@ -1923,7 +1994,7 @@
                 }
             });
 
-            // Front Water Wave
+            // Front Water Wave (Calmer waves)
             ctx.fillStyle = "rgba(40, 180, 240, 0.8)"; 
             ctx.beginPath();
             ctx.moveTo(renderStartDraw, botBound);
