@@ -4,7 +4,7 @@
     <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Shape Quest V4!</title>
+    <title>3D Shape Quest V6!</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -153,6 +153,7 @@
         .start-btn:active { transform: translateY(6px); border-bottom-width: 2px; }
 
         .start-btn.blue { background: var(--c-blue); border-bottom-color: var(--c-blue-shadow); }
+        .start-btn.red { background: var(--c-red); border-bottom-color: var(--c-red-shadow); }
 
         #bonus-overlay .container {
             width: 100%; max-width: 800px;
@@ -160,11 +161,12 @@
         }
 
         #bonus-canvas {
-            background: linear-gradient(to bottom, #38bdf8, #bae6fd);
+            background: linear-gradient(to bottom, #2c3e50, #34495e); /* Darker background for fruit ninja */
             border-radius: 24px; border: 6px solid var(--card-border);
             border-bottom-width: 12px; max-width: 100%; height: auto; width: 800px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            touch-action: none; /* prevent scrolling when playing */
+            touch-action: none; /* prevent scrolling when swiping */
+            cursor: crosshair;
         }
 
         .feedback {
@@ -221,37 +223,38 @@
     </main>
 
     <div id="start-overlay" class="overlay">
-        <div style="font-size: 80px; margin-bottom: 10px;">🦘</div>
+        <div style="font-size: 80px; margin-bottom: 10px;">💎</div>
         <h1 style="font-size: 4rem; color: var(--c-blue); margin-bottom: 5px; font-weight: 900; line-height: 1.1; text-transform: uppercase;">Shape Quest</h1>
-        <p style="font-size: 1.5rem; color: var(--text-dark); margin-bottom: 40px; font-weight: 700;">Find shapes & play with Roo! 🦘</p>
+        <p style="font-size: 1.5rem; color: var(--text-dark); margin-bottom: 40px; font-weight: 700;">Find the 3D shapes and slice fruits! 🍉</p>
         <button class="start-btn" onclick="startGame()">LET'S PLAY</button>
     </div>
 
     <div id="bonus-overlay" class="overlay hidden">
         <div class="container">
-            <h2 style="font-size: 3.5rem; color: var(--c-purple); font-weight: 900; text-transform: uppercase; margin-bottom: 10px;">BONUS TIME! 🦘</h2>
-            <p style="font-weight: 700; color: var(--text-dark); font-size: 1.3rem; margin-bottom: 20px;">Tap or Press SPACE to jump over obstacles!</p>
+            <h2 style="font-size: 3.5rem; color: var(--c-red); font-weight: 900; text-transform: uppercase; margin-bottom: 10px;">FRUIT SLICE! 🍉</h2>
+            <p style="font-weight: 700; color: var(--text-dark); font-size: 1.3rem; margin-bottom: 20px;">Swipe to slice fruits! AVOID BOMBS! 💣</p>
             
             <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 10px; font-weight: 800; font-size: 1.5rem;">
-                <div style="color: var(--c-blue);">TIME: <span id="timer-val">25</span>s</div>
+                <div style="color: var(--c-blue);">TIME: <span id="timer-val">60</span>s</div>
                 <div style="color: var(--c-yellow); text-shadow: 1px 1px 0 rgba(0,0,0,0.1);">PTS: <span id="bonus-score">0</span></div>
             </div>
             
-            <canvas id="bonus-canvas" width="800" height="300"></canvas>
-            <button id="bonus-start-btn" class="start-btn blue" style="margin-top: 30px;" onclick="startKangarooGame()">START RUNNING</button>
+            <!-- Taller canvas for better throwing arcs -->
+            <canvas id="bonus-canvas" width="800" height="400"></canvas>
+            <button id="bonus-start-btn" class="start-btn blue" style="margin-top: 30px;" onclick="startFruitGame()">START SLICING</button>
         </div>
     </div>
 
     <div id="win-overlay" class="overlay hidden">
         <canvas id="confetti-canvas"></canvas>
-        <div style="font-size: 100px; margin-bottom: 10px; filter: drop-shadow(0 20px 20px rgba(0,0,0,0.2));">🏆</div>
-        <h1 style="font-size: 4rem; color: var(--c-green); font-weight: 900; text-transform: uppercase;">AMAZING JOB!</h1>
+        <div id="win-icon" style="font-size: 100px; margin-bottom: 10px; filter: drop-shadow(0 20px 20px rgba(0,0,0,0.2));">🏆</div>
+        <h1 id="win-title" style="font-size: 4rem; color: var(--c-green); font-weight: 900; text-transform: uppercase;">AMAZING JOB!</h1>
         <div style="font-size: 2.5rem; font-weight: 800; color: var(--text-dark); margin-bottom: 50px;">Total Score: <span id="final-score" style="color: var(--c-yellow)">0</span> ⭐</div>
         <button class="start-btn blue" onclick="location.reload()">PLAY AGAIN</button>
     </div>
 
     <script>
-        // High-quality, vibrant Duolingo-style colors
+        // 3D Geometries (from Ver4)
         const SHAPES = [
             { id: 'cube', name: 'Cube', color: 0xff4b4b, geometry: (s=4) => new THREE.BoxGeometry(s, s, s) },
             { id: 'sphere', name: 'Sphere', color: 0x1cb0f6, geometry: (s=2.8) => new THREE.SphereGeometry(s, 64, 64) },
@@ -334,7 +337,6 @@
             const container = document.getElementById('game-content');
             container.innerHTML = '';
 
-            // Use larger fixed canvas, CSS will downscale on mobile
             const cSize = 250; 
 
             choices.forEach(c => {
@@ -357,7 +359,6 @@
             const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
             camera.position.z = 11;
             
-            // Soft lighting for shading only (no shiny reflection)
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
             scene.add(ambientLight);
             
@@ -365,14 +366,12 @@
             dirLight.position.set(5, 10, 8);
             scene.add(dirLight);
 
-            // Lambert Material: Matte surface, responds to light but NO shine
             const mat = new THREE.MeshLambertMaterial({ 
                 color: shapeData.color
             });
             
             const mesh = new THREE.Mesh(shapeData.geometry(3.2), mat);
             
-            // Add prominent dark outlines
             const edges = new THREE.EdgesGeometry(mesh.geometry);
             const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ 
                 color: 0x222222, 
@@ -382,7 +381,6 @@
             }));
             mesh.add(line);
 
-            // Initial tilt
             mesh.rotation.x = 0.4;
             mesh.rotation.y = 0.4;
             scene.add(mesh);
@@ -407,7 +405,6 @@
                 card.classList.add('correct');
                 showFeedback("AWESOME! ✨", "var(--c-green)");
                 
-                // Happy pop sound
                 if(synth) synth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "8n");
 
                 setTimeout(() => {
@@ -419,7 +416,6 @@
                 card.classList.add('wrong');
                 showFeedback("OOPS!", "var(--c-red)");
                 
-                // Sad boop sound
                 if(synth) synth.triggerAttackRelease("C3", "8n");
                 
                 setTimeout(() => {
@@ -453,239 +449,326 @@
             window.speechSynthesis.speak(utterance);
         }
 
-        // --- Kangaroo Mini Game ---
+        // --- FRUIT NINJA MINI GAME ---
         const bCanvas = document.getElementById('bonus-canvas');
         const bCtx = bCanvas.getContext('2d');
-        let kId, kRunning = false, kangaroo = { x: 100, y: 215, dy: 0, grounded: true }, kObs = [], bScore = 0, kStart;
+        let fId, fRunning = false, fScore = 0, fStart;
         
-        let decor = [];
-        for(let i=0; i<25; i++) decor.push({x: Math.random()*800, type: Math.random() > 0.5 ? 'grass' : 'flower', s: 0.7+Math.random()*0.5});
+        let fruits = [];
+        let trails = [];
+        let isSwiping = false;
+        let swipePos = {x: 0, y: 0};
+        let isExploding = false;
 
         function showBonusIntro() {
             document.getElementById('bonus-overlay').classList.remove('hidden');
         }
 
-        function startKangarooGame() {
+        function startFruitGame() {
             document.getElementById('bonus-start-btn').classList.add('hidden');
-            bScore = 0; kObs = []; kStart = Date.now(); kRunning = true;
-            kangaroo.y = 215; kangaroo.dy = 0;
-            updateKangaroo();
+            fScore = 0; fruits = []; trails = []; isExploding = false;
+            fStart = Date.now(); fRunning = true;
+            document.getElementById('bonus-score').innerText = '0';
+            updateFruitGame();
         }
 
-        // Cuter Kangaroo Drawing
-        function drawKangaroo(x, y) {
-            bCtx.save(); bCtx.translate(x, y);
-            
-            // Shadow
-            bCtx.fillStyle = "rgba(0,0,0,0.15)";
-            bCtx.beginPath(); bCtx.ellipse(20, 45, 25, 6, 0, 0, Math.PI*2); bCtx.fill();
-
-            // Tail
-            bCtx.lineWidth = 14; bCtx.lineCap = "round"; bCtx.strokeStyle = "#e67e22";
-            bCtx.beginPath(); bCtx.moveTo(0, 35); bCtx.quadraticCurveTo(-40, 45, -35, 10); bCtx.stroke();
-
-            // Back leg
-            bCtx.fillStyle = "#d35400";
-            bCtx.beginPath(); bCtx.ellipse(25, 38, 10, 14, -0.3, 0, Math.PI*2); bCtx.fill();
-
-            // Body
-            bCtx.fillStyle = "#e67e22";
-            bCtx.beginPath(); bCtx.ellipse(15, 20, 20, 28, 0.1, 0, Math.PI*2); bCtx.fill();
-
-            // Belly / Pouch area
-            bCtx.fillStyle = "#fdebd0";
-            bCtx.beginPath(); bCtx.ellipse(22, 22, 12, 20, 0.1, 0, Math.PI*2); bCtx.fill();
-
-            // Front leg
-            bCtx.fillStyle = "#e67e22";
-            bCtx.beginPath(); bCtx.ellipse(12, 35, 7, 12, 0.2, 0, Math.PI*2); bCtx.fill();
-
-            // Neck & Head
-            bCtx.beginPath(); bCtx.ellipse(35, -5, 16, 14, -0.1, 0, Math.PI*2); bCtx.fill();
-            
-            // Snout
-            bCtx.beginPath(); bCtx.ellipse(48, -2, 10, 8, 0, 0, Math.PI*2); bCtx.fill();
-            bCtx.fillStyle = "#2c3e50"; // Dark cute nose
-            bCtx.beginPath(); bCtx.arc(55, -4, 4, 0, Math.PI*2); bCtx.fill(); 
-
-            // Ears
-            bCtx.fillStyle = "#d35400"; // Back ear
-            bCtx.beginPath(); bCtx.ellipse(28, -18, 5, 14, -0.3, 0, Math.PI*2); bCtx.fill();
-            bCtx.fillStyle = "#e67e22"; // Front ear
-            bCtx.beginPath(); bCtx.ellipse(38, -16, 5, 14, 0.1, 0, Math.PI*2); bCtx.fill();
-            bCtx.fillStyle = "#f5b041"; // Inner pinkish/orange ear
-            bCtx.beginPath(); bCtx.ellipse(38, -16, 2.5, 10, 0.1, 0, Math.PI*2); bCtx.fill();
-
-            // Cute Anime Eye
-            bCtx.fillStyle = "white";
-            bCtx.beginPath(); bCtx.arc(42, -8, 6, 0, Math.PI*2); bCtx.fill();
-            bCtx.fillStyle = "#2c3e50";
-            bCtx.beginPath(); bCtx.arc(44, -8, 3.5, 0, Math.PI*2); bCtx.fill();
-            bCtx.fillStyle = "white"; // Catchlight
-            bCtx.beginPath(); bCtx.arc(45, -9.5, 1.2, 0, Math.PI*2); bCtx.fill();
-
-            // Red Scarf (Cute Detail)
-            bCtx.fillStyle = "#e74c3c";
-            bCtx.beginPath(); bCtx.ellipse(32, 8, 12, 6, -0.1, 0, Math.PI*2); bCtx.fill();
-            bCtx.beginPath(); bCtx.roundRect(22, 10, 8, 15, 4); bCtx.fill();
-
-            bCtx.restore();
+        // Calculate distance from point to line segment
+        function distToSegment(p, v, w) {
+            let l2 = (w.x - v.x)**2 + (w.y - v.y)**2;
+            if (l2 == 0) return Math.hypot(p.x - v.x, p.y - v.y);
+            let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+            t = Math.max(0, Math.min(1, t));
+            return Math.hypot(p.x - (v.x + t * (w.x - v.x)), p.y - (v.y + t * (w.y - v.y)));
         }
 
-        // Beautiful & Clearer Obstacles
-        function drawObstacle(x, type) {
-            bCtx.save(); 
-            bCtx.translate(x, 260); // Align to ground level
-            
-            if(type === 0) { // Detail Rock
-                bCtx.fillStyle = "#7f8c8d";
-                bCtx.beginPath(); bCtx.arc(20, -18, 22, 0, Math.PI, true); bCtx.fill();
-                bCtx.fillStyle = "#95a5a6"; // Highlight
-                bCtx.beginPath(); bCtx.arc(16, -20, 15, 0, Math.PI, true); bCtx.fill();
-                bCtx.fillStyle = "#bdc3c7";
-                bCtx.beginPath(); bCtx.arc(32, -10, 12, 0, Math.PI, true); bCtx.fill();
-                // Grass base
-                bCtx.fillStyle = "#27ae60";
-                bCtx.beginPath(); bCtx.moveTo(0, 0); bCtx.lineTo(10, -10); bCtx.lineTo(15, 0); bCtx.fill();
-            } 
-            else if(type === 1) { // Detail Cactus
-                bCtx.fillStyle = "#2ecc71";
-                bCtx.beginPath(); bCtx.roundRect(15, -45, 16, 45, 8); bCtx.fill();
-                bCtx.beginPath(); bCtx.roundRect(5, -30, 14, 15, 7); bCtx.fill(); // Left branch
-                bCtx.beginPath(); bCtx.roundRect(27, -35, 14, 15, 7); bCtx.fill(); // Right branch
-                // Spines (Lighter contrast)
-                bCtx.fillStyle = "#f1c40f";
-                bCtx.fillRect(10, -35, 4, 2); bCtx.fillRect(32, -25, 4, 2); bCtx.fillRect(22, -15, 4, 2);
-                bCtx.fillRect(12, -20, 4, 2); bCtx.fillRect(28, -40, 4, 2);
-                // Flower
-                bCtx.fillStyle = "#ff7979";
-                bCtx.beginPath(); bCtx.arc(23, -45, 6, 0, Math.PI*2); bCtx.fill();
-            } 
-            else if(type === 2) { // Detail Mushroom
-                bCtx.fillStyle = "#ecf0f1"; // Stem
-                bCtx.beginPath(); bCtx.roundRect(16, -25, 12, 25, 6); bCtx.fill();
-                bCtx.beginPath(); bCtx.ellipse(22, -15, 10, 3, 0, 0, Math.PI*2); bCtx.fill(); // Collar
-                bCtx.fillStyle = "#e74c3c"; // Cap
-                bCtx.beginPath(); bCtx.arc(22, -22, 22, 0, Math.PI, true); bCtx.fill();
-                // Spots
-                bCtx.fillStyle = "white";
-                bCtx.beginPath(); bCtx.arc(12, -32, 5, 0, Math.PI*2); bCtx.fill();
-                bCtx.beginPath(); bCtx.arc(30, -28, 4, 0, Math.PI*2); bCtx.fill();
-                bCtx.beginPath(); bCtx.arc(22, -38, 3, 0, Math.PI*2); bCtx.fill();
-                bCtx.beginPath(); bCtx.arc(20, -26, 2.5, 0, Math.PI*2); bCtx.fill();
-                // Grass Base
-                bCtx.fillStyle = "#27ae60";
-                bCtx.beginPath(); bCtx.moveTo(10, 0); bCtx.lineTo(16, -8); bCtx.lineTo(22, 0); bCtx.fill();
-                bCtx.beginPath(); bCtx.moveTo(20, 0); bCtx.lineTo(28, -12); bCtx.lineTo(34, 0); bCtx.fill();
-            }
-            bCtx.restore();
-        }
-
-        function drawBonusBackground() {
-            bCtx.clearRect(0, 0, 800, 300);
-            
-            // Ground
-            bCtx.fillStyle = "#58cc02"; bCtx.fillRect(0, 260, 800, 40);
-            bCtx.fillStyle = "#58a700"; bCtx.fillRect(0, 260, 800, 6);
-            
-            // Scenery decorations moving
-            decor.forEach(d => {
-                d.x -= 6; if(d.x < -40) d.x = 840;
-                bCtx.save(); bCtx.translate(d.x, 260);
-                if(d.type === 'grass') {
-                    bCtx.fillStyle = "#71df1e";
-                    bCtx.beginPath(); bCtx.moveTo(0,0); bCtx.lineTo(-5*d.s, -15*d.s); bCtx.lineTo(5*d.s, -15*d.s); bCtx.fill();
-                } else {
-                    bCtx.fillStyle = "#ff4b4b";
-                    bCtx.beginPath(); bCtx.arc(0, -12*d.s, 6*d.s, 0, Math.PI*2); bCtx.fill();
-                    bCtx.fillStyle = "#ffc800";
-                    bCtx.beginPath(); bCtx.arc(0, -12*d.s, 3*d.s, 0, Math.PI*2); bCtx.fill();
+        function checkSlice(p1, p2) {
+            fruits.forEach(f => {
+                if (!f.sliced && !isExploding) {
+                    if (distToSegment(f, p1, p2) < f.radius) {
+                        sliceObject(f);
+                    }
                 }
-                bCtx.restore();
             });
         }
 
-        function updateKangaroo() {
-            if(!kRunning) return;
-            const remaining = Math.max(0, 25 - Math.floor((Date.now() - kStart)/1000));
-            document.getElementById('timer-val').innerText = remaining;
-            if(remaining <= 0) { endKangaroo("FINISH!"); return; }
-
-            drawBonusBackground();
-
-            // Physics
-            kangaroo.dy += 1.0; // Gravity
-            kangaroo.y += kangaroo.dy;
-            if(kangaroo.y > 210) { kangaroo.y = 210; kangaroo.dy = 0; kangaroo.grounded = true; }
-            drawKangaroo(kangaroo.x, kangaroo.y);
-
-            // Obstacles Generation (Slightly more spaced out on wider screen)
-            if(Math.random() < 0.015 && (kObs.length === 0 || kObs[kObs.length-1].x < 450)) {
-                kObs.push({x: 850, type: Math.floor(Math.random()*3)});
+        function sliceObject(f) {
+            f.sliced = true;
+            if (f.type === 'bomb') {
+                isExploding = true;
+                f.radius *= 3; // Explosion size
+                if(synth) synth.triggerAttackRelease("C2", "2n"); // Boom sound
+                
+                // End game after explosion
+                setTimeout(() => endFruitGame("GAME OVER"), 1200);
+            } else {
+                fScore += 5;
+                document.getElementById('bonus-score').innerText = fScore;
+                if(synth) synth.triggerAttackRelease("C6", "32n"); // Slice sound
             }
+        }
+
+        function spawnFruit() {
+            // Spawn logic
+            if (Math.random() < 0.04) {
+                let isBomb = Math.random() < 0.25; // 25% chance of bomb
+                let types = ['apple', 'orange', 'watermelon'];
+                let type = isBomb ? 'bomb' : types[Math.floor(Math.random()*types.length)];
+                
+                fruits.push({
+                    x: 150 + Math.random() * 500,
+                    y: 450, // Below canvas bottom
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: -13 - Math.random() * 5, // Throw upward
+                    radius: type === 'watermelon' ? 35 : (type === 'bomb' ? 30 : 25),
+                    type: type,
+                    sliced: false,
+                    rotation: Math.random() * Math.PI,
+                    rotSpeed: (Math.random() - 0.5) * 0.2,
+                    splitDist: 0
+                });
+            }
+        }
+
+        function drawHalfFruit(ctx, f, dir) {
+            ctx.beginPath();
+            ctx.arc(0, 0, f.radius, -Math.PI/2, Math.PI/2);
             
-            for(let i=kObs.length-1; i>=0; i--) {
-                const o = kObs[i]; o.x -= 7.5;
-                
-                drawObstacle(o.x, o.type);
-                
-                // Collision Box 
-                if(kangaroo.x + 20 < o.x + 40 && kangaroo.x + 45 > o.x + 5 && kangaroo.y + 40 > 220) {
-                    endKangaroo("CRASH!"); return;
-                } else if(o.x < -60) {
-                    kObs.splice(i, 1); 
-                    bScore += 5;
-                    document.getElementById('bonus-score').innerText = bScore;
+            if (f.type === 'apple') {
+                ctx.fillStyle = "#e74c3c"; ctx.fill();
+                ctx.fillStyle = "#fdfebd"; // Inside
+                ctx.beginPath(); ctx.arc(0, 0, f.radius-4, -Math.PI/2, Math.PI/2); ctx.fill();
+                // Seeds
+                ctx.fillStyle = "#333";
+                ctx.beginPath(); ctx.ellipse(4, 5, 2, 4, 0.3, 0, Math.PI*2); ctx.fill();
+            } else if (f.type === 'orange') {
+                ctx.fillStyle = "#e67e22"; ctx.fill();
+                ctx.fillStyle = "#f39c12"; // Inside
+                ctx.beginPath(); ctx.arc(0, 0, f.radius-3, -Math.PI/2, Math.PI/2); ctx.fill();
+                ctx.strokeStyle = "white"; ctx.lineWidth = 2; // segments
+                for(let i=-1; i<=1; i+=0.5) {
+                    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(i)*f.radius, Math.sin(i)*f.radius); ctx.stroke();
+                }
+            } else if (f.type === 'watermelon') {
+                ctx.fillStyle = "#27ae60"; ctx.fill();
+                ctx.fillStyle = "#e74c3c"; // Inside
+                ctx.beginPath(); ctx.arc(0, 0, f.radius-5, -Math.PI/2, Math.PI/2); ctx.fill();
+                // Seeds
+                ctx.fillStyle = "black";
+                ctx.beginPath(); ctx.arc(8, 10, 2, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(15, -5, 2, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(10, -18, 2, 0, Math.PI*2); ctx.fill();
+            }
+        }
+
+        function drawWholeFruit(ctx, f) {
+            if (f.type === 'bomb') {
+                ctx.fillStyle = "#111";
+                ctx.beginPath(); ctx.arc(0, 0, f.radius, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "#7f8c8d";
+                ctx.fillRect(-8, -f.radius-6, 16, 10); // cap
+                ctx.strokeStyle = "#e67e22"; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.moveTo(0, -f.radius-6); ctx.quadraticCurveTo(15, -f.radius-15, 10, -f.radius-25); ctx.stroke(); // fuse
+                // spark
+                if (Math.random() > 0.3 && !isExploding) {
+                    ctx.fillStyle = "#f1c40f"; ctx.beginPath(); ctx.arc(10, -f.radius-25, 4+Math.random()*4, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = "#e74c3c"; ctx.beginPath(); ctx.arc(10, -f.radius-25, 2, 0, Math.PI*2); ctx.fill();
+                }
+            } else {
+                ctx.beginPath(); ctx.arc(0, 0, f.radius, 0, Math.PI*2);
+                if (f.type === 'apple') {
+                    ctx.fillStyle = "#e74c3c"; ctx.fill();
+                    // Stem and leaf
+                    ctx.fillStyle = "#27ae60";
+                    ctx.beginPath(); ctx.ellipse(-5, -f.radius, 8, 4, -0.4, 0, Math.PI*2); ctx.fill();
+                    ctx.strokeStyle = "#8e44ad"; ctx.lineWidth=3;
+                    ctx.beginPath(); ctx.moveTo(0,-f.radius+2); ctx.lineTo(2,-f.radius-8); ctx.stroke();
+                } else if (f.type === 'orange') {
+                    ctx.fillStyle = "#e67e22"; ctx.fill();
+                    ctx.fillStyle = "#d35400"; // Texture dots
+                    for(let i=0; i<5; i++) {
+                        ctx.beginPath(); ctx.arc(Math.random()*20-10, Math.random()*20-10, 1.5, 0, Math.PI*2); ctx.fill();
+                    }
+                } else if (f.type === 'watermelon') {
+                    ctx.fillStyle = "#2ecc71"; ctx.fill();
+                    ctx.strokeStyle = "#27ae60"; ctx.lineWidth = 5;
+                    ctx.beginPath(); ctx.arc(0, 0, f.radius-2, -0.2, 0.2); ctx.stroke();
+                    ctx.beginPath(); ctx.arc(0, 0, f.radius-2, Math.PI-0.2, Math.PI+0.2); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(0, -f.radius); ctx.lineTo(0, f.radius); ctx.stroke();
                 }
             }
-            kId = requestAnimationFrame(updateKangaroo);
         }
 
-        // Action trigger for Jumping
-        function triggerJump(e) {
-            if (e) e.preventDefault();
-            if(kangaroo.grounded && kRunning) { 
-                kangaroo.dy = -18; 
-                kangaroo.grounded = false; 
-                if(synth) synth.triggerAttackRelease("G4", "16n");
+        function updateFruitGame() {
+            if(!fRunning) return;
+            
+            let timeElapsed = (Date.now() - fStart)/1000;
+            const remaining = Math.max(0, 60 - Math.floor(timeElapsed));
+            document.getElementById('timer-val').innerText = remaining;
+            
+            if(remaining <= 0 && !isExploding) { endFruitGame("TIME'S UP!"); return; }
+
+            // Background
+            bCtx.clearRect(0, 0, 800, 400);
+            
+            // Draw wooden board background text faintly
+            bCtx.fillStyle = "rgba(255,255,255,0.05)";
+            bCtx.font = "bold 80px Poppins";
+            bCtx.textAlign = "center";
+            bCtx.fillText("SHAPE QUEST", 400, 220);
+
+            if (!isExploding) spawnFruit();
+
+            // Physics & Drawing Fruits
+            for(let i = fruits.length - 1; i >= 0; i--) {
+                let f = fruits[i];
+                
+                if (!f.sliced) {
+                    f.vy += 0.25; // gravity
+                    f.x += f.vx;
+                    f.y += f.vy;
+                    f.rotation += f.rotSpeed;
+                } else {
+                    // Halves fall faster
+                    f.vy += 0.4;
+                    f.y += f.vy;
+                    f.splitDist += 4;
+                }
+
+                // Draw
+                bCtx.save();
+                bCtx.translate(f.x, f.y);
+                bCtx.rotate(f.rotation);
+
+                if (f.type === 'bomb' && isExploding && f.sliced) {
+                    // Explosion Effect
+                    let grad = bCtx.createRadialGradient(0,0,10, 0,0,f.radius);
+                    grad.addColorStop(0, "white");
+                    grad.addColorStop(0.2, "yellow");
+                    grad.addColorStop(0.5, "orange");
+                    grad.addColorStop(1, "rgba(255,0,0,0)");
+                    bCtx.fillStyle = grad;
+                    bCtx.beginPath(); bCtx.arc(0,0,f.radius*2, 0, Math.PI*2); bCtx.fill();
+                } 
+                else if (!f.sliced) {
+                    drawWholeFruit(bCtx, f);
+                } else {
+                    // Draw halves
+                    bCtx.save(); bCtx.translate(-f.splitDist, 0); bCtx.rotate(-0.1); drawHalfFruit(bCtx, f, -1); bCtx.restore();
+                    bCtx.save(); bCtx.scale(-1, 1); bCtx.translate(-f.splitDist, 0); bCtx.rotate(-0.1); drawHalfFruit(bCtx, f, 1); bCtx.restore();
+                }
+                bCtx.restore();
+
+                // Remove if off screen
+                if(f.y > 500) fruits.splice(i, 1);
             }
+
+            // Draw Blade Trail
+            if (trails.length > 1 && !isExploding) {
+                bCtx.beginPath();
+                bCtx.moveTo(trails[0].x, trails[0].y);
+                for(let i=1; i<trails.length; i++) bCtx.lineTo(trails[i].x, trails[i].y);
+                bCtx.strokeStyle = "rgba(236, 240, 241, 0.8)";
+                bCtx.lineWidth = 6;
+                bCtx.lineCap = "round";
+                bCtx.lineJoin = "round";
+                bCtx.shadowColor = "rgba(189, 195, 199, 0.8)";
+                bCtx.shadowBlur = 10;
+                bCtx.stroke();
+                bCtx.shadowBlur = 0; // reset
+            }
+
+            fId = requestAnimationFrame(updateFruitGame);
         }
 
-        // Touch / Click to Jump
-        bCanvas.addEventListener('pointerdown', triggerJump);
-
-        // Keyboard Space to Jump
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' && kRunning) {
-                triggerJump(e);
+        // Pointer/Swipe Interactions
+        function updateSwipePos(e) {
+            const rect = bCanvas.getBoundingClientRect();
+            const scaleX = bCanvas.width / rect.width;
+            const scaleY = bCanvas.height / rect.height;
+            // Support both mouse and touch
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
             }
-        });
+            swipePos.x = (clientX - rect.left) * scaleX;
+            swipePos.y = (clientY - rect.top) * scaleY;
+        }
 
-        function endKangaroo(reason) {
-            kRunning = false; cancelAnimationFrame(kId);
-            state.score += bScore;
+        function startSwipe(e) {
+            if(!fRunning || isExploding) return;
+            e.preventDefault();
+            isSwiping = true;
+            updateSwipePos(e);
+            trails = [{x: swipePos.x, y: swipePos.y}];
+        }
+
+        function moveSwipe(e) {
+            if(!isSwiping || !fRunning || isExploding) return;
+            e.preventDefault();
+            let oldPos = {x: swipePos.x, y: swipePos.y};
+            updateSwipePos(e);
+            trails.push({x: swipePos.x, y: swipePos.y});
+            if(trails.length > 8) trails.shift(); // Keep trail short
+            checkSlice(oldPos, swipePos);
+        }
+
+        function endSwipe() {
+            isSwiping = false;
+            trails = [];
+        }
+
+        bCanvas.addEventListener('mousedown', startSwipe);
+        bCanvas.addEventListener('mousemove', moveSwipe);
+        window.addEventListener('mouseup', endSwipe);
+
+        bCanvas.addEventListener('touchstart', startSwipe, {passive: false});
+        bCanvas.addEventListener('touchmove', moveSwipe, {passive: false});
+        window.addEventListener('touchend', endSwipe);
+
+        function endFruitGame(reason) {
+            fRunning = false; cancelAnimationFrame(fId);
+            state.score += fScore;
             document.getElementById('score-val').innerText = state.score;
             
             const btn = document.getElementById('bonus-start-btn');
             btn.classList.remove('hidden');
-            btn.innerText = (reason === "CRASH!" ? "OUCH! CONTINUE" : "GREAT JOB! CONTINUE");
+            
+            if (reason === "GAME OVER") {
+                btn.innerText = "GAME OVER >>";
+                btn.classList.add('red');
+            } else {
+                btn.innerText = "GREAT JOB! >>";
+                btn.classList.remove('red');
+            }
             
             btn.onclick = () => {
                 document.getElementById('bonus-overlay').classList.add('hidden');
-                showFinalWin();
+                showFinalWin(reason === "GAME OVER");
             };
-
-            if(synth) {
-                if(reason === "CRASH!") synth.triggerAttackRelease("C3", "4n");
-                else synth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "4n");
-            }
         }
 
-        function showFinalWin() {
-            kRunning = false;
-            cancelAnimationFrame(kId);
+        function showFinalWin(isGameOver) {
+            fRunning = false;
+            cancelAnimationFrame(fId);
             document.getElementById('bonus-overlay').classList.add('hidden');
-            document.getElementById('win-overlay').classList.remove('hidden');
+            
+            let winOverlay = document.getElementById('win-overlay');
+            let title = document.getElementById('win-title');
+            let icon = document.getElementById('win-icon');
+            
+            if (isGameOver) {
+                title.innerText = "GAME OVER!";
+                title.style.color = "var(--c-red)";
+                icon.innerText = "💥";
+            } else {
+                title.innerText = "AMAZING JOB!";
+                title.style.color = "var(--c-green)";
+                icon.innerText = "🏆";
+            }
+
+            winOverlay.classList.remove('hidden');
             document.getElementById('final-score').innerText = state.score;
             startConfetti();
         }
