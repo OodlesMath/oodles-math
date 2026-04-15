@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Frog Leap v12 - Beautiful Lotus Adventure</title>
+    <title>Frog Leap v20 - Perfect Lotus Adventure</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -128,7 +129,7 @@
         #question-text {
             font-size: 3rem; 
             font-weight: 900;
-            color: var(--text-dark);
+            color: var(--red); /* Phép tính màu đỏ */
             white-space: nowrap;
         }
 
@@ -313,6 +314,7 @@
     </style>
 </head>
 <body>
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
     <canvas id="gameCanvas"></canvas>
 
     <div id="ui-layer">
@@ -366,15 +368,13 @@
         </div>
 
         <div id="game-over-panel" class="panel hidden">
-            <!-- Awesome Piranha Icon matching the new fierce fish -->
+            <!-- Awesome Piranha Icon -->
             <svg class="title-icon" viewBox="0 0 100 100">
                 <ellipse cx="50" cy="50" rx="45" ry="35" fill="#2d6a4f"/>
                 <path d="M 10 50 Q 50 10 90 50 Z" fill="#370617"/>
                 <path d="M 10 50 L 25 35 L 40 50 L 55 35 L 70 50 L 85 35 L 90 50 Z" fill="#fff"/>
-                <!-- Fins -->
                 <path d="M 50 15 L 30 -5 L 60 5 Z" fill="#d90429"/>
                 <path d="M 50 85 L 30 105 L 60 95 Z" fill="#d90429"/>
-                <!-- Eye -->
                 <circle cx="35" cy="30" r="10" fill="#ffb703"/>
                 <circle cx="65" cy="30" r="10" fill="#ffb703"/>
                 <circle cx="35" cy="30" r="4" fill="#000"/>
@@ -401,9 +401,10 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d', { alpha: false }); 
     
-    // Virtual resolution
-    const VW = 1600;
-    const VH = 900;
+    // Dynamic Virtual Height for perfect mobile scaling
+    const VW = 1600; 
+    let VH = 900; 
+    let WATER_LEVEL = 750; // Will be dynamically set to 5/6 of VH
     
     let gameState = 'start'; 
     let scale = 1, offsetX = 0, offsetY = 0;
@@ -428,42 +429,33 @@
         jumpTargetX: null
     };
 
-    let fierceFish = {
-        active: false,
-        x: 0, y: 0, vy: 0
-    };
+    let fierceFish = { active: false, x: 0, y: 0, vy: 0 };
     let fishBubbles = [];
     
-    // Background arrays
+    // Arrays
     let decorFishes = [];
     let patrolShark = { x: 0, y: 0, dir: 1, speed: 2.5 };
     let standingLotuses = [];
     let floatingLeaves = [];
     let mgFlowers = []; 
-
-    // Minigame Data
-    let pointerX = VW/2;
-    let bonusItems = [];
-    let bonusTimer = 0;
-    let bonusDuration = 60 * 60; 
-
-    let platforms = [];
-    let particles = [];
     let backgroundElements = [];
+    let particles = [];
     let confetti = [];
     let floatingTexts = [];
+    let platforms = [];
+    let bonusItems = [];
+
     let backgroundTime = 0;
     let fwInterval = null;
-
+    let bonusTimer = 0;
+    let bonusDuration = 60 * 60; 
     let currentQuestion = null;
 
     // --- AUDIO SYSTEM ---
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     
     function initAudio() {
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
     }
 
     function playTone(freq, type, duration, vol=0.1) {
@@ -480,57 +472,50 @@
         osc.stop(audioCtx.currentTime + duration);
     }
 
-    function sfxJump() {
-        playTone(350, 'sine', 0.15, 0.08);
-        setTimeout(() => playTone(600, 'sine', 0.2, 0.08), 50);
-    }
+    function sfxJump() { playTone(350, 'sine', 0.15, 0.08); setTimeout(() => playTone(600, 'sine', 0.2, 0.08), 50); }
+    function sfxCorrect() { playTone(523.25, 'sine', 0.1, 0.1); setTimeout(() => playTone(659.25, 'sine', 0.1, 0.1), 100); setTimeout(() => playTone(783.99, 'sine', 0.3, 0.1), 200); }
+    function sfxWrong() { playTone(250, 'square', 0.2, 0.08); setTimeout(() => playTone(150, 'square', 0.3, 0.1), 150); }
+    function sfxBonusGem() { playTone(880, 'sine', 0.1, 0.05); setTimeout(() => playTone(1108, 'sine', 0.15, 0.05), 50); }
+    function sfxBonusSpike() { playTone(150, 'sawtooth', 0.4, 0.1); setTimeout(() => playTone(100, 'sawtooth', 0.5, 0.15), 100); }
+    function sfxWin() { [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((freq, i) => setTimeout(() => playTone(freq, 'square', 0.4, 0.08), i * 120)); }
+    function sfxLose() { [300, 250, 200, 150].forEach((freq, i) => setTimeout(() => playTone(freq, 'triangle', 0.4, 0.08), i * 200)); }
 
-    function sfxCorrect() {
-        playTone(523.25, 'sine', 0.1, 0.1); 
-        setTimeout(() => playTone(659.25, 'sine', 0.1, 0.1), 100); 
-        setTimeout(() => playTone(783.99, 'sine', 0.3, 0.1), 200); 
-    }
-
-    function sfxWrong() {
-        playTone(250, 'square', 0.2, 0.08);
-        setTimeout(() => playTone(150, 'square', 0.3, 0.1), 150);
-    }
-
-    function sfxBonusGem() { 
-        playTone(880, 'sine', 0.1, 0.05);
-        setTimeout(() => playTone(1108, 'sine', 0.15, 0.05), 50);
-    }
-
-    function sfxBonusSpike() { 
-        playTone(150, 'sawtooth', 0.4, 0.1);
-        setTimeout(() => playTone(100, 'sawtooth', 0.5, 0.15), 100);
-    }
-
-    function sfxWin() {
-        [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((freq, i) => {
-            setTimeout(() => playTone(freq, 'square', 0.4, 0.08), i * 120);
-        });
-    }
-
-    function sfxLose() {
-        [300, 250, 200, 150].forEach((freq, i) => {
-            setTimeout(() => playTone(freq, 'triangle', 0.4, 0.08), i * 200);
-        });
-    }
-
-    // --- SETUP & RESIZE ---
+    // --- SETUP & RESIZE (FULLY RESPONSIVE FIX) ---
     function resize() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
         
-        let scaleX = canvas.width / VW;
-        let scaleY = canvas.height / VH;
-        scale = Math.min(scaleX, scaleY);
+        scale = canvas.width / VW;
         
-        offsetX = (canvas.width - VW * scale) / 2;
-        offsetY = (canvas.height - VH * scale) / 2;
+        // Dynamically calculate Virtual Height so it perfectly fits the screen aspect ratio
+        let newVH = canvas.height / scale;
+        
+        // Force the water level to ALWAYS be exactly 5/6 down the physical screen.
+        let newWaterLevel = newVH * (5/6);
+        
+        let yShift = newWaterLevel - WATER_LEVEL; 
+
+        VH = newVH;
+        WATER_LEVEL = newWaterLevel;
+        offsetX = 0;
+        offsetY = 0;
+
+        // Shift existing elements to keep them grounded properly during resize mid-game
+        if (gameState !== 'start' && yShift !== 0 && !isNaN(yShift)) {
+            player.y += yShift;
+            if(player.targetPlatform) player.jumpTargetX = null;
+            platforms.forEach(p => p.y += yShift);
+            backgroundElements.forEach(el => el.y += yShift);
+            standingLotuses.forEach(l => l.y += yShift);
+            floatingLeaves.forEach(l => l.y += yShift);
+            decorFishes.forEach(f => f.y += yShift);
+            fierceFish.y += yShift;
+            mgFlowers.forEach(f => f.y += yShift);
+        }
     }
     window.addEventListener('resize', resize);
+    
+    // Initial call to set up the correct proportions before anything is generated
     resize();
 
     // --- MATH & TTS ---
@@ -549,7 +534,6 @@
                 num2 = Math.floor(Math.random() * (num1 - 1)) + 1; 
                 ans = num1 - num2;
             }
-
             qString = `${num1} ${op} ${num2}`;
             attempts++;
             if (attempts > 50) break; 
@@ -562,12 +546,10 @@
             let offset = Math.floor(Math.random() * 9) - 4; 
             if (offset === 0) offset = 5;
             let fake = ans + offset;
-            
             if (fake > 0 && fake <= currentMathRange && !options.includes(fake)) {
                 options.push(fake);
             }
         }
-        
         options.sort(() => Math.random() - 0.5);
         
         let spokenOp = op === '+' ? 'plus' : 'minus';
@@ -604,54 +586,25 @@
         mgFlowers = [];
         fishBubbles = [];
         
-        // Puffy Clouds
-        for(let i=0; i<8; i++) {
+        // Puffy Clouds (Reduced count)
+        for(let i=0; i<4; i++) {
             backgroundElements.push({
                 type: 'cloud',
                 x: Math.random() * VW * 4, 
-                y: Math.random() * (VH * 0.35) - 50,
-                size: 60 + Math.random() * 80,
+                y: Math.random() * (WATER_LEVEL * 0.4),
+                size: 50 + Math.random() * 50,
                 speed: Math.random() * 0.4 + 0.15, 
                 parallax: 0.1
             });
         }
 
-        // Layer 1: Pointier TALL Mountains (Fixed height and shape)
-        for(let i=0; i<12; i++) {
+        // Overlapping Mountains (Perfectly centered per segment)
+        for(let i=0; i<6; i++) {
             backgroundElements.push({
-                type: 'mountain',
-                x: i * 400 - 200,
-                y: VH - 550 + Math.random() * 80, // Moved up
-                width: 300 + Math.random()*200, // Narrower base
-                height: 550 + Math.random() * 250, // Taller peaks
-                color: '#4fa8e0', 
-                parallax: 0.1
-            });
-        }
-
-        // Layer 2: Mid Hills
-        for(let i=0; i<15; i++) {
-            backgroundElements.push({
-                type: 'hill',
-                x: i * 300 - 100,
-                y: VH - 350 + Math.random() * 40,
-                width: 600 + Math.random() * 200,
-                height: 300 + Math.random() * 50,
-                color: '#65ad45',
-                parallax: 0.25
-            });
-        }
-
-        // Layer 3: Foreground Hills
-        for(let i=0; i<15; i++) {
-            backgroundElements.push({
-                type: 'hill',
-                x: i * 250 - 50,
-                y: VH - 250 + Math.random() * 30,
-                width: 500 + Math.random() * 200,
-                height: 200 + Math.random() * 50,
-                color: '#499b2e',
-                parallax: 0.35
+                type: 'mountain_pair',
+                x: i * 3000, 
+                y: WATER_LEVEL, 
+                parallax: 0.05
             });
         }
 
@@ -662,53 +615,48 @@
             {body: '#ce82ff', stripe: '#ffb2d1'},
             {body: '#ff4b4b', stripe: '#ffc800'}
         ];
-        for(let i=0; i<25; i++) {
+        for(let i=0; i<40; i++) {
             decorFishes.push({
-                x: Math.random() * VW * 2,
-                y: VH + 20 + Math.random() * 400, // Strictly below water surface (VH - 50)
-                speed: 0.8 + Math.random() * 1.5,
+                x: Math.random() * VW * 5,
+                y: WATER_LEVEL + 20 + Math.random() * 40, 
+                speed: 0.2 + Math.random() * 0.4, 
                 dir: Math.random() > 0.5 ? 1 : -1,
-                scale: 0.4 + Math.random() * 0.4,
+                scale: 0.4 + Math.random() * 0.3,
                 bobOffset: Math.random() * Math.PI * 2,
                 colorObj: fishColors[Math.floor(Math.random() * fishColors.length)]
             });
         }
 
-        // Standing Lotus Flowers (Continuous generation logic in update)
-        for(let i=0; i<20; i++) {
+        // Standing Lotus Flowers
+        for(let i=0; i<40; i++) {
             standingLotuses.push({
-                x: i * 300 + Math.random() * 150 - 200,
-                y: VH - 100 + Math.random() * 15, 
-                height: 80 + Math.random() * 60,
-                scale: 0.8 + Math.random() * 0.5,
+                x: i * 300 - 1000 + Math.random()*100,
+                y: WATER_LEVEL - 20 + Math.random() * 10, 
+                height: 70 + Math.random() * 40,
+                scale: 0.7 + Math.random() * 0.4,
                 swayOffset: Math.random() * Math.PI * 2
             });
         }
 
-        for(let i=0; i<25; i++) {
+        // Floating leaves
+        for(let i=0; i<40; i++) {
             floatingLeaves.push({
-                x: i * 200 + Math.random() * 200 - 200,
-                y: VH - 90 + Math.random() * 25, 
-                scale: 0.5 + Math.random() * 0.8,
+                x: i * 250 - 1000 + Math.random()*100,
+                y: WATER_LEVEL - 10 + Math.random() * 15, 
+                scale: 0.5 + Math.random() * 0.6,
                 rotation: Math.random() * Math.PI * 2
             });
         }
 
-        for(let i=0; i<30; i++) {
+        // Grass Flowers (Minigame & Shoreline)
+        for(let i=0; i<50; i++) {
             mgFlowers.push({
-                x: Math.random() * VW * 2, 
-                y: VH - 80 + Math.random() * 60,
+                x: i * 150 - 1000 + Math.random()*100, 
+                y: WATER_LEVEL - 20 + Math.random() * 30,
                 scale: 0.4 + Math.random() * 0.6,
                 color: Math.random() > 0.5 ? '#ff7eb3' : (Math.random() > 0.5 ? '#ffeb3b' : '#ffffff')
             });
         }
-
-        patrolShark = {
-            x: cameraX - 200,
-            y: VH + 200, 
-            dir: 1,
-            speed: 2
-        };
     }
 
     function createPlatformObject(x, y, w, isBase, answerValue) {
@@ -725,15 +673,15 @@
     }
 
     function generateLevelSet(baseX) {
-        // High platforms, well above water (VH - 100)
-        let baseY = VH - 450; 
+        // Frog jumps close to water, stem length is short and cute!
+        let baseY = WATER_LEVEL - 150; 
         
         if (platforms.length === 0) {
             platforms.push(createPlatformObject(baseX, baseY, 240, true, null));
         }
 
         let startX = baseX + 350;
-        let yOffsets = [-30, -70, 10, -50]; 
+        let yOffsets = [-10, -40, 20, -20]; 
         
         for(let i=0; i<4; i++) {
             let platX = startX + i * 280;
@@ -810,11 +758,8 @@
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         
-        const scaledX = x - offsetX;
-        const scaledY = y - offsetY;
-        
-        const virtualX = scaledX / scale + cameraX;
-        const virtualY = scaledY / scale;
+        const virtualX = (x - offsetX) / scale + cameraX;
+        const virtualY = (y - offsetY) / scale;
 
         for(let i=1; i<platforms.length; i++) {
             let p = platforms[i];
@@ -867,69 +812,60 @@
             if(bg.type === 'cloud') {
                 bg.x -= bg.speed; 
                 let px = bg.x - (gameState==='minigame'? 0 : cameraX * bg.parallax);
-                if (px < -400) {
-                    bg.x += (VW + 800); 
+                if (px < -1000) {
+                    bg.x += 8000; 
                 }
             }
         });
 
-        // Background movement & Wrapping (FIXED to ensure continuous generation)
+        // Background Wrapping (Flawless Infinite Scroll)
         if (gameState !== 'minigame') {
-            
             backgroundElements.forEach(el => {
-                if(el.type !== 'cloud') { 
+                if (el.type === 'mountain_pair') {
                     let px = el.x - cameraX * el.parallax;
-                    if (px < -800) el.x += (VW + 1600);
-                    else if (px > VW + 800) el.x -= (VW + 1600);
+                    while (px < -3000) { el.x += 12000; px = el.x - cameraX * el.parallax; }
+                    while (px > 9000) { el.x -= 12000; px = el.x - cameraX * el.parallax; }
                 }
             });
 
-            // True wrap-around calculation for lotuses so they never disappear
+            const LOTUS_SPAN = 40 * 300; // 12000
             standingLotuses.forEach(lotus => {
-                let px = lotus.x - cameraX * 0.2; 
-                if (px < -400) {
-                    lotus.x = cameraX * 0.2 + VW + 400 + Math.random() * 200; 
-                    lotus.y = VH - 100 + Math.random() * 20; 
-                } else if (px > VW + 800) {
-                    lotus.x = cameraX * 0.2 - 400 - Math.random() * 200;
-                }
+                let px = lotus.x - cameraX * 0.2;
+                while (px < -1000) { lotus.x += LOTUS_SPAN; px = lotus.x - cameraX * 0.2; lotus.y = WATER_LEVEL - 20 + Math.random()*10; }
+                while (px > LOTUS_SPAN - 1000) { lotus.x -= LOTUS_SPAN; px = lotus.x - cameraX * 0.2; }
             });
 
+            const LEAF_SPAN = 40 * 250; // 10000
             floatingLeaves.forEach(leaf => {
-                let px = leaf.x - cameraX * 0.2; 
-                if (px < -400) leaf.x = cameraX * 0.2 + VW + 400 + Math.random() * 200; 
-                else if (px > VW + 800) leaf.x = cameraX * 0.2 - 400 - Math.random() * 200;
+                let px = leaf.x - cameraX * 0.2;
+                while (px < -1000) { leaf.x += LEAF_SPAN; px = leaf.x - cameraX * 0.2; }
+                while (px > LEAF_SPAN - 1000) { leaf.x -= LEAF_SPAN; px = leaf.x - cameraX * 0.2; }
             });
 
+            const FISH_SPAN = 40 * 200; // 8000
             decorFishes.forEach(f => {
                 f.x += f.speed * f.dir;
                 let px = f.x - cameraX * 0.1;
-                if(f.dir === 1 && px > VW + 300) {
-                    f.x = cameraX * 0.1 - 300 - Math.random()*200;
-                    f.y = VH + 20 + Math.random() * 400;
-                } else if(f.dir === -1 && px < -300) {
-                    f.x = cameraX * 0.1 + VW + 300 + Math.random()*200;
-                    f.y = VH + 20 + Math.random() * 400;
-                }
+                while (px < -1000) { f.x += FISH_SPAN; px = f.x - cameraX * 0.1; f.y = WATER_LEVEL + 20 + Math.random()*40; }
+                while (px > FISH_SPAN - 1000) { f.x -= FISH_SPAN; px = f.x - cameraX * 0.1; }
             });
 
             // Patrol Shark Logic
             patrolShark.x += patrolShark.speed * patrolShark.dir;
             if(patrolShark.dir === 1 && patrolShark.x > cameraX + VW + 400) {
                 patrolShark.dir = -1;
-                patrolShark.y = VH + 150 + Math.random() * 100;
+                patrolShark.y = WATER_LEVEL + 150 + Math.random() * 50;
             } else if(patrolShark.dir === -1 && patrolShark.x < cameraX - 400) {
                 patrolShark.dir = 1;
-                patrolShark.y = VH + 150 + Math.random() * 100;
+                patrolShark.y = WATER_LEVEL + 150 + Math.random() * 50;
             }
         }
 
-        // Attack Fish Logic (Fierce Fish with bubbles)
+        // Attack Fish Logic
         if (fierceFish.active) {
             fierceFish.y += fierceFish.vy;
-            fierceFish.vy += gravity * 0.6; 
+            fierceFish.vy += gravity * 0.8; 
             
-            // Spawn bubbles trailing the fierce fish
             if(fierceFish.vy < -5 && Math.random() < 0.4) {
                 fishBubbles.push({
                     x: fierceFish.x + (Math.random()-0.5)*80,
@@ -939,8 +875,7 @@
                     life: 1
                 });
             }
-
-            if (fierceFish.y > VH + 400) fierceFish.active = false;
+            if (fierceFish.y > WATER_LEVEL + 800) fierceFish.active = false;
         }
 
         // Update Fish Bubbles
@@ -951,14 +886,8 @@
             if(b.life <= 0) fishBubbles.splice(i, 1);
         }
 
-        // Platform bouncy spring physics
-        platforms.forEach(p => {
-            if(p.spring !== undefined) {
-                p.spring *= 0.8; 
-            }
-        });
+        platforms.forEach(p => { if(p.spring !== undefined) p.spring *= 0.8; });
 
-        // Confetti & Particles
         for (let i = confetti.length - 1; i >= 0; i--) {
             let c = confetti[i];
             c.x += c.vx;
@@ -967,7 +896,7 @@
             c.rot += c.rotSpeed;
             c.wobble += c.wobbleSpeed;
             c.x += Math.sin(c.wobble) * 2; 
-            if (c.y > VH + 50) confetti.splice(i, 1);
+            if (c.y > WATER_LEVEL + 300) confetti.splice(i, 1);
         }
 
         for (let i = particles.length - 1; i >= 0; i--) {
@@ -979,7 +908,6 @@
             if (p.life <= 0) particles.splice(i, 1);
         }
 
-        // Floating texts
         for (let i = floatingTexts.length - 1; i >= 0; i--) {
             let ft = floatingTexts[i];
             ft.y -= 2.5;
@@ -987,15 +915,15 @@
             if(ft.life <= 0) floatingTexts.splice(i, 1);
         }
 
-        // --- STATE: MINIGAME (Fireflies & Rocks on Grass - Daytime) ---
+        // --- STATE: MINIGAME ---
         if (gameState === 'minigame') {
             bonusTimer++;
             
-            // Wrap grass flowers
+            const FLOWER_SPAN = 50 * 150; 
             mgFlowers.forEach(flower => {
                 let px = flower.x - cameraX;
-                if(px < -200) flower.x += VW + 400;
-                else if(px > VW + 200) flower.x -= VW + 400;
+                while (px < -1000) { flower.x += FLOWER_SPAN; px = flower.x - cameraX; }
+                while (px > FLOWER_SPAN - 1000) { flower.x -= FLOWER_SPAN; px = flower.x - cameraX; }
             });
 
             let targetPx = pointerX;
@@ -1010,11 +938,10 @@
                 difficultyMultiplier = 1 + ((bonusTimer - 600) / (bonusDuration - 600)) * 1.5; 
             }
 
-            // Spawn Bright Fireflies & Rocks
             if (Math.random() < 0.04 * (1 + (difficultyMultiplier-1)*0.5)) {
                 bonusItems.push({
                     x: 60 + Math.random() * (VW - 120),
-                    y: -100,
+                    y: WATER_LEVEL - 1000,
                     vy: (Math.random() * 2 + 2.5) * difficultyMultiplier, 
                     type: 'firefly'
                 });
@@ -1022,7 +949,7 @@
             if (Math.random() < 0.025 * (1 + (difficultyMultiplier-1)*0.5)) { 
                 bonusItems.push({
                     x: 60 + Math.random() * (VW - 120),
-                    y: -100,
+                    y: WATER_LEVEL - 1000,
                     vy: (Math.random() * 3 + 4) * difficultyMultiplier, 
                     type: 'rock',
                     rot: Math.random() * Math.PI*2,
@@ -1030,13 +957,11 @@
                 });
             }
 
-            // Update & Collision
             for (let i = bonusItems.length - 1; i >= 0; i--) {
                 let item = bonusItems[i];
                 item.y += item.vy;
                 if(item.type === 'rock') item.rot += item.rotSpeed;
                 
-                // Generous collision box for frog catching items
                 if (item.y > player.y - player.height - 20 && item.y < player.y + 20 &&
                     item.x > player.x - 45 && item.x < player.x + 45) {
                     
@@ -1045,6 +970,7 @@
                         diamonds++;
                         document.getElementById('score-text').innerText = `${diamonds}`;
                         floatingTexts.push({x: player.x, y: player.y - 120, text: "+1", life: 1, color: '#e5ff00'});
+                        
                         createSparkles(item.x, item.y, 8, '#e5ff00');
                         bonusItems.splice(i, 1);
                     } else if (item.type === 'rock') {
@@ -1054,7 +980,7 @@
                         endMinigame(true); 
                         return;
                     }
-                } else if (item.y > VH + 50) {
+                } else if (item.y > WATER_LEVEL + 50) {
                     bonusItems.splice(i, 1); 
                 }
             }
@@ -1068,7 +994,7 @@
         // --- POST GAME OVER/WIN ---
         if (gameState !== 'playing') {
             if ((gameState === 'gameover' || gameState === 'win') && Math.random() < 0.05) {
-                createConfettiBurst(VW*0.2 + Math.random()*VW*0.6, VH*0.1);
+                createConfettiBurst(VW*0.2 + Math.random()*VW*0.6, WATER_LEVEL - 500);
             }
             return;
         }
@@ -1088,7 +1014,7 @@
                 player.vy = 0;
                 player.jumpTargetX = null;
                 
-                player.targetPlatform.spring = 15; // Bounce effect
+                player.targetPlatform.spring = 15; 
                 screenShake(5);
 
                 if (player.targetPlatform.isPortal) {
@@ -1098,7 +1024,7 @@
                     bonusTimer = 0;
                     bonusDuration = 60 * 60;
                     player.x = VW / 2;
-                    player.y = VH - 60; 
+                    player.y = WATER_LEVEL - 60; 
                     targetCameraX = 0;
                     cameraX = 0;
                     pointerX = player.x;
@@ -1168,29 +1094,27 @@
                 player.x = player.targetPlatform.x + player.targetPlatform.w/2;
                 player.y = player.targetPlatform.y - 10;
                 
-                // Trigger fierce fish when reaching water level
-                if (player.y > VH - 100 && !fierceFish.active) {
+                if (player.y > WATER_LEVEL - 50 && !fierceFish.active) {
                     fierceFish = {
                         active: true,
                         x: player.x,
-                        y: VH + 200,
+                        y: WATER_LEVEL + 250,
                         vy: -25 
                     };
-                    createSparkles(player.x, VH - 80, 20, '#ffffff'); // Water splash
+                    createSparkles(player.x, WATER_LEVEL - 30, 20, '#ffffff'); 
                 }
             } else {
                 player.vy += gravity;
                 player.y += player.vy;
             }
             
-            if (player.y > VH + 100 && !fierceFish.active) {
+            if (player.y > WATER_LEVEL + 150 && !fierceFish.active) {
                 loseGame();
             } else if (fierceFish.active && player.y > fierceFish.y - 80) {
                 loseGame();
             }
         }
 
-        // Platform Sinking Logic
         platforms.forEach(p => {
             if (p.isCrumbling) {
                 p.vy += gravity * 0.08; 
@@ -1199,9 +1123,8 @@
             }
         });
 
-        // Cleanup
         for (let i = platforms.length - 1; i >= 0; i--) {
-            if (platforms[i].y > VH + 500 || platforms[i].x < cameraX - 800) {
+            if (platforms[i].y > WATER_LEVEL + 500 || platforms[i].x < cameraX - 800) {
                 platforms.splice(i, 1);
             }
         }
@@ -1246,16 +1169,13 @@
     // --- DRAWING FUNCTIONS ---
     function drawCuteSun(ctx, screenX, screenY) {
         ctx.save();
-        // Stick strictly to top left of the screen view (screenX, screenY)
-        ctx.translate(screenX + 160, screenY + 160); 
+        ctx.translate(screenX + 160/scale, screenY + 160/scale); 
 
-        // Outer glow rings
         ctx.fillStyle = "rgba(255, 230, 50, 0.15)";
         ctx.beginPath(); ctx.arc(0, 0, 110, 0, Math.PI*2); ctx.fill();
         ctx.fillStyle = "rgba(255, 220, 50, 0.3)";
         ctx.beginPath(); ctx.arc(0, 0, 85, 0, Math.PI*2); ctx.fill();
         
-        // Rotating Sun Rays
         ctx.save();
         ctx.rotate(backgroundTime * 0.1);
         ctx.fillStyle = "#ffb900";
@@ -1271,26 +1191,21 @@
         }
         ctx.restore();
 
-        // Solid Core
         ctx.fillStyle = "#ffcc00";
         ctx.beginPath(); ctx.arc(0, 0, 60, 0, Math.PI*2); ctx.fill();
 
-        // Cute Face
         ctx.fillStyle = "#000000";
         ctx.beginPath(); ctx.arc(-15, -10, 6, 0, Math.PI*2); ctx.fill(); 
         ctx.beginPath(); ctx.arc(15, -10, 6, 0, Math.PI*2); ctx.fill();  
 
-        // Eye Shines
         ctx.fillStyle = "#ffffff";
         ctx.beginPath(); ctx.arc(-17, -12, 2, 0, Math.PI*2); ctx.fill();
         ctx.beginPath(); ctx.arc(13, -12, 2, 0, Math.PI*2); ctx.fill();
 
-        // Blush
         ctx.fillStyle = "rgba(255, 100, 100, 0.5)";
         ctx.beginPath(); ctx.ellipse(-25, 5, 8, 4, 0, 0, Math.PI*2); ctx.fill();
         ctx.beginPath(); ctx.ellipse(25, 5, 8, 4, 0, 0, Math.PI*2); ctx.fill();
 
-        // Smile
         ctx.strokeStyle = "#000000";
         ctx.lineWidth = 3;
         ctx.lineCap = "round";
@@ -1307,7 +1222,6 @@
         ctx.rotate(sway);
         ctx.scale(scale, scale);
 
-        // Stem
         ctx.strokeStyle = "#276b1f";
         ctx.lineWidth = 6;
         ctx.beginPath();
@@ -1317,21 +1231,17 @@
 
         ctx.translate(0, -h);
 
-        // Outer petals
         ctx.fillStyle = "#ff63a5";
         ctx.beginPath(); ctx.ellipse(-18, -10, 16, 28, -Math.PI/4, 0, Math.PI*2); ctx.fill();
         ctx.beginPath(); ctx.ellipse(18, -10, 16, 28, Math.PI/4, 0, Math.PI*2); ctx.fill();
         
-        // Inner petals
         ctx.fillStyle = "#ff9ec4";
         ctx.beginPath(); ctx.ellipse(-10, -15, 14, 32, -Math.PI/8, 0, Math.PI*2); ctx.fill();
         ctx.beginPath(); ctx.ellipse(10, -15, 14, 32, Math.PI/8, 0, Math.PI*2); ctx.fill();
         
-        // Center petal
         ctx.fillStyle = "#ffe0ec";
         ctx.beginPath(); ctx.ellipse(0, -20, 14, 34, 0, 0, Math.PI*2); ctx.fill();
         
-        // Core
         ctx.fillStyle = "#ffc800";
         ctx.beginPath(); ctx.ellipse(0, 0, 14, 6, 0, 0, Math.PI*2); ctx.fill();
 
@@ -1346,14 +1256,12 @@
 
         let w = 120;
         
-        // Leaf Shadow / Thickness
         ctx.fillStyle = "#1e7a1e"; 
         ctx.beginPath();
         ctx.arc(0, 10, w/2, Math.PI * 0.1, Math.PI * 1.9); 
         ctx.lineTo(0, 10);
         ctx.fill();
         
-        // Leaf Top Surface
         let leafGrad = ctx.createLinearGradient(-w/2, -w/2, w/2, w/2);
         leafGrad.addColorStop(0, "#58cc02"); 
         leafGrad.addColorStop(1, "#3ba302"); 
@@ -1367,18 +1275,104 @@
         ctx.restore();
     }
 
-    function drawDayBackground(includeMountains = true, startDraw, topBound, endDraw) {
-        let skyGrad = ctx.createLinearGradient(0, topBound, 0, VH);
+    function drawMountain(ctx, mx, my, mw, mh, colorLight, colorDark) {
+        let peakX = mx + mw/2;
+        let peakY = my;
+
+        ctx.fillStyle = colorLight;
+        ctx.beginPath();
+        ctx.moveTo(mx, my + mh);
+        ctx.lineTo(peakX, peakY);
+        ctx.lineTo(peakX, my + mh);
+        ctx.fill();
+
+        ctx.fillStyle = colorDark;
+        ctx.beginPath();
+        ctx.moveTo(peakX, peakY);
+        ctx.lineTo(mx + mw, my + mh);
+        ctx.lineTo(peakX, my + mh);
+        ctx.fill();
+
+        // Snow Cap
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        let sH = mh * 0.15; 
+        ctx.moveTo(peakX, peakY);
+        ctx.lineTo(peakX - (mw/2)*(sH/mh), peakY + sH);
+        let wStep = (mw/2)*(sH/mh) / 3;
+        ctx.lineTo(peakX - wStep*2, peakY + sH + 15);
+        ctx.lineTo(peakX - wStep, peakY + sH - 5);
+        ctx.lineTo(peakX, peakY + sH + 20);
+        ctx.lineTo(peakX + wStep, peakY + sH - 5);
+        ctx.lineTo(peakX + wStep*2, peakY + sH + 15);
+        ctx.lineTo(peakX + (mw/2)*(sH/mh), peakY + sH);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.fillStyle = "rgba(0,0,0,0.08)";
+        ctx.beginPath();
+        ctx.moveTo(peakX, peakY);
+        ctx.lineTo(peakX, peakY + sH + 20);
+        ctx.lineTo(peakX + wStep, peakY + sH - 5);
+        ctx.lineTo(peakX + wStep*2, peakY + sH + 15);
+        ctx.lineTo(peakX + (mw/2)*(sH/mh), peakY + sH);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    function drawDayBackground(includeMountains = true, startDraw, endDraw) {
+        // Sky gradient
+        let topBound = -offsetY/scale; 
+        let skyGrad = ctx.createLinearGradient(0, topBound, 0, WATER_LEVEL);
         skyGrad.addColorStop(0, "#48c0f0"); 
         skyGrad.addColorStop(1, "#c0eaff"); 
         ctx.fillStyle = skyGrad;
-        ctx.fillRect(startDraw, topBound - 500, endDraw - startDraw, VH - topBound + 500); 
+        ctx.fillRect(startDraw, topBound - 500, endDraw - startDraw, WATER_LEVEL - topBound + 500); 
 
         drawCuteSun(ctx, startDraw, topBound);
 
+        if (includeMountains) {
+            // Draw continuous line of bushes/trees along the horizon first
+            ctx.fillStyle = "#499b2e";
+            ctx.beginPath();
+            ctx.moveTo(startDraw, WATER_LEVEL);
+            for(let bx = startDraw - 100; bx < endDraw + 100; bx += 80) {
+                ctx.arc(bx, WATER_LEVEL, 60, Math.PI, 0);
+            }
+            ctx.lineTo(endDraw, WATER_LEVEL);
+            ctx.fill();
+
+            // Mountains on top of horizon
+            let skyHeight = WATER_LEVEL - topBound; 
+            
+            backgroundElements.forEach(el => {
+                let px = el.x - cameraX * el.parallax;
+                if (el.type === 'mountain_pair') {
+                    if(px + 4000 < startDraw || px > endDraw) return; 
+                    
+                    let mHeight1 = skyHeight * 0.85; 
+                    let mHeight2 = skyHeight * 0.70;
+                    let mWidth1 = mHeight1 * 2.5; 
+                    let mWidth2 = mHeight2 * 2.5;
+
+                    // Centering calculation to guarantee they sit directly in middle of a 1600px block
+                    // Center of 1600 is 800
+                    let peak1X = 600; 
+                    let peak2X = 1000;
+                    let m1X = peak1X - mWidth1/2;
+                    let m2X = peak2X - mWidth2/2;
+
+                    // Draw Right Mountain (Back)
+                    drawMountain(ctx, px + m2X, WATER_LEVEL - mHeight2, mWidth2, mHeight2, "#8cd136", "#5cb823");
+                    // Draw Left Mountain (Front overlapping)
+                    drawMountain(ctx, px + m1X, WATER_LEVEL - mHeight1, mWidth1, mHeight1, "#a1e535", "#7ab823");
+                } 
+            });
+        }
+
+        // Draw Clouds OVER mountains
         backgroundElements.forEach(el => {
             let px = el.x - (gameState==='minigame'? 0 : cameraX * el.parallax);
-            
             if (el.type === 'cloud') {
                 if(px + el.size*2 < startDraw || px - el.size*2 > endDraw) return;
                 ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
@@ -1387,42 +1381,7 @@
                 ctx.arc(px + el.size*0.8, el.y + el.size*0.2, el.size*0.7, 0, Math.PI*2);
                 ctx.arc(px - el.size*0.8, el.y + el.size*0.2, el.size*0.7, 0, Math.PI*2);
                 ctx.fill();
-            } else if (el.type === 'mountain' && includeMountains) {
-                if(px + el.width < startDraw || px > endDraw) return;
-                
-                // Draw Mountain (Taller and pointier)
-                ctx.fillStyle = el.color;
-                ctx.beginPath();
-                ctx.moveTo(px, el.y + el.height);
-                ctx.lineTo(px + el.width/2, el.y - 50); // Sharp peak
-                ctx.lineTo(px + el.width, el.y + el.height);
-                ctx.fill();
-
-                // Draw Majestic Snow Cap
-                ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-                ctx.beginPath();
-                let peakX = px + el.width/2;
-                let peakY = el.y - 50;
-                let snowHeight = el.height * 0.35;
-                
-                ctx.moveTo(peakX, peakY);
-                ctx.lineTo(peakX - (el.width/2)*(snowHeight/(el.height+50)), peakY + snowHeight);
-                // Jagged snow line
-                ctx.lineTo(peakX - 20, peakY + snowHeight + 20);
-                ctx.lineTo(peakX, peakY + snowHeight - 10);
-                ctx.lineTo(peakX + 20, peakY + snowHeight + 20);
-                ctx.lineTo(peakX + (el.width/2)*(snowHeight/(el.height+50)), peakY + snowHeight);
-                ctx.closePath();
-                ctx.fill();
-
-            } else if (el.type === 'hill' && includeMountains) {
-                if(px + el.width < startDraw || px > endDraw) return;
-                ctx.fillStyle = el.color;
-                ctx.beginPath();
-                ctx.moveTo(px, el.y + el.height);
-                ctx.quadraticCurveTo(px + el.width/2, el.y, px + el.width, el.y + el.height);
-                ctx.fill();
-            } 
+            }
         });
     }
 
@@ -1480,14 +1439,12 @@
         ctx.scale(1, 0.5); 
         ctx.rotate(p.rotation || 0);
 
-        // Leaf Shadow / Thickness
         ctx.fillStyle = "#27851d"; 
         ctx.beginPath();
         ctx.arc(0, 15, w/2, Math.PI * 0.1, Math.PI * 1.9); 
         ctx.lineTo(0, 15);
         ctx.fill();
         
-        // Leaf Top Surface
         let leafGrad = ctx.createLinearGradient(-w/2, -w/2, w/2, w/2);
         leafGrad.addColorStop(0, "#69e62e"); 
         leafGrad.addColorStop(1, "#3bab13"); 
@@ -1498,7 +1455,6 @@
         ctx.lineTo(0, 0);
         ctx.fill();
 
-        // Veins 
         ctx.strokeStyle = "rgba(10, 80, 5, 0.3)";
         ctx.lineWidth = 4;
         ctx.lineCap = "round";
@@ -1520,7 +1476,6 @@
         ctx.save();
         ctx.translate(drawX + p.w/2, p.y + springOffset);
 
-        // Portal Effect
         if (p.isPortal) {
             ctx.translate(0, -80); 
             ctx.scale(1 + Math.sin(backgroundTime*4)*0.1, 1 + Math.sin(backgroundTime*4)*0.1);
@@ -1550,7 +1505,7 @@
             ctx.lineWidth = 10;
             ctx.strokeStyle = "#1a4d00"; 
             ctx.strokeText(p.answer, 0, ry);
-            ctx.fillStyle = "#ffffff";
+            ctx.fillStyle = "#ffde00"; 
             ctx.fillText(p.answer, 0, ry);
         }
 
@@ -1612,7 +1567,7 @@
 
         ctx.fillStyle = "rgba(255, 120, 150, 0.6)";
         ctx.beginPath(); ctx.ellipse(-22, -15, 7, 4, -0.1, 0, Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.ellipse(22, -15, 7, 4, 0.1, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(20, -15, 7, 4, 0.1, 0, Math.PI*2); ctx.fill();
 
         ctx.fillStyle = skinBright; 
         ctx.beginPath(); ctx.arc(-18, -42, 16, 0, Math.PI*2); ctx.fill();
@@ -1666,7 +1621,6 @@
         ctx.save();
         ctx.translate(px, py);
         
-        // Bubbles trailing the fish
         ctx.strokeStyle = "#48c0f0";
         ctx.lineWidth = 2;
         fishBubbles.forEach(b => {
@@ -1680,34 +1634,28 @@
 
         ctx.scale(1.5, 1.5);
 
-        // Water aura
         let aura = ctx.createRadialGradient(0, 0, 20, 0, 0, 120);
         aura.addColorStop(0, "rgba(0, 0, 0, 0.5)");
         aura.addColorStop(1, "rgba(0, 0, 0, 0)");
         ctx.fillStyle = aura;
         ctx.beginPath(); ctx.arc(0, 20, 120, 0, Math.PI*2); ctx.fill();
 
-        // Fish Body Setup
         ctx.fillStyle = "#2d6a4f"; 
         ctx.strokeStyle = "#000"; 
         ctx.lineWidth = 3;
 
-        // Tail Fin (Red)
         ctx.fillStyle = "#d90429";
         ctx.beginPath(); 
         ctx.moveTo(0, 50); ctx.lineTo(-40, 120); ctx.lineTo(0, 100); ctx.lineTo(40, 120); 
         ctx.closePath(); ctx.fill(); ctx.stroke();
 
-        // Dorsal Fin (Top)
         ctx.beginPath();
         ctx.moveTo(-20, -50); ctx.lineTo(-40, -100); ctx.lineTo(0, -60); ctx.lineTo(20, -110); ctx.lineTo(30, -50);
         ctx.closePath(); ctx.fill(); ctx.stroke();
 
-        // Side Pectoral Fins (Red)
         ctx.beginPath(); ctx.moveTo(-45, 30); ctx.lineTo(-80, 60); ctx.lineTo(-40, 70); ctx.closePath(); ctx.fill(); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(45, 30); ctx.lineTo(80, 60); ctx.lineTo(40, 70); ctx.closePath(); ctx.fill(); ctx.stroke();
 
-        // Main Body Gradient
         let bGrad = ctx.createLinearGradient(0, -70, 0, 70);
         bGrad.addColorStop(0, "#194a33"); 
         bGrad.addColorStop(0.6, "#52b788"); 
@@ -1721,7 +1669,6 @@
         ctx.quadraticCurveTo(-70, -40, 0, -60); 
         ctx.fill(); ctx.stroke();
 
-        // Texture spots
         ctx.fillStyle = "#1b4332";
         ctx.beginPath(); ctx.arc(-30, 0, 6, 0, Math.PI*2); ctx.fill();
         ctx.beginPath(); ctx.arc(20, -10, 8, 0, Math.PI*2); ctx.fill();
@@ -1729,15 +1676,12 @@
         ctx.beginPath(); ctx.arc(30, 20, 7, 0, Math.PI*2); ctx.fill();
         ctx.beginPath(); ctx.arc(0, 40, 5, 0, Math.PI*2); ctx.fill();
 
-        // Giant Gaping Mouth (Facing UP)
         ctx.fillStyle = "#370617"; 
         ctx.beginPath(); ctx.ellipse(0, -30, 45, 35, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
 
-        // Red Tongue
         ctx.fillStyle = "#d90429";
         ctx.beginPath(); ctx.ellipse(0, -10, 25, 15, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke();
 
-        // Sharp Teeth!
         ctx.fillStyle = "#ffffff";
         for(let i=-35; i<=25; i+=15) {
             ctx.beginPath(); ctx.moveTo(i, -55); ctx.lineTo(i+7, -25); ctx.lineTo(i+14, -55); ctx.fill(); ctx.stroke();
@@ -1746,7 +1690,6 @@
             ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i+8, -30); ctx.lineTo(i+16, 0); ctx.fill(); ctx.stroke();
         }
 
-        // Angry Yellow Eyes
         ctx.fillStyle = "#ffb703"; 
         ctx.beginPath(); ctx.ellipse(-30, -50, 14, 18, Math.PI/8, 0, Math.PI*2); ctx.fill(); ctx.stroke();
         ctx.beginPath(); ctx.ellipse(30, -50, 14, 18, -Math.PI/8, 0, Math.PI*2); ctx.fill(); ctx.stroke();
@@ -1759,12 +1702,10 @@
         ctx.beginPath(); ctx.arc(-30, -52, 3, 0, Math.PI*2); ctx.fill();
         ctx.beginPath(); ctx.arc(26, -52, 3, 0, Math.PI*2); ctx.fill();
 
-        // Fierce Eyebrows
         ctx.lineWidth = 6; ctx.strokeStyle = "#0b2b1b"; ctx.lineCap = "round";
         ctx.beginPath(); ctx.moveTo(-50, -65); ctx.lineTo(-15, -55); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(50, -65); ctx.lineTo(15, -55); ctx.stroke();
 
-        // Snout wrinkles
         ctx.beginPath(); ctx.moveTo(-10, -70); ctx.lineTo(10, -70); ctx.stroke();
 
         ctx.restore();
@@ -1841,12 +1782,13 @@
             ctx.save();
             ctx.translate(shakeX, shakeY);
             
-            drawDayBackground(false, startDraw, topBound, endDraw); 
+            drawDayBackground(false, startDraw, endDraw); 
 
             ctx.fillStyle = "#8cd136"; 
             ctx.beginPath();
             ctx.moveTo(startDraw, botBound);
-            let grassLevel = VH - 60;
+            ctx.lineTo(startDraw, WATER_LEVEL - 60);
+            let grassLevel = WATER_LEVEL - 60;
             for(let x = startDraw - 100; x <= endDraw + 150; x += 100) {
                 let wave = Math.sin(x/150) * 15;
                 ctx.lineTo(x, grassLevel + wave);
@@ -1868,7 +1810,7 @@
                 let px = flower.x - cameraX;
                 if(px > startDraw - 100 && px < endDraw + 100) {
                     ctx.save();
-                    let wave = Math.sin(flower.x/150) * 15;
+                    let wave = Math.sin(px/150) * 15;
                     ctx.translate(px, grassLevel + wave - 10);
                     ctx.scale(flower.scale, flower.scale);
                     
@@ -1894,7 +1836,7 @@
 
         } else {
             // NORMAL GAME
-            drawDayBackground(true, startDraw, topBound, endDraw);
+            drawDayBackground(true, startDraw, endDraw);
             
             ctx.save();
             ctx.translate(-cameraX + shakeX, shakeY);
@@ -1902,12 +1844,47 @@
             let renderStartDraw = startDraw + cameraX - 200;
             let renderEndDraw = endDraw + cameraX + 200;
 
+            // Shoreline mounds
+            ctx.fillStyle = "#5cb823"; 
+            ctx.beginPath();
+            ctx.moveTo(renderStartDraw, WATER_LEVEL); 
+            ctx.lineTo(renderStartDraw, WATER_LEVEL - 20);
+            let shoreY = WATER_LEVEL - 20;
+            for(let x = renderStartDraw - 150; x <= renderEndDraw + 150; x += 150) {
+                ctx.quadraticCurveTo(x + 75, shoreY - 40, x + 150, shoreY);
+            }
+            ctx.lineTo(renderEndDraw + 150, WATER_LEVEL);
+            ctx.fill();
+
+            // Flowers on shore
+            for(let x = renderStartDraw - (renderStartDraw%150); x <= renderEndDraw; x += 150) {
+                let flowerX1 = x + 40;
+                let flowerY1 = shoreY - 15;
+                let flowerX2 = x + 110;
+                let flowerY2 = shoreY - 10;
+
+                let fColor1 = (Math.abs(x) % 3 === 0) ? '#ff7eb3' : '#ffffff';
+                let fColor2 = (Math.abs(x) % 2 === 0) ? '#ffeb3b' : '#ff7eb3';
+
+                ctx.fillStyle = fColor1;
+                ctx.beginPath(); ctx.arc(flowerX1-3, flowerY1-3, 4, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(flowerX1+3, flowerY1-3, 4, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(flowerX1, flowerY1+3, 4, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "#ffc800"; ctx.beginPath(); ctx.arc(flowerX1, flowerY1, 3, 0, Math.PI*2); ctx.fill();
+
+                ctx.fillStyle = fColor2;
+                ctx.beginPath(); ctx.arc(flowerX2-3, flowerY2-3, 4, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(flowerX2+3, flowerY2-3, 4, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(flowerX2, flowerY2+3, 4, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "#ffc800"; ctx.beginPath(); ctx.arc(flowerX2, flowerY2, 3, 0, Math.PI*2); ctx.fill();
+            }
+
             // Deep Water Layer
-            let waterGrad = ctx.createLinearGradient(0, VH - 80, 0, botBound);
+            let waterGrad = ctx.createLinearGradient(0, WATER_LEVEL, 0, botBound);
             waterGrad.addColorStop(0, "#1ca3ec");
             waterGrad.addColorStop(1, "#0f5e9c");
             ctx.fillStyle = waterGrad; 
-            ctx.fillRect(renderStartDraw, VH - 80, renderEndDraw - renderStartDraw, botBound - (VH - 80));
+            ctx.fillRect(renderStartDraw, WATER_LEVEL, renderEndDraw - renderStartDraw, botBound - WATER_LEVEL);
 
             // Pebbles
             ctx.fillStyle = "rgba(0, 40, 80, 0.4)";
@@ -1919,23 +1896,14 @@
             ctx.fillStyle = "rgba(100, 200, 255, 0.4)"; 
             ctx.beginPath();
             ctx.moveTo(renderStartDraw, botBound);
-            let speed1 = backgroundTime * 2.0;
-            let heightBase1 = VH - 60;
+            let speed1 = backgroundTime * 0.8; 
+            let heightBase1 = WATER_LEVEL + 20;
             for(let x = renderStartDraw; x <= renderEndDraw + 50; x += 50) { 
-                let wave = Math.sin((x + cameraX*0.2)/80 + speed1) * 15;
+                let wave = Math.sin((x + cameraX*0.2)/120 + speed1) * 6; 
                 ctx.lineTo(x, heightBase1 + wave);
             }
             ctx.lineTo(renderEndDraw, botBound);
             ctx.fill();
-
-            // Floating Leaves in Background
-            floatingLeaves.forEach(leaf => {
-                let px = leaf.x - cameraX * 0.2; 
-                if(px > renderStartDraw - 100 && px < renderEndDraw + 100) {
-                    let wave = Math.sin((px + cameraX*0.2)/80 + speed1) * 15;
-                    drawFloatingLeaf(ctx, px, VH - 60 + wave, leaf.scale, leaf.rotation + Math.sin(backgroundTime)*0.05);
-                }
-            });
 
             // Standing lotus flowers 
             standingLotuses.forEach(lotus => {
@@ -1946,14 +1914,23 @@
                 }
             });
 
+            // Floating Leaves in Background
+            floatingLeaves.forEach(leaf => {
+                let px = leaf.x - cameraX * 0.2; 
+                if(px > renderStartDraw - 100 && px < renderEndDraw + 100) {
+                    let wave = Math.sin((px + cameraX*0.2)/120 + speed1) * 6;
+                    drawFloatingLeaf(ctx, px, WATER_LEVEL + 20 + wave, leaf.scale, leaf.rotation + Math.sin(backgroundTime)*0.05);
+                }
+            });
+
             // Front Water Wave
             ctx.fillStyle = "rgba(40, 180, 240, 0.8)"; 
             ctx.beginPath();
             ctx.moveTo(renderStartDraw, botBound);
-            let speed2 = backgroundTime * 2.5;
-            let heightBase2 = VH - 30;
+            let speed2 = backgroundTime * 1.0; 
+            let heightBase2 = WATER_LEVEL + 50;
             for(let x = renderStartDraw; x <= renderEndDraw + 50; x += 50) { 
-                let wave = Math.sin((x + cameraX*0.2)/100 + speed2) * 20;
+                let wave = Math.sin((x + cameraX*0.2)/150 + speed2) * 10; 
                 ctx.lineTo(x, heightBase2 + wave);
             }
             ctx.lineTo(renderEndDraw, botBound);
@@ -1964,19 +1941,19 @@
             ctx.lineWidth = 4;
             ctx.beginPath();
             for(let x = renderStartDraw; x <= renderEndDraw + 50; x += 50) { 
-                let wave = Math.sin((x + cameraX*0.2)/100 + speed2) * 20;
+                let wave = Math.sin((x + cameraX*0.2)/150 + speed2) * 10;
                 if(x===renderStartDraw) ctx.moveTo(x, heightBase2 + wave);
                 else ctx.lineTo(x, heightBase2 + wave);
             }
             ctx.stroke();
 
-            // Draw FISHES clearly visible AFTER water layers
+            // Decor Fishes - Drawn clearly BEFORE platforms
             decorFishes.forEach(f => {
                 let px = f.x - cameraX * 0.1; 
                 if(px > renderStartDraw - 100 && px < renderEndDraw + 100) {
-                    // Make sure fish Y is clamped nicely
                     let displayY = f.y;
-                    if(displayY < VH) displayY = VH + 20; // Keep safely below surface
+                    if(displayY > VH - 10) displayY = VH - 10;
+                    if(displayY < WATER_LEVEL + 20) displayY = WATER_LEVEL + 20;
                     f.y = displayY;
                     drawCuteFish(ctx, f, px);
                 }
@@ -2074,7 +2051,7 @@
 
         fwInterval = setInterval(() => {
             if(gameState !== 'win') clearInterval(fwInterval);
-            createConfettiBurst(VW*0.2 + Math.random()*VW*0.6, VH*0.1);
+            createConfettiBurst(VW*0.2 + Math.random()*VW*0.6, WATER_LEVEL - 500);
         }, 300);
         
         sfxWin();
