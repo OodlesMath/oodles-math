@@ -90,7 +90,7 @@
             .game-container { flex-direction: row; gap: 60px; max-width: 1100px; }
         }
 
-        /* --- Play Area (Tree & Wide Baskets) --- */
+        /* --- Play Area (Tree & Baskets) --- */
         .play-area { display: flex; flex-direction: column; align-items: center; }
         
         .tree-container {
@@ -137,6 +137,13 @@
         /* --- Quiz Area --- */
         .quiz-area { display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%; max-width: 400px;}
 
+        /* Question Text for Subtraction */
+        .question-text {
+            display: none; background: var(--secondary); color: white; padding: 8px 20px; border-radius: 15px;
+            font-size: 1.2rem; font-weight: 800; text-align: center; width: 100%;
+            box-shadow: 0 4px 0 var(--secondary-shadow); margin-bottom: 5px;
+        }
+
         /* Feedback Box */
         .feedback-box {
             display: none; background: #fff; border: 4px solid var(--primary); border-radius: 25px;
@@ -172,9 +179,10 @@
             box-shadow: 0 4px 0 #e5e5e5; transition: all 0.3s;
         }
         .circle-total { top: 20px; border-color: #e5e5e5; color: var(--secondary); left: calc(50% - 32.5px); }
-        .circle-total.revealed { border-color: var(--success); color: var(--success); box-shadow: 0 4px 0 var(--success-shadow); animation: pop 0.5s; }
         .circle-part1 { bottom: 20px; left: 30px; border-color: var(--primary); color: var(--primary); box-shadow: 0 4px 0 var(--primary-shadow);}
         .circle-part2 { bottom: 20px; right: 30px; border-color: var(--warning); color: var(--warning); box-shadow: 0 4px 0 var(--warning-shadow);}
+        
+        .circle.revealed { border-color: var(--success); color: var(--success); box-shadow: 0 4px 0 var(--success-shadow); animation: pop 0.5s; }
 
         /* Options */
         .options-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; }
@@ -214,16 +222,17 @@
         .modal.active .modal-content { transform: scale(1); }
         
         .setup-title { font-size: 2.8rem; color: var(--primary); margin-bottom: 10px; font-weight: 900; text-shadow: 2px 2px 0 var(--primary-shadow);}
-        .setup-desc { font-size: 1.2rem; font-weight: bold; color: var(--text-main); margin-bottom: 20px; }
+        .setup-section-title { font-size: 1.2rem; font-weight: bold; color: var(--text-main); margin-bottom: 10px; text-align: left; padding-left: 10px; }
         
-        .setup-modes { display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; }
+        .setup-row { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; flex-wrap: wrap;}
         .mode-btn {
-            background: #fff; border: 4px solid #e5e5e5; border-radius: 20px; padding: 15px;
-            font-size: 1.5rem; font-weight: 900; color: var(--text-main); cursor: pointer;
-            box-shadow: 0 6px 0 #e5e5e5; transition: all 0.1s;
+            background: #fff; border: 4px solid #e5e5e5; border-radius: 15px; padding: 12px 15px;
+            font-size: 1.2rem; font-weight: 900; color: var(--text-main); cursor: pointer;
+            box-shadow: 0 6px 0 #e5e5e5; transition: all 0.1s; flex: 1; min-width: 110px;
         }
         .mode-btn:active { transform: translateY(6px); box-shadow: 0 0 0 transparent; }
         .mode-btn.active { border-color: var(--secondary); background: #e1f5fe; color: var(--secondary); box-shadow: 0 6px 0 var(--secondary-shadow); }
+        .mode-btn.op-btn.active { border-color: var(--success); background: #e8f5e9; color: var(--success); box-shadow: 0 6px 0 var(--success-shadow); }
 
         .modal p { font-size: 1.4rem; font-weight: bold; color: var(--text-main); margin-bottom: 20px; }
         
@@ -303,11 +312,11 @@
                 </div>
 
                 <div class="baskets-wrapper">
-                    <div class="basket-container">
+                    <div class="basket-container" id="basket-container-1">
                         <div class="basket" id="basket-1"></div>
                         <div class="basket-label" id="label-1" style="color:var(--primary); border-color:var(--primary)">0</div>
                     </div>
-                    <div class="basket-container">
+                    <div class="basket-container" id="basket-container-2">
                         <div class="basket" id="basket-2"></div>
                         <div class="basket-label" id="label-2" style="color:var(--warning); border-color:var(--warning)">0</div>
                     </div>
@@ -338,6 +347,9 @@
                     <div class="circle circle-part2" id="bond-part2">0</div>
                 </div>
 
+                <!-- Question Text (For Subtraction) -->
+                <div class="question-text" id="question-text">How many apples are left?</div>
+
                 <!-- Options -->
                 <div class="options-grid" id="options-container">
                     <!-- Options injected via JS -->
@@ -356,13 +368,21 @@
     <div class="modal active" id="setup-modal">
         <div class="modal-content">
             <h2 class="setup-title">Apple Math</h2>
-            <p class="setup-desc">Choose the number range:</p>
-            <div class="setup-modes">
+            
+            <div class="setup-section-title">Operation:</div>
+            <div class="setup-row">
+                <button class="mode-btn op-btn active" id="op-add" onclick="selectOp('add')">Addition (+)</button>
+                <button class="mode-btn op-btn" id="op-sub" onclick="selectOp('sub')">Subtraction (-)</button>
+            </div>
+
+            <div class="setup-section-title">Number Range:</div>
+            <div class="setup-row">
                 <button class="mode-btn active" id="mode-5" onclick="selectMode(5)">Up to 5</button>
                 <button class="mode-btn" id="mode-10" onclick="selectMode(10)">Up to 10</button>
                 <button class="mode-btn" id="mode-20" onclick="selectMode(20)">Up to 20</button>
             </div>
-            <button class="main-btn btn-check" style="box-shadow: 0 6px 0 var(--success-shadow); background: var(--success);" onclick="startGameFromSetup()">Play Now!</button>
+
+            <button class="main-btn btn-check" style="box-shadow: 0 6px 0 var(--success-shadow); background: var(--success); margin-top: 10px;" onclick="startGameFromSetup()">Play Now!</button>
         </div>
     </div>
 
@@ -425,7 +445,8 @@
         </svg>`;
 
         // --- Game State ---
-        let gameMode = 5; // default
+        let gameMode = 5; // default range
+        let gameOp = 'add'; // 'add' or 'sub'
         let questions = [];
         let currentQIndex = 0;
         let score = 0;
@@ -435,6 +456,8 @@
 
         // UI Elements
         const elTree = document.getElementById('tree-leaves');
+        const elBasketContainer1 = document.getElementById('basket-container-1');
+        const elBasketContainer2 = document.getElementById('basket-container-2');
         const elBasket1 = document.getElementById('basket-1');
         const elBasket2 = document.getElementById('basket-2');
         const elLabel1 = document.getElementById('label-1');
@@ -449,12 +472,23 @@
         const elFeedbackEq = document.getElementById('feedback-equation');
         const elFeedbackStatus = document.getElementById('feedback-status');
         const elProgress = document.getElementById('progress-fill');
+        const elQuestionText = document.getElementById('question-text');
 
         // --- Setup Logic ---
         function selectMode(mode) {
             gameMode = mode;
-            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('mode-5').classList.remove('active');
+            document.getElementById('mode-10').classList.remove('active');
+            document.getElementById('mode-20').classList.remove('active');
             document.getElementById(`mode-${mode}`).classList.add('active');
+            playSound('click');
+        }
+
+        function selectOp(op) {
+            gameOp = op;
+            document.getElementById('op-add').classList.remove('active');
+            document.getElementById('op-sub').classList.remove('active');
+            document.getElementById(`op-${op}`).classList.add('active');
             playSound('click');
         }
 
@@ -468,6 +502,7 @@
             let pool = [];
             let minSum, maxSum;
             
+            // For both + and -, `maxSum` represents the Total (The Whole)
             if (gameMode === 5) { minSum = 2; maxSum = 5; }
             else if (gameMode === 10) { minSum = 2; maxSum = 10; }
             else { minSum = 11; maxSum = 20; } 
@@ -487,17 +522,29 @@
             for(let i=0; i<TOTAL_QUESTIONS; i++) {
                 if(pool.length === 0) break;
                 const pair = pool.pop(); 
-                const correct = pair.sum;
                 
-                let wrong1 = correct + (Math.random() > 0.5 ? 1 : -1);
-                let wrong2 = correct + (Math.random() > 0.5 ? 2 : -2);
+                let correctAns;
+                if (gameOp === 'add') {
+                    correctAns = pair.sum; // Find the whole
+                } else {
+                    correctAns = pair.b; // Find part 2 (total - part 1 = part 2)
+                }
                 
-                while (wrong1 === correct || wrong1 <= 0) wrong1 += 1;
-                while (wrong2 === correct || wrong2 === wrong1 || wrong2 <= 0) wrong2 += (wrong2 === wrong1 ? 2 : 1);
+                let wrong1 = correctAns + (Math.random() > 0.5 ? 1 : -1);
+                let wrong2 = correctAns + (Math.random() > 0.5 ? 2 : -2);
+                
+                while (wrong1 === correctAns || wrong1 < 0) wrong1 += 1;
+                while (wrong2 === correctAns || wrong2 === wrong1 || wrong2 < 0) wrong2 += (wrong2 === wrong1 ? 2 : 1);
 
-                let options = [correct, wrong1, wrong2];
+                let options = [correctAns, wrong1, wrong2];
                 options.sort(() => Math.random() - 0.5);
-                qs.push({ part1: pair.a, part2: pair.b, correct, options });
+                qs.push({ 
+                    total: pair.sum, 
+                    p1: pair.a, 
+                    p2: pair.b, 
+                    correct: correctAns, 
+                    options: options 
+                });
             }
             return qs;
         }
@@ -521,15 +568,29 @@
             elBasket2.innerHTML = '';
             elLabel1.innerText = '0';
             elLabel2.innerText = '0';
-            elBond1.innerText = q.part1;
-            elBond2.innerText = q.part2;
-            elBondTotal.innerText = '?';
+            
             elBondTotal.classList.remove('revealed');
+            elBond2.classList.remove('revealed');
             
             elFeedback.classList.remove('active');
             btnCheck.style.display = 'block';
             btnCheck.disabled = true;
             btnNext.style.display = 'none';
+
+            if (gameOp === 'add') {
+                elBasketContainer2.style.display = 'flex';
+                elQuestionText.style.display = 'none';
+                elBondTotal.innerText = '?';
+                elBond1.innerText = q.p1;
+                elBond2.innerText = q.p2;
+            } else {
+                // Subtraction Mode UI
+                elBasketContainer2.style.display = 'none';
+                elQuestionText.style.display = 'block';
+                elBondTotal.innerText = q.total;
+                elBond1.innerText = q.p1;
+                elBond2.innerText = '?';
+            }
 
             // Render Options
             elOptionsContainer.innerHTML = '';
@@ -542,7 +603,11 @@
             });
 
             // Animate Apples
-            await dropApplesSequence(q.part1, q.part2);
+            if (gameOp === 'add') {
+                await dropApplesSequenceAdd(q.p1, q.p2);
+            } else {
+                await dropApplesSequenceSub(q.total, q.p1);
+            }
             isAnimating = false;
         }
 
@@ -564,15 +629,24 @@
             btnCheck.style.display = 'none';
             const optionBtns = document.querySelectorAll('.option-btn');
             
-            elFeedbackEq.innerText = `${q.part1} + ${q.part2} = ${q.correct}`;
+            if (gameOp === 'add') {
+                elFeedbackEq.innerText = `${q.p1} + ${q.p2} = ${q.correct}`;
+            } else {
+                elFeedbackEq.innerText = `${q.total} - ${q.p1} = ${q.correct}`;
+            }
 
             if (isCorrect) {
                 playSound('correct');
                 score++;
                 createFireworks(null, 120); 
                 
-                elBondTotal.innerText = q.correct;
-                elBondTotal.classList.add('revealed');
+                if (gameOp === 'add') {
+                    elBondTotal.innerText = q.correct;
+                    elBondTotal.classList.add('revealed');
+                } else {
+                    elBond2.innerText = q.correct;
+                    elBond2.classList.add('revealed');
+                }
                 
                 elFeedback.style.borderColor = "var(--success)";
                 elFeedback.style.boxShadow = "0 8px 0 var(--success-shadow)";
@@ -602,7 +676,12 @@
         function readEquation() {
             playSound('click');
             const q = questions[currentQIndex];
-            const text = `${q.part1} plus ${q.part2} equals ${q.correct}`;
+            let text = "";
+            if (gameOp === 'add') {
+                text = `${q.p1} plus ${q.p2} equals ${q.correct}`;
+            } else {
+                text = `${q.total} minus ${q.p1} equals ${q.correct}`;
+            }
             
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
@@ -636,19 +715,49 @@
             el.style.animation = 'none'; el.offsetHeight; el.style.animation = 'pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
         }
 
-        async function dropApplesSequence(c1, c2) {
-            const total = c1 + c2;
-            const goldenAngle = 137.508 * (Math.PI / 180);
+        // Helper to drop an apple
+        async function dropToBasket(apple, basket, index, isBasket1) {
+            playSound('drop');
+            const rectT = apple.getBoundingClientRect();
             
-            const createAppleOnTree = (index) => {
+            basket.appendChild(apple);
+            apple.style.position = 'relative';
+            apple.style.left = 'auto';
+            apple.style.top = 'auto';
+            
+            apple.style.margin = '-5px -2px'; 
+            apple.style.transform = `rotate(${Math.random()*60-30}deg)`;
+            
+            const rectB = apple.getBoundingClientRect();
+            const dx = rectT.left - rectB.left;
+            const dy = rectT.top - rectB.top;
+            
+            apple.style.transform = `translate(${dx}px, ${dy}px) rotate(0deg)`;
+            apple.style.transition = 'none';
+            apple.offsetHeight; 
+            
+            apple.style.transition = 'transform 0.4s cubic-bezier(0.5, 0, 0.75, 0)';
+            apple.style.transform = `translate(0,0) rotate(${Math.random()*60-30}deg)`;
+
+            if (isBasket1) { elLabel1.innerText = index + 1; triggerPop(elLabel1); }
+            else { elLabel2.innerText = index + 1; triggerPop(elLabel2); }
+            
+            await sleep(150);
+        }
+
+        // Helper to spawn apples
+        function spawnApplesOnTree(totalCount) {
+            const goldenAngle = 137.508 * (Math.PI / 180);
+            const apples = [];
+            for(let i=0; i<totalCount; i++) {
                 const a = document.createElement('div');
                 a.className = 'apple';
                 a.innerHTML = SVG_APPLE;
                 
-                const rRatio = Math.sqrt((index + 0.5) / total);
+                const rRatio = Math.sqrt((i + 0.5) / totalCount);
                 const rMaxX = 140; 
                 const rMaxY = 100; 
-                const theta = index * goldenAngle;
+                const theta = i * goldenAngle;
                 
                 const x = Math.cos(theta) * rRatio * rMaxX;
                 const y = Math.sin(theta) * rRatio * rMaxY;
@@ -659,54 +768,44 @@
                 elTree.appendChild(a);
                 
                 setTimeout(() => a.style.transform = `scale(1) rotate(${Math.random()*40-20}deg)`, 10);
-                return a;
-            };
-
-            let apples1 = [], apples2 = [];
-            for(let i=0; i<c1; i++) apples1.push(createAppleOnTree(i));
-            for(let i=0; i<c2; i++) apples2.push(createAppleOnTree(c1 + i));
-            
-            await sleep(500);
-
-            const dropToBasket = async (apple, basket, index, isBasket1) => {
-                playSound('drop');
-                const rectT = apple.getBoundingClientRect();
-                
-                basket.appendChild(apple);
-                apple.style.position = 'relative';
-                apple.style.left = 'auto';
-                apple.style.top = 'auto';
-                
-                apple.style.margin = '-5px -2px'; 
-                apple.style.transform = `rotate(${Math.random()*60-30}deg)`;
-                
-                const rectB = apple.getBoundingClientRect();
-                const dx = rectT.left - rectB.left;
-                const dy = rectT.top - rectB.top;
-                
-                apple.style.transform = `translate(${dx}px, ${dy}px) rotate(0deg)`;
-                apple.style.transition = 'none';
-                apple.offsetHeight; 
-                
-                apple.style.transition = 'transform 0.4s cubic-bezier(0.5, 0, 0.75, 0)';
-                apple.style.transform = `translate(0,0) rotate(${Math.random()*60-30}deg)`;
-
-                if (isBasket1) { elLabel1.innerText = index + 1; triggerPop(elLabel1); }
-                else { elLabel2.innerText = index + 1; triggerPop(elLabel2); }
-                
-                await sleep(150);
-            };
-
-            for(let i=0; i<apples1.length; i++) await dropToBasket(apples1[i], elBasket1, i, true);
-            await sleep(300);
-            for(let i=0; i<apples2.length; i++) await dropToBasket(apples2[i], elBasket2, i, false);
+                apples.push(a);
+            }
+            return apples;
         }
 
-        // New Confetti Effect - Explosions from Top Corners falling gracefully
+        // Add Sequence
+        async function dropApplesSequenceAdd(c1, c2) {
+            const total = c1 + c2;
+            const apples = spawnApplesOnTree(total);
+            await sleep(500);
+
+            // Drop first half to Basket 1
+            for(let i=0; i<c1; i++) {
+                await dropToBasket(apples[i], elBasket1, i, true);
+            }
+            await sleep(300);
+            // Drop second half to Basket 2
+            for(let i=0; i<c2; i++) {
+                await dropToBasket(apples[c1 + i], elBasket2, i, false);
+            }
+        }
+
+        // Sub Sequence
+        async function dropApplesSequenceSub(total, dropCount) {
+            const apples = spawnApplesOnTree(total);
+            await sleep(800); // Give player a moment to see the total amount
+
+            // Drop 'dropCount' apples to Basket 1. The rest stay on the tree!
+            for(let i=0; i<dropCount; i++) {
+                await dropToBasket(apples[i], elBasket1, i, true);
+            }
+            // The remaining apples are left on the tree
+        }
+
+        // Confetti Effect
         function createFireworks(e, amount = 150) {
             const colors = ['#ff4b4b', '#ffc800', '#58cc02', '#1cb0f6', '#ce82ff', '#ff9ff3', '#feca57'];
             
-            // Explosion origins: top-left and top-right
             const centers = [
                 { x: window.innerWidth * 0.2, y: window.innerHeight * 0.1 },
                 { x: window.innerWidth * 0.8, y: window.innerHeight * 0.1 }
@@ -731,7 +830,6 @@
                 const velocity = Math.random() * 300 + 100;
                 
                 const tx = Math.cos(angle) * velocity;
-                // Heavy gravity effect for falling down
                 const ty = Math.sin(angle) * velocity + window.innerHeight * 0.8; 
                 
                 particle.style.setProperty('--tx', `${tx}px`);
