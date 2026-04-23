@@ -143,8 +143,8 @@
             z-index: 10;
         }
 
-        .equation-bar { display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%;}
-        
+        .equation-bar { display: flex; justify-content: center; align-items: center; gap: 15px; width: 100%; flex-wrap: wrap;}
+
         .practice-bar { display: none; justify-content: center; align-items: center; gap: 15px; width: 100%; }
         .practice-input {
             font-size: 1.8rem; font-weight: 800; padding: 10px 20px; width: 120px; text-align: center;
@@ -173,7 +173,7 @@
         .speaker-btn {
             background: var(--blue-light); color: var(--blue-dark); border: none; border-radius: 50%;
             width: 50px; height: 50px; cursor: pointer; display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0; transition: all 0.2s; box-shadow: 0 4px 0 var(--blue-dark); margin-left: 20px;
+            flex-shrink: 0; transition: all 0.2s; box-shadow: 0 4px 0 var(--blue-dark); margin-left: 10px;
         }
         .speaker-btn:hover { background: var(--blue-base); color: white; box-shadow: 0 4px 0 var(--blue-dark); }
         .speaker-btn:active { transform: translateY(4px); box-shadow: 0 0px 0 transparent; }
@@ -197,19 +197,25 @@
         @media (max-width: 1023px) {
             .game-layout { flex-direction: column; align-items: center; gap: 30px; padding: 15px 10px; }
             .right-col { width: 95%; padding: 25px 15px; }
-            .top-bar-container { padding: 10px 15px; }
+            .top-bar-container { padding: 15px; }
             .equation-bar { gap: 8px;}
             .eq-box { width: 50px; height: 50px; font-size: 1.8rem;}
             .eq-sign { font-size: 2rem;}
-            .speaker-btn { width: 40px; height: 40px; margin-left: 10px;}
+            .speaker-btn { width: 40px; height: 40px; margin-left: 5px;}
         }
+
+        /* Instructions */
+        .instruction-container {
+            display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: -5px; flex-wrap: wrap;
+        }
+        .instruction-text { font-size: 1.3rem; font-weight: 800; color: var(--red-base); text-align: center; }
+        .instruction-text.teacher { color: var(--purple-base); }
+        .small-speaker { width: 40px; height: 40px; margin-left: 0; }
+        .small-speaker svg { width: 20px; height: 20px; }
 
         /* Ten Frames */
         .frames-wrapper { display: flex; flex-direction: column; gap: 15px; align-items: center; width: 100%; }
         
-        .instruction-text { font-size: 1.3rem; font-weight: 800; color: var(--red-base); margin-bottom: -5px; text-align: center; }
-        .instruction-text.teacher { color: var(--purple-base); }
-
         .ten-frame {
             display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(2, 1fr);
             gap: 8px; background: #fff; padding: 12px; border-radius: 20px;
@@ -294,18 +300,38 @@
         .decomp-sub-left {
             width: 70px; height: 70px; top: 240px; left: 190px;
             background: var(--tree-white-bg); border: 4px solid var(--tree-light-blue-border); color: var(--blue-dark);
-            opacity: 0; transition: opacity 0.3s;
+            opacity: 0; transition: opacity 0.3s, transform 0.2s;
+            cursor: pointer;
         }
+        .decomp-sub-left:hover { transform: scale(1.05); }
 
         .decomp-sub-right {
             width: 70px; height: 70px; top: 240px; right: 20px;
             background: var(--tree-white-bg); border: 4px solid var(--red-light); color: var(--red-dark);
             opacity: 0; transition: opacity 0.3s;
         }
+        
+        .decomp-sub-right.crossed-node::after {
+            content: '❌';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            opacity: 0.4;
+            pointer-events: none;
+        }
 
         .show-sub .decomp-sub-left, .show-sub .decomp-sub-right { opacity: 1; }
         .show-sub .sub-line { stroke-opacity: 1; }
         .sub-line { stroke-opacity: 0; transition: stroke-opacity 0.3s; }
+
+        @keyframes pulse-node { 
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(28, 176, 246, 0.7); } 
+            50% { transform: scale(1.15); box-shadow: 0 0 0 15px rgba(28, 176, 246, 0); } 
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(28, 176, 246, 0); } 
+        }
+        .pulsing { animation: pulse-node 1.5s infinite; border-color: var(--blue-base) !important; }
 
         /* Multiple Choice Options */
         .mcq-container {
@@ -347,7 +373,6 @@
             box-shadow: 0 6px 0 var(--green-dark), 0 0 20px var(--green-light) !important; transition: all 0.3s;
             transform: scale(1.1); z-index: 10;
         }
-        .decomp-top.correct-glow { transform: translateX(-50%) scale(1.1) !important; }
 
         /* Screens overlays */
         .overlay-screen {
@@ -406,7 +431,7 @@
     <header>
         <div class="title-area">
             <button class="btn-back" onclick="showSetupScreen()">🔙 Menu</button>
-            <div class="title" id="game-title">Subtraction</div>
+            <div class="title" id="game-title">SUBTRACTION WITHIN 20</div>
         </div>
         <div class="mode-switcher">
             <button class="mode-tab active" id="tab-challenge" onclick="setGameMode('challenge')">Challenge</button>
@@ -420,7 +445,7 @@
 
     <!-- TOP BAR (Equation or Practice Controls) -->
     <div class="top-bar-container">
-        <!-- Challenge Mode Equation -->
+        <!-- Challenge Mode Equation (Single Line) -->
         <div class="equation-bar" id="equation-bar">
             <div class="eq-box eq-text-blue" id="eq-a">15</div>
             <div class="eq-sign eq-sign-blue">-</div>
@@ -428,7 +453,7 @@
             <div class="eq-sign eq-sign-red">=</div>
             <div class="eq-box eq-text-blue" id="eq-res">?</div>
             
-            <button id="speaker-btn" class="speaker-btn" onclick="speakText()" title="Listen">
+            <button id="speaker-btn" class="speaker-btn" onclick="speakEquationText()" title="Listen">
                 <svg viewBox="0 0 24 24">
                     <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
                 </svg>
@@ -447,7 +472,14 @@
         
         <!-- LEFT COLUMN: Ten Frames -->
         <div class="left-col">
-            <div class="instruction-text" id="instruction-text">Tap apples to cross them out!</div>
+            <div class="instruction-container">
+                <div class="instruction-text" id="instruction-text">Tap apples to cross them out!</div>
+                <button id="inst-speaker-btn" class="speaker-btn small-speaker" onclick="speakInstructionText()" title="Listen">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                    </svg>
+                </button>
+            </div>
             <div class="frames-wrapper" id="frames-container">
                 <!-- Ten frames generated by JS -->
             </div>
@@ -477,7 +509,7 @@
                 <div class="decomp-node decomp-right" id="tree-right">10</div>
                 
                 <!-- Sub branches under Right Node -->
-                <div class="decomp-node decomp-sub-left" id="tree-rem">?</div>
+                <div class="decomp-node decomp-sub-left" id="tree-rem" onclick="revealRemainder()" title="Click to reveal">?</div>
                 <div class="decomp-node decomp-sub-right" id="tree-subtracted">0</div>
             </div>
 
@@ -552,10 +584,14 @@
         let targetB = 0; // Subtrahend
         let selectedOption = null;
         let hasGuessedWrong = false;
+        let currentRemainderValue = 0; 
+        let remainderRevealed = false; // Flag to ensure user clicks "?"
 
         let isChecking = false;
         let cells = [];
-        let ttsText = "";
+        
+        let ttsEquation = "";
+        let ttsInstruction = "";
 
         // --- DOM Elements ---
         const framesContainer = document.getElementById('frames-container');
@@ -587,7 +623,7 @@
         function setRangeAndStart(range) {
             initAudio(); maxRange = range;
             document.getElementById('setup-screen').style.display = 'none';
-            document.getElementById('game-title').textContent = `Subtraction to ${maxRange}`;
+            document.getElementById('game-title').textContent = `SUBTRACTION WITHIN ${maxRange}`;
             startGame();
         }
 
@@ -602,6 +638,7 @@
                 document.getElementById('practice-bar').style.display = 'flex';
                 rightCol.style.visibility = 'hidden'; // Hide tree/MCQ initially
                 instructionText.innerHTML = `<span class="teacher">Teacher: Enter a number > 10 to get apples!</span>`;
+                ttsInstruction = `Enter a number greater than 10 to get apples!`;
                 practicePhase = 'setup';
                 initGrid(10);
                 cells.forEach(c => c.innerHTML = ''); 
@@ -672,7 +709,7 @@
             // Generate 3 unique options: correct, and 2 distractors (+1, -1, or +2)
             let options = new Set([correct]);
             while(options.size < 3) {
-                let offset = Math.floor(Math.random() * 5) - 2; // -2 to +2
+                let offset = Math.floor(Math.random() * 5) - 2; 
                 if (offset !== 0 && correct + offset >= 0) options.add(correct + offset);
             }
             let optsArray = Array.from(options).sort(() => Math.random() - 0.5); // Shuffle
@@ -687,6 +724,23 @@
 
         function selectOption(btn, val) {
             if(isChecking) return;
+            
+            if (getCrossedCount() === 0) {
+                playWrong();
+                instructionText.innerHTML = `Cross out apples first!`;
+                ttsInstruction = `Cross out apples first!`;
+                triggerShakeCheck();
+                return;
+            }
+            
+            if (!remainderRevealed) {
+                playWrong();
+                instructionText.innerHTML = `Click the <span style="color:var(--blue-base)">?</span> first!`;
+                treeRem.classList.add('shake');
+                setTimeout(() => treeRem.classList.remove('shake'), 300);
+                return;
+            }
+
             initAudio(); playPop();
             document.querySelectorAll('.mcq-btn').forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
@@ -699,7 +753,6 @@
         }
 
         function getTargetFrameIndex() {
-            // Find the index of the last full 10-frame
             const frames = Array.from(framesContainer.children);
             let targetIdx = -1;
             for (let i = frames.length - 1; i >= 0; i--) {
@@ -709,7 +762,6 @@
                     break;
                 }
             }
-            // Fallback for practice mode if they enter < 10
             if (targetIdx === -1) targetIdx = 0;
             return targetIdx;
         }
@@ -730,10 +782,11 @@
         function startRound() {
             isChecking = false;
             hasGuessedWrong = false;
+            remainderRevealed = false;
             btnCheck.style.display = 'block'; btnNext.style.display = 'none'; btnReset.disabled = false;
             
             // Remove glows
-            [treeTop, eqRes, treeRem].forEach(el => el.classList.remove('correct-glow'));
+            [treeTop, treeLeft, treeRem, eqRes].forEach(el => el.classList.remove('correct-glow'));
             document.querySelectorAll('.mcq-btn').forEach(b => {b.classList.remove('correct-glow'); b.classList.remove('selected');});
             
             generateQuestion();
@@ -752,10 +805,10 @@
 
             if (targetA <= 10) {
                 instructionText.innerHTML = `Teacher: Cross out ${targetB} apples!`;
-                ttsText = `Cross out ${targetB} apples!`;
+                ttsInstruction = `Cross out ${targetB} apples!`;
             } else {
                 instructionText.innerHTML = `Teacher: Because ${targetB} > ${targetA%10}, subtract from the 10!<br>Tap apples in the full 10-frame.`;
-                ttsText = `Because ${targetB} is greater than ${targetA%10}, subtract from the 10! Tap apples in the full ten frame.`;
+                ttsInstruction = `Because ${targetB} is greater than ${targetA%10}, subtract from the 10! Tap apples in the full ten frame.`;
             }
 
             updateUI();
@@ -772,12 +825,13 @@
             targetA = val;
             practicePhase = 'setup';
             isChecking = false;
+            remainderRevealed = false;
 
             // Reset UI states
             btnCheck.style.display = 'block';
             btnNext.style.display = 'none';
             btnReset.disabled = false;
-            [treeTop, eqRes, treeRem].forEach(el => el.classList.remove('correct-glow'));
+            [treeTop, treeLeft, treeRem, eqRes].forEach(el => el.classList.remove('correct-glow'));
             mcqContainer.innerHTML = '';
             
             // SHOW the tree panel
@@ -793,8 +847,10 @@
             applyFrameLocks();
             if (targetA <= 10) {
                 instructionText.innerHTML = `Great! Now tap apples to cross them out.`;
+                ttsInstruction = `Great! Now tap apples to cross them out.`;
             } else {
                 instructionText.innerHTML = `Great! Now tap apples in the full 10-frame to cross them out.`;
+                ttsInstruction = `Great! Now tap apples in the full ten frame to cross them out.`;
             }
             updateUI();
             updateTreeState(); // Hide sub-nodes initially
@@ -806,6 +862,8 @@
             eqB.textContent = targetB;
             eqRes.textContent = '?';
 
+            ttsEquation = `What is ${targetA} minus ${targetB}?`;
+
             // Decomposition Tree
             treeTop.textContent = targetA;
             
@@ -814,7 +872,6 @@
             let leftPart = targetA - 10;
             
             if (targetA < 10) {
-                // Fallback for practice mode if they enter < 10
                 leftPart = 0;
                 rightPart = targetA;
             }
@@ -835,7 +892,6 @@
         function handleAppleClick(e) {
             if (isChecking) return;
             
-            // In practice mode answering phase, lock apples
             if (gameMode === 'practice' && practicePhase === 'answering') return;
             
             initAudio();
@@ -846,10 +902,10 @@
             const frameIndex = frames.indexOf(frame);
             const targetIdx = getTargetFrameIndex();
 
-            // Lock to only the target 10-frame
             if (frameIndex !== targetIdx) {
                 playWrong();
                 instructionText.innerHTML = `Tap apples in the correct frame!`;
+                ttsInstruction = `Tap apples in the correct frame!`;
                 triggerShakeCheck();
                 return;
             }
@@ -865,13 +921,13 @@
             let currentCrossed = getCrossedCount();
             
             if (clickedApple && clickedApple.classList.contains('crossed')) {
-                // Undo the LOWEST index crossed apple (to avoid gaps)
+                // Undo
                 if(crossed.length > 0) {
                     crossed[0].firstChild.classList.remove('crossed');
                     playPop();
                 }
             } else {
-                // Cross out the HIGHEST index uncrossed apple in this frame
+                // Cross out
                 if (currentCrossed >= 10) {
                     playWrong(); return;
                 }
@@ -895,9 +951,36 @@
             
             if (count > 0) {
                 decompPanel.classList.add('show-sub');
-                treeRem.textContent = '?'; // Still question mark until checked
+                treeSubtracted.classList.add('crossed-node');
+                
+                let rightPartStart = (targetA < 10) ? targetA : 10;
+                currentRemainderValue = rightPartStart - count; 
+                
+                if (!remainderRevealed) {
+                    treeRem.textContent = '?'; 
+                    treeRem.classList.add('pulsing');
+                } else {
+                    treeRem.textContent = currentRemainderValue;
+                }
             } else {
                 decompPanel.classList.remove('show-sub');
+                treeSubtracted.classList.remove('crossed-node');
+                treeRem.classList.remove('pulsing');
+                treeRem.textContent = '?';
+                remainderRevealed = false;
+            }
+        }
+
+        // --- Reveal ? Node when clicked ---
+        function revealRemainder() {
+            if (!remainderRevealed && decompPanel.classList.contains('show-sub')) {
+                initAudio();
+                treeRem.textContent = currentRemainderValue;
+                treeRem.classList.remove('pulsing');
+                remainderRevealed = true;
+                playPop();
+                treeRem.classList.add('pop');
+                setTimeout(() => treeRem.classList.remove('pop'), 500);
             }
         }
 
@@ -909,23 +992,27 @@
             });
             selectedOption = null;
             document.querySelectorAll('.mcq-btn').forEach(b => b.classList.remove('selected'));
+            remainderRevealed = false;
             updateTreeState();
             
             if (gameMode === 'challenge') {
                 if (targetA <= 10) {
                     instructionText.innerHTML = `Teacher: Cross out ${targetB} apples!`;
+                    ttsInstruction = `Cross out ${targetB} apples!`;
                 } else {
                     instructionText.innerHTML = `Teacher: Because ${targetB} > ${targetA%10}, subtract from the 10!<br>Tap apples in the full 10-frame.`;
+                    ttsInstruction = `Because ${targetB} is greater than ${targetA%10}, subtract from the 10! Tap apples in the full ten frame.`;
                 }
             } else {
-                // Practice Reset
                 practicePhase = 'setup';
                 mcqContainer.innerHTML = '';
-                [treeTop, eqRes, treeRem].forEach(el => el.classList.remove('correct-glow'));
+                [treeTop, treeLeft, treeRem, eqRes].forEach(el => el.classList.remove('correct-glow'));
                 if (targetA <= 10) {
                     instructionText.innerHTML = `Great! Now tap apples to cross them out.`;
+                    ttsInstruction = `Great! Now tap apples to cross them out.`;
                 } else {
                     instructionText.innerHTML = `Great! Now tap apples in the full 10-frame to cross them out.`;
+                    ttsInstruction = `Great! Now tap apples in the full ten frame to cross them out.`;
                 }
                 btnCheck.style.display = 'block';
                 btnNext.style.display = 'none';
@@ -938,42 +1025,61 @@
             
             let crossedCount = getCrossedCount();
             
-            // Practice Mode specific Phase 1 (Generating MCQ)
+            // Practice Mode specific Phase 1
             if (gameMode === 'practice' && practicePhase === 'setup') {
                 if (crossedCount === 0) {
                     playWrong(); 
                     instructionText.innerHTML = `Cross out some apples first!`;
+                    ttsInstruction = `Cross out some apples first!`;
                     triggerShakeCheck(); return;
                 }
+                
+                if (!remainderRevealed) {
+                    playWrong();
+                    instructionText.innerHTML = `Click the <span style="color:var(--blue-base)">?</span> first!`;
+                    treeRem.classList.add('shake');
+                    setTimeout(() => treeRem.classList.remove('shake'), 300);
+                    return;
+                }
+
                 targetB = crossedCount;
                 generateMCQ();
                 practicePhase = 'answering';
                 instructionText.innerHTML = `Now select the correct answer below!`;
-                return; // Stop here, wait for user to select option
+                ttsInstruction = `Now select the correct answer below!`;
+                return;
             }
 
-            // Normal Check Logic (Challenge OR Practice Phase 2)
+            // Normal Check Logic
             let correctAns = targetA - targetB;
 
-            // Validation 1: Did they cross out the right number of apples? (Challenge only)
             if (gameMode === 'challenge' && crossedCount !== targetB) {
                 playWrong(); 
                 instructionText.innerHTML = `Cross out exactly <span style="color:var(--red-dark)">${targetB}</span> apples!`;
+                ttsInstruction = `Cross out exactly ${targetB} apples!`;
                 hasGuessedWrong = true;
                 triggerShakeCheck(); return;
             }
 
-            // Validation 2: Did they select an option?
+            if (!remainderRevealed) {
+                playWrong();
+                instructionText.innerHTML = `Click the <span style="color:var(--blue-base)">?</span> first!`;
+                treeRem.classList.add('shake');
+                setTimeout(() => treeRem.classList.remove('shake'), 300);
+                return;
+            }
+
             if (selectedOption === null) {
                 playWrong(); 
                 instructionText.innerHTML = `Select an answer below!`;
+                ttsInstruction = `Select an answer below!`;
                 triggerShakeCheck(); return;
             }
 
-            // Validation 3: Is the option correct?
             if (selectedOption !== correctAns) {
                 playWrong(); 
                 instructionText.innerHTML = `Almost there, try again!`;
+                ttsInstruction = `Almost there, try again!`;
                 hasGuessedWrong = true;
                 triggerShakeCheck(); return;
             }
@@ -982,19 +1088,27 @@
             isChecking = true; playWin(); 
             if(gameMode === 'challenge' && !hasGuessedWrong) { score++; updateStats(); }
             
-            instructionText.innerHTML = `Awesome! <span style="color:var(--green-base)">${targetA} - ${targetB} = ${correctAns}</span>`;
-            ttsText = `Awesome! ${targetA} minus ${targetB} equals ${correctAns}`;
-
-            // Update UI to show answers
-            eqRes.textContent = correctAns;
-            
-            // Tree remaining shows the result of 10 - targetB
+            let leftPart = (targetA < 10) ? 0 : targetA - 10;
             let rightPartStart = (targetA < 10) ? targetA : 10;
-            treeRem.textContent = rightPartStart - targetB; 
+            let rem = rightPartStart - targetB;
+            
+            if (targetA > 10) {
+                instructionText.innerHTML = `Awesome! <span style="color:var(--green-base)">${targetA} - ${targetB} = ${leftPart} + 10 - ${targetB} = ${leftPart} + ${rem} = ${correctAns}</span>`;
+                ttsInstruction = `Awesome! ${targetA} minus ${targetB} equals ${leftPart} plus 10 minus ${targetB} equals ${leftPart} plus ${rem} equals ${correctAns}`;
+            } else {
+                instructionText.innerHTML = `Awesome! <span style="color:var(--green-base)">${targetA} - ${targetB} = ${correctAns}</span>`;
+                ttsInstruction = `Awesome! ${targetA} minus ${targetB} equals ${correctAns}`;
+            }
+
+            ttsEquation = `${targetA} minus ${targetB} equals ${correctAns}`;
+
+            // Update UI
+            eqRes.textContent = correctAns;
+            treeRem.textContent = rem; 
 
             // Add Glows
             if(gameMode === 'challenge') eqRes.classList.add('correct-glow'); 
-            treeTop.classList.add('correct-glow');
+            if(treeLeft.style.display !== 'none') treeLeft.classList.add('correct-glow');
             treeRem.classList.add('correct-glow');
             document.querySelector('.mcq-btn.selected').classList.add('correct-glow');
 
@@ -1004,15 +1118,13 @@
             btnCheck.style.display = 'none'; btnReset.disabled = true; btnNext.style.display = 'block';
             fireFireworks();
             
-            // Only speak if equation bar is visible (challenge mode)
             if(gameMode === 'challenge') {
-                setTimeout(speakText, 500); 
+                setTimeout(speakEquationText, 500); 
             }
         }
 
         function nextRound() {
             if (gameMode === 'practice') {
-                // Just reset the board completely
                 setGameMode('practice');
             } else {
                 if (currentRound < maxRounds) { currentRound++; updateStats(); startRound(); } 
@@ -1036,10 +1148,19 @@
         }
 
         // --- TTS ---
-        function speakText() {
+        function speakEquationText() {
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(ttsText);
+                const utterance = new SpeechSynthesisUtterance(ttsEquation);
+                utterance.lang = 'en-US'; utterance.rate = 0.9; utterance.pitch = 1.2;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function speakInstructionText() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(ttsInstruction);
                 utterance.lang = 'en-US'; utterance.rate = 0.9; utterance.pitch = 1.2;
                 window.speechSynthesis.speak(utterance);
             }
