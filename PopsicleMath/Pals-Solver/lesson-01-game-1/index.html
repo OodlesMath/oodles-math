@@ -1,667 +1,882 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Number Race Game</title>
-    <!-- Tailwind CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tens & Ones</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Tone.js for Audio -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
-        /* Custom animations not included in default Tailwind */
-        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes zoom-in { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        @keyframes slide-up { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            overflow: hidden; 
+            touch-action: none; 
+            user-select: none; 
+            -webkit-user-select: none; 
+            background: radial-gradient(circle at 50% 20%, #fff6a8 0%, #60d2ff 45%, #aae4ff 100%);
+        }
+
+        /* Animated Clouds Background */
+        .clouds-container { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+        .cloud { position: absolute; background: rgba(255, 255, 255, 0.6); border-radius: 50px; filter: blur(1px); animation: float linear infinite; }
+        .cloud::before, .cloud::after { content: ''; position: absolute; background: inherit; border-radius: 50%; }
+        .c1 { width: 100px; height: 30px; top: 10%; animation-duration: 40s; animation-delay: -10s; }
+        .c1::before { width: 50px; height: 50px; top: -25px; left: 10px; }
+        .c1::after { width: 40px; height: 40px; top: -15px; right: 15px; }
+        .c2 { width: 140px; height: 40px; top: 40%; animation-duration: 55s; animation-delay: -30s; transform: scale(1.2); opacity: 0.4; }
+        .c2::before { width: 70px; height: 70px; top: -35px; left: 15px; }
+        .c2::after { width: 60px; height: 60px; top: -25px; right: 20px; }
+        .c3 { width: 80px; height: 25px; top: 70%; animation-duration: 30s; opacity: 0.5; }
+        .c3::before { width: 40px; height: 40px; top: -20px; left: 10px; }
         
-        .animate-fade-in { animation: fade-in 0.5s ease-out; }
-        .animate-zoom-in { animation: zoom-in 0.5s ease-out; }
-        .animate-slide-up { animation: slide-up 0.3s ease-out; }
+        @keyframes float { 
+            0% { left: -150px; } 
+            100% { left: 100vw; } 
+        }
+
+        /* 3D Chunky Buttons */
+        .duo-btn-green { background-color: #58cc02; border-bottom: 4px solid #58a700; color: white; transition: transform 0.1s; }
+        .duo-btn-green:active:not(:disabled) { border-bottom-width: 0px; transform: translateY(4px); }
         
-        body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
-        .no-select { user-select: none; -webkit-user-select: none; }
+        .duo-btn-blue { background-color: #1cb0f6; border-bottom: 4px solid #1899d6; color: white; transition: transform 0.1s; }
+        .duo-btn-blue:active:not(:disabled) { border-bottom-width: 0px; transform: translateY(4px); }
+        
+        .duo-btn-white { background-color: #ffffff; border-bottom: 4px solid #e5e5e5; color: #4b4b4b; transition: transform 0.1s, background-color 0.2s; }
+        .duo-btn-white:active:not(:disabled) { border-bottom-width: 0px; transform: translateY(4px); }
+        
+        .duo-btn-wrong { background-color: #ff4b4b; border-bottom: 4px solid #ea1515; color: white; transition: transform 0.1s; }
+        
+        /* Glossy 3D Blocks */
+        .ten-rod-block {
+            background: linear-gradient(135deg, #7ee0ff 0%, #1cb0f6 40%, #008cc9 100%);
+            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.25), inset 2px 2px 4px rgba(255,255,255,0.7), 0 3px 5px rgba(0,0,0,0.15);
+            border: 1px solid rgba(0, 140, 201, 0.4);
+        }
+        .one-cube-block {
+            background: linear-gradient(135deg, #fff0a8 0%, #ffc800 40%, #d69f00 100%);
+            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.25), inset 2px 2px 4px rgba(255,255,255,0.7), 0 3px 5px rgba(0,0,0,0.15);
+            border: 1px solid rgba(214, 159, 0, 0.4);
+        }
+
+        /* Animations */
+        @keyframes slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-slide-up { animation: slide-up 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        
+        @keyframes bounce-in { 0% { transform: scale(0); } 60% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        .animate-bounce-in { animation: bounce-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        
+        @keyframes balloon-float { 0% { transform: translateY(0) scale(var(--scale)); opacity: 1; } 100% { transform: translateY(-130vh) scale(var(--scale)); opacity: 1; } }
+        .balloon-anim { animation: balloon-float var(--duration) linear var(--delay) forwards; }
+        
+        @keyframes bounce-inf { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+        .animate-bounce-inf { animation: bounce-inf 1s infinite; }
+        
+        .confetti-piece { position: absolute; z-index: 0; }
     </style>
 </head>
-<body class="min-h-screen bg-sky-100 flex flex-col items-center font-sans text-slate-700 overflow-hidden relative no-select">
-    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
-    <!-- App Container -->
-    <div id="app" class="w-full h-full flex flex-col items-center">
-        <!-- Content will be injected here by JavaScript -->
+<body class="w-full h-screen flex flex-col items-center relative">
+
+    <!-- Background Clouds -->
+    <div class="clouds-container">
+        <div class="cloud c1"></div>
+        <div class="cloud c2"></div>
+        <div class="cloud c3"></div>
     </div>
 
+    <!-- Start Screen -->
+    <div id="start-screen" class="flex-1 flex flex-col items-center justify-center text-center p-6 z-20 w-full max-w-md transition-opacity duration-300">
+        <span class="text-7xl mb-4 animate-bounce-in drop-shadow-xl">🧮</span>
+        <h1 class="text-5xl font-black mb-2 text-white drop-shadow-md animate-slide-up" style="text-shadow: 0 4px 10px rgba(0,0,0,0.1)">Tens & Ones</h1>
+        <p class="mb-10 text-xl text-sky-800 font-bold animate-slide-up" style="animation-delay: 0.1s">Math Adventure!</p>
+        <button data-action="start-game" class="duo-btn-green w-full py-4 rounded-2xl font-black text-2xl flex items-center justify-center gap-2 animate-slide-up shadow-xl" style="animation-delay: 0.2s">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            LET'S PLAY
+        </button>
+    </div>
+
+    <!-- Finished Screen -->
+    <div id="finished-screen" class="hidden flex-1 flex flex-col items-center justify-center text-center p-6 z-20 w-full max-w-md">
+        <div id="confetti-container" class="absolute inset-0 pointer-events-none overflow-hidden z-0"></div>
+        <div class="text-8xl mb-2 animate-bounce-in z-20 drop-shadow-xl">🎉</div>
+        <h1 class="text-5xl font-black mb-2 text-white drop-shadow-md z-20">Awesome!</h1>
+        <p class="mb-6 text-xl text-sky-800 font-bold z-20">Your Total Score</p>
+        <div id="final-score" class="text-6xl font-black text-[#ffc800] mb-10 bg-white px-10 py-6 rounded-3xl border-4 border-[#ffc800] shadow-[0_8px_0_#e5a900] z-20 animate-bounce-in" style="animation-delay: 0.2s">
+            0
+        </div>
+        <button data-action="restart-game" class="duo-btn-blue w-full py-4 rounded-2xl font-black text-2xl flex items-center justify-center gap-2 z-20 shadow-xl">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+            PLAY AGAIN
+        </button>
+    </div>
+
+    <!-- Playing Screen -->
+    <div id="playing-screen" class="hidden flex-1 w-full max-w-lg flex-col px-3 pb-3 relative z-10 pt-2">
+        
+        <!-- Header -->
+        <div class="w-full px-1 mb-1 flex justify-between items-center z-20">
+            <div class="flex items-center gap-3">
+                <div class="bg-white rounded-2xl px-4 py-2 flex items-center gap-2 shadow-md border-2 border-slate-100">
+                    <span class="text-xl">🏆</span>
+                    <span id="score-display" class="font-bold text-xl text-[#ffc800] drop-shadow-sm">0</span>
+                </div>
+                <div id="level-display" class="bg-[#1cb0f6] rounded-2xl px-3 py-2 text-white text-sm font-bold border-b-4 border-[#1899d6] shadow-sm">
+                    Level 1 / 10
+                </div>
+            </div>
+            <button data-action="start-game" class="bg-white p-2 rounded-2xl text-slate-400 border-2 border-slate-200 hover:bg-slate-50 transition-colors active:translate-y-1 shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+            </button>
+        </div>
+
+        <!-- Equation Bar -->
+        <!-- Closer to the board by using mb-0 -->
+        <div class="bg-white/95 rounded-2xl p-3 mb-0 shadow-md border-2 border-slate-100 flex items-center justify-between z-20 relative backdrop-blur-sm mx-1">
+             <div class="flex gap-2 items-center flex-1 justify-center">
+                <span id="eq-n1" class="text-4xl font-black text-[#1cb0f6] drop-shadow-sm"></span>
+                <span class="text-2xl font-bold text-slate-300">+</span>
+                <span id="eq-n2" class="text-4xl font-black text-[#ffc800] drop-shadow-sm"></span>
+                <span class="text-2xl font-bold text-slate-300">=</span>
+                <span class="text-4xl font-black text-[#4b4b4b]">?</span>
+             </div>
+             <button data-action="speak" class="p-3 bg-[#e8f6ff] rounded-2xl text-[#1cb0f6] border-b-4 border-[#bce2ff] active:border-b-0 active:translate-y-1 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+             </button>
+        </div>
+
+        <!-- Notification -->
+        <div class="h-8 flex items-center justify-center z-30 pointer-events-none w-full absolute top-[140px] left-0">
+             <div id="notification-msg" class="hidden bg-[#ffc800] text-white px-4 py-1 rounded-xl text-sm font-bold animate-bounce shadow-md border-2 border-[#e6b400]"></div>
+        </div>
+
+        <!-- Game Board -->
+        <!-- Pulled UP under the equation using -mt-3 and padding-top -->
+        <div class="flex-1 bg-white/95 backdrop-blur-sm rounded-3xl border-2 border-slate-100 flex flex-col overflow-hidden relative shadow-lg mb-3 -mt-3 pt-3 z-10 mx-1">
+             
+             <!-- Board Header -->
+             <div class="flex bg-slate-50 border-b-2 border-slate-100 z-10 shadow-sm">
+                <div class="w-1/2 py-2 text-center text-[#1cb0f6] font-black text-xl border-r-2 border-slate-100 tracking-wide drop-shadow-sm">TENS</div>
+                <div class="w-1/2 py-2 text-center text-[#ffc800] font-black text-xl tracking-wide drop-shadow-sm">ONES</div>
+             </div>
+
+             <!-- Board Content -->
+             <div class="flex-1 flex relative">
+                <!-- Tens Column -->
+                <div id="tens-col" class="w-1/2 border-r-2 border-slate-100 p-2 flex flex-col items-center gap-2 bg-[#f4fafe] transition-colors relative"></div>
+                <!-- Ones Column -->
+                <div id="ones-col" class="w-1/2 p-2 flex flex-col relative bg-[#fffdf5]"></div>
+             </div>
+        </div>
+
+        <!-- Controls (Bank) -->
+        <div class="flex gap-3 justify-center mb-3 z-20 mx-1">
+             <button id="btn-add-ten" data-action="add-ten" class="flex-1 bg-white border-2 border-slate-200 border-b-4 rounded-2xl p-3 flex flex-col items-center gap-2 active:translate-y-1 active:border-b-2 disabled:opacity-50 transition-all shadow-sm hover:bg-sky-50">
+                <div id="btn-ten-icon"></div>
+                <span class="text-[#4b4b4b] text-sm font-black tracking-wide">ADD 10</span>
+             </button>
+             
+             <button id="btn-add-one" data-action="add-one" class="flex-1 bg-white border-2 border-slate-200 border-b-4 rounded-2xl p-3 flex flex-col items-center gap-2 active:translate-y-1 active:border-b-2 disabled:opacity-50 transition-all shadow-sm hover:bg-yellow-50">
+                <div id="btn-one-icon" class="flex gap-1"></div>
+                <span class="text-[#4b4b4b] text-sm font-black tracking-wide">ADD 1</span>
+             </button>
+        </div>
+
+        <!-- Answer Options -->
+        <div id="options-container" class="grid grid-cols-2 gap-3 z-20 mx-1"></div>
+    </div>
+
+    <!-- Drag Preview Overlay -->
+    <div id="drag-preview" class="fixed hidden pointer-events-none z-50 flex items-center" style="transform: translate(-50%, -50%) rotate(-5deg)">
+        <div class="bg-white/90 p-2 rounded-xl shadow-2xl scale-125 border-2 border-[#1cb0f6] backdrop-blur-sm" id="drag-preview-content"></div>
+    </div>
+
+    <!-- Feedback Overlay (Check/X) -->
+    <div id="feedback-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-white/50 backdrop-blur-sm">
+        <div id="feedback-icon-container" class="p-8 rounded-full shadow-2xl animate-bounce-in border-4 border-white">
+            <span id="feedback-icon" class="text-6xl text-white font-black drop-shadow-md"></span>
+        </div>
+    </div>
+    
+    <!-- Bonus Game Overlay -->
+    <div id="bonus-container" class="hidden absolute inset-0 z-50"></div>
+
     <script>
-        // --- CONFIGURATION & DATA ---
-        const TOTAL_CELLS = 50;
-
-        const PLAYER_DATA = [
-            { id: 0, name: 'Bunny', color: 'bg-rose-500', text: 'text-rose-600', border: 'border-rose-500', icon: '🐰', shadow: 'shadow-rose-300' },
-            { id: 1, name: 'Turtle', color: 'bg-cyan-500', text: 'text-cyan-600', border: 'border-cyan-500', icon: '🐢', shadow: 'shadow-cyan-300' },
-            { id: 2, name: 'Froggy', color: 'bg-lime-500', text: 'text-lime-600', border: 'border-lime-500', icon: '🐸', shadow: 'shadow-lime-300' },
-            { id: 3, name: 'Ducky', color: 'bg-amber-400', text: 'text-amber-600', border: 'border-amber-500', icon: '🦆', shadow: 'shadow-amber-300' },
-        ];
-
-        const CELL_COLORS = [
-            'bg-red-50 border-red-100', 'bg-orange-50 border-orange-100', 
-            'bg-amber-50 border-amber-100', 'bg-yellow-50 border-yellow-100', 
-            'bg-lime-50 border-lime-100', 'bg-green-50 border-green-100', 
-            'bg-emerald-50 border-emerald-100', 'bg-teal-50 border-teal-100', 
-            'bg-cyan-50 border-cyan-100', 'bg-sky-50 border-sky-100'
-        ];
-
-        // --- STATE MANAGEMENT ---
+        // --- GAME STATE ---
         const state = {
-            gameState: 'SETUP', // SETUP, ROLL, ROLLING_DICE, MOVING_MANUAL, QUIZ, WIN, REWARD
-            players: [],
-            turn: 0,
-            diceVal: 1,
-            stepsLeft: 0,
-            startTurnPos: 1,
-            quiz: null,
+            gameState: 'start', // 'start', 'playing', 'finished'
             score: 0,
-            rewardGameType: 'CHEST',
-            chests: [],
-            balloons: [],
-            fireworks: [],
-            rewardMessage: ''
+            completedQuestions: 0,
+            maxQuestions: 10,
+            question: { n1: 0, n2: 0, ans: 0 },
+            options: [],
+            n1Entered: { tens: 0, ones: 0 },
+            n2Entered: { tens: 0, ones: 0 },
+            carriedTens: 0,
+            isRegroupingDrag: false,
+            dragPos: { x: 0, y: 0, startX: 0, startY: 0 },
+            selectedOption: null,
+            feedback: null,
+            notification: null,
+            bonusActive: false
         };
 
-        let animationFrameId;
-        let audioInitialized = false;
-        let timerId = null;
+        let audioCtx = null;
+        let confettiReq = null;
 
-        // --- AUDIO SYSTEM ---
-        const speak = (text) => {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'en-US';
-                utterance.rate = 0.9;
-                utterance.pitch = 1.2;
-                window.speechSynthesis.speak(utterance);
-            }
-        };
+        // --- SOUND ENGINE ---
+        function playSound(type) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!audioCtx && AudioContext) audioCtx = new AudioContext();
+            if (!audioCtx) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
 
-        const initAudio = async () => {
-            if (!audioInitialized) {
-                await Tone.start();
-                audioInitialized = true;
-            }
-        };
-
-        const playSoundEffect = (type) => {
-            if (!audioInitialized) return;
-
-            const synth = new Tone.PolySynth(Tone.Synth).toDestination();
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
 
             if (type === 'pop') {
-                const noise = new Tone.NoiseSynth({
-                    envelope: { attack: 0.001, decay: 0.1, sustain: 0 }
-                }).toDestination();
-                noise.triggerAttackRelease("16n");
-            } else if (type === 'chest') {
-                synth.triggerAttackRelease(["C5", "E5", "G5"], "8n");
-            } else if (type === 'correct') {
-                synth.triggerAttackRelease(["C5", "F5", "A5", "C6"], "4n");
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(500, now);
+                osc.frequency.exponentialRampToValueAtTime(900, now + 0.1);
+                gainNode.gain.setValueAtTime(0.15, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'bonusPop') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(700, now);
+                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.15);
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now); osc.stop(now + 0.15);
+            } else if (type === 'magic') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.linearRampToValueAtTime(900, now + 0.4);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.linearRampToValueAtTime(0.2, now + 0.2);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now); osc.stop(now + 0.4);
+            } else if (type === 'success') {
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g); g.connect(audioCtx.destination);
+                    o.type = 'sine'; o.frequency.value = freq;
+                    g.gain.setValueAtTime(0.15, now + i*0.1);
+                    g.gain.exponentialRampToValueAtTime(0.01, now + i*0.1 + 0.25);
+                    o.start(now + i*0.1); o.stop(now + i*0.1 + 0.25);
+                });
             } else if (type === 'wrong') {
-                const membrane = new Tone.MembraneSynth().toDestination();
-                membrane.triggerAttackRelease("C2", "8n");
-            } else if (type === 'click') {
-                const click = new Tone.MetalSynth({
-                    envelope: { attack: 0.001, decay: 0.05, sustain: 0 }
-                }).toDestination();
-                click.triggerAttackRelease("32n");
-            }
-        };
-
-        // --- GAME LOGIC ---
-
-        function handleStartGame(count) {
-            initAudio();
-            state.players = Array.from({ length: count }, (_, i) => ({
-                ...PLAYER_DATA[i],
-                pos: 1,
-            }));
-            state.gameState = 'ROLL';
-            state.turn = 0;
-            speak("Welcome to Number Race! Player 1, it's your turn.");
-            render();
-        }
-
-        function handleRollClick() {
-            state.gameState = 'ROLLING_DICE';
-            render();
-            
-            let count = 0;
-            const interval = setInterval(() => {
-                state.diceVal = Math.floor(Math.random() * 6) + 1;
-                playSoundEffect('click');
-                // Only update the dice UI
-                updateDiceUI(); 
-                count++;
-                if (count > 12) {
-                    clearInterval(interval);
-                    finalizeRoll();
-                }
-            }, 80);
-        }
-
-        function finalizeRoll() {
-            const val = Math.floor(Math.random() * 6) + 1;
-            state.diceVal = val;
-            state.stepsLeft = val;
-            state.startTurnPos = state.players[state.turn].pos;
-            state.gameState = 'MOVING_MANUAL';
-            speak(`You got a ${val}. Tap the path to move!`);
-            render();
-        }
-
-        function handleCellClick(cellNum) {
-            if (state.gameState !== 'MOVING_MANUAL') return;
-
-            const currentPlayer = state.players[state.turn];
-            const expectedPos = currentPlayer.pos + 1;
-
-            if (cellNum === expectedPos && state.stepsLeft > 0) {
-                playSoundEffect('click');
-                state.players[state.turn].pos = cellNum;
-                state.stepsLeft--;
-
-                // Optimization: Just re-render board instead of full app if possible, 
-                // but full render is safer for state consistency in vanilla JS.
-                
-                if (cellNum >= TOTAL_CELLS) {
-                    triggerWin(currentPlayer);
-                } else if (state.stepsLeft === 0) {
-                    prepareQuiz(state.startTurnPos, state.diceVal, cellNum);
-                }
-                render();
+                osc.type = 'sine'; 
+                osc.frequency.setValueAtTime(250, now);
+                osc.frequency.linearRampToValueAtTime(200, now + 0.2);
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now); osc.stop(now + 0.2);
+            } else if (type === 'fanfare') {
+                [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50, 1318.51].forEach((freq, i) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g); g.connect(audioCtx.destination);
+                    o.type = i % 2 === 0 ? 'triangle' : 'sine'; 
+                    o.frequency.value = freq;
+                    const time = now + i * 0.15;
+                    g.gain.setValueAtTime(0.15, time);
+                    g.gain.linearRampToValueAtTime(0, time + 0.4);
+                    o.start(time); o.stop(time + 0.4);
+                });
             }
         }
 
-        function triggerWin(winner) {
-            state.gameState = 'WIN';
-            speak(`Congratulations! ${winner.name} is the champion!`);
-            createFireworks();
-            render();
+        function speakEquation() {
+            if ('speechSynthesis' in window) {
+                const text = `${state.question.n1} plus ${state.question.n2} equals?`;
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US'; 
+                utterance.rate = 0.85; 
+                utterance.pitch = 1.1; 
+                window.speechSynthesis.cancel(); 
+                window.speechSynthesis.speak(utterance);
+            }
         }
 
-        function createFireworks() {
-            state.fireworks = Array.from({length: 40}, (_, i) => ({
-                id: i,
-                x: Math.random() * 80 + 10,
-                y: Math.random() * 40 + 20,
-                color: `hsl(${Math.random() * 360}, 70%, 50%)`,
-                angle: Math.random() * 360,
-                speed: Math.random() * 4 + 2,
-                life: 100
-            }));
-            startAnimationLoop();
+        // --- HTML TEMPLATES ---
+        function getTenRodHTML(isGhost) {
+            let cubes = '';
+            for(let i=0; i<10; i++) {
+                cubes += `<div class="w-4 h-4 sm:w-[22px] sm:h-[22px] rounded-[4px] border border-sky-400/30 ${isGhost ? 'bg-[#1cb0f6] opacity-30' : 'ten-rod-block'} pointer-events-none"></div>`;
+            }
+            return `<div class="flex flex-row gap-[1px] drop-shadow-md ${!isGhost ? 'cursor-pointer hover:scale-105 active:scale-95 transition-transform' : ''}">${cubes}</div>`;
         }
 
-        function prepareQuiz(start, added, result) {
-            let wrong1 = result + (Math.random() > 0.5 ? 1 : 2);
-            let wrong2 = Math.max(1, result - (Math.random() > 0.5 ? 1 : 2));
-            if (wrong2 === result || wrong2 === start) wrong2 = result + 3;
-            
-            const options = [result, wrong1, wrong2].sort(() => Math.random() - 0.5);
-
-            state.quiz = {
-                start,
-                add: added,
-                correct: result,
-                options: options
-            };
-
-            setTimeout(() => {
-                state.gameState = 'QUIZ';
-                speak(`What is ${start} plus ${added}?`);
-                render();
-            }, 400);
+        function getOneCubeHTML(isGhost) {
+            return `<div class="w-4 h-4 sm:w-[22px] sm:h-[22px] rounded-[5px] border border-yellow-500/30 drop-shadow-md ${isGhost ? 'bg-[#ffc800] opacity-30' : 'one-cube-block cursor-pointer hover:scale-110 active:scale-90 transition-transform'}"></div>`;
         }
 
-        function handleQuizAnswer(ans) {
-            if (ans === state.quiz.correct) {
-                playSoundEffect('correct');
-                speak("Excellent!");
-                const type = Math.random() > 0.5 ? 'CHEST' : 'BALLOON';
-                state.rewardGameType = type;
+        // --- UI UPDATERS ---
+        function updateUI() {
+            if (state.gameState === 'start') {
+                document.getElementById('start-screen').classList.remove('hidden');
+                document.getElementById('playing-screen').classList.add('hidden');
+                document.getElementById('finished-screen').classList.add('hidden');
+            } else if (state.gameState === 'playing') {
+                document.getElementById('start-screen').classList.add('hidden');
+                document.getElementById('playing-screen').classList.remove('hidden');
+                document.getElementById('playing-screen').classList.add('flex');
+                document.getElementById('finished-screen').classList.add('hidden');
                 
-                if (type === 'CHEST') setupChestGame();
-                else setupBalloonGame();
+                updateHeader();
+                updateEquation();
+                updateBoard();
+                updateControls();
+                updateOptions();
+            } else if (state.gameState === 'finished') {
+                document.getElementById('start-screen').classList.add('hidden');
+                document.getElementById('playing-screen').classList.add('hidden');
+                document.getElementById('playing-screen').classList.remove('flex');
+                document.getElementById('finished-screen').classList.remove('hidden');
+                document.getElementById('finished-screen').classList.add('flex');
+                document.getElementById('final-score').innerText = state.score;
+                startConfetti();
+            }
+            
+            updateFeedbackOverlay();
+        }
+
+        function updateHeader() {
+            document.getElementById('score-display').innerText = state.score;
+            document.getElementById('level-display').innerText = `Level ${Math.min(state.completedQuestions + 1, state.maxQuestions)} / ${state.maxQuestions}`;
+        }
+
+        function updateEquation() {
+            document.getElementById('eq-n1').innerText = state.question.n1;
+            document.getElementById('eq-n2').innerText = state.question.n2;
+        }
+
+        function updateBoard() {
+            const tensCol = document.getElementById('tens-col');
+            const onesCol = document.getElementById('ones-col');
+
+            // --- TENS COLUMN ---
+            let tHtml = '';
+            tHtml += `<div class="flex flex-col gap-2 min-h-[40px] w-full items-center justify-center mt-2">`;
+            for(let i=0; i<state.n1Entered.tens; i++) tHtml += `<div data-action="remove-ten" data-is-n1="true" class="inline-block">${getTenRodHTML(false)}</div>`;
+            if (state.n1Entered.tens < Math.floor(state.question.n1/10)) tHtml += `<div class="opacity-30 inline-block">${getTenRodHTML(true)}</div>`;
+            tHtml += `</div>`;
+            
+            tHtml += `<div class="w-full border-b-2 border-dashed border-[#bce2ff] my-1 relative"></div>`;
+            
+            tHtml += `<div class="flex flex-col gap-2 min-h-[40px] w-full items-center justify-center mb-2">`;
+            for(let i=0; i<state.n2Entered.tens; i++) tHtml += `<div data-action="remove-ten" data-is-n1="false" class="inline-block">${getTenRodHTML(false)}</div>`;
+            const n1Full = state.n1Entered.tens === Math.floor(state.question.n1 / 10) && state.n1Entered.ones === (state.question.n1 % 10);
+            if (n1Full && state.n2Entered.tens < Math.floor(state.question.n2/10)) tHtml += `<div class="opacity-30 inline-block">${getTenRodHTML(true)}</div>`;
+            tHtml += `</div>`;
+            
+            if (state.carriedTens > 0) {
+                tHtml += `<div class="mt-1 animate-bounce-in">
+                            <div class="relative">
+                              ${getTenRodHTML(false)}
+                              <div class="absolute -top-3 -right-3 bg-[#58cc02] text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-md border border-white">+1</div>
+                            </div>
+                         </div>`;
+            }
+            tensCol.innerHTML = tHtml;
+
+            if (state.isRegroupingDrag) {
+                tensCol.classList.add('bg-[#e5ffcc]');
+                tensCol.classList.remove('bg-[#f4fafe]');
             } else {
-                playSoundEffect('wrong');
-                speak("Oh no, try again!");
+                tensCol.classList.remove('bg-[#e5ffcc]');
+                tensCol.classList.add('bg-[#f4fafe]');
             }
-        }
 
-        function setupChestGame() {
-            state.gameState = 'REWARD';
-            state.rewardMessage = 'Choose your treasure! 🎁';
-            state.chests = [
-                { id: 1, content: 'gems', isOpen: false },
-                { id: 2, content: 'gold', isOpen: false },
-                { id: 3, content: 'crown', isOpen: false }
-            ].sort(() => Math.random() - 0.5);
-            render();
-        }
-
-        function openChest(chestId) {
-            if (state.chests.some(c => c.isOpen)) return;
+            // --- ONES COLUMN ---
+            let oHtml = '';
+            const isRegrouped = state.carriedTens > 0;
             
-            const chestIndex = state.chests.findIndex(c => c.id === chestId);
-            state.chests[chestIndex].isOpen = true;
-            playSoundEffect('chest');
+            oHtml += `<div class="flex flex-wrap content-start justify-center gap-2 min-h-[40px] w-full mt-2">`;
+            for(let i=0; i<state.n1Entered.ones; i++) oHtml += `<div data-action="remove-one" data-is-n1="true" class="inline-block">${getOneCubeHTML(false)}</div>`;
+            if (!isRegrouped && state.n1Entered.ones < (state.question.n1%10)) oHtml += `<div class="opacity-30 inline-block">${getOneCubeHTML(true)}</div>`;
+            oHtml += `</div>`;
 
-            const chest = state.chests[chestIndex];
-            let bonus = 10;
-            let msg = "";
-            if (chest.content === 'gems') { msg = "Crystal Gems!"; bonus = 20; }
-            else if (chest.content === 'gold') { msg = "Pot of Gold!"; bonus = 50; }
-            else if (chest.content === 'crown') { msg = "Royal Crown!"; bonus = 100; }
+            oHtml += `<div class="w-full border-b-2 border-dashed border-[#ffe066] my-1"></div>`;
 
-            state.rewardMessage = msg;
-            state.score += bonus;
+            oHtml += `<div class="flex flex-wrap content-start justify-center gap-2 min-h-[40px] w-full mb-2">`;
+            for(let i=0; i<state.n2Entered.ones; i++) oHtml += `<div data-action="remove-one" data-is-n1="false" class="inline-block">${getOneCubeHTML(false)}</div>`;
+            if (!isRegrouped && n1Full && state.n2Entered.ones < (state.question.n2%10)) oHtml += `<div class="opacity-30 inline-block">${getOneCubeHTML(true)}</div>`;
+            oHtml += `</div>`;
+
+            // Validate Regrouping Rules
+            const totalOnes = state.n1Entered.ones + state.n2Entered.ones;
+            const onesFull = state.n1Entered.ones === (state.question.n1 % 10) && state.n2Entered.ones === (state.question.n2 % 10);
+            const needsRegrouping = onesFull && totalOnes >= 10;
             
-            render(); // Update UI to show open chest and score
-
-            if (timerId) clearTimeout(timerId);
-            timerId = setTimeout(() => advanceTurn(), 2500);
-        }
-
-        function setupBalloonGame() {
-            state.gameState = 'REWARD';
-            state.rewardMessage = 'Pop as many as you can! 🎈';
-            state.balloons = Array.from({ length: 10 }, (_, i) => ({
-                id: i,
-                x: Math.random() * 80 + 10,
-                y: -20 - (i * 10),
-                speed: Math.random() * 0.5 + 0.3,
-                color: ['#FF6B6B', '#4ECDC4', '#95E1D3', '#FFE66D', '#C39BD3'][Math.floor(Math.random() * 5)],
-                popped: false
-            }));
-            
-            render();
-            startAnimationLoop();
-
-            if (timerId) clearTimeout(timerId);
-            timerId = setTimeout(() => advanceTurn(), 7000);
-        }
-
-        function popBalloon(id) {
-            const bIndex = state.balloons.findIndex(b => b.id === id);
-            if(bIndex > -1 && !state.balloons[bIndex].popped) {
-                playSoundEffect('pop');
-                state.balloons[bIndex].popped = true;
-                state.score += 5;
-                render(); // Re-render to remove balloon and update score
-            }
-        }
-
-        function advanceTurn() {
-            state.gameState = state.gameState === 'WIN' ? 'WIN' : 'ROLL';
-            state.quiz = null;
-            state.turn = (state.turn + 1) % state.players.length;
-            render();
-        }
-
-        function resetGame() {
-            if (timerId) clearTimeout(timerId);
-            if (animationFrameId) cancelAnimationFrame(animationFrameId);
-            state.gameState = 'SETUP';
-            state.players = [];
-            state.fireworks = [];
-            state.balloons = [];
-            state.score = 0;
-            render();
-        }
-
-        // --- ANIMATION LOOP ---
-        function startAnimationLoop() {
-            if (animationFrameId) cancelAnimationFrame(animationFrameId);
-            
-            function loop() {
-                let needsRender = false;
-
-                // Fireworks Logic
-                if (state.gameState === 'WIN' && state.fireworks.length > 0) {
-                    state.fireworks = state.fireworks.map(p => ({
-                        ...p,
-                        x: p.x + Math.cos(p.angle * Math.PI / 180) * p.speed * 0.2,
-                        y: p.y + Math.sin(p.angle * Math.PI / 180) * p.speed * 0.2,
-                        life: p.life - 2,
-                        speed: p.speed * 0.96
-                    })).filter(p => p.life > 0);
-                    
-                    updateFireworksUI();
-                    needsRender = true;
-                }
-
-                // Balloons Logic
-                if (state.gameState === 'REWARD' && state.rewardGameType === 'BALLOON') {
-                    state.balloons = state.balloons.map(b => ({
-                        ...b,
-                        y: b.y + b.speed
-                    }));
-                    updateBalloonsUI();
-                    needsRender = true;
-                }
-
-                if (state.gameState === 'WIN' || (state.gameState === 'REWARD' && state.rewardGameType === 'BALLOON')) {
-                    animationFrameId = requestAnimationFrame(loop);
-                }
-            }
-            loop();
-        }
-
-        // --- DOM RENDERERS ---
-
-        // Specialized UI updaters to avoid full re-render on high-frequency animations
-        function updateDiceUI() {
-            const diceEl = document.getElementById('dice-value');
-            if (diceEl) diceEl.innerText = state.diceVal;
-        }
-
-        function updateFireworksUI() {
-            const container = document.getElementById('fireworks-container');
-            if (!container) return;
-            
-            let html = '';
-            state.fireworks.forEach(p => {
-                html += `
-                    <div class="absolute w-2 h-2 rounded-full"
-                         style="background-color: ${p.color}; left: ${p.x}%; top: ${p.y}%; opacity: ${p.life / 100}; transform: scale(${p.life/50})">
+            if (needsRegrouping && !isRegrouped) {
+                let hintCubes = '';
+                for(let i=0; i<10; i++) hintCubes += `<div class="w-4 h-4 rounded-sm border border-yellow-600/20 bg-gradient-to-br from-[#fff0a8] via-[#ffc800] to-[#d69f00] shadow-[inset_-1px_-1px_2px_rgba(0,0,0,0.2),inset_1px_1px_2px_rgba(255,255,255,0.7)] pointer-events-none"></div>`;
+                
+                oHtml += `
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                        <div class="bg-white/95 p-3 rounded-2xl shadow-xl border-2 border-[#58cc02] animate-bounce animate-bounce-inf flex flex-col items-center">
+                            <span class="text-[#58cc02] font-bold text-sm mb-2 drop-shadow-sm">Make a Ten!</span>
+                            <div id="regroup-btn" class="pointer-events-auto cursor-pointer active:scale-95 bg-[#fff4cc] p-2 rounded-xl border-2 border-[#ffc800] flex flex-wrap gap-1 w-28 justify-center shadow-inner transition-transform">
+                               ${hintCubes}
+                               <div class="absolute -top-3 -right-3 bg-[#58cc02] text-white rounded-full p-1 shadow-md border-2 border-white">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8L22 12L18 16"></path><path d="M2 12H22"></path></svg>
+                               </div>
+                            </div>
+                            <span class="text-[11px] text-slate-400 font-bold mt-2 uppercase tracking-wide">Drag or Tap &larr;</span>
+                        </div>
                     </div>
                 `;
+            }
+            onesCol.innerHTML = oHtml;
+        }
+
+        function updateControls() {
+            document.getElementById('btn-ten-icon').innerHTML = getTenRodHTML(false);
+            document.getElementById('btn-one-icon').innerHTML = getOneCubeHTML(false);
+            
+            const btnAddOne = document.getElementById('btn-add-one');
+            if (state.carriedTens > 0) {
+                btnAddOne.setAttribute('disabled', 'true');
+                btnAddOne.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                btnAddOne.removeAttribute('disabled');
+                btnAddOne.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        function isBoardCurrentlyValid() {
+            const totalOnes = state.n1Entered.ones + state.n2Entered.ones;
+            const onesFull = state.n1Entered.ones === (state.question.n1 % 10) && state.n2Entered.ones === (state.question.n2 % 10);
+            const needsRegrouping = onesFull && totalOnes >= 10;
+            const isRegrouped = state.carriedTens > 0;
+            const currentTotalValue = (state.n1Entered.tens + state.n2Entered.tens + state.carriedTens) * 10 + state.n1Entered.ones + state.n2Entered.ones;
+            
+            return currentTotalValue === state.question.ans && (!needsRegrouping || isRegrouped);
+        }
+
+        function updateOptions() {
+            const container = document.getElementById('options-container');
+            const isBoardValid = isBoardCurrentlyValid();
+            
+            let html = '';
+            state.options.forEach((opt) => {
+                const isSelected = state.selectedOption === opt;
+                let btnClass = "duo-btn-white shadow-sm text-slate-700";
+                let extraAttrs = `data-action="select-option" data-val="${opt}"`;
+                let innerHtml = opt;
+                
+                if (!isBoardValid) {
+                    btnClass = "bg-slate-100 text-slate-400 border-b-4 border-slate-200 cursor-not-allowed opacity-70";
+                    extraAttrs = 'disabled';
+                    innerHtml += `<div class="absolute right-3 opacity-40"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>`;
+                } else if (isSelected && state.feedback === 'correct') {
+                    btnClass = "duo-btn-green";
+                } else if (isSelected && state.feedback === 'wrong') {
+                    btnClass = "duo-btn-wrong";
+                }
+                
+                if (state.feedback !== null) extraAttrs = 'disabled';
+                
+                html += `<button ${extraAttrs} class="h-16 rounded-2xl text-3xl font-black relative flex items-center justify-center transition-transform ${btnClass}">${innerHtml}</button>`;
             });
+            
             container.innerHTML = html;
         }
 
-        function updateBalloonsUI() {
-            // We only update the bottom position style of existing elements to avoid DOM thrashing
-            state.balloons.forEach(b => {
-                const el = document.getElementById(`balloon-${b.id}`);
-                if (el) {
-                    el.style.bottom = `${b.y}%`;
-                }
-            });
+        function showNotification(msg) {
+            const el = document.getElementById('notification-msg');
+            el.innerText = msg;
+            el.classList.remove('hidden');
+            setTimeout(() => {
+                el.classList.add('hidden');
+            }, 1500);
         }
 
-        // --- MAIN RENDER FUNCTION ---
-        function render() {
-            const app = document.getElementById('app');
-            let html = '';
+        function updateFeedbackOverlay() {
+            const overlay = document.getElementById('feedback-overlay');
+            const iconContainer = document.getElementById('feedback-icon-container');
+            const icon = document.getElementById('feedback-icon');
+            
+            if (state.feedback === 'correct' || state.feedback === 'wrong') {
+                overlay.classList.remove('hidden');
+                overlay.classList.add('flex');
+                
+                if (state.feedback === 'correct') {
+                    iconContainer.className = "p-8 rounded-full shadow-2xl animate-bounce-in border-4 border-white bg-[#58cc02]";
+                    icon.innerHTML = '✓';
+                } else {
+                    iconContainer.className = "p-8 rounded-full shadow-2xl animate-bounce-in border-4 border-white bg-[#ff4b4b]";
+                    icon.innerHTML = '✗';
+                }
+            } else {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+            }
+        }
 
-            // Background Decor
-            html += `
-                <div class="absolute top-10 left-10 w-24 h-24 bg-white/40 rounded-full blur-2xl animate-pulse pointer-events-none"></div>
-                <div class="absolute bottom-20 right-10 w-32 h-32 bg-cyan-200/40 rounded-full blur-3xl pointer-events-none"></div>
-            `;
+        // --- GAME LOGIC ---
+        function generateQuestion() {
+            const n1 = Math.floor(Math.random() * 30) + 1; 
+            const maxN2 = 50 - n1;
+            const n2 = Math.floor(Math.random() * (maxN2 + 1));
+            const ans = n1 + n2;
 
-            // HEADER
-            html += `
-                <header class="w-full max-w-4xl bg-white/90 backdrop-blur-md p-4 px-6 shadow-sm flex justify-between items-center z-40 m-2 rounded-3xl border border-white/50">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center shadow-lg">
-                            <i data-lucide="star" class="text-white w-5 h-5"></i>
-                        </div>
-                        <h1 class="text-2xl font-black text-slate-800 tracking-tight">Number Race</h1>
-                    </div>
-                    
-                    <div class="flex items-center gap-4">
-                        <div class="bg-white px-4 py-2 rounded-2xl shadow-inner border border-slate-100 flex items-center gap-2">
-                            <i data-lucide="gem" class="text-cyan-500 w-4 h-4"></i>
-                            <span class="font-black text-xl text-slate-700">${state.score}</span>
-                        </div>
-                        <button onclick="resetGame()" class="p-2.5 bg-slate-100 rounded-2xl hover:bg-slate-200 transition-colors text-slate-500">
-                            <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
-                        </button>
-                    </div>
-                </header>
-            `;
+            const wrongOptions = new Set();
+            while (wrongOptions.size < 3) {
+                const offset = Math.floor(Math.random() * 10) - 5; 
+                const wrong = ans + offset;
+                if (wrong >= 0 && wrong <= 60 && wrong !== ans) wrongOptions.add(wrong);
+            }
+            const allOptions = [ans, ...Array.from(wrongOptions)].sort(() => Math.random() - 0.5);
 
-            // SETUP SCREEN
-            if (state.gameState === 'SETUP') {
-                html += `
-                    <div class="flex-1 flex flex-col items-center justify-center w-full max-w-2xl p-6 animate-zoom-in">
-                        <div class="relative mb-12">
-                            <div class="text-9xl animate-bounce">🏁</div>
-                            <div class="absolute -bottom-4 left-1/2 -translate-x-1/2 w-32 h-4 bg-black/10 blur-md rounded-full"></div>
-                        </div>
-                        
-                        <h2 class="text-4xl font-black mb-10 text-center text-slate-800 drop-shadow-sm">How many racers?</h2>
-                        
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-lg">
-                            ${[1, 2, 3, 4].map(num => `
-                                <button onclick="handleStartGame(${num})" class="bg-white/80 backdrop-blur p-8 rounded-[2rem] shadow-xl border-b-8 border-violet-200 hover:border-violet-500 hover:-translate-y-2 transition-all flex flex-col items-center gap-4 group">
-                                    <div class="flex -space-x-4 group-hover:space-x-2 transition-all">
-                                        ${Array.from({length: num}).map((_, i) => `
-                                            <span class="text-4xl filter drop-shadow-md">${PLAYER_DATA[i].icon}</span>
-                                        `).join('')}
-                                    </div>
-                                    <span class="font-extrabold text-2xl text-slate-600">${num} Racer${num > 1 ? 's' : ''}</span>
-                                </button>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
+            state.question = { n1, n2, ans };
+            state.options = allOptions;
+            state.n1Entered = { tens: 0, ones: 0 };
+            state.n2Entered = { tens: 0, ones: 0 };
+            state.carriedTens = 0;
+            state.selectedOption = null;
+            state.feedback = null;
+            
+            updateUI();
+        }
+
+        function startGame() {
+            playSound('success');
+            state.score = 0;
+            state.completedQuestions = 0;
+            state.gameState = 'playing';
+            if(confettiReq) { cancelAnimationFrame(confettiReq); confettiReq = null; }
+            generateQuestion();
+        }
+
+        function addOne() {
+            const n1OnesTarget = state.question.n1 % 10;
+            const n2OnesTarget = state.question.n2 % 10;
+
+            if (state.n1Entered.ones < n1OnesTarget) {
+                playSound('pop');
+                state.n1Entered.ones++;
+                updateBoard(); updateOptions();
+            } else if (state.n2Entered.ones < n2OnesTarget) {
+                playSound('pop');
+                state.n2Entered.ones++;
+                updateBoard(); updateOptions();
+            } else {
+                playSound('wrong');
+                showNotification("You have enough Ones!");
+            }
+        }
+
+        function addTen() {
+            const n1TensTarget = Math.floor(state.question.n1 / 10);
+            const n2TensTarget = Math.floor(state.question.n2 / 10);
+
+            if (state.n1Entered.tens < n1TensTarget) {
+                playSound('pop');
+                state.n1Entered.tens++;
+                updateBoard(); updateOptions();
+            } else if (state.n2Entered.tens < n2TensTarget) {
+                playSound('pop');
+                state.n2Entered.tens++;
+                updateBoard(); updateOptions();
+            } else {
+                playSound('wrong');
+                showNotification("You have enough Tens!");
+            }
+        }
+
+        function removeOne(isN1) {
+            if (state.carriedTens > 0) return; 
+            if (isN1 && state.n1Entered.ones > 0) {
+                state.n1Entered.ones--;
+                updateBoard(); updateOptions();
+            } else if (!isN1 && state.n2Entered.ones > 0) {
+                state.n2Entered.ones--;
+                updateBoard(); updateOptions();
+            }
+        }
+
+        function removeTen(isN1) {
+            if (isN1 && state.n1Entered.tens > 0) {
+                state.n1Entered.tens--;
+                updateBoard(); updateOptions();
+            } else if (!isN1 && state.n2Entered.tens > 0) {
+                state.n2Entered.tens--;
+                updateBoard(); updateOptions();
+            }
+        }
+
+        function executeRegroup() {
+            playSound('magic');
+            state.carriedTens = 1;
+            showNotification("Regrouped! Awesome!");
+            
+            let remainingToRemove = 10;
+            let newN2Ones = state.n2Entered.ones;
+            if (newN2Ones >= remainingToRemove) {
+                newN2Ones -= remainingToRemove;
+                remainingToRemove = 0;
+            } else {
+                remainingToRemove -= newN2Ones;
+                newN2Ones = 0;
+            }
+            
+            let newN1Ones = state.n1Entered.ones;
+            if (remainingToRemove > 0) {
+                newN1Ones = Math.max(0, newN1Ones - remainingToRemove);
             }
 
-            // GAME AREA
-            if (state.gameState !== 'SETUP') {
-                html += `<div class="w-full max-w-3xl px-4 mt-2 mb-32 flex flex-col flex-1 overflow-y-auto">`;
+            state.n2Entered.ones = newN2Ones;
+            state.n1Entered.ones = newN1Ones;
+
+            updateBoard();
+            updateControls();
+            updateOptions();
+        }
+
+        function handleAnswer(option) {
+            if (state.feedback !== null) return;
+            state.selectedOption = option;
+            
+            if (option === state.question.ans) {
+                playSound('success');
+                state.feedback = 'correct';
+                state.score += 10;
+                state.completedQuestions++;
                 
-                // RENDER BOARD
-                html += `<div class="grid grid-cols-10 gap-2 p-4 bg-white/80 backdrop-blur-md rounded-[2.5rem] shadow-2xl border-[8px] border-white/50 select-none relative overflow-hidden">
-                        <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-tr from-violet-500/5 to-cyan-500/5 pointer-events-none"></div>`;
+                updateUI();
                 
-                for(let rowIndex = 0; rowIndex < 5; rowIndex++) {
-                    const rowStart = 41 - (rowIndex * 10);
-                    for(let j = 0; j < 10; j++) {
-                        let cellNum = rowIndex % 2 === 0 ? rowStart + j : (rowStart + 9) - j;
-                        const colorClass = CELL_COLORS[(cellNum - 1) % 10];
-                        const currentPlayer = state.players[state.turn];
-                        // Safe check for undefined during transitions
-                        const isNextStep = currentPlayer && state.gameState === 'MOVING_MANUAL' && cellNum === currentPlayer.pos + 1;
-                        
-                        html += `
-                            <div onclick="handleCellClick(${cellNum})" 
-                                class="relative aspect-square border-2 border-white/40 rounded-2xl flex items-center justify-center shadow-sm transition-all duration-300 ${colorClass} ${isNextStep ? 'ring-4 ring-yellow-400 scale-105 z-20 cursor-pointer animate-bounce shadow-xl' : 'hover:brightness-95'}">
-                                
-                                <span class="absolute inset-0 flex items-center justify-center text-xl sm:text-2xl font-black text-slate-400/30 select-none pointer-events-none z-0">${cellNum}</span>
-                                
-                                ${cellNum === TOTAL_CELLS ? '<i data-lucide="trophy" class="text-yellow-500 z-10 drop-shadow-lg scale-110 w-8 h-8"></i>' : ''}
-                                
-                                <div class="relative z-10 flex -space-x-2 items-center justify-center w-full h-full flex-wrap content-center pointer-events-none">
-                                    ${state.players.map((p, idx) => p.pos === cellNum ? `
-                                        <div class="w-8 h-8 sm:w-11 sm:h-11 rounded-full shadow-lg border-2 border-white flex items-center justify-center text-xl sm:text-2xl transition-all ${p.color} z-10 transform hover:scale-125 hover:rotate-12">
-                                            ${p.icon}
-                                        </div>
-                                    ` : '').join('')}
-                                </div>
-                            </div>
-                        `;
+                setTimeout(() => {
+                    startBonusRound(state.completedQuestions >= state.maxQuestions);
+                }, 1500);
+
+            } else {
+                playSound('wrong');
+                state.feedback = 'wrong';
+                updateUI();
+                setTimeout(() => {
+                    state.feedback = null;
+                    state.selectedOption = null;
+                    updateUI();
+                }, 1500);
+            }
+        }
+
+        // --- BONUS GAME ---
+        function startBonusRound(isLastRound) {
+            state.bonusActive = true;
+            state.feedback = null;
+            updateUI(); // clear feedback
+            
+            const container = document.getElementById('bonus-container');
+            container.innerHTML = `
+                <div class="absolute inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center overflow-hidden pointer-events-none">
+                    <div class="absolute top-12 text-center animate-bounce-in z-10 drop-shadow-xl pointer-events-none">
+                      <h2 class="text-5xl font-black text-[#ffc800] tracking-wider" style="text-shadow: 0 6px 0 #cc9f00;">BONUS!</h2>
+                      <p class="text-white font-bold text-xl mt-2 drop-shadow-md">Pop the balloons!</p>
+                    </div>
+                    <div id="balloons-layer" class="absolute inset-0 pointer-events-auto"></div>
+                </div>
+            `;
+            
+            const colors = ['bg-[#ff4b4b]', 'bg-[#1cb0f6]', 'bg-[#58cc02]', 'bg-[#ffc800]', 'bg-[#ce82ff]'];
+            const layer = document.getElementById('balloons-layer');
+            
+            for (let i = 0; i < 18; i++) {
+                const id = Date.now() + i;
+                const left = Math.random() * 85 + 5;
+                const delay = Math.random() * 2;
+                const duration = 4.5 + Math.random() * 3.5;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const scale = 0.7 + Math.random() * 0.6;
+                
+                const bHTML = `
+                    <div id="balloon-${id}" onpointerdown="popBalloon(${id}, event)" class="absolute bottom-[-150px] rounded-[40%] cursor-pointer flex items-center justify-center balloon-anim ${color}" style="touch-action: none; left: ${left}%; width: 60px; height: 75px; --scale: ${scale}; --duration: ${duration}s; --delay: ${delay}s; box-shadow: inset -8px -8px 15px rgba(0,0,0,0.2), 0 5px 15px rgba(0,0,0,0.3); border-bottom-right-radius: 50%; border-bottom-left-radius: 50%;">
+                        <div class="w-2 h-6 bg-white/50 rounded-full absolute top-2 left-3 rotate-12 pointer-events-none"></div>
+                        <div class="absolute -bottom-8 w-[2px] h-10 bg-white/60 rotate-[-10deg] pointer-events-none"></div>
+                        <div class="absolute -bottom-2 w-3 h-3 bg-inherit rotate-45 border-t border-black/10 pointer-events-none"></div>
+                    </div>
+                `;
+                layer.insertAdjacentHTML('beforeend', bHTML);
+            }
+            
+            container.classList.remove('hidden');
+            
+            setTimeout(() => {
+                state.bonusActive = false;
+                container.innerHTML = '';
+                container.classList.add('hidden');
+                
+                if (isLastRound) {
+                    playSound('fanfare');
+                    state.gameState = 'finished';
+                    updateUI();
+                } else {
+                    generateQuestion();
+                }
+            }, 5500);
+        }
+
+        window.popBalloon = function(id, event) {
+            if(event) { event.preventDefault(); event.stopPropagation(); }
+            playSound('bonusPop');
+            state.score += 5;
+            const el = document.getElementById(`balloon-${id}`);
+            if(el) el.remove();
+            updateHeader(); 
+        }
+
+        // --- CONFETTI ANIMATION ---
+        function startConfetti() {
+            const container = document.getElementById('confetti-container');
+            container.innerHTML = '';
+            const colors = ['#58cc02', '#1cb0f6', '#ffc800', '#ff4b4b', '#ce82ff'];
+            let particles = Array.from({ length: 80 }).map((_, i) => ({
+              id: i,
+              x: Math.random() * 100,
+              y: -20 - Math.random() * 100,
+              color: colors[Math.floor(Math.random() * colors.length)],
+              speed: 0.3 + Math.random() * 0.8,
+              spin: Math.random() * 360,
+              spinSpeed: (Math.random() - 0.5) * 5,
+              size: 0.5 + Math.random() * 1
+            }));
+            
+            particles.forEach(p => {
+                const el = document.createElement('div');
+                el.className = 'confetti-piece rounded-sm shadow-sm';
+                el.style.backgroundColor = p.color;
+                el.style.width = `${12 * p.size}px`;
+                el.style.height = `${12 * p.size}px`;
+                el.id = `confetti-${p.id}`;
+                container.appendChild(el);
+            });
+
+            function animate() {
+                if(state.gameState !== 'finished') {
+                    if(confettiReq) cancelAnimationFrame(confettiReq);
+                    return;
+                }
+                particles.forEach(p => {
+                    p.y += p.speed;
+                    p.spin += p.spinSpeed;
+                    const el = document.getElementById(`confetti-${p.id}`);
+                    if (el) {
+                        el.style.left = `${p.x}%`;
+                        el.style.top = `${p.y}%`;
+                        el.style.transform = `rotate(${p.spin}deg)`;
+                    }
+                });
+                confettiReq = requestAnimationFrame(animate);
+            }
+            confettiReq = requestAnimationFrame(animate);
+        }
+
+        // --- EVENT LISTENERS ---
+        document.body.addEventListener('click', (e) => {
+            const target = e.target.closest('[data-action]');
+            if (!target) return;
+            
+            const action = target.getAttribute('data-action');
+            
+            if (action === 'start-game' || action === 'restart-game') {
+                startGame();
+            } else if (action === 'speak') {
+                speakEquation();
+            } else if (action === 'add-ten') {
+                if (!target.hasAttribute('disabled')) addTen();
+            } else if (action === 'add-one') {
+                if (!target.hasAttribute('disabled')) addOne();
+            } else if (action === 'remove-ten') {
+                removeTen(target.getAttribute('data-is-n1') === 'true');
+            } else if (action === 'remove-one') {
+                removeOne(target.getAttribute('data-is-n1') === 'true');
+            } else if (action === 'select-option') {
+                if (!target.hasAttribute('disabled')) {
+                    handleAnswer(parseInt(target.getAttribute('data-val')));
+                }
+            }
+        });
+
+        // Drag & Drop Regrouping Handling
+        document.addEventListener('mousedown', handlePointerDown);
+        document.addEventListener('touchstart', handlePointerDown, {passive: false});
+        document.addEventListener('mousemove', handlePointerMove);
+        document.addEventListener('touchmove', handlePointerMove, {passive: false});
+        document.addEventListener('mouseup', handlePointerUp);
+        document.addEventListener('touchend', handlePointerUp);
+
+        function handlePointerDown(e) {
+            const regroupBtn = e.target.closest('#regroup-btn');
+            if (regroupBtn) {
+                if(e.type === 'touchstart') e.preventDefault();
+                state.isRegroupingDrag = true;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                state.dragPos = { x: clientX, y: clientY, startX: clientX, startY: clientY };
+                
+                const preview = document.getElementById('drag-preview');
+                document.getElementById('drag-preview-content').innerHTML = getTenRodHTML(false);
+                preview.style.left = `${clientX}px`;
+                preview.style.top = `${clientY}px`;
+                preview.classList.remove('hidden');
+                updateBoard(); // Highlight drop zone
+            }
+        }
+
+        function handlePointerMove(e) {
+            if (!state.isRegroupingDrag) return;
+            // Prevent scrolling on touch
+            if(e.type === 'touchmove') e.preventDefault();
+            
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            state.dragPos.x = clientX;
+            state.dragPos.y = clientY;
+            
+            const preview = document.getElementById('drag-preview');
+            preview.style.left = `${clientX}px`;
+            preview.style.top = `${clientY}px`;
+        }
+
+        function handlePointerUp(e) {
+            if (!state.isRegroupingDrag) return;
+            state.isRegroupingDrag = false;
+            document.getElementById('drag-preview').classList.add('hidden');
+            
+            const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+            const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+            
+            const dx = clientX - state.dragPos.startX;
+            const dy = clientY - state.dragPos.startY;
+            const distance = Math.sqrt(dx*dx + dy*dy);
+            
+            if (distance < 15) {
+                // Tap detected
+                executeRegroup();
+            } else {
+                // Drag detected - check if dropped over tens col
+                const tensCol = document.getElementById('tens-col');
+                if (tensCol) {
+                    const rect = tensCol.getBoundingClientRect();
+                    if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
+                        executeRegroup();
+                    } else {
+                        // Drop missed, just refresh board to clear highlight
+                        updateBoard();
                     }
                 }
-                html += `</div>`; // End Grid
-                html += `</div>`; // End Game Area Wrapper
             }
-
-            // BOTTOM CONTROLS PANEL
-            if (state.gameState !== 'SETUP') {
-                const currentPlayer = state.players[state.turn];
-                
-                html += `
-                    <div class="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-lg shadow-[0_-15px_40px_rgba(0,0,0,0.1)] p-5 px-6 rounded-t-[3rem] z-50 transition-all border-t border-white/60">
-                        <div class="max-w-xl mx-auto">
-                `;
-
-                // ROLL DICE PHASE
-                if (state.gameState === 'ROLL' || state.gameState === 'ROLLING_DICE') {
-                    html += `
-                        <div class="flex items-center justify-between gap-4 animate-slide-up">
-                            <div class="flex items-center gap-5">
-                                <div class="w-20 h-20 rounded-[1.5rem] flex items-center justify-center text-5xl shadow-2xl border-b-8 border-black/10 ${currentPlayer?.color} text-white">
-                                    ${currentPlayer?.icon}
-                                </div>
-                                <div>
-                                    <div class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-1">Current Racer</div>
-                                    <div class="font-black text-3xl ${currentPlayer?.text}">${currentPlayer?.name}</div>
-                                </div>
-                            </div>
-                            
-                            <div class="flex-shrink-0">
-                                ${state.gameState === 'ROLL' ? `
-                                    <button onclick="handleRollClick()" class="bg-gradient-to-br from-violet-500 to-indigo-600 text-white px-10 py-5 rounded-2xl font-black text-2xl shadow-xl shadow-indigo-200 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 border-b-4 border-indigo-800">
-                                        <i data-lucide="dices" class="w-8 h-8"></i> ROLL
-                                    </button>
-                                ` : `
-                                    <div class="w-24 h-24 bg-white border-4 border-violet-100 rounded-3xl shadow-inner flex items-center justify-center">
-                                        <div id="dice-value" class="text-4xl font-black text-violet-600 animate-spin">${state.diceVal}</div>
-                                    </div>
-                                `}
-                            </div>
-                        </div>
-                    `;
-                }
-
-                // MOVING MANUAL INSTRUCTION
-                if (state.gameState === 'MOVING_MANUAL') {
-                    html += `
-                        <div class="text-center py-2 animate-fade-in">
-                            <div class="flex justify-center items-center gap-6 mb-4">
-                                <div class="bg-white border-4 border-violet-100 rounded-2xl w-16 h-16 flex items-center justify-center shadow-lg">
-                                    <span class="text-4xl font-black text-violet-600">${state.diceVal}</span>
-                                </div>
-                                <i data-lucide="arrow-right" class="text-slate-200 w-8 h-8" stroke-width="4"></i>
-                                <div class="text-left">
-                                    <span class="text-4xl font-black text-slate-700 block leading-none">${state.stepsLeft}</span>
-                                    <span class="text-xs font-bold text-slate-400 uppercase tracking-tighter">Steps to go</span>
-                                </div>
-                            </div>
-                            <div class="bg-amber-100 text-amber-700 px-6 py-2 rounded-full font-black text-lg inline-flex items-center gap-2 border-2 border-amber-200 animate-pulse">
-                                <i data-lucide="play" class="w-5 h-5 fill-current"></i> TAP THE NEXT BOX!
-                            </div>
-                        </div>
-                    `;
-                }
-
-                // QUIZ
-                if (state.gameState === 'QUIZ' && state.quiz) {
-                    html += `
-                        <div class="animate-slide-up">
-                            <h3 class="text-center text-slate-400 font-bold uppercase text-sm mb-3 tracking-widest">Math Challenge!</h3>
-                            <div class="flex items-center justify-center gap-4 mb-6 text-4xl font-black text-slate-800 bg-white p-6 rounded-3xl border-4 border-violet-50 shadow-inner">
-                                <span>${state.quiz.start}</span>
-                                <span class="text-violet-500">+</span>
-                                <span>${state.quiz.add}</span>
-                                <span class="text-slate-300">=</span>
-                                <span class="text-violet-600">?</span>
-                            </div>
-                            <div class="grid grid-cols-3 gap-4">
-                                ${state.quiz.options.map(opt => `
-                                    <button onclick="handleQuizAnswer(${opt})" class="bg-white border-b-8 border-slate-100 hover:border-violet-500 hover:bg-violet-50 py-5 rounded-2xl text-3xl font-black shadow-lg transition-all active:scale-95 active:border-b-0 text-slate-700">
-                                        ${opt}
-                                    </button>
-                                `).join('')}
-                            </div>
-                        </div>
-                    `;
-                }
-
-                // WINNER
-                if (state.gameState === 'WIN') {
-                    html += `
-                        <div class="text-center py-4 animate-zoom-in">
-                            <div class="inline-block p-4 bg-yellow-100 rounded-full mb-3 border-4 border-white shadow-lg">
-                                <i data-lucide="trophy" class="text-yellow-600 w-12 h-12"></i>
-                            </div>
-                            <h2 class="text-4xl font-black text-slate-800 mb-1">WE HAVE A WINNER!</h2>
-                            <p class="text-xl font-bold text-violet-600 mb-6">${currentPlayer?.name} is the fastest!</p>
-                            <button onclick="resetGame()" class="bg-violet-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-violet-700 w-full">PLAY AGAIN ↺</button>
-                        </div>
-                    `;
-                }
-                
-                html += `</div></div>`; // End Bottom Panel
-            }
-
-            // REWARD MODAL
-            if (state.gameState === 'REWARD') {
-                html += `
-                    <div class="fixed inset-0 z-[100] bg-sky-600/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
-                        <div class="absolute top-10 left-10 text-9xl opacity-20">🎈</div>
-                        <div class="absolute bottom-20 right-10 text-9xl opacity-20">🎁</div>
-
-                        <div class="bg-white rounded-[3rem] p-10 w-full max-w-lg shadow-[0_30px_60px_-12px_rgba(0,0,0,0.5)] border-[12px] border-white/50 relative overflow-hidden">
-                            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-pink-500 via-violet-500 to-cyan-500"></div>
-                            
-                            <h2 class="text-3xl font-black text-slate-800 mb-2">${state.rewardMessage}</h2>
-                            <p class="text-slate-400 font-bold mb-10 tracking-widest uppercase text-xs">Bonus Points Round</p>
-                            
-                            ${state.rewardGameType === 'CHEST' ? `
-                                <div class="flex justify-center gap-4">
-                                    ${state.chests.map(chest => `
-                                        <div onclick="openChest(${chest.id})" class="relative w-28 h-28 flex items-center justify-center cursor-pointer transition-all duration-300 ${chest.isOpen ? 'scale-110' : 'hover:scale-105 active:scale-90'}">
-                                            ${chest.isOpen ? `
-                                                <div class="animate-zoom-in flex flex-col items-center">
-                                                    ${chest.content === 'gems' ? '<i data-lucide="gem" class="text-pink-500 drop-shadow-lg w-16 h-16"></i>' : ''}
-                                                    ${chest.content === 'gold' ? '<i data-lucide="coins" class="text-yellow-500 drop-shadow-lg w-16 h-16"></i>' : ''}
-                                                    ${chest.content === 'crown' ? '<i data-lucide="sparkles" class="text-purple-500 drop-shadow-lg w-16 h-16"></i>' : ''}
-                                                </div>
-                                            ` : `
-                                                <div class="w-full h-full bg-gradient-to-b from-amber-400 to-amber-600 rounded-3xl border-b-8 border-amber-800 shadow-2xl flex items-center justify-center relative overflow-hidden group">
-                                                    <div class="w-full h-1/3 bg-white/20 absolute top-0"></div>
-                                                    <div class="w-10 h-10 bg-amber-200 rounded-full border-4 border-amber-800 z-10 shadow-inner flex items-center justify-center">
-                                                        <div class="w-2 h-2 bg-slate-800 rounded-full"></div>
-                                                    </div>
-                                                </div>
-                                            `}
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            ` : `
-                                <div class="h-64 relative bg-sky-50 rounded-3xl border-4 border-dashed border-sky-200 overflow-hidden">
-                                    ${state.balloons.map(b => !b.popped ? `
-                                        <div id="balloon-${b.id}" onclick="popBalloon(${b.id})" class="absolute cursor-pointer animate-pulse" 
-                                             style="left: ${b.x}%; bottom: ${b.y}%; transition: bottom 0.1s linear;">
-                                            <div class="w-14 h-16 rounded-[50%] shadow-lg border-2 border-white/30 relative" style="background-color: ${b.color}">
-                                                <div class="w-1 h-8 bg-white/40 absolute top-full left-1/2 -translate-x-1/2"></div>
-                                                <div class="w-2 h-4 bg-white/30 absolute top-2 right-3 rounded-full rotate-45"></div>
-                                            </div>
-                                        </div>
-                                    ` : '').join('')}
-                                    ${state.balloons.every(b => b.popped) ? '<div class="flex items-center justify-center h-full text-5xl">🏆</div>' : ''}
-                                </div>
-                            `}
-
-                            ${(state.chests.some(c => c.isOpen) || state.rewardGameType === 'BALLOON') ? `
-                                <div class="mt-8 flex items-center justify-center gap-2 text-violet-500 font-bold animate-pulse">
-                                    Next round in a moment...
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                `;
-            }
-
-            // FIREWORKS CONTAINER
-            if (state.gameState === 'WIN') {
-                html += '<div id="fireworks-container" class="fixed inset-0 pointer-events-none z-[70]"></div>';
-            }
-
-            app.innerHTML = html;
-            lucide.createIcons();
-            
-            // Re-draw fireworks immediately if they exist to prevent flicker
-            if (state.gameState === 'WIN' && state.fireworks.length > 0) updateFireworksUI();
         }
 
-        // --- INIT ---
-        render();
+        // Initialize Game
+        document.getElementById('btn-ten-icon').innerHTML = getTenRodHTML(false);
+        document.getElementById('btn-one-icon').innerHTML = getOneCubeHTML(false);
+        updateUI();
 
     </script>
 </body>
