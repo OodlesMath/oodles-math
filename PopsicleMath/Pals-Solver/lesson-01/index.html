@@ -3,664 +3,947 @@
 <head>
     <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pop the Greater Number</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Make Tens Strategy Game - Ver12</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
     <style>
-        :root {
-            --bg-sky: #87CEEB;
-            --font-main: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
-            
-            /* Brighter, Yummy Colors */
-            --c-red: #FF6B6B;
-            --c-blue: #4ECDC4;
-            --c-green: #95E1D3;
-            --c-yellow: #FFE66D;
-            --c-orange: #FFA500;
-            --c-purple: #C39BD3;
-            --c-white: #FFFFFF;
-        }
-
-        * {
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-
         body {
-            font-family: var(--font-main);
-            background-color: var(--bg-sky);
-            /* Cute cloud background pattern */
-            background-image: 
-                radial-gradient(circle at 50% 50%, white 10px, transparent 11px),
-                radial-gradient(circle at 10% 20%, rgba(255,255,255,0.6) 20px, transparent 21px),
-                radial-gradient(circle at 90% 80%, rgba(255,255,255,0.6) 30px, transparent 31px);
-            background-size: 100px 100px, 200px 200px, 300px 300px;
-            margin: 0;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            overflow-x: hidden;
+            font-family: 'Poppins', sans-serif;
+            touch-action: none; 
+            background-color: #87CEEB;
+            overflow: hidden;
         }
 
-        /* --- Header --- */
-        header {
-            width: 100%;
-            max-width: 800px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 15px 25px;
-            border-radius: 25px;
-            box-shadow: 0 8px 0 rgba(0,0,0,0.1);
-            margin-bottom: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        /* Beautiful Scenic Background */
+        .scenic-bg {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            background: linear-gradient(180deg, #60b6ff 0%, #c4e4ff 70%);
+            overflow: hidden;
+            pointer-events: none;
         }
 
-        .title-group h1 {
-            color: #2c3e50;
-            font-size: 1.5rem;
-            margin: 0;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        /* Grass Ground */
+        .grass-ground {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 25%;
+            background: linear-gradient(180deg, #88d44e 0%, #58cc02 100%);
+            border-top: 8px solid #79e82c;
+            border-radius: 40% 40% 0 0 / 20px 20px 0 0;
+            box-shadow: inset 0 10px 20px rgba(255,255,255,0.2);
         }
 
-        .controls {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-top: 5px;
+        /* Clouds */
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+            opacity: 0.8;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+            animation: drift linear infinite;
         }
-
-        .speaker-btn {
-            background: var(--c-yellow);
-            border: 3px solid #F1C40F;
-            border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            cursor: pointer;
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.1s;
-        }
-
-        .speaker-btn:active { transform: scale(0.9); }
-
-        .score-board {
-            background: var(--c-blue);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 15px;
-            font-size: 1.4rem;
-            font-weight: bold;
-            box-shadow: 0 4px 0 #2A9D8F;
-        }
-
-        /* --- Game Area --- */
-        #game-area {
-            width: 100%;
-            max-width: 900px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-        }
-
-        .question-label {
-            font-size: 2rem;
-            color: white;
-            text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
-            margin-bottom: 20px;
-            font-weight: bold;
-            background: rgba(0,0,0,0.2);
-            padding: 5px 20px;
-            border-radius: 20px;
-        }
-
-        .balloons-wrapper {
-            display: flex;
-            justify-content: center;
-            align-items: flex-end; /* Align bottom to make strings look grounded */
-            gap: 60px;
-            min-height: 350px;
-            padding-bottom: 20px;
-        }
-
-        /* --- Balloons --- */
-        .balloon-container {
-            position: relative;
-            cursor: pointer;
-            transition: transform 0.2s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        
-        .balloon-container:hover { transform: translateY(-5px); }
-        .balloon-container:active { transform: scale(0.95); }
-
-        .balloon {
-            width: 130px;
-            height: 160px;
-            background: var(--c-red);
-            border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 4rem;
-            font-weight: bold;
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-            position: relative;
-            box-shadow: inset -10px -10px 20px rgba(0,0,0,0.1), 5px 10px 10px rgba(0,0,0,0.1);
-            z-index: 2;
-        }
-
-        /* Shine reflection */
-        .balloon::after {
+        .cloud::before, .cloud::after {
             content: '';
             position: absolute;
-            top: 25px;
-            left: 30px;
-            width: 25px;
-            height: 45px;
-            background: rgba(255,255,255,0.4);
+            background: white;
             border-radius: 50%;
-            transform: rotate(20deg);
         }
-
-        .string {
-            width: 4px;
-            height: 100px;
-            background: #fff;
-            margin-top: -5px;
-            position: relative;
-            z-index: 1;
-            filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.1));
-        }
-
-        /* --- Colors --- */
-        .b-red { background-color: var(--c-red); }
-        .b-blue { background-color: var(--c-blue); }
-        .b-green { background-color: var(--c-green); }
-        .b-yellow { background-color: var(--c-yellow); color: #665; }
-        .b-orange { background-color: var(--c-orange); }
-        .b-purple { background-color: var(--c-purple); }
-
-        /* --- Animations & Feedback --- */
+        .cloud-1 { width: 120px; height: 40px; top: 8%; left: -150px; animation-duration: 45s; }
+        .cloud-1::before { width: 60px; height: 60px; top: -30px; left: 15px; }
+        .cloud-1::after { width: 40px; height: 40px; top: -15px; left: 65px; }
         
-        /* POP Animation */
-        @keyframes pop {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.2); opacity: 0.8; }
-            100% { transform: scale(0); opacity: 0; }
-        }
-        .popped .balloon { animation: pop 0.3s forwards ease-in; }
-        .popped .string { opacity: 0; transition: 0.3s; }
+        .cloud-2 { width: 80px; height: 25px; top: 20%; left: -100px; animation-duration: 35s; animation-delay: 5s; opacity: 0.6; transform: scale(0.8); }
+        .cloud-2::before { width: 40px; height: 40px; top: -20px; left: 10px; }
+        .cloud-2::after { width: 30px; height: 30px; top: -10px; left: 40px; }
 
-        /* Shake Animation */
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px) rotate(-5deg); }
-            75% { transform: translateX(10px) rotate(5deg); }
+        @keyframes drift {
+            from { transform: translateX(-200px); }
+            to { transform: translateX(calc(100vw + 200px)); }
         }
-        .shake .balloon { animation: shake 0.4s ease-in-out; }
 
-        /* Stars Effect (Correct) */
-        .star-effect {
+        /* Minigame Starry Background */
+        .starry-bg {
+            background: linear-gradient(180deg, #181142 0%, #352163 45%, #523178 80%, #24143a 100%);
+            position: relative;
+        }
+        .moon {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 5rem;
-            color: #FFD700;
-            opacity: 0;
-            pointer-events: none;
+            top: 8%;
+            right: 10%;
+            width: 70px;
+            height: 70px;
+            background: #fff9d6;
+            border-radius: 50%;
+            box-shadow: 0 0 50px rgba(255, 249, 214, 0.6), inset -10px -10px 0 rgba(0,0,0,0.1);
+            z-index: 1;
+        }
+        .stars-layer-1 {
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(2px 2px at 15% 25%, #ffffff 50%, transparent),
+                radial-gradient(3px 3px at 35% 45%, #ffea00 50%, transparent),
+                radial-gradient(2px 2px at 85% 25%, #ffffff 50%, transparent);
+            background-size: 200px 200px;
+            opacity: 0.8;
+            animation: twinkle-bg 3s infinite alternate;
+        }
+        @keyframes twinkle-bg { 0% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        /* Duolingo Style Buttons */
+        .btn-duo-green {
+            background-color: #58cc02;
+            border-bottom: 5px solid #46a302;
+            color: white;
+            transition: all 0.1s ease;
+        }
+        .btn-duo-green:active:not(:disabled) {
+            transform: translateY(5px);
+            border-bottom: 0px solid #46a302;
+            margin-bottom: 5px;
+        }
+        .btn-duo-blue {
+            background-color: #1cb0f6;
+            border-bottom: 5px solid #1899d6;
+            color: white;
+            transition: all 0.1s ease;
+        }
+        .btn-duo-blue:active:not(:disabled) {
+            transform: translateY(5px);
+            border-bottom: 0px solid #1899d6;
+            margin-bottom: 5px;
+        }
+
+        /* Duo Style Cards */
+        .card-duo {
+            background-color: white;
+            border-radius: 1.25rem;
+            border: 3px solid #e5e7eb;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
+            position: relative;
             z-index: 10;
         }
-        .popped .star-effect { animation: starBurst 0.6s ease-out forwards; }
-        @keyframes starBurst {
-            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2) rotate(20deg); }
-            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5) rotate(45deg); }
+
+        /* --- SQUARED BLUE CUBES (Ten Rod) --- */
+        .ten-cube-segment-sq {
+            background: linear-gradient(135deg, #4cb8ff 0%, #0088dd 100%);
+            border: 1px solid #0077c2;
+            border-bottom: 2px solid #005599; 
+            border-radius: 3px; 
+            box-shadow: inset 1px 1px 2px rgba(255,255,255,0.6);
         }
 
-        /* Try Again Text (Incorrect) */
-        .try-again {
-            position: absolute;
-            top: -40px;
-            width: 150%;
-            left: -25%;
-            text-align: center;
-            background: #fff;
-            color: var(--c-red);
-            padding: 5px 10px;
-            border-radius: 10px;
-            font-weight: bold;
-            font-size: 1.2rem;
-            opacity: 0;
-            transform: translateY(10px);
-            pointer-events: none;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .shake .try-again { animation: floatUp 1s ease-out; }
-        @keyframes floatUp {
-            0% { opacity: 1; transform: translateY(0); }
-            80% { opacity: 1; transform: translateY(-20px); }
-            100% { opacity: 0; transform: translateY(-30px); }
+        /* Golden Ones Cube */
+        .one-cube {
+            background: linear-gradient(135deg, #ffde00 0%, #ffc800 100%);
+            border: 2px solid #e5a900;
+            border-bottom: 4px solid #cc8400; 
+            border-radius: 6px;
+            box-shadow: inset 2px 2px 4px rgba(255,255,255,0.7);
         }
 
-        /* --- Mystery Box Section --- */
-        #mystery-area {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            animation: fadeIn 0.5s;
-        }
-        
-        .mystery-title {
-            font-size: 2rem;
-            color: white;
-            text-shadow: 2px 2px 0 #333;
-            margin-bottom: 40px;
-            text-align: center;
-        }
-
-        .boxes-container {
-            display: flex;
-            gap: 30px;
-            justify-content: center;
-        }
-
-        .mystery-box {
+        /* Ultra Realistic Glass Potion Jar (Ver 12) */
+        .glass-jar-v9 {
             width: 120px;
-            height: 120px;
-            background: linear-gradient(to bottom, #FF9A9E 0%, #FECFEF 100%);
-            border-radius: 15px;
+            height: 140px;
+            border: 6px solid rgba(255, 255, 255, 0.9);
+            border-top: none;
+            border-radius: 30px 30px 60px 60px; /* Bulbous bottom shape */
+            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 100%);
+            backdrop-filter: blur(5px);
+            box-shadow: 
+                inset 20px 0 30px rgba(255, 255, 255, 0.8), 
+                inset -10px -10px 20px rgba(0,0,0,0.2), 
+                0 20px 40px rgba(0,0,0,0.5);
             position: relative;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-            transition: transform 0.2s;
+            overflow: hidden;
         }
-        
-        .mystery-box:hover { transform: translateY(-5px) scale(1.05); }
-
-        .lid {
-            position: absolute;
-            top: -10px;
-            left: -5px;
-            width: 130px;
-            height: 35px;
-            background: #FF6B6B;
-            border-radius: 8px;
-            z-index: 5;
-            transition: 0.5s;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+        @media (min-width: 640px) {
+            .glass-jar-v9 { width: 150px; height: 170px; border-width: 8px; border-radius: 40px 40px 70px 70px; }
         }
-        /* Bow */
-        .lid::after {
-            content: '';
+        .jar-neck-v9 {
             position: absolute;
+            top: -25px;
             left: 50%;
-            top: -15px;
             transform: translateX(-50%);
-            width: 30px;
-            height: 20px;
-            background: #FFD700;
-            border-radius: 5px;
+            width: 70px;
+            height: 30px;
+            border-left: 6px solid rgba(255,255,255,0.9);
+            border-right: 6px solid rgba(255,255,255,0.9);
+            background: rgba(255, 255, 255, 0.3);
+            z-index: 5;
         }
-
-        .prize {
-            font-size: 3.5rem;
+        @media (min-width: 640px) {
+            .jar-neck-v9 { top: -30px; width: 85px; height: 35px; border-width: 8px; }
+        }
+        .jar-lip-v9 {
             position: absolute;
-            bottom: 30px;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: 0.5s;
+            top: -38px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85px;
+            height: 20px;
+            border: 6px solid #ffffff;
+            border-radius: 10px;
+            background: #e0f2fe;
+            z-index: 10;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.3), inset 0 3px 6px rgba(255,255,255,1);
         }
-
-        .mystery-box.opened .lid { transform: translateY(-50px) rotate(-15deg); opacity: 0; }
-        .mystery-box.opened .prize { opacity: 1; transform: translateY(-10px) scale(1.2); }
-
-        /* --- Victory Modal --- */
-        #victory-modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 100;
-            justify-content: center;
-            align-items: center;
+        @media (min-width: 640px) {
+            .jar-lip-v9 { top: -45px; width: 105px; height: 24px; border-width: 8px; border-radius: 12px; }
         }
-
-        .modal-content {
-            background: white;
-            padding: 40px;
+        /* Thick White Vector Highlight matching Duolingo style */
+        .jar-highlight-v9 {
+            position: absolute;
+            left: 12%;
+            top: 15%;
+            width: 15%;
+            height: 65%;
+            background: #ffffff;
             border-radius: 30px;
-            text-align: center;
-            animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            max-width: 90%;
+            opacity: 0.7;
+            transform: rotate(-10deg);
+            z-index: 2; 
+        }
+        .magic-fill-v9 {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, #FFEB3B 0%, #FF9800 100%);
+            box-shadow: 0 -5px 25px rgba(255, 152, 0, 0.9), inset 0 0 25px rgba(255, 255, 255, 0.6);
+            transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 0 0 55px 55px; /* Match bulbous bottom */
+            opacity: 0.95;
+            z-index: 1;
+            overflow: hidden;
+        }
+        @media (min-width: 640px) {
+            .magic-fill-v9 { border-radius: 0 0 62px 62px; }
+        }
+        .bubble {
+            position: absolute;
+            background: rgba(255,255,255,0.6);
+            border-radius: 50%;
+            animation: rise 2s infinite ease-in;
+        }
+        @keyframes rise {
+            0% { transform: translateY(0) scale(0.5); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-50px) scale(1.2); opacity: 0; }
         }
 
-        @keyframes bounceIn {
-            from { transform: scale(0.5); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
+        /* Hide scrollbar */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .modal-content h2 { font-size: 2.5rem; color: var(--c-purple); margin: 0 0 10px 0; }
-        .modal-content p { font-size: 1.2rem; color: #555; }
-        
-        button.restart-btn {
-            background: var(--c-blue);
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            font-size: 1.3rem;
-            border-radius: 50px;
-            cursor: pointer;
-            margin-top: 20px;
-            font-family: inherit;
-            box-shadow: 0 4px 0 #2A9D8F;
-        }
-        button.restart-btn:hover { transform: translateY(-2px); }
-
-        /* Mobile */
-        @media (max-width: 600px) {
-            .balloon { width: 100px; height: 120px; font-size: 3rem; }
-            .balloons-wrapper { gap: 30px; }
-            h1 { font-size: 1.2rem; }
-            .mystery-box { width: 90px; height: 90px; }
-            .lid { width: 100px; }
-        }
-
-        #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99; }
+        /* Animations */
+        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+        .animate-pop-in { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes bounce-sm { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        .animate-bounce-sm { animation: bounce-sm 1s ease-in-out infinite; }
+        @keyframes twinkle { 0%, 100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 8px rgba(255,215,0,0.8)); } 50% { opacity: 0.8; transform: scale(0.85); filter: drop-shadow(0 0 3px rgba(255,215,0,0.4)); } }
+        .animate-twinkle { animation: twinkle 1.5s infinite; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .animate-shake { animation: shake 0.2s ease-in-out 2; }
     </style>
 </head>
-<body>
-<img src="../assets/logo-oodles-math.png" class="oodles-logo">
-    <header>
-        <div class="title-group">
-            <h1>Pop the Greater Number</h1>
-            <div class="controls">
-                <div style="color: #555; font-size: 1rem;">Click the bigger number!</div>
-                <button class="speaker-btn" onclick="speakQuestion()" title="Read Question">🔊</button>
-            </div>
-        </div>
-        <div class="score-board">Score: <span id="score">0</span> / 6</div>
-    </header>
-
-    <div id="game-area">
-        <!-- Question Section -->
-        <div id="question-wrapper" style="width: 100%; text-align: center;">
-            <div class="question-label" id="q-label">Question 1</div>
-            <div class="balloons-wrapper" id="balloons-wrapper">
-                <!-- Balloons injected here -->
-            </div>
-        </div>
-
-        <!-- Mystery Box Section -->
-        <div id="mystery-area">
-            <div class="mystery-title">Correct! Pick a Mystery Box! 🎁</div>
-            <div class="boxes-container" id="boxes-container">
-                <!-- Boxes injected here -->
-            </div>
-        </div>
+<body class="w-full h-screen flex flex-col text-slate-800 relative select-none">
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- Scenic Background -->
+    <div id="scenic-bg" class="scenic-bg">
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+        <div class="grass-ground"></div>
     </div>
 
-    <!-- Victory Modal -->
-    <div id="victory-modal">
-        <div class="modal-content">
-            <h2>You are a Star! 🌟</h2>
-            <p>You answered all questions correctly!</p>
-            <button class="restart-btn" onclick="location.reload()">Play Again</button>
-        </div>
+    <!-- Main App Container -->
+    <div id="app" class="w-full h-full flex flex-col relative z-10"></div>
+    
+    <!-- Drag Proxy -->
+    <div id="drag-proxy" class="fixed z-[100] pointer-events-none drop-shadow-2xl opacity-90 scale-125" style="display: none; transform: translate(-50%, -50%);"></div>
+
+    <!-- Feedback Overlay -->
+    <div id="feedback-overlay" class="absolute inset-0 z-[60] flex items-center justify-center bg-black/30 backdrop-blur-sm hidden transition-opacity duration-300">
+        <div id="feedback-content" class="p-6 sm:p-10 rounded-[2rem] shadow-2xl border-[6px] border-white transform scale-0 transition-transform duration-300"></div>
     </div>
 
-    <canvas id="confetti-canvas"></canvas>
+    <!-- Notification -->
+    <div id="notification-toast" class="fixed top-24 left-1/2 transform -translate-x-1/2 z-[100] bg-white text-[#1cb0f6] px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-bold shadow-xl border-2 border-slate-100 flex items-center gap-2 opacity-0 pointer-events-none transition-all duration-300">
+        <span class="text-xl sm:text-2xl">✨</span> <span id="notification-text" class="whitespace-nowrap">Message</span>
+    </div>
 
     <script>
-        // ==========================================
-        // TEACHER AREA
-        // ==========================================
-        const gameData = [
-            { label: 'Question 1', left: 5,  right: 12 },
-            { label: 'Question 2', left: 18, right: 9  },
-            { label: 'Question 3', left: 3,  right: 7  },
-            { label: 'Question 4', left: 14, right: 11 },
-            { label: 'Question 5', left: 2,  right: 6  },
-            { label: 'Question 6', left: 10, right: 15 }
-        ];
+        // --- Game State ---
+        const state = {
+            gameState: 'start', 
+            score: 0,
+            completedQuestions: 0,
+            targets: [],
+            numbers: [],
+            options: [], 
+            
+            hasGuessedWrong: false,
+            showFinalAnswer: false,
 
-        // Colors for balloons
-        const colors = ['b-red', 'b-blue', 'b-green', 'b-yellow', 'b-orange', 'b-purple'];
+            stars: [],
+            jar: { x: window.innerWidth / 2, caught: 0, target: 10 }
+        };
+        const MAX_QUESTIONS = 5;
 
-        let currentQIndex = 0;
-        let score = 0;
-        
-        // DOM Elements
-        const qWrapper = document.getElementById('question-wrapper');
-        const mysteryArea = document.getElementById('mystery-area');
-        const balloonsWrapper = document.getElementById('balloons-wrapper');
-        const boxesContainer = document.getElementById('boxes-container');
-        const qLabel = document.getElementById('q-label');
-        const scoreDisplay = document.getElementById('score');
-        const victoryModal = document.getElementById('victory-modal');
+        // --- SVGs & Icons ---
+        const Icons = {
+            Trophy: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>`,
+            Play: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>`,
+            Reload: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>`,
+            CheckBig: `<svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 sm:w-20 sm:h-20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+            XBig: `<svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 sm:w-20 sm:h-20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+            Plus: `<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 sm:w-8 sm:h-8 drop-shadow-sm text-[#1cb0f6]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+            Puzzle: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="w-16 h-16 sm:w-20 sm:h-20 drop-shadow-md">
+                        <path d="M38.5,14H25.5c-1.7,0-3,1.3-3,3v3.5c0,1.4-1.1,2.5-2.5,2.5S17.5,21.9,17.5,20.5V17c0-1.7-1.3-3-3-3s-3,1.3-3,3v19c0,1.7,1.3,3,3,3s3-1.3,3-3v-3.5c0-1.4,1.1-2.5,2.5-2.5s2.5,1.1,2.5,2.5V39c0,1.7,1.3,3,3,3s3-1.3,3-3V20c0-1.7-1.3-3-3-3s-3,1.3-3,3v3.5c0,1.4-1.1,2.5-2.5,2.5S38.5,21.9,38.5,20.5V17C38.5,15.3,37.2,14,38.5,14z" fill="#79e82c" stroke="#46a302" stroke-width="3" stroke-linejoin="round"/>
+                    </svg>`,
+            // Cute bubbly star
+            Star: `
+                <svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="starGrad3" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#FFF176" />
+                            <stop offset="50%" stop-color="#FFD54F" />
+                            <stop offset="100%" stop-color="#FF9800" />
+                        </linearGradient>
+                    </defs>
+                    <polygon points="50,10 61,35 89,35 66,54 75,82 50,65 25,82 34,54 11,35 39,35" fill="url(#starGrad3)" stroke="#E65100" stroke-width="6" stroke-linejoin="round"/>
+                    <path d="M50,20 L58,38 L76,38 L62,50 L68,68 L50,56 L32,68 L38,50 L24,38 L42,38 Z" fill="#FFF9C4" opacity="0.9"/>
+                </svg>
+            `
+        };
 
-        // --- AUDIO SYSTEM ---
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        // --- Audio Engine ---
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) audioCtx = new AudioContext();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        }
 
         function playSound(type) {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-
+            initAudio();
+            if (!audioCtx) return;
             const now = audioCtx.currentTime;
-
-            if (type === 'pop') {
-                // High pitch pop
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(600, now);
-                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
-                gain.gain.setValueAtTime(0.5, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                osc.start(now);
-                osc.stop(now + 0.1);
-            } else if (type === 'error') {
-                // Low buzz
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, now);
-                osc.frequency.linearRampToValueAtTime(100, now + 0.2);
-                gain.gain.setValueAtTime(0.5, now);
-                gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
-                osc.start(now);
-                osc.stop(now + 0.2);
-            } else if (type === 'win') {
-                // Magical chime
-                [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
-                    let o = audioCtx.createOscillator();
-                    let g = audioCtx.createGain();
-                    o.connect(g);
-                    g.connect(audioCtx.destination);
-                    o.type = 'triangle';
-                    o.frequency.value = freq;
-                    g.gain.setValueAtTime(0.1, now + i*0.1);
-                    g.gain.linearRampToValueAtTime(0, now + i*0.1 + 0.4);
-                    o.start(now + i*0.1);
-                    o.stop(now + i*0.1 + 0.4);
-                });
-            }
-        }
-
-        function speakQuestion() {
-            window.speechSynthesis.cancel();
-            const item = gameData[currentQIndex];
-            if (!item) return;
-
-            const text = `Which number is bigger? ${item.left}, or ${item.right}?`;
-            const ut = new SpeechSynthesisUtterance(text);
-            ut.lang = 'en-US';
-            ut.rate = 0.9;
-            window.speechSynthesis.speak(ut);
-        }
-
-        // --- GAME LOGIC ---
-        function initGame() {
-            showQuestion(0);
-        }
-
-        function showQuestion(index) {
-            if (index >= gameData.length) {
-                endGame();
-                return;
-            }
-
-            // Reset UI
-            qWrapper.style.display = 'block';
-            mysteryArea.style.display = 'none';
-            balloonsWrapper.innerHTML = '';
-            
-            // IMPORTANT FIX: Re-enable clicking on the wrapper
-            balloonsWrapper.style.pointerEvents = 'auto';
-
-            const item = gameData[index];
-            qLabel.innerText = item.label;
-
-            // Pick colors based on index
-            const c1 = colors[(index * 2) % colors.length];
-            const c2 = colors[(index * 2 + 1) % colors.length];
-
-            // Create balloons
-            balloonsWrapper.appendChild(createBalloon(item.left, item.right, c1));
-            balloonsWrapper.appendChild(createBalloon(item.right, item.left, c2));
-        }
-
-        function createBalloon(num, otherNum, colorClass) {
-            const container = document.createElement('div');
-            container.className = 'balloon-container';
-
-            container.innerHTML = `
-                <div class="try-again">Try Again!</div>
-                <div class="balloon ${colorClass}">${num}</div>
-                <div class="string"></div>
-                <div class="star-effect">⭐</div>
-            `;
-
-            container.onclick = (e) => {
-                // Prevent multiple clicks if parent is disabled
-                if (balloonsWrapper.style.pointerEvents === 'none') return;
-
-                if (num > otherNum) {
-                    // CORRECT
-                    playSound('pop');
-                    container.classList.add('popped');
-                    // Disable all clicks immediately
-                    balloonsWrapper.style.pointerEvents = 'none';
-
-                    setTimeout(() => {
-                        startMysteryPhase();
-                    }, 1200);
-                } else {
-                    // INCORRECT
-                    playSound('error');
-                    container.classList.add('shake');
-                    setTimeout(() => container.classList.remove('shake'), 500);
-                }
+            const playTone = (freq, tType, duration, delay = 0, vol = 0.3) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = tType;
+                osc.frequency.setValueAtTime(freq, now + delay);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                gain.gain.setValueAtTime(0, now + delay);
+                gain.gain.linearRampToValueAtTime(vol, now + delay + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + delay + duration);
+                osc.start(now + delay);
+                osc.stop(now + delay + duration);
             };
 
-            return container;
-        }
-
-        // --- MYSTERY PHASE ---
-        function startMysteryPhase() {
-            qWrapper.style.display = 'none';
-            mysteryArea.style.display = 'flex';
-            boxesContainer.innerHTML = '';
-            mysteryArea.setAttribute('data-locked', 'false');
-
-            // Prizes: 1 Trophy, 2 Candies
-            let prizes = ['🏆', '🍬', '🍬'];
-            prizes.sort(() => Math.random() - 0.5);
-
-            prizes.forEach(prize => {
-                const box = document.createElement('div');
-                box.className = 'mystery-box';
-                box.innerHTML = `
-                    <div class="lid"></div>
-                    <div class="prize">${prize}</div>
-                `;
-
-                box.onclick = () => {
-                    if (box.classList.contains('opened')) return;
-                    if (mysteryArea.getAttribute('data-locked') === 'true') return;
-
-                    // Open box
-                    box.classList.add('opened');
-                    playSound('win');
-                    mysteryArea.setAttribute('data-locked', 'true');
-
-                    score++;
-                    scoreDisplay.innerText = score;
-
-                    // Wait then go to next
-                    setTimeout(() => {
-                        currentQIndex++;
-                        showQuestion(currentQIndex);
-                    }, 2500);
-                };
-                boxesContainer.appendChild(box);
-            });
-        }
-
-        function endGame() {
-            startConfetti();
-            victoryModal.style.display = 'flex';
-            playSound('win');
-        }
-
-        // --- CONFETTI ---
-        const canvas = document.getElementById('confetti-canvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-
-        function resizeC() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-        window.onresize = resizeC;
-        resizeC();
-
-        function startConfetti() {
-            for(let i=0; i<200; i++) {
-                particles.push({
-                    x: Math.random()*canvas.width, y: Math.random()*canvas.height - canvas.height,
-                    w: Math.random()*10+5, h: Math.random()*10+5,
-                    color: `hsl(${Math.random()*360}, 100%, 50%)`,
-                    speed: Math.random()*5+2, angle: Math.random()*6.2, spin: Math.random()*0.2-0.1
-                });
+            if (type === 'pop') playTone(600, 'sine', 0.1, 0, 0.4);
+            else if (type === 'drop') playTone(300, 'triangle', 0.1, 0, 0.4);
+            else if (type === 'success') {
+                playTone(523.25, 'triangle', 0.2, 0, 0.4);
+                playTone(659.25, 'triangle', 0.2, 0.05, 0.4);
+                playTone(783.99, 'triangle', 0.2, 0.1, 0.4);
+                playTone(1046.50, 'triangle', 0.4, 0.15, 0.4);
             }
-            loopConfetti();
+            else if (type === 'star') {
+                playTone(1200, 'sine', 0.1, 0, 0.2);
+                playTone(1600, 'sine', 0.15, 0.05, 0.2);
+            }
+            else if (type === 'wrong') playTone(150, 'sawtooth', 0.3, 0, 0.3);
+            else if (type === 'start') {
+                playTone(523.25, 'sine', 0.3, 0, 0.3);   
+                playTone(659.25, 'sine', 0.3, 0.1, 0.3); 
+                playTone(783.99, 'sine', 0.5, 0.2, 0.3); 
+            }
+            else if (type === 'magic') {
+                for(let i=0; i<5; i++) playTone(800 + i*200, 'sine', 0.1, i*0.05, 0.2);
+            }
         }
 
-        function loopConfetti() {
-            ctx.clearRect(0,0,canvas.width,canvas.height);
-            particles.forEach(p => {
-                p.y += p.speed; p.angle += p.spin; p.x += Math.sin(p.angle);
-                if(p.y > canvas.height) { p.y = -20; p.x = Math.random()*canvas.width; }
-                ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle);
-                ctx.fillStyle = p.color; ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h); ctx.restore();
+        // --- HTML Generators for Blocks ---
+        function getTenRodHTML(isNew, extraClass = "") {
+            let segments = "";
+            for(let i=0; i<10; i++) {
+                segments += `<div class="ten-cube-segment-sq aspect-square w-full"></div>`;
+            }
+            return `<div class="grid grid-cols-10 gap-[1px] sm:gap-[2px] w-full max-w-[150px] sm:max-w-[180px] mx-auto ${isNew ? 'animate-pop-in' : ''} ${extraClass} mb-1 sm:mb-2">
+                ${segments}
+            </div>`;
+        }
+
+        function getOneCubeHTML(isGhost = false, extraClass = "") {
+            if (isGhost) {
+                return `<div class="w-full h-full bg-black/5 rounded-[4px] sm:rounded-md border-[2px] sm:border-[3px] border-dashed border-slate-300 transition-all duration-200 select-none ${extraClass}"></div>`;
+            }
+            return `<div class="w-full h-full rounded-[4px] sm:rounded-md one-cube flex items-center justify-center select-none active:scale-95 hover:brightness-110 ${extraClass}">
+                <div class="w-[30%] h-[30%] rounded-full bg-white/60 absolute top-[10%] left-[10%] blur-[1px]"></div>
+            </div>`;
+        }
+
+        // --- Core Logic ---
+        function generateQuestion() {
+            const ones1 = Math.floor(Math.random() * 3) + 7; 
+            const tens1 = Math.floor(Math.random() * 2) + 1; 
+            const ones2 = Math.floor(Math.random() * 5) + 3; 
+            const tens2 = 0;
+            const ones3 = Math.floor(Math.random() * 8) + 2; 
+            const tens3 = Math.floor(Math.random() * 2) + 1; 
+
+            state.targets = [tens1*10 + ones1, tens2*10 + ones2, tens3*10 + ones3];
+            
+            state.numbers = state.targets.map(num => ({
+                tens: Math.floor(num / 10),
+                ones: num % 10,
+                isTransformed: false
+            }));
+
+            // Generate Options
+            const total = state.targets.reduce((a, b) => a + b, 0);
+            let opts = new Set([total]);
+            while(opts.size < 4) {
+                const variations = [total + 10, total - 10, total + 1, total - 1, total + 2, total - 2];
+                const randChoice = variations[Math.floor(Math.random() * variations.length)];
+                if (randChoice > 0) opts.add(randChoice);
+            }
+            state.options = Array.from(opts).sort(() => Math.random() - 0.5);
+
+            state.hasGuessedWrong = false;
+            state.showFinalAnswer = false;
+
+            document.getElementById('scenic-bg').style.display = 'block';
+            showNotification("Move ones to make TENS! 🧩");
+        }
+
+        function startGame() {
+            initAudio();
+            playSound('start');
+            state.score = 0;
+            state.completedQuestions = 0;
+            state.gameState = 'regrouping';
+            generateQuestion();
+            renderApp();
+        }
+
+        function showNotification(text) {
+            const el = document.getElementById('notification-toast');
+            document.getElementById('notification-text').innerText = text;
+            el.classList.remove('opacity-0', '-translate-y-4');
+            el.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => {
+                el.classList.remove('opacity-100', 'translate-y-0');
+                el.classList.add('opacity-0', '-translate-y-4');
+            }, 2500);
+        }
+
+        function showFeedback(isCorrect, callback) {
+            const overlay = document.getElementById('feedback-overlay');
+            const content = document.getElementById('feedback-content');
+            
+            overlay.classList.remove('hidden');
+            setTimeout(() => overlay.classList.add('opacity-100'), 10);
+            
+            content.className = `p-6 sm:p-10 rounded-[2rem] shadow-2xl border-[6px] border-white transform scale-0 transition-transform duration-300 ${isCorrect ? 'bg-[#58cc02]' : 'bg-[#ff4b4b]'}`;
+            content.innerHTML = isCorrect ? Icons.CheckBig : Icons.XBig;
+            
+            setTimeout(() => content.classList.replace('scale-0', 'scale-110'), 50);
+            setTimeout(() => content.classList.replace('scale-110', 'scale-100'), 250);
+
+            setTimeout(() => {
+                overlay.classList.remove('opacity-100');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                    if(callback) callback();
+                }, 300);
+            }, 1200);
+        }
+
+        function checkMultipleChoiceAnswer(guessVal) {
+            const total = state.targets.reduce((a, b) => a + b, 0);
+            if (guessVal === total) {
+                playSound('success');
+                if (!state.hasGuessedWrong) {
+                    state.score += 20; 
+                }
+                state.showFinalAnswer = true;
+                renderApp(); 
+                
+                setTimeout(() => {
+                    showFeedback(true, () => startMinigame());
+                }, 800);
+            } else {
+                playSound('wrong');
+                state.hasGuessedWrong = true;
+                
+                const btn = document.querySelector(`[data-val="${guessVal}"]`);
+                if (btn) {
+                    btn.classList.add('opacity-50', 'pointer-events-none', 'grayscale', 'animate-shake');
+                    setTimeout(() => btn.classList.remove('animate-shake'), 500);
+                }
+            }
+        }
+
+        // --- Drag and Drop Handling ---
+        let isDragging = false;
+        let dragSourceIdx = null;
+
+        document.addEventListener('pointerdown', (e) => {
+            if(state.gameState !== 'regrouping') return;
+            initAudio();
+            const target = e.target.closest('[data-drag]');
+            if(!target) return;
+
+            const dragAction = target.getAttribute('data-drag');
+            if (dragAction === 'unit') {
+                const idx = parseInt(target.getAttribute('data-idx'));
+                startDrag(e, idx);
+                playSound('pop');
+            }
+        });
+
+        function startDrag(e, sourceIdx) {
+            e.preventDefault();
+            isDragging = true;
+            dragSourceIdx = sourceIdx;
+
+            const proxy = document.getElementById('drag-proxy');
+            proxy.innerHTML = `<div class="w-10 h-10 shadow-2xl">${getOneCubeHTML(false)}</div>`; 
+            proxy.style.display = 'block';
+            updateProxyPos(e.clientX, e.clientY);
+        }
+
+        document.addEventListener('pointermove', (e) => {
+            if (state.gameState === 'minigame') {
+                const jarEl = document.getElementById('catcher-jar');
+                if (jarEl) {
+                    const halfWidth = jarEl.offsetWidth / 2;
+                    state.jar.x = Math.max(halfWidth, Math.min(window.innerWidth - halfWidth, e.clientX));
+                    jarEl.style.left = `${state.jar.x}px`;
+                }
+            }
+
+            if(!isDragging) return;
+            e.preventDefault();
+            updateProxyPos(e.clientX, e.clientY);
+        });
+
+        document.addEventListener('pointerup', (e) => {
+            if(!isDragging) return;
+            isDragging = false;
+            
+            const proxy = document.getElementById('drag-proxy');
+            proxy.style.display = 'none';
+
+            const targetEl = document.elementFromPoint(e.clientX, e.clientY);
+            const slotEl = targetEl ? targetEl.closest('.game-slot') : null;
+
+            if (slotEl) {
+                const targetIdx = parseInt(slotEl.getAttribute('data-slot-idx'));
+                if (targetIdx !== dragSourceIdx) {
+                    if (state.numbers[targetIdx].ones < 10) {
+                        state.numbers[dragSourceIdx].ones--;
+                        state.numbers[targetIdx].ones++;
+                        
+                        if (state.numbers[targetIdx].ones === 10) {
+                            state.numbers[targetIdx].ones = 0;
+                            state.numbers[targetIdx].tens++;
+                            state.numbers[targetIdx].isTransformed = true;
+                            playSound('magic');
+                            showNotification("Awesome! TEN Made! 🌟");
+                        } else {
+                            playSound('drop');
+                        }
+                    } else {
+                        showNotification("This slot is already full!");
+                        playSound('wrong');
+                    }
+                }
+            }
+            dragSourceIdx = null;
+            renderApp();
+        });
+
+        function updateProxyPos(x, y) {
+            const proxy = document.getElementById('drag-proxy');
+            proxy.style.left = x + 'px';
+            proxy.style.top = y + 'px';
+        }
+
+        // --- Click Events ---
+        document.addEventListener('click', (e) => {
+            const actionBtn = e.target.closest('[data-action]');
+            if (!actionBtn) return;
+            
+            const act = actionBtn.getAttribute('data-action');
+            if (act === 'start') startGame();
+            else if (act === 'guess') {
+                const val = parseInt(actionBtn.getAttribute('data-val'));
+                checkMultipleChoiceAnswer(val);
+            }
+        });
+
+        // --- Minigame: Catching Stars ---
+        let animFrame;
+        function startMinigame() {
+            state.gameState = 'minigame';
+            document.getElementById('scenic-bg').style.display = 'none'; 
+            state.jar.caught = 0;
+            state.stars = [];
+            renderApp();
+            
+            let frameCount = 0;
+            function updateMinigame() {
+                if (state.gameState !== 'minigame') return;
+                frameCount++;
+
+                if (frameCount % 35 === 0 && state.stars.length < 12 && state.jar.caught < state.jar.target) {
+                    state.stars.push({
+                        id: Date.now() + Math.random(),
+                        x: Math.random() * (window.innerWidth - 60) + 30,
+                        y: -50,
+                        speed: 2.5 + Math.random() * 3.5,
+                        scale: 0.8 + Math.random() * 0.6,
+                        caught: false
+                    });
+                }
+
+                const fillEl = document.getElementById('jar-fill');
+                if (fillEl) {
+                    const fillPct = (state.jar.caught / state.jar.target) * 100;
+                    fillEl.style.height = `${fillPct}%`;
+                    
+                    if(Math.random() < 0.1 && state.jar.caught > 0) {
+                        const bubble = document.createElement('div');
+                        bubble.className = 'bubble';
+                        bubble.style.left = `${Math.random() * 80 + 10}%`;
+                        bubble.style.width = `${Math.random() * 8 + 4}px`;
+                        bubble.style.height = bubble.style.width;
+                        bubble.style.bottom = `${Math.random() * 20}%`;
+                        fillEl.appendChild(bubble);
+                        setTimeout(() => bubble.remove(), 1900);
+                    }
+                }
+
+                for (let i = state.stars.length - 1; i >= 0; i--) {
+                    let star = state.stars[i];
+                    if (star.caught) continue;
+
+                    star.y += star.speed;
+                    
+                    const starEl = document.getElementById(`star-${star.id}`);
+                    if (starEl) {
+                        starEl.style.top = `${star.y}px`;
+                        starEl.style.left = `${star.x}px`;
+                    } else if (star.y < window.innerHeight) {
+                        const container = document.getElementById('minigame-container');
+                        if (container) {
+                            const newStar = document.createElement('div');
+                            newStar.id = `star-${star.id}`;
+                            newStar.className = 'absolute w-10 h-10 sm:w-14 sm:h-14 animate-twinkle'; 
+                            newStar.style.transform = `scale(${star.scale})`;
+                            newStar.style.left = `${star.x}px`;
+                            newStar.style.top = `${star.y}px`;
+                            newStar.innerHTML = Icons.Star;
+                            container.appendChild(newStar);
+                        }
+                    }
+
+                    const jarEl = document.getElementById('catcher-jar');
+                    if(jarEl) {
+                        const jarTopY = window.innerHeight - jarEl.offsetHeight - 20; 
+                        const jarBottomY = window.innerHeight - 30;
+                        const jarHalfWidth = jarEl.offsetWidth / 2;
+
+                        if (star.y > jarTopY && star.y < jarBottomY) {
+                            if (Math.abs((star.x + 20) - state.jar.x) < jarHalfWidth) { 
+                                star.caught = true;
+                                state.jar.caught++;
+                                state.score += 5; 
+                                playSound('star');
+                                
+                                if (starEl) {
+                                    starEl.style.transform = 'scale(0)';
+                                    starEl.style.opacity = '0';
+                                    setTimeout(() => starEl.remove(), 200);
+                                }
+                                state.stars.splice(i, 1);
+
+                                if (state.jar.caught >= state.jar.target) {
+                                    playSound('magic');
+                                    setTimeout(() => endMinigame(), 500);
+                                    return; 
+                                }
+                            }
+                        }
+                    }
+
+                    if (star.y > window.innerHeight) {
+                        if (starEl) starEl.remove();
+                        state.stars.splice(i, 1);
+                    }
+                }
+                animFrame = requestAnimationFrame(updateMinigame);
+            }
+            updateMinigame();
+        }
+
+        function endMinigame() {
+            cancelAnimationFrame(animFrame);
+            shootConfetti();
+            setTimeout(() => {
+                if (state.completedQuestions + 1 >= MAX_QUESTIONS) {
+                    state.gameState = 'finished';
+                    document.getElementById('scenic-bg').style.display = 'block';
+                    renderApp();
+                    shootConfetti();
+                } else {
+                    state.completedQuestions++;
+                    state.gameState = 'regrouping';
+                    generateQuestion();
+                    renderApp();
+                }
+            }, 3000);
+        }
+
+        function shootConfetti() {
+            const duration = 2500;
+            const end = Date.now() + duration;
+            // Big burst in the center
+            confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 }, colors: ['#ffc800', '#ff4b4b', '#1cb0f6', '#58cc02'], shapes: ['square', 'circle'] });
+            
+            // Side cannons
+            (function frame() {
+                confetti({ particleCount: 8, angle: 60, spread: 55, origin: { x: 0, y: 0.8 }, colors: ['#58cc02', '#1cb0f6', '#ffc800', '#ff4b4b', '#a335ee'], shapes: ['square', 'circle'] });
+                confetti({ particleCount: 8, angle: 120, spread: 55, origin: { x: 1, y: 0.8 }, colors: ['#58cc02', '#1cb0f6', '#ffc800', '#ff4b4b', '#a335ee'], shapes: ['square', 'circle'] });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+
+        // --- Render Functions ---
+
+        function renderTopBar() {
+            if (state.gameState === 'start' || state.gameState === 'finished' || state.gameState === 'minigame') return '';
+            
+            const initialStr = state.targets.join(' <span class="text-slate-300 mx-1 sm:mx-1.5">+</span> ');
+            const currentVals = state.numbers.map(n => n.tens * 10 + n.ones).filter(v => v > 0);
+            const intermediateStr = currentVals.join(' <span class="text-slate-300 mx-1 sm:mx-1.5">+</span> ');
+
+            const rawInitial = state.targets.join(' + ');
+            const rawIntermediate = currentVals.join(' + ');
+            const showIntermediate = rawInitial !== rawIntermediate;
+
+            const finalAnsHtml = state.showFinalAnswer 
+                ? `<span class="text-xl sm:text-2xl md:text-3xl font-black text-[#ffc800] mx-1">${state.targets.reduce((a,b)=>a+b,0)}</span>`
+                : `<span class="text-xl sm:text-2xl md:text-3xl font-black text-[#ffc800] mx-1">?</span>`;
+
+            return `
+            <div class="w-full px-3 sm:px-6 pt-2 sm:pt-4 pb-2 flex flex-col lg:flex-row items-center justify-between z-20 shrink-0 relative gap-3 sm:gap-4">
+                
+                <!-- Left: Stats & Undo -->
+                <div class="flex flex-row items-center gap-2 sm:gap-3 z-10 w-full lg:w-[25%] justify-between lg:justify-start">
+                    <div class="flex items-center gap-1.5 sm:gap-2">
+                        <div class="flex items-center gap-1 sm:gap-1.5 bg-white/95 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl border-[2px] sm:border-[3px] border-[#e5e7eb] shadow-sm">
+                            ${Icons.Trophy}
+                            <span class="font-extrabold text-[#d97706] text-sm sm:text-lg">${state.score}</span>
+                        </div>
+                        <div class="flex bg-white/95 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl border-[2px] sm:border-[3px] border-[#e5e7eb] shadow-sm items-center justify-center">
+                            <span class="text-xs sm:text-sm font-bold text-slate-500 whitespace-nowrap">Q ${state.completedQuestions + 1}/${MAX_QUESTIONS}</span>
+                        </div>
+                    </div>
+                    <button data-action="start" class="p-1.5 sm:p-2 bg-white/95 hover:bg-slate-100 rounded-xl sm:rounded-2xl text-slate-400 transition-colors border-[2px] sm:border-[3px] border-[#e5e7eb] shadow-sm active:scale-95 shrink-0">
+                        ${Icons.Reload}
+                    </button>
+                </div>
+
+                <!-- Center: Auto-expanding Equation Block -->
+                <div class="flex justify-center z-10 flex-1 w-full lg:w-auto px-1">
+                    <div class="w-fit max-w-full bg-white/95 py-1.5 sm:py-2 px-3 sm:px-6 text-center shadow-md rounded-[1.5rem] sm:rounded-[2rem] flex flex-row flex-wrap justify-center items-center gap-1 sm:gap-2 border-[3px] border-white mx-auto">
+                        <div class="flex items-center gap-0.5 sm:gap-1 text-slate-400 font-extrabold text-lg sm:text-2xl md:text-3xl tracking-widest whitespace-nowrap">
+                            ${initialStr}
+                        </div>
+                        
+                        ${showIntermediate ? `
+                        <div class="text-lg sm:text-2xl md:text-3xl font-black text-[#1cb0f6] mx-0.5 sm:mx-1">=</div>
+                        <div class="flex items-center gap-0.5 sm:gap-1 text-slate-600 font-extrabold text-lg sm:text-2xl md:text-3xl tracking-widest whitespace-nowrap">
+                            ${intermediateStr}
+                        </div>` : ''}
+
+                        <div class="flex items-center gap-1 bg-[#1cb0f6] px-2 sm:px-4 py-0.5 sm:py-1 rounded-xl sm:rounded-full shadow-[inset_0_-4px_0_rgba(0,0,0,0.15)] border-2 border-[#1899d6] ml-1 sm:ml-2 whitespace-nowrap mt-1 sm:mt-0">
+                            <span class="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-widest">=</span>
+                            ${finalAnsHtml}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Empty space for Future Logo -->
+                <div class="hidden lg:flex flex-1 justify-end z-10 w-[25%]"></div>
+            </div>`;
+        }
+
+        // Board layout centrally aligned, won't deform when resizing
+        function renderBoard() {
+            let html = `<div class="flex-1 w-full flex items-center justify-center p-2 sm:p-4 relative z-10 overflow-y-auto">
+                    <div class="flex flex-row flex-wrap md:flex-nowrap items-center justify-center gap-4 sm:gap-6 w-full max-w-6xl pb-4">`;
+            
+            state.targets.forEach((targetVal, idx) => {
+                const currentVal = state.numbers[idx].tens * 10 + state.numbers[idx].ones;
+                const isRounded = state.numbers[idx].ones === 0 && currentVal > 0;
+                
+                html += `
+                <div class="game-slot flex flex-col p-3 sm:p-4 card-duo w-[150px] sm:w-[220px] md:w-[260px] shrink-0 transition-all duration-300" data-slot-idx="${idx}">
+                    
+                    <div class="text-center pb-2 border-b-[3px] border-slate-100 mb-3">
+                        <span class="text-3xl sm:text-5xl font-black ${isRounded ? 'text-[#58cc02]' : 'text-[#1cb0f6]'}">${currentVal}</span>
+                    </div>
+
+                    <div class="flex flex-col gap-3">
+                        <!-- Tens Section -->
+                        <div class="flex flex-col items-center justify-start bg-[#58cc02]/5 rounded-xl sm:rounded-2xl p-2 sm:p-3 w-full border-[2px] sm:border-[3px] border-[#58cc02]/40 relative min-h-[60px] sm:min-h-[80px]">
+                            <span class="absolute -top-3 bg-white px-2 sm:px-3 text-[10px] sm:text-[12px] font-extrabold text-[#58cc02] uppercase tracking-widest rounded-full border-2 border-[#58cc02]/20">Tens</span>
+                            <div class="flex flex-col items-center justify-start w-full pt-2">
+                                ${Array(state.numbers[idx].tens).fill(0).map((_, tIdx) => 
+                                    getTenRodHTML(state.numbers[idx].isTransformed && tIdx === state.numbers[idx].tens - 1)
+                                ).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Ones Section -->
+                        <div class="flex flex-col items-center bg-[#ffc800]/5 rounded-xl sm:rounded-2xl p-2 sm:p-3 w-full border-[2px] sm:border-[3px] border-[#ffc800]/50 relative mt-2">
+                            <span class="absolute -top-3 bg-white px-2 sm:px-3 text-[10px] sm:text-[12px] font-extrabold text-[#d97706] uppercase tracking-widest rounded-full border-2 border-[#ffc800]/30">Ones</span>
+                            
+                            <div class="grid grid-cols-5 gap-1.5 sm:gap-2 mt-2 p-1.5 sm:p-2 rounded-xl bg-white/60 border-2 border-[#ffc800]/20 w-full justify-items-center self-center shadow-inner">
+                                ${Array(10).fill(0).map((_, i) => {
+                                    if(i < state.numbers[idx].ones) {
+                                        return `<div class="flex items-center justify-center relative w-full aspect-square max-w-[2.5rem]">
+                                            <div data-drag="unit" data-idx="${idx}" class="cursor-grab active:cursor-grabbing touch-none pointer-events-auto w-[90%] h-[90%] flex items-center justify-center">
+                                                ${getOneCubeHTML(false, "pointer-events-none")}
+                                            </div>
+                                        </div>`;
+                                    } else {
+                                        return `<div class="flex items-center justify-center relative w-full aspect-square max-w-[2.5rem] pointer-events-none">
+                                            <div class="w-[90%] h-[90%] flex items-center justify-center">
+                                                ${getOneCubeHTML(true, "pointer-events-none")}
+                                            </div>
+                                        </div>`;
+                                    }
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+
+                if (idx < state.targets.length - 1) {
+                    html += `<div class="self-center mx-0 sm:mx-2 drop-shadow-md shrink-0">${Icons.Plus}</div>`;
+                }
             });
-            requestAnimationFrame(loopConfetti);
+
+            html += `</div></div>`;
+            return html;
         }
 
-        // Start
-        initGame();
+        function renderBottomControls() {
+            const optionsHtml = state.options.map(opt => `
+                <button data-action="guess" data-val="${opt}" class="btn-duo-blue flex-1 h-14 sm:h-20 rounded-xl sm:rounded-2xl flex items-center justify-center font-black text-2xl sm:text-4xl shadow-lg hover:brightness-110 active:scale-95 transition-all mx-1 sm:mx-2">
+                    ${opt}
+                </button>
+            `).join('');
+
+            return `
+            <div class="py-3 sm:py-5 bg-white/95 backdrop-blur-md border-t-[3px] border-slate-100 px-2 sm:px-4 flex items-center justify-center z-30 w-full rounded-t-[1.5rem] sm:rounded-t-[2.5rem] shadow-[0_-10px_20px_rgba(0,0,0,0.05)] shrink-0">
+                <div class="grid grid-cols-4 w-full max-w-4xl gap-2 sm:gap-4">
+                    ${optionsHtml}
+                </div>
+            </div>`;
+        }
+
+        function renderApp() {
+            const app = document.getElementById('app');
+            let html = '';
+
+            if (state.gameState === 'start') {
+                html = `
+                <div class="flex-1 flex flex-col items-center justify-center p-4 z-10 w-full relative">
+                    <!-- Clean White Card matching image_a82bd5.png -->
+                    <div class="bg-white rounded-3xl p-8 sm:p-10 mb-6 w-full max-w-[340px] flex flex-col items-center shadow-[0_10px_20px_rgba(0,0,0,0.1)] border border-slate-100">
+                        <div class="w-24 h-24 bg-[#1cb0f6] rounded-[1.5rem] mb-6 flex items-center justify-center shadow-[0_6px_0_#1480b3] border-4 border-white animate-bounce-sm">
+                            ${Icons.Puzzle}
+                        </div>
+                        <h1 class="text-4xl sm:text-5xl font-black text-[#1e293b] mb-1 tracking-tight">Make Tens</h1>
+                        <p class="text-[#94a3b8] font-bold text-sm sm:text-base uppercase tracking-widest">Master Addition</p>
+                    </div>
+                    
+                    <!-- Solid Green Button matching image_a82bd5.png -->
+                    <button data-action="start" class="btn-duo-green w-full max-w-[340px] py-4 sm:py-5 rounded-2xl font-black text-2xl uppercase tracking-widest shadow-xl flex items-center justify-center gap-3">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="6 3 20 12 6 21 6 3"/></svg> START
+                    </button>
+                </div>`;
+            } else if (state.gameState === 'finished') {
+                html = `
+                <div class="flex-1 flex flex-col items-center justify-center p-4 text-center animate-pop-in relative z-10">
+                    <div class="card-duo p-8 sm:p-12 mb-6 sm:mb-8 flex flex-col items-center w-full max-w-sm border-[3px] sm:border-[4px] border-white">
+                        <div class="bg-gradient-to-br from-[#ffc800] to-[#e5a900] p-6 sm:p-8 rounded-full mb-6 sm:mb-8 border-4 border-white animate-bounce-sm shadow-[0_6px_0_#cc8400] sm:shadow-[0_8px_0_#cc8400]">
+                            <span class="text-5xl sm:text-7xl">🏆</span>
+                        </div>
+                        <h2 class="text-4xl sm:text-5xl font-black text-slate-800 mb-2">Awesome!</h2>
+                        <p class="text-[#afafaf] font-bold uppercase tracking-widest text-lg sm:text-xl mb-2 sm:mb-4">Total Score</p>
+                        <div class="text-6xl sm:text-8xl font-black text-[#58cc02] mb-6 sm:mb-10 drop-shadow-sm">${state.score}</div>
+                        <button data-action="start" class="btn-duo-blue w-full py-4 sm:py-5 rounded-2xl sm:rounded-3xl font-black text-xl sm:text-2xl uppercase tracking-widest shadow-xl">
+                            Play Again
+                        </button>
+                    </div>
+                </div>`;
+            } else if (state.gameState === 'minigame') {
+                html = `
+                <div id="minigame-container" class="absolute inset-0 z-50 starry-bg overflow-hidden w-full h-full flex flex-col">
+                    <div class="moon"></div>
+                    <div class="stars-layer-1"></div>
+                    
+                    <div class="absolute top-8 sm:top-12 w-full text-center z-10 animate-fade-in pointer-events-none">
+                        <h2 class="text-4xl sm:text-5xl md:text-6xl font-black text-white drop-shadow-[0_4px_0_#000]">CATCH STARS!</h2>
+                        <div class="inline-block bg-black/40 backdrop-blur-sm px-4 sm:px-6 py-1 sm:py-2 rounded-full mt-2 sm:mt-4 border border-white/20">
+                            <p class="text-white font-bold text-lg sm:text-xl tracking-widest">SCORE: <span class="text-[#ffc800] text-xl sm:text-2xl">${state.score}</span></p>
+                        </div>
+                    </div>
+                    
+                    <!-- Glass Jar V9 (Beautiful vector Duolingo style Potion) -->
+                    <div id="catcher-jar" class="absolute bottom-[20px] glass-jar-v9 flex flex-col-reverse z-20" style="left: ${state.jar.x}px; transform: translateX(-50%); touch-action: none;">
+                        <div class="jar-neck-v9"></div>
+                        <div class="jar-lip-v9"></div>
+                        <div class="jar-highlight-v9"></div>
+                        <div id="jar-fill" class="magic-fill-v9 w-full" style="height: 0%;"></div>
+                    </div>
+                </div>`;
+            } else {
+                html = renderTopBar() + renderBoard() + renderBottomControls();
+            }
+
+            app.innerHTML = html;
+        }
+
+        renderApp();
 
     </script>
 </body>
