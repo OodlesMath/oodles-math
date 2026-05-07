@@ -3,40 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Math Graphing Adventure!</title>
+    <title>Math Graphing Adventure! (Ver 3)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap');
         
         :root {
-            --primary-bg: #e0f2fe;
-            --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            --c-blue: #1CB0F6;
+            --c-green: #58CC02;
+            --c-red: #FF4B4B;
+            --c-yellow: #FFC800;
+            --font-main: 'Poppins', sans-serif;
         }
 
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            font-family: var(--font-main);
+        }
+
+        /* ==================================================== */
+        /* SCENERY BACKGROUND CSS */
+        /* ==================================================== */
+        .scenery-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #6EE2FF, #C9F0FF);
+        }
+        .scenery-sun {
+            position: absolute;
+            top: 2rem; left: 2rem;
+            width: 5rem; height: 5rem;
+            background-color: #FFD166;
+            border-radius: 50%;
+            box-shadow: 0 0 50px rgba(255,209,102,0.8);
+            animation: sun-pulse 4s ease-in-out infinite;
+        }
+        @media (min-width: 640px) {
+            .scenery-sun { top: 4rem; left: 6rem; width: 8rem; height: 8rem; }
+        }
+        .scenery-rainbow {
+            position: absolute;
+            bottom: 20%; left: 50%;
+            transform: translateX(-50%);
+            width: 150%;
+            min-width: 800px; max-width: 1400px;
+            opacity: 0.6;
+        }
+        .scenery-cloud {
+            position: absolute;
+            color: white;
+            filter: drop-shadow(0 4px 3px rgba(0,0,0,0.07));
+        }
+        .scenery-cloud-1 { top: 10%; opacity: 0.9; width: 6rem; animation: cloud-fly 45s linear infinite; animation-delay: -5s; }
+        .scenery-cloud-2 { top: 25%; opacity: 0.8; width: 8rem; animation: cloud-fly 60s linear infinite; animation-delay: -30s; }
+        .scenery-cloud-3 { top: 5%; opacity: 0.8; width: 5rem; animation: cloud-fly 30s linear infinite; animation-delay: -15s; }
+        
+        .scenery-grass-1 { position: absolute; bottom: 0; width: 100%; height: 25vh; }
+        .scenery-grass-2 { position: absolute; bottom: 0; width: 100%; height: 15vh; }
+
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+        @keyframes cloud-fly {
+            0% { transform: translateX(-15vw); }
+            100% { transform: translateX(115vw); }
+        }
+        @keyframes sun-pulse {
+            0%, 100% { transform: scale(1); opacity: 0.9; }
+            50% { transform: scale(1.05); opacity: 1; box-shadow: 0 0 80px rgba(255,209,102,1); }
+        }
+
+        /* ==================================================== */
+        /* GAME SPECIFIC STYLES */
+        /* ==================================================== */
         body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            background-color: transparent;
             min-height: 100vh;
             overflow-x: hidden;
-            touch-action: manipulation;
+            padding-bottom: 50px;
         }
 
-        .bubbly-title {
-            text-shadow: 2px 2px 0px #fff, 4px 4px 0px rgba(0,0,0,0.1);
-            color: #0369a1;
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(255,255,255,0.5);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
         }
 
         .playground {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
             border: 4px dashed #7dd3fc;
-            min-height: 200px;
+            min-height: 180px;
         }
 
         .item-pop {
             animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             cursor: pointer;
+            transition: transform 0.2s;
         }
+        .item-pop:active { transform: scale(0.9); }
 
         @keyframes popIn {
             0% { transform: scale(0); }
@@ -50,22 +119,18 @@
         }
 
         .graph-card {
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             border: 6px solid transparent;
-        }
-
-        .graph-card:hover {
-            transform: translateY(-5px) scale(1.02);
         }
 
         .graph-card.selected-correct {
             border-color: #22c55e;
-            background-color: #f0fdf4;
+            background-color: rgba(240, 253, 244, 0.9);
         }
 
         .graph-card.selected-wrong {
             border-color: #ef4444;
-            background-color: #fef2f2;
+            background-color: rgba(254, 242, 242, 0.9);
             animation: shake 0.5s;
         }
 
@@ -90,20 +155,30 @@
             box-shadow: inset 0 -4px 0 rgba(0,0,0,0.1);
         }
 
+        .y-axis-label {
+            height: 27px; /* Khớp với chiều cao cell (25px) + margin (2px) */
+            display: flex;
+            align-items: center;
+            justify-content: end;
+            padding-right: 8px;
+            font-weight: 800;
+            color: #94a3b8;
+            font-size: 0.75rem;
+        }
+
         #fireworks-canvas {
             position: fixed;
             top: 0;
             left: 0;
             pointer-events: none;
-            z-index: 100;
+            z-index: 1000;
         }
 
         .score-badge {
             background: linear-gradient(to right, #fbbf24, #f59e0b);
-            box-shadow: 0 4px 0 #b45309;
+            border-bottom: 4px solid #b45309;
         }
 
-        /* Mobile specific adjustments */
         @media (max-width: 640px) {
             .graph-cell { width: 35px; height: 20px; }
             .y-axis-label { height: 22px; font-size: 10px; }
@@ -112,50 +187,77 @@
 </head>
 <body class="p-4 md:p-8">
 
+    <!-- ================= SCENERY BACKGROUND ================= -->
+    <div class="scenery-bg">
+        <div class="scenery-sun"></div>
+        <svg class="scenery-rainbow" viewBox="0 0 100 50">
+            <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#EF476F" stroke-width="3"/>
+            <path d="M 13 50 A 37 37 0 0 1 87 50" fill="none" stroke="#F78C6B" stroke-width="3"/>
+            <path d="M 16 50 A 34 34 0 0 1 84 50" fill="none" stroke="#FFD166" stroke-width="3"/>
+            <path d="M 19 50 A 31 31 0 0 1 81 50" fill="none" stroke="#06D6A0" stroke-width="3"/>
+            <path d="M 22 50 A 28 28 0 0 1 78 50" fill="none" stroke="#118AB2" stroke-width="3"/>
+            <path d="M 25 50 A 25 25 0 0 1 75 50" fill="none" stroke="#073B4C" stroke-width="3"/>
+        </svg>
+
+        <svg class="scenery-cloud scenery-cloud-1" viewBox="0 0 24 24"><path fill="currentColor" d="M17.5,19c2.48,0,4.5-2.02,4.5-4.5c0-2.33-1.78-4.25-4.06-4.47c-0.65-2.9-3.26-5.03-6.44-5.03c-2.81,0-5.21,1.75-6.19,4.24C2.5,9.45,0.5,11.83,0.5,14.5C0.5,17.53,2.97,20,6,20h11.5V19z"/></svg>
+        <svg class="scenery-cloud scenery-cloud-2" viewBox="0 0 24 24"><path fill="currentColor" d="M17.5,19c2.48,0,4.5-2.02,4.5-4.5c0-2.33-1.78-4.25-4.06-4.47c-0.65-2.9-3.26-5.03-6.44-5.03c-2.81,0-5.21,1.75-6.19,4.24C2.5,9.45,0.5,11.83,0.5,14.5C0.5,17.53,2.97,20,6,20h11.5V19z"/></svg>
+        <svg class="scenery-cloud scenery-cloud-3" viewBox="0 0 24 24"><path fill="currentColor" d="M17.5,19c2.48,0,4.5-2.02,4.5-4.5c0-2.33-1.78-4.25-4.06-4.47c-0.65-2.9-3.26-5.03-6.44-5.03c-2.81,0-5.21,1.75-6.19,4.24C2.5,9.45,0.5,11.83,0.5,14.5C0.5,17.53,2.97,20,6,20h11.5V19z"/></svg>
+
+        <svg class="scenery-grass-1" preserveAspectRatio="none" viewBox="0 0 1440 320"><path fill="#7ED321" d="M0,160L48,154.7C96,149,192,139,288,144C384,149,480,171,576,176C672,181,768,171,864,149.3C960,128,1056,96,1152,90.7C1248,85,1344,107,1392,117.3L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>
+        <svg class="scenery-grass-2" preserveAspectRatio="none" viewBox="0 0 1440 320"><path fill="#52B700" d="M0,224L60,208C120,192,240,160,360,160C480,160,600,192,720,202.7C840,213,960,203,1080,186.7C1200,171,1320,149,1380,138.7L1440,128L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"></path></svg>
+
+        <div class="scenery-flowers-container">
+            <span class="scenery-flower flower-1" style="bottom: 20%; left: 5%;">🌸</span>
+            <span class="scenery-flower flower-2" style="bottom: 40%; left: 25%; animation-delay: 0.4s">🌼</span>
+            <span class="scenery-flower flower-3" style="bottom: 15%; left: 50%; animation-delay: 1s">🌻</span>
+            <span class="scenery-flower flower-4" style="bottom: 30%; left: 75%; animation-delay: 0.6s">🌷</span>
+            <span class="scenery-flower flower-5" style="bottom: 10%; left: 90%; animation-delay: 0.2s">🌺</span>
+        </div>
+    </div>
+    <!-- ================= END SCENERY ================= -->
+
     <canvas id="fireworks-canvas"></canvas>
 
     <!-- Start Overlay -->
-    <div id="start-overlay" class="fixed inset-0 bg-sky-500 z-[200] flex flex-items center justify-center flex-col text-white p-6 text-center">
-        <h1 class="text-5xl font-extrabold mb-4 bubbly-title">Graphing Adventure!</h1>
-        <p class="text-xl mb-8">Are you ready to count and win?</p>
-        <button onclick="startGame()" class="bg-white text-sky-600 px-12 py-4 rounded-full font-black text-2xl shadow-2xl hover:scale-110 transition-transform">
+    <div id="start-overlay" class="fixed inset-0 bg-sky-500/90 backdrop-blur-md z-[200] flex items-center justify-center flex-col text-white p-6 text-center">
+        <h1 class="text-5xl md:text-7xl font-black mb-6 drop-shadow-lg">Graphing Adventure!</h1>
+        <p class="text-2xl mb-10 font-semibold">Are you ready to count and win?</p>
+        <button onclick="startGame()" class="bg-white text-sky-600 px-14 py-5 rounded-full font-black text-3xl shadow-[0_10px_0_#0ea5e9] hover:translate-y-1 hover:shadow-[0_6px_0_#0ea5e9] transition-all active:translate-y-2 active:shadow-none">
             PLAY NOW! 🚀
         </button>
     </div>
 
     <div class="max-w-6xl mx-auto">
         <header class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-            <div class="text-left">
-                <h1 class="text-4xl font-black bubbly-title">Level <span id="level-num">1</span></h1>
-                <p class="text-slate-500 font-semibold uppercase tracking-wider text-sm">Count items and find the right graph!</p>
+            <div class="text-left glass-panel p-4 px-8 rounded-3xl">
+                <h1 class="text-4xl font-black text-sky-700">Level <span id="level-num">1</span></h1>
+                <p class="text-slate-500 font-bold uppercase tracking-wider text-xs">Count items and find the correct graph!</p>
             </div>
-            <div class="score-badge px-6 py-2 rounded-2xl text-white font-bold text-xl flex items-center gap-2">
+            <div class="score-badge px-8 py-3 rounded-full text-white font-black text-2xl flex items-center gap-3">
                 <span>⭐ SCORE:</span>
                 <span id="score-val">0</span>
             </div>
         </header>
 
         <!-- The Items Area -->
-        <div id="playground" class="playground rounded-3xl p-6 flex flex-wrap gap-4 justify-center items-center mb-8 shadow-inner">
+        <div id="playground" class="playground glass-panel rounded-[3rem] p-8 flex flex-wrap gap-4 justify-center items-center mb-10 shadow-inner">
             <!-- Items injected here -->
         </div>
 
         <!-- Options Container -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             
-            <div id="option-a" class="graph-card bg-white p-6 rounded-[2rem] shadow-xl cursor-pointer" onclick="checkAnswer('a')">
-                <h3 class="text-center font-black text-2xl mb-6 text-indigo-500">Graph A</h3>
-                <div id="graph-a-content" class="flex justify-center items-end gap-2 overflow-x-auto pb-2">
-                    <div id="y-axis-a" class="flex flex-col-reverse"></div>
-                    <!-- Columns here -->
+            <div id="option-a" class="graph-card glass-panel p-8 rounded-[3rem] shadow-xl cursor-pointer" onclick="checkAnswer('a')">
+                <h3 class="text-center font-black text-2xl mb-8 text-indigo-600">Graph A</h3>
+                <div id="graph-a-content" class="flex justify-center items-end gap-3 overflow-x-auto pb-4">
+                    <!-- Graph A columns injected here -->
                 </div>
             </div>
 
-            <div id="option-b" class="graph-card bg-white p-6 rounded-[2rem] shadow-xl cursor-pointer" onclick="checkAnswer('b')">
-                <h3 class="text-center font-black text-2xl mb-6 text-pink-500">Graph B</h3>
-                <div id="graph-b-content" class="flex justify-center items-end gap-2 overflow-x-auto pb-2">
-                    <div id="y-axis-b" class="flex flex-col-reverse"></div>
-                    <!-- Columns here -->
+            <div id="option-b" class="graph-card glass-panel p-8 rounded-[3rem] shadow-xl cursor-pointer" onclick="checkAnswer('b')">
+                <h3 class="text-center font-black text-2xl mb-8 text-pink-600">Graph B</h3>
+                <div id="graph-b-content" class="flex justify-center items-end gap-3 overflow-x-auto pb-4">
+                    <!-- Graph B columns injected here -->
                 </div>
             </div>
 
@@ -164,11 +266,11 @@
 
     <!-- Win Modal -->
     <div id="win-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-[150]">
-        <div class="bg-white rounded-[3rem] p-10 max-w-md w-full text-center shadow-2xl transform scale-110">
-            <div class="text-8xl mb-4">🥳</div>
+        <div class="bg-white rounded-[3.5rem] p-12 max-w-md w-full text-center shadow-2xl">
+            <div class="text-8xl mb-6">🥳</div>
             <h2 class="text-4xl font-black text-slate-800 mb-2">AMAZING!</h2>
-            <p class="text-slate-500 text-lg mb-8">You are a Math Superstar! Keep going!</p>
-            <button onclick="nextLevel()" class="bg-green-500 hover:bg-green-600 text-white w-full py-5 rounded-2xl font-black text-2xl shadow-lg transition-all active:scale-95">
+            <p class="text-slate-500 text-lg mb-10 font-medium">You are a Math Superstar! Keep going!</p>
+            <button onclick="nextLevel()" class="bg-green-500 hover:bg-green-600 text-white w-full py-5 rounded-2xl font-black text-2xl shadow-[0_8px_0_#166534] transition-all active:translate-y-2 active:shadow-none">
                 NEXT LEVEL ➔
             </button>
         </div>
@@ -178,10 +280,10 @@
         // Sound System
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
+            osc.connect(gain); gain.connect(audioCtx.destination);
 
             if (type === 'click') {
                 osc.type = 'sine';
@@ -189,10 +291,8 @@
                 osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.1);
                 gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
             } else if (type === 'correct') {
-                osc.type = 'triangle';
                 [523.25, 659.25, 783.99].forEach((freq, i) => {
                     const o = audioCtx.createOscillator();
                     const g = audioCtx.createGain();
@@ -209,8 +309,7 @@
                 osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3);
                 gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
                 gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
             }
         }
 
@@ -236,7 +335,6 @@
 
         function startGame() {
             document.getElementById('start-overlay').classList.add('hidden');
-            if (audioCtx.state === 'suspended') audioCtx.resume();
             initLevel();
         }
 
@@ -244,15 +342,11 @@
             const container = document.getElementById('playground');
             container.innerHTML = '';
             
-            // Randomly pick 2-4 categories based on level
             const numCats = Math.min(4, 2 + Math.floor(state.level / 5));
             const shuffled = [...ALL_ITEMS].sort(() => 0.5 - Math.random());
             state.currentItems = shuffled.slice(0, numCats);
-
-            // Generate counts (3 to 8 for balance)
             state.actualCounts = state.currentItems.map(() => Math.floor(Math.random() * 6) + 2);
 
-            // Create item pool
             let pool = [];
             state.currentItems.forEach((item, idx) => {
                 for (let i = 0; i < state.actualCounts[idx]; i++) {
@@ -263,7 +357,7 @@
 
             pool.forEach(item => {
                 const el = document.createElement('div');
-                el.className = 'item-pop text-5xl md:text-6xl p-2 select-none';
+                el.className = 'item-pop text-5xl md:text-7xl p-3 select-none drop-shadow-sm';
                 el.innerHTML = item.emoji;
                 el.onclick = () => {
                     el.classList.toggle('clicked');
@@ -274,14 +368,13 @@
 
             state.correctOption = Math.random() > 0.5 ? 'a' : 'b';
             
-            // Wrong counts generation
             let wrongCounts = [...state.actualCounts];
             const changeIdx = Math.floor(Math.random() * numCats);
             const offset = Math.random() > 0.5 ? 1 : -1;
             wrongCounts[changeIdx] = Math.max(1, wrongCounts[changeIdx] + offset);
             if (wrongCounts[changeIdx] === state.actualCounts[changeIdx]) wrongCounts[changeIdx]++;
 
-            const maxDisplay = Math.max(...state.actualCounts, ...wrongCounts) + 1;
+            const maxDisplay = Math.max(...state.actualCounts, ...wrongCounts);
 
             renderGraph('a', state.correctOption === 'a' ? state.actualCounts : wrongCounts, maxDisplay);
             renderGraph('b', state.correctOption === 'b' ? state.actualCounts : wrongCounts, maxDisplay);
@@ -289,21 +382,34 @@
 
         function renderGraph(prefix, data, maxY) {
             const container = document.getElementById(`graph-${prefix}-content`);
-            const yAxis = document.getElementById(`y-axis-${prefix}`);
             
-            // Clear previous
-            while (container.children.length > 1) container.removeChild(container.lastChild);
-            yAxis.innerHTML = '';
+            // Xóa nội dung đồ thị cũ trước khi render
+            container.innerHTML = '';
 
-            // Y Axis
+            // Tạo cột Trục Y (Y-Axis)
+            const yAxisCol = document.createElement('div');
+            yAxisCol.className = 'flex flex-col items-end';
+            
+            // Phần nhãn đánh số cho trục Y
+            const labelStack = document.createElement('div');
+            labelStack.className = 'flex flex-col-reverse';
+
             for (let i = 1; i <= maxY; i++) {
                 const label = document.createElement('div');
-                label.className = 'y-axis-label h-[27px] flex items-center justify-end pr-2 text-slate-400 font-bold text-xs';
+                label.className = 'y-axis-label';
                 label.innerText = i;
-                yAxis.appendChild(label);
+                labelStack.appendChild(label);
             }
+            
+            // Phần không gian đệm ở dưới cùng (Khớp với khoảng trống của Icon)
+            const emptySpace = document.createElement('div');
+            emptySpace.className = 'mt-3 h-10';
+            
+            yAxisCol.appendChild(labelStack);
+            yAxisCol.appendChild(emptySpace);
+            container.appendChild(yAxisCol);
 
-            // Columns
+            // Tạo các cột đồ thị
             state.currentItems.forEach((item, idx) => {
                 const col = document.createElement('div');
                 col.className = 'flex flex-col items-center';
@@ -317,13 +423,13 @@
                     if (i <= data[idx]) {
                         cell.innerHTML = `<div class="cell-fill ${item.color}"></div>`;
                     } else {
-                        cell.className += ' bg-slate-50';
+                        cell.className += ' bg-slate-50/50';
                     }
                     stack.appendChild(cell);
                 }
 
                 const icon = document.createElement('div');
-                icon.className = 'text-2xl mt-2';
+                icon.className = 'text-3xl mt-3 h-10 flex items-center justify-center';
                 icon.innerText = item.emoji;
 
                 col.appendChild(stack);
@@ -342,7 +448,7 @@
                 startFireworks();
                 setTimeout(() => {
                     document.getElementById('win-modal').classList.remove('hidden');
-                }, 1000);
+                }, 800);
             } else {
                 playSound('wrong');
                 card.classList.add('selected-wrong');
@@ -359,7 +465,7 @@
             initLevel();
         }
 
-        // Simple Fireworks System
+        // Fireworks System
         const canvas = document.getElementById('fireworks-canvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
@@ -375,12 +481,10 @@
             constructor() {
                 this.x = canvas.width / 2;
                 this.y = canvas.height / 2;
-                this.destX = Math.random() * canvas.width;
-                this.destY = Math.random() * canvas.height;
-                this.vx = (Math.random() - 0.5) * 15;
-                this.vy = (Math.random() - 0.5) * 15;
+                this.vx = (Math.random() - 0.5) * 20;
+                this.vy = (Math.random() - 0.5) * 20;
                 this.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
-                this.size = Math.random() * 4 + 2;
+                this.size = Math.random() * 5 + 2;
                 this.life = 100;
             }
             draw() {
@@ -392,8 +496,8 @@
             update() {
                 this.x += this.vx;
                 this.y += this.vy;
-                this.vy += 0.1; // gravity
-                this.life--;
+                this.vy += 0.15; // gravity
+                this.life -= 2;
                 this.size *= 0.96;
             }
         }
@@ -401,7 +505,7 @@
         function startFireworks() {
             particles = [];
             for (let i = 0; i < 100; i++) particles.push(new Particle());
-            animate();
+            requestAnimationFrame(animate);
         }
 
         function animate() {
@@ -412,7 +516,7 @@
                 p.draw();
                 if (p.life <= 0) particles.splice(i, 1);
             });
-            requestAnimationFrame(animate);
+            if (particles.length > 0) requestAnimationFrame(animate);
         }
     </script>
 </body>
