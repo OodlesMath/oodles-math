@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Animal Math - Duolingo Style (Ver 3)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        /* Candy Style Buttons */
+        .btn-duo {
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .btn-duo:active:not(:disabled) {
+            transform: translateY(6px);
+            border-bottom-width: 0px;
+            margin-top: 6px;
+        }
+        .btn-duo:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Animations */
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
+        }
+        .animate-bounce-slow { animation: bounce-slow 1.5s infinite ease-in-out; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px) rotate(-5deg); }
+            50% { transform: translateX(8px) rotate(5deg); }
+            75% { transform: translateX(-8px) rotate(-5deg); }
+        }
+        .animate-shake { animation: shake 0.4s ease-in-out; }
+
+        @keyframes pop-in {
+            0% { transform: scale(0.3); opacity: 0; }
+            70% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop-in { animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+        /* Icon 3D styling */
+        .icon-3d {
+            filter: drop-shadow(0px 10px 5px rgba(0, 0, 0, 0.3));
+        }
+
+        /* Input specific active state with brighter colors */
+        .box-input {
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .input-active {
+            border-color: #f59e0b !important; /* amber-500 */
+            box-shadow: 0 0 0 8px rgba(253, 230, 138, 0.9) !important; /* amber-200 */
+            transform: scale(1.15);
+            background-color: white !important;
+            z-index: 10;
+        }
+        .input-filled {
+            border-color: #a855f7 !important; /* purple-500 */
+            color: #7e22ce !important; /* purple-700 */
+            background-color: #f3e8ff !important; /* purple-100 */
+            box-shadow: inset 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .input-error {
+            border-color: #ef4444 !important;
+            background-color: #fee2e2 !important;
+            color: #b91c1c !important;
+        }
+
+        /* Clouds background */
+        .bg-clouds {
+            background-image: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.4) 0%, transparent 60%);
+            background-size: 120px 120px;
+        }
+        
+        /* Animal jump transition */
+        .animal-transition {
+            transition: all 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+    </style>
+</head>
+<body class="bg-pink-100 text-purple-900 h-[100dvh] w-screen overflow-hidden flex flex-col">
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <div id="screen-start" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-6 bg-gradient-to-b from-fuchsia-300 to-purple-500">
+        <div class="bg-white rounded-[3rem] p-8 md:p-12 w-full max-w-md text-center shadow-[0_20px_0_rgba(0,0,0,0.15)] animate-pop-in border-8 border-white/50 relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-yellow-300 rounded-full blur-2xl opacity-50"></div>
+            <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-pink-400 rounded-full blur-2xl opacity-50"></div>
+            
+            <div class="text-7xl md:text-8xl mb-6 flex justify-center gap-3 icon-3d animate-bounce-slow relative z-10">
+                🦄 🐸 🐯
+            </div>
+            <h1 class="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-orange-400 mb-2 uppercase tracking-wide drop-shadow-sm relative z-10">Math<br>Stories</h1>
+            <p class="text-xl md:text-2xl font-black text-purple-400 mb-8 uppercase tracking-wider relative z-10">Learn to Subtract!</p>
+            <button onclick="startGame()" class="btn-duo w-full bg-green-400 text-white font-black text-3xl py-5 rounded-3xl border-b-[8px] border-green-600 shadow-xl uppercase tracking-widest relative z-10">
+                Play Now!
+            </button>
+        </div>
+    </div>
+
+    <div id="screen-end" class="absolute inset-0 z-50 hidden flex flex-col items-center justify-center p-6 bg-gradient-to-b from-yellow-300 to-orange-500">
+        <div class="bg-white rounded-[3rem] p-8 md:p-12 w-full max-w-md text-center shadow-[0_20px_0_rgba(0,0,0,0.15)] animate-pop-in border-8 border-white/50">
+            <div class="text-8xl mb-6 animate-bounce-slow icon-3d">🏆</div>
+            <h1 class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-500 mb-2 uppercase tracking-wide drop-shadow-sm">You did it!</h1>
+            <div class="bg-orange-50 rounded-3xl p-6 mb-8 border-4 border-orange-200">
+                <p class="text-2xl font-black text-orange-400 uppercase mb-2">Total Score</p>
+                <p id="final-score" class="text-7xl font-black text-orange-500 drop-shadow-md">0</p>
+            </div>
+            <button onclick="location.reload()" class="btn-duo w-full bg-blue-400 text-white font-black text-3xl py-5 rounded-3xl border-b-[8px] border-blue-600 shadow-xl uppercase tracking-widest">
+                Play Again!
+            </button>
+        </div>
+    </div>
+
+    <div id="screen-game" class="hidden flex-col h-full w-full">
+        
+        <!-- Header -->
+        <header class="flex-none bg-white/90 backdrop-blur-md p-4 flex justify-between items-center z-20 shadow-sm border-b-4 border-pink-200">
+            <div class="flex-grow flex items-center max-w-xl mx-auto space-x-4">
+                <div class="font-black text-pink-400 uppercase tracking-widest text-lg w-20">Lvl <span id="level-display" class="text-pink-600 text-xl">1</span></div>
+                <div class="flex-grow h-6 bg-pink-100 rounded-full overflow-hidden border-2 border-pink-200 p-1">
+                    <div id="progress-bar" class="h-full bg-gradient-to-r from-green-300 to-green-500 rounded-full transition-all duration-500 w-[10%]"></div>
+                </div>
+                <div class="font-black text-yellow-500 flex items-center text-xl shadow-sm bg-yellow-50 px-4 py-2 rounded-2xl border-4 border-yellow-200">
+                    ⭐ <span id="score-display" class="ml-2 text-2xl">0</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <div class="flex-grow overflow-y-auto overflow-x-hidden pb-56 relative bg-clouds">
+            
+            <!-- Scene (Visual representation) -->
+            <div id="scene-container" class="relative w-full h-56 md:h-72 transition-colors duration-1000 overflow-hidden shadow-[inset_0_-10px_30px_rgba(0,0,0,0.1)] border-b-8 border-white/60 shrink-0">
+                <div id="home-base" class="absolute top-1/2 left-1/2 w-[85%] md:w-[70%] h-[75%] transform -translate-x-1/2 -translate-y-1/2 transition-all duration-1000"></div>
+                <div id="animals-layer" class="absolute inset-0"></div>
+            </div>
+
+            <!-- Interactive Area -->
+            <div class="w-full max-w-4xl mx-auto flex flex-col items-center p-4 md:p-6 z-10 space-y-6">
+                
+                <!-- Story Text & Audio -->
+                <div class="flex items-center space-x-4 w-full justify-center max-w-2xl mt-4">
+                    <button onclick="playCurrentStepAudio()" class="btn-duo flex-none w-16 h-16 bg-pink-500 hover:bg-pink-400 text-white rounded-[2rem] flex items-center justify-center text-4xl border-b-[6px] border-pink-700 shadow-lg">
+                        🔊
+                    </button>
+                    <div class="bg-white/90 backdrop-blur px-8 py-5 rounded-[2rem] border-4 border-pink-200 shadow-md flex-grow text-center">
+                        <p id="story-text" class="text-2xl md:text-3xl font-black text-purple-700 leading-snug"></p>
+                    </div>
+                </div>
+
+                <!-- Step 0: Start Button -->
+                <button id="btn-action" onclick="triggerAction()" class="btn-duo hidden mt-8 px-12 py-6 bg-gradient-to-b from-green-400 to-green-500 text-white font-black text-3xl uppercase rounded-[2rem] border-b-[8px] border-green-600 tracking-wider shadow-xl">
+                    Watch it happen!
+                </button>
+
+                <!-- Interactive Modules Container -->
+                <div id="module-container" class="w-full flex flex-col items-center space-y-8 hidden">
+                    
+                    <!-- Module 1: Equation -->
+                    <div id="mod-equation" class="bg-white/90 backdrop-blur border-4 border-purple-200 p-8 rounded-[3rem] w-full max-w-xl shadow-lg flex flex-col items-center opacity-50 transition-opacity duration-500 hidden relative">
+                        <div class="absolute -top-4 bg-purple-400 text-white px-6 py-1 rounded-full font-black uppercase tracking-widest border-4 border-white shadow-sm">Equation</div>
+                        <div class="flex items-center justify-center space-x-3 md:space-x-5 mt-4">
+                            <div id="box-eqTotal" class="box-input w-20 h-20 md:w-24 md:h-24 bg-pink-50 rounded-[2rem] border-4 border-pink-200 flex items-center justify-center text-4xl md:text-5xl font-black text-pink-400"></div>
+                            <span class="text-5xl md:text-6xl font-black text-purple-300 drop-shadow-sm">-</span>
+                            <div id="box-eqJumped" class="box-input w-20 h-20 md:w-24 md:h-24 bg-pink-50 rounded-[2rem] border-4 border-pink-200 flex items-center justify-center text-4xl md:text-5xl font-black text-pink-400"></div>
+                            <span class="text-5xl md:text-6xl font-black text-purple-300 drop-shadow-sm">=</span>
+                            <div id="box-eqLeft" class="box-input w-20 h-20 md:w-24 md:h-24 bg-pink-50 rounded-[2rem] border-4 border-pink-200 flex items-center justify-center text-4xl md:text-5xl font-black text-pink-400"></div>
+                        </div>
+                    </div>
+
+                    <!-- Module 2: Number Bond -->
+                    <div id="mod-bond" class="bg-white/90 backdrop-blur border-4 border-blue-200 p-8 rounded-[3rem] w-full max-w-md shadow-lg flex flex-col items-center opacity-50 transition-opacity duration-500 hidden relative">
+                        <div class="absolute -top-4 bg-blue-400 text-white px-6 py-1 rounded-full font-black uppercase tracking-widest border-4 border-white shadow-sm">Number Bond</div>
+                        
+                        <div class="relative w-full h-56 flex flex-col items-center justify-between z-10 mt-4">
+                            <!-- Lines -->
+                            <svg class="absolute inset-0 w-full h-full pointer-events-none" style="z-index: -1;">
+                                <line x1="50%" y1="20%" x2="25%" y2="80%" stroke="#bfdbfe" stroke-width="10" stroke-linecap="round" />
+                                <line x1="50%" y1="20%" x2="75%" y2="80%" stroke="#bfdbfe" stroke-width="10" stroke-linecap="round" />
+                            </svg>
+                            <!-- Top Circle (Whole) -->
+                            <div id="box-bondWhole" class="box-input w-24 h-24 bg-blue-50 rounded-full border-4 border-blue-200 flex items-center justify-center text-5xl font-black text-blue-400"></div>
+                            <!-- Bottom Circles (Parts) -->
+                            <div class="flex w-full justify-between px-4">
+                                <div id="box-bondPart1" class="box-input w-24 h-24 bg-blue-50 rounded-full border-4 border-blue-200 flex items-center justify-center text-5xl font-black text-blue-400"></div>
+                                <div id="box-bondPart2" class="box-input w-24 h-24 bg-blue-50 rounded-full border-4 border-blue-200 flex items-center justify-center text-5xl font-black text-blue-400"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Module 3: Final Answer -->
+                    <div id="mod-final" class="bg-gradient-to-r from-green-100 to-emerald-100 border-4 border-green-300 p-8 rounded-[3rem] w-full max-w-xl shadow-lg flex flex-col items-center hidden animate-pop-in">
+                        <p class="text-2xl md:text-4xl font-black text-green-700 text-center flex items-center flex-wrap justify-center gap-4">
+                            There are 
+                            <span id="box-finalLeft" class="box-input inline-flex w-20 h-20 md:w-24 md:h-24 bg-white rounded-[2rem] border-4 border-green-300 items-center justify-center text-5xl font-black text-green-600 mx-2 shadow-sm"></span>
+                            <span id="final-name" class="capitalize">animals</span> left!
+                        </p>
+                    </div>
+
+                    <!-- Next Level Button -->
+                    <button id="btn-next" onclick="nextLevel()" class="btn-duo hidden px-12 py-6 bg-blue-400 text-white font-black text-3xl uppercase rounded-[2rem] border-b-[8px] border-blue-600 tracking-wider w-full max-w-md mt-6 animate-pop-in shadow-xl">
+                        Next Story ➔
+                    </button>
+
+                </div>
+            </div>
+        </div>
+
+        <div id="numpad-container" class="fixed bottom-0 w-full bg-white/95 backdrop-blur-xl border-t-8 border-pink-200 p-4 md:p-6 z-50 transform translate-y-full transition-transform duration-500 rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+            <div class="max-w-4xl mx-auto flex flex-col items-center">
+                <div id="numpad-hint" class="text-sm md:text-lg font-black text-pink-500 uppercase tracking-widest mb-4 bg-pink-50 px-6 py-2 rounded-full border-4 border-pink-100 shadow-sm">
+                    Select a number
+                </div>
+                <div class="flex flex-wrap justify-center gap-2 md:gap-4 w-full px-2">
+                    <!-- Numpad buttons injected by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA ---
+        const LEVELS = [
+            { total: 15, jumped: 6, emoji: '🐸', name: 'frogs', place: 'lily pad', actionText: 'jump into the pond', actionPast: 'jumped', bgTheme: 'bg-gradient-to-b from-cyan-300 to-blue-400', homeTheme: 'bg-green-400 rounded-[50%] border-b-[16px] border-green-600 shadow-2xl' },
+            { total: 18, jumped: 9, emoji: '🐒', name: 'monkeys', place: 'tree branch', actionText: 'swing away', actionPast: 'swung away', bgTheme: 'bg-gradient-to-b from-lime-300 to-green-400', homeTheme: 'bg-amber-600 rounded-3xl border-b-[16px] border-amber-800 shadow-2xl' },
+            { total: 12, jumped: 4, emoji: '🐧', name: 'penguins', place: 'iceberg', actionText: 'slide into the water', actionPast: 'slid', bgTheme: 'bg-gradient-to-b from-blue-200 to-indigo-300', homeTheme: 'bg-white rounded-t-full rounded-b-3xl border-b-[16px] border-blue-200 shadow-xl' },
+            { total: 16, jumped: 7, emoji: '🐝', name: 'bees', place: 'hive', actionText: 'fly out to get nectar', actionPast: 'flew', bgTheme: 'bg-gradient-to-b from-amber-200 to-orange-400', homeTheme: 'bg-yellow-400 rounded-full border-b-[16px] border-yellow-600 shadow-2xl' },
+            { total: 20, jumped: 8, emoji: '🐞', name: 'bugs', place: 'leaf', actionText: 'crawl under a rock', actionPast: 'crawled', bgTheme: 'bg-gradient-to-b from-green-300 to-emerald-400', homeTheme: 'bg-lime-400 rounded-[50%] border-b-[12px] border-lime-600 rotate-[5deg] shadow-2xl' },
+            { total: 14, jumped: 5, emoji: '🦆', name: 'ducks', place: 'grass', actionText: 'waddle into the lake', actionPast: 'waddled', bgTheme: 'bg-gradient-to-b from-sky-300 to-blue-400', homeTheme: 'bg-green-300 rounded-[50%] border-b-[16px] border-green-500 shadow-2xl' },
+            { total: 19, jumped: 11, emoji: '🐰', name: 'bunnies', place: 'meadow', actionText: 'hop into their burrow', actionPast: 'hopped', bgTheme: 'bg-gradient-to-b from-emerald-300 to-teal-400', homeTheme: 'bg-emerald-400 rounded-[50%] border-b-[16px] border-emerald-600 shadow-2xl' },
+            { total: 17, jumped: 9, emoji: '🐦', name: 'birds', place: 'fence', actionText: 'fly up to the sky', actionPast: 'flew', bgTheme: 'bg-gradient-to-b from-indigo-300 to-purple-400', homeTheme: 'bg-stone-300 rounded-lg border-b-[16px] border-stone-500 shadow-2xl' },
+            { total: 13, jumped: 6, emoji: '🐢', name: 'turtles', place: 'log', actionText: 'slip into the river', actionPast: 'slipped', bgTheme: 'bg-gradient-to-b from-cyan-200 to-teal-300', homeTheme: 'bg-orange-700 rounded-[50%] border-b-[16px] border-orange-900 shadow-2xl' },
+            { total: 20, jumped: 12, emoji: '🐠', name: 'fish', place: 'coral reef', actionText: 'swim into a dark cave', actionPast: 'swam', bgTheme: 'bg-gradient-to-b from-blue-400 to-indigo-500', homeTheme: 'bg-pink-400 rounded-[3rem] border-b-[16px] border-pink-600 shadow-2xl' }
+        ];
+
+        // --- STATE ---
+        const state = {
+            level: 0,
+            step: 0,
+            score: 0,
+            hasJumped: false,
+            audioCtx: null,
+            inputs: {
+                jumped: null, eqTotal: null, eqJumped: null, eqLeft: null,
+                bondWhole: null, bondPart1: null, bondPart2: null, finalLeft: null
+            }
+        };
+
+        function initAudio() {
+            if (!state.audioCtx) {
+                state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (state.audioCtx.state === 'suspended') state.audioCtx.resume();
+        }
+
+        function playSound(type) {
+            if (!state.audioCtx) return;
+            const ctx = state.audioCtx;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            const now = ctx.currentTime;
+
+            try {
+                if (type === 'correct') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.1);
+                    osc.frequency.setValueAtTime(783.99, now + 0.2);
+                    gain.gain.setValueAtTime(0, now);
+                    gain.gain.linearRampToValueAtTime(0.3, now + 0.05);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'wrong') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.exponentialRampToValueAtTime(50, now + 0.2);
+                    gain.gain.setValueAtTime(0, now);
+                    gain.gain.linearRampToValueAtTime(0.3, now + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else if (type === 'action') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, now);
+                    osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'win') {
+                    osc.type = 'square';
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                        const osc2 = ctx.createOscillator();
+                        const gain2 = ctx.createGain();
+                        osc2.connect(gain2);
+                        gain2.connect(ctx.destination);
+                        osc2.type = 'sine';
+                        osc2.frequency.value = freq;
+                        gain2.gain.setValueAtTime(0, now + i*0.1);
+                        gain2.gain.linearRampToValueAtTime(0.2, now + i*0.1 + 0.05);
+                        gain2.gain.linearRampToValueAtTime(0, now + i*0.1 + 0.3);
+                        osc2.start(now + i*0.1);
+                        osc2.stop(now + i*0.1 + 0.3);
+                    });
+                }
+            } catch(e) { console.log(e); }
+        }
+
+        function speakText(text) {
+            if (!window.speechSynthesis) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.85; // Slower for kids
+            utterance.pitch = 1.2; // Higher pitch
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // --- DOM ELEMENTS ---
+        const els = {
+            screenStart: document.getElementById('screen-start'),
+            screenGame: document.getElementById('screen-game'),
+            screenEnd: document.getElementById('screen-end'),
+            sceneContainer: document.getElementById('scene-container'),
+            homeBase: document.getElementById('home-base'),
+            animalsLayer: document.getElementById('animals-layer'),
+            storyText: document.getElementById('story-text'),
+            btnAction: document.getElementById('btn-action'),
+            moduleContainer: document.getElementById('module-container'),
+            modEquation: document.getElementById('mod-equation'),
+            modBond: document.getElementById('mod-bond'),
+            modFinal: document.getElementById('mod-final'),
+            numpadContainer: document.getElementById('numpad-container'),
+            numpadHint: document.getElementById('numpad-hint'),
+            btnNext: document.getElementById('btn-next'),
+            boxes: {
+                eqTotal: document.getElementById('box-eqTotal'),
+                eqJumped: document.getElementById('box-eqJumped'),
+                eqLeft: document.getElementById('box-eqLeft'),
+                bondWhole: document.getElementById('box-bondWhole'),
+                bondPart1: document.getElementById('box-bondPart1'),
+                bondPart2: document.getElementById('box-bondPart2'),
+                finalLeft: document.getElementById('box-finalLeft')
+            }
+        };
+
+        function buildNumpad() {
+            const container = els.numpadContainer.querySelector('.flex-wrap');
+            container.innerHTML = '';
+            // Candy Colors array
+            const textColors = ['text-pink-500', 'text-blue-500', 'text-green-500', 'text-orange-500', 'text-purple-500'];
+            
+            for(let i=0; i<=20; i++) {
+                const btn = document.createElement('button');
+                const tColor = textColors[i % textColors.length];
+                
+                btn.className = `btn-duo w-[12%] md:w-16 h-14 md:h-16 bg-white ${tColor} font-black text-2xl md:text-4xl rounded-2xl border-b-[6px] border-slate-200 border-2 border-x-slate-200 border-t-white shadow-sm flex items-center justify-center hover:bg-slate-50`;
+                btn.innerText = i;
+                btn.onclick = () => handleNumClick(i);
+                container.appendChild(btn);
+            }
+        }
+        buildNumpad();
+
+        // --- GAME LOGIC ---
+        function startGame() {
+            initAudio();
+            els.screenStart.classList.add('hidden');
+            els.screenGame.classList.remove('hidden');
+            els.screenGame.classList.add('flex');
+            loadLevel();
+        }
+
+        function loadLevel() {
+            const lvl = LEVELS[state.level];
+            state.step = 0;
+            state.hasJumped = false;
+            Object.keys(state.inputs).forEach(k => state.inputs[k] = null);
+            
+            document.getElementById('level-display').innerText = state.level + 1;
+            document.getElementById('progress-bar').style.width = `${((state.level) / 10) * 100}%`;
+            
+            els.sceneContainer.className = `relative w-full h-56 md:h-[350px] transition-colors duration-1000 overflow-hidden shadow-[inset_0_-10px_30px_rgba(0,0,0,0.1)] border-b-8 border-white/60 shrink-0 ${lvl.bgTheme}`;
+            els.homeBase.className = `absolute top-1/2 left-1/2 w-[85%] md:w-[70%] h-[75%] transform -translate-x-1/2 -translate-y-1/2 transition-all duration-1000 ${lvl.homeTheme}`;
+            
+            document.getElementById('final-name').innerText = lvl.name;
+
+            renderSceneAnimals();
+            updateUI();
+        }
+
+        function renderSceneAnimals() {
+            const lvl = LEVELS[state.level];
+            const leftCount = lvl.total - lvl.jumped;
+            els.animalsLayer.innerHTML = '';
+
+            for (let i = 0; i < lvl.total; i++) {
+                const isJumping = state.hasJumped && i >= leftCount;
+                
+                // Start spots (Home Base) - Clustered in the center
+                const startTop = 25 + Math.floor(i / 5) * 15 + (i % 2 === 0 ? 5 : 0);
+                const startLeft = 20 + (i % 5) * 14 + (Math.floor(i / 5) % 2 === 0 ? 5 : 0);
+                
+                // Action spots (FAR AWAY - pushed to bottom left and bottom right corners)
+                const isLeft = i % 2 === 0;
+                // Push them down to 80-95%
+                const actionTop = 80 + (i % 4) * 6; 
+                // Push them to the sides: 2-15% (Left) or 80-95% (Right)
+                const actionLeft = isLeft ? (2 + (i % 3) * 6) : (80 + (i % 3) * 6);
+                // Extra rotation for chaos
+                const actionRot = isLeft ? -45 - (i%3)*20 : 45 + (i%3)*20;
+
+                const top = isJumping ? actionTop : startTop;
+                const left = isJumping ? actionLeft : startLeft;
+                // Scale down slightly when far away to simulate distance
+                const transform = isJumping ? `rotate(${actionRot}deg) scale(0.6)` : 'scale(1)';
+                
+                const anim = document.createElement('div');
+                anim.className = 'absolute text-5xl md:text-6xl animal-transition icon-3d select-none';
+                anim.style.top = `${top}%`;
+                anim.style.left = `${left}%`;
+                anim.style.transform = `translate(-50%, -50%) ${transform}`;
+                // Optional: make them slightly opaque if they ran away
+                // anim.style.opacity = isJumping ? '0.8' : '1';
+                
+                const emoji = document.createElement('div');
+                emoji.innerText = lvl.emoji;
+                if(!isJumping) emoji.classList.add('animate-bounce-slow');
+                
+                anim.appendChild(emoji);
+                els.animalsLayer.appendChild(anim);
+            }
+        }
+
+        function getCurrentStepText() {
+            const lvl = LEVELS[state.level];
+            const left = lvl.total - lvl.jumped;
+            switch(state.step) {
+                case 0: return `There are ${lvl.total} ${lvl.name} on the ${lvl.place}.`;
+                case 1: return `${lvl.jumped} ${lvl.name} ${lvl.actionText}. Tap how many ${lvl.actionPast}!`;
+                case 2: return `How many are left? Let's build the equation. Tap the STARTING TOTAL!`;
+                case 3: return `Minus how many ${lvl.actionPast}?`;
+                case 4: return `Equals how many are left?`;
+                case 5: return `Now the number bond. Tap the WHOLE amount.`;
+                case 6: return `Tap one of the PARTS.`;
+                case 7: return `Tap the other PART.`;
+                case 8: return `Great! Tap the final answer.`;
+                case 9: return `Awesome job!`;
+                default: return "";
+            }
+        }
+
+        function playCurrentStepAudio() {
+            speakText(getCurrentStepText());
+        }
+
+        function triggerAction() {
+            state.hasJumped = true;
+            playSound('action');
+            renderSceneAnimals();
+            els.btnAction.classList.add('hidden');
+            setTimeout(() => {
+                state.step = 1;
+                updateUI();
+            }, 1200);
+        }
+
+        function handleNumClick(num) {
+            const lvl = LEVELS[state.level];
+            const left = lvl.total - lvl.jumped;
+            let expected = null;
+            let targetKey = null;
+
+            switch(state.step) {
+                case 1: expected = lvl.jumped; targetKey = 'jumped'; break;
+                case 2: expected = lvl.total; targetKey = 'eqTotal'; break;
+                case 3: expected = lvl.jumped; targetKey = 'eqJumped'; break;
+                case 4: expected = left; targetKey = 'eqLeft'; break;
+                case 5: expected = lvl.total; targetKey = 'bondWhole'; break;
+                case 6: 
+                    if(num === lvl.jumped || num === left) {
+                        playSound('correct');
+                        state.inputs.bondPart1 = num;
+                        state.score += 10;
+                        nextStep();
+                        return;
+                    }
+                    triggerError();
+                    return;
+                case 7: 
+                    expected = state.inputs.bondPart1 === left ? lvl.jumped : left; 
+                    targetKey = 'bondPart2'; 
+                    break;
+                case 8: expected = left; targetKey = 'finalLeft'; break;
+                default: return;
+            }
+
+            if (num === expected) {
+                playSound('correct');
+                state.inputs[targetKey] = num;
+                state.score += 10;
+                
+                if (state.step === 8) {
+                    state.step = 9;
+                    doWin();
+                } else {
+                    nextStep();
+                }
+            } else {
+                triggerError();
+            }
+        }
+
+        function triggerError() {
+            playSound('wrong');
+            const activeBox = document.querySelector('.input-active');
+            if(activeBox) {
+                activeBox.classList.remove('animate-shake');
+                void activeBox.offsetWidth;
+                activeBox.classList.add('animate-shake', 'input-error');
+                setTimeout(() => activeBox.classList.remove('input-error', 'animate-shake'), 400);
+            }
+        }
+
+        function nextStep() {
+            state.step++;
+            updateUI();
+        }
+
+        function doWin() {
+            playSound('win');
+            document.getElementById('score-display').innerText = state.score;
+            updateUI();
+            
+            // Confetti
+            const duration = 2500;
+            const end = Date.now() + duration;
+            (function frame() {
+                confetti({ particleCount: 7, angle: 60, spread: 60, origin: { x: 0 }, colors: ['#ff718d', '#fdff6a', '#4ade80', '#3b82f6', '#a855f7'] });
+                confetti({ particleCount: 7, angle: 120, spread: 60, origin: { x: 1 }, colors: ['#ff718d', '#fdff6a', '#4ade80', '#3b82f6', '#a855f7'] });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+
+        function nextLevel() {
+            if (state.level < LEVELS.length - 1) {
+                state.level++;
+                loadLevel();
+            } else {
+                els.screenGame.classList.add('hidden');
+                els.screenGame.classList.remove('flex');
+                els.screenEnd.classList.remove('hidden');
+                els.screenEnd.classList.add('flex');
+                document.getElementById('final-score').innerText = state.score;
+                playSound('win');
+                confetti({ particleCount: 200, spread: 150, origin: { y: 0.5 }, colors: ['#ff718d', '#fdff6a', '#4ade80', '#3b82f6', '#a855f7'] });
+                speakText("You finished all lessons! You are a math master!");
+            }
+        }
+
+        function updateUI() {
+            const lvl = LEVELS[state.level];
+            document.getElementById('score-display').innerText = state.score;
+            els.storyText.innerText = getCurrentStepText();
+            playCurrentStepAudio();
+
+            if (state.step === 0) {
+                els.btnAction.classList.remove('hidden');
+                els.moduleContainer.classList.add('hidden');
+                els.modEquation.classList.add('hidden');
+                els.modBond.classList.add('hidden');
+                els.modFinal.classList.add('hidden');
+                els.btnNext.classList.add('hidden');
+                els.numpadContainer.classList.add('translate-y-full');
+            } else {
+                els.btnAction.classList.add('hidden');
+                els.moduleContainer.classList.remove('hidden');
+                els.numpadContainer.classList.remove('translate-y-full');
+            }
+
+            const updateBox = (boxEl, value, isActive) => {
+                boxEl.innerText = value !== null ? value : '';
+                boxEl.className = `box-input flex items-center justify-center font-black transition-all ${
+                    boxEl.id.includes('bond') ? 'w-24 h-24 rounded-full text-5xl' : 'w-20 h-20 md:w-24 md:h-24 rounded-[2rem] text-4xl md:text-5xl'
+                } border-4 ${
+                    isActive ? 'input-active text-amber-500' : 
+                    (value !== null ? 'input-filled' : 'bg-pink-50 border-pink-200 text-pink-400')
+                }`;
+            };
+
+            if (state.step >= 2) {
+                els.modEquation.classList.remove('hidden');
+                els.modEquation.classList.toggle('opacity-50', state.step > 4);
+                updateBox(els.boxes.eqTotal, state.inputs.eqTotal, state.step === 2);
+                updateBox(els.boxes.eqJumped, state.inputs.eqJumped, state.step === 3);
+                updateBox(els.boxes.eqLeft, state.inputs.eqLeft, state.step === 4);
+            }
+
+            if (state.step >= 5) {
+                els.modBond.classList.remove('hidden');
+                els.modBond.classList.toggle('opacity-50', state.step > 7);
+                updateBox(els.boxes.bondWhole, state.inputs.bondWhole, state.step === 5);
+                updateBox(els.boxes.bondPart1, state.inputs.bondPart1, state.step === 6);
+                updateBox(els.boxes.bondPart2, state.inputs.bondPart2, state.step === 7);
+            }
+
+            if (state.step >= 8) {
+                els.modFinal.classList.remove('hidden');
+                updateBox(els.boxes.finalLeft, state.inputs.finalLeft, state.step === 8);
+            }
+
+            if (state.step === 9) {
+                els.numpadContainer.classList.add('translate-y-full');
+                els.btnNext.classList.remove('hidden');
+                els.modEquation.classList.add('opacity-50');
+                els.modBond.classList.add('opacity-50');
+            }
+
+            if(state.step >= 1 && state.step <= 8) {
+                let hint = "Select a number";
+                if(state.step === 1 || state.step === 3) hint = `Tap how many ${lvl.actionPast}`;
+                if(state.step === 2 || state.step === 5) hint = "Tap the Total";
+                if(state.step === 4 || state.step === 8) hint = "Tap how many are left";
+                if(state.step === 6 || state.step === 7) hint = "Tap a Part";
+                els.numpadHint.innerText = hint;
+            }
+        }
+    </script>
+</body>
+</html>
