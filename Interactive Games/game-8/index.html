@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic Bunny Festival - Kids Adventure V4</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <!-- Using Tone.js for simple synthesised sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        :root {
+            --primary: #58cc02; /* Duolingo Green */
+            --primary-dark: #58a700;
+            --secondary: #1cb0f6; /* Duolingo Blue */
+            --secondary-dark: #1899d6;
+            --danger: #ff4b4b; /* Duolingo Red */
+            --danger-dark: #ea2b2b;
+            --warning: #ffc800; /* Duolingo Yellow */
+            --warning-dark: #d3a600;
+            --bg-color: #f7f9fa;
+        }
+
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: var(--bg-color); 
+            margin: 0;
+            overflow: hidden; /* Prevent scrolling in full screen game */
+            background-image: radial-gradient(#e5e7eb 2px, transparent 2px);
+            background-size: 30px 30px;
+        }
+        
+        .hidden-screen {
+            display: none !important;
+        }
+
+        /* Fun instruction bar - Floating */
+        .instruction-bar {
+            background: var(--secondary);
+            border-radius: 25px;
+            padding: 12px 24px;
+            text-align: center;
+            color: white;
+            font-weight: 900;
+            font-size: 1.2rem;
+            box-shadow: 0 6px 0 var(--secondary-dark);
+            white-space: nowrap;
+        }
+
+        .key-hint {
+            background: #ffffff;
+            color: var(--secondary);
+            padding: 4px 16px;
+            border-radius: 12px;
+            margin: 0 8px;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 0 #e0f2fe;
+            display: inline-block;
+            transform: translateY(-2px);
+        }
+
+        /* Animations */
+        @keyframes bunny-float {
+            0%, 100% { transform: translateY(0) rotate(-2deg); }
+            50% { transform: translateY(-8px) rotate(2deg); }
+        }
+        .cute-logo { animation: bunny-float 3s infinite ease-in-out; }
+
+        /* Custom Range Slider */
+        input[type=range] { 
+            accent-color: var(--primary);
+            height: 12px;
+            border-radius: 6px;
+            outline: none;
+            width: 100%;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 4px 0 var(--primary-dark);
+        }
+
+        /* Beautiful Summary Modal */
+        #game-summary {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #ffffff;
+            padding: 30px 40px;
+            border-radius: 30px;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+            z-index: 100;
+            border: 4px solid #e5e7eb;
+            min-width: 320px;
+            width: 90%;
+            max-width: 450px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            box-shadow: 0 6px 0 var(--primary-dark);
+            transition: all 0.1s;
+        }
+        .btn-primary:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 var(--primary-dark);
+        }
+        
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: #4b5563;
+            box-shadow: 0 6px 0 #d1d5db;
+            transition: all 0.1s;
+        }
+        .btn-secondary:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 #d1d5db;
+        }
+
+        /* Confetti Canvas */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+        
+        /* Game Screen Wrapper */
+        #game-screen {
+            background: #8bd3ff;
+        }
+        #canvas-container canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- SETUP SCREEN (MAIN MENU) -->
+    <div id="setup-screen" class="w-full h-screen overflow-y-auto">
+        <header class="bg-white border-b-4 border-gray-200">
+            <div class="max-w-5xl mx-auto px-4 h-20 flex justify-between items-center">
+                <div class="flex items-center space-x-3 cute-logo cursor-pointer">
+                    <!-- SVG Icon for Bunny -->
+                    <svg width="45" height="45" viewBox="0 0 24 24">
+                        <path d="M12 22c4.418 0 8-3.582 8-8s-3.582-8-8-8-8 3.582-8 8 3.582 8 8 8z" fill="#f4f4f5"/>
+                        <path d="M7 2c0 0-3 1-3 6s2 8 4 8 3-4 3-8-4-6-4-6z" fill="#e4e4e7"/>
+                        <path d="M17 2c0 0 3 1 3 6s-2 8-4 8-3-4-3-8 4-6 4-6z" fill="#e4e4e7"/>
+                        <path d="M7 3.5c0 0-1.5 .5-1.5 4s1 6 2 6 1.5-2 1.5-4-1-6-2-6z" fill="#fda4af"/>
+                        <path d="M17 3.5c0 0 1.5 .5 1.5 4s-1 6-2 6-1.5-2-1.5-4 1-6 2-6z" fill="#fda4af"/>
+                        <circle cx="9" cy="13" r="1.5" fill="#3f3f46"/>
+                        <circle cx="15" cy="13" r="1.5" fill="#3f3f46"/>
+                        <ellipse cx="12" cy="16" rx="1.5" ry="1" fill="#f43f5e"/>
+                    </svg>
+                    <div class="text-2xl md:text-3xl font-black tracking-tight text-nowrap">
+                        <span style="color: var(--secondary)">HAPPY</span> 
+                        <span style="color: var(--primary)">BUNNY</span>
+                    </div>
+                </div>
+                <div class="hidden sm:block bg-yellow-100 px-5 py-2 rounded-2xl border-2 border-yellow-300 text-yellow-600 font-black text-sm">
+                    LET'S PLAY! 🌟
+                </div>
+            </div>
+        </header>
+
+        <main class="max-w-4xl mx-auto py-10 px-4 flex flex-col items-center">
+            
+            <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                <!-- Parents Zone -->
+                <div class="bg-white p-8 rounded-[30px] border-4 border-gray-100 shadow-sm relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-[100px] -z-10"></div>
+                    <h2 class="text-2xl font-black text-gray-700 mb-8 flex items-center gap-3">
+                        <span class="text-3xl">⚙️</span> Game Setup
+                    </h2>
+                    
+                    <form id="settings-form" class="space-y-6">
+                        <div class="space-y-3">
+                            <div class="flex justify-between font-black uppercase text-sm" style="color: var(--secondary)">
+                                <label>Run Speed</label>
+                                <span id="speed-val" class="bg-blue-50 px-3 py-1 rounded-lg">7.0</span>
+                            </div>
+                            <input type="range" name="SPEED" min="4" max="12" step="0.5">
+                        </div>
+                        <div class="space-y-3">
+                            <div class="flex justify-between font-black uppercase text-sm" style="color: var(--primary)">
+                                <label>Jump Height</label>
+                                <span id="gravity-val" class="bg-green-50 px-3 py-1 rounded-lg">0.6</span>
+                            </div>
+                            <input type="range" name="GRAVITY" min="0.4" max="1.0" step="0.05">
+                        </div>
+                    </form>
+                </div>
+
+                <!-- High Score -->
+                <div class="bg-white p-8 rounded-[30px] border-4 border-gray-100 shadow-sm text-center flex flex-col justify-center items-center relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-4" style="background: var(--warning)"></div>
+                    <div class="text-7xl mb-4 drop-shadow-md mt-4">👑</div>
+                    <div class="text-sm font-black text-gray-400 uppercase tracking-widest mb-2">Best Score</div>
+                    <div id="high-score-display" style="color: var(--warning)" class="text-8xl font-black tracking-tighter drop-shadow-sm">0</div>
+                </div>
+            </div>
+
+            <!-- Huge Play Button -->
+            <button id="play-now-btn" class="btn-primary w-full max-w-md py-6 px-10 rounded-3xl font-black text-3xl uppercase tracking-widest flex items-center justify-center gap-4 hover:scale-[1.02] transition-transform">
+                PLAY NOW <span class="text-4xl">🚀</span>
+            </button>
+            
+            <div class="mt-12 text-center text-xs text-gray-400 font-bold uppercase tracking-widest">
+                Player ID: <span id="user-display">...</span>
+            </div>
+        </main>
+    </div>
+
+    <!-- FULLSCREEN GAME AREA -->
+    <div id="game-screen" class="fixed inset-0 hidden-screen z-50">
+        <div id="canvas-container" class="w-full h-full"></div>
+        
+        <!-- Floating Instruction -->
+        <div id="floating-instruction" class="absolute bottom-12 left-1/2 -translate-x-1/2 instruction-bar pointer-events-none transition-opacity duration-500">
+            Press <span class="key-hint">SPACE</span> or <span class="key-hint">TAP</span> to Jump!
+        </div>
+
+        <!-- Summary Block -->
+        <div id="game-summary">
+            <div class="text-7xl mb-4">🎉</div>
+            <h3 style="color: var(--secondary)" class="text-4xl font-black mb-2 tracking-tight">GREAT JOB!</h3>
+            <p class="text-gray-400 font-bold mb-6 uppercase tracking-wider text-sm">You are a Super Star!</p>
+            <div class="bg-gray-50 rounded-2xl p-6 mb-8 border-2 border-gray-100">
+                <div class="text-sm font-bold text-gray-400 uppercase mb-2">Your Stars</div>
+                <div id="final-score" style="color: var(--warning)" class="text-6xl font-black drop-shadow-sm">0</div>
+            </div>
+            <div class="flex flex-col gap-3">
+                <button id="restart-btn" class="btn-primary w-full py-4 px-6 rounded-2xl font-black text-xl uppercase tracking-wide flex items-center justify-center gap-2">
+                    PLAY AGAIN <span class="text-2xl">🥕</span>
+                </button>
+                <button id="home-btn" class="btn-secondary w-full py-3 px-6 rounded-2xl font-black text-lg uppercase tracking-wide flex items-center justify-center gap-2">
+                    🏠 HOME
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confetti overlay (always on top) -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+        // Firebase Config
+        let db, auth, appId;
+        try {
+            const firebaseConfig = JSON.parse(__firebase_config);
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            appId = typeof __app_id !== 'undefined' ? __app_id : 'bunny-kids-wonderland-v4';
+        } catch (e) { console.warn("Firebase limited"); }
+
+        // --- Sound Effects using Tone.js ---
+        const SoundFX = {
+            jumpSynth: null,
+            scoreSynth: null,
+            failSynth: null,
+            winSynth: null,
+            isReady: false,
+            
+            init() {
+                if(this.isReady) return;
+                try {
+                    this.jumpSynth = new Tone.MembraneSynth({
+                        pitchDecay: 0.05, octaves: 4, oscillator: { type: "sine" }
+                    }).toDestination();
+                    this.jumpSynth.volume.value = -10;
+
+                    this.scoreSynth = new Tone.PolySynth(Tone.Synth, {
+                        oscillator: { type: "triangle" },
+                        envelope: { attack: 0.01, decay: 0.1, sustain: 0.1, release: 0.5 }
+                    }).toDestination();
+                    this.scoreSynth.volume.value = -15;
+
+                    this.failSynth = new Tone.FMSynth({
+                        harmonicity: 0.5, modulationIndex: 10,
+                        oscillator: { type: "sawtooth" },
+                        envelope: { attack: 0.1, decay: 0.2, sustain: 0.1, release: 0.2 }
+                    }).toDestination();
+                    this.failSynth.volume.value = -10;
+
+                    this.winSynth = new Tone.PolySynth().toDestination();
+                    this.winSynth.volume.value = -5;
+                    
+                    this.isReady = true;
+                } catch(e) { console.log("Audio context not ready"); }
+            },
+            
+            playJump() {
+                if(!this.isReady) this.init();
+                if(this.isReady && Tone.context.state === 'running') {
+                    this.jumpSynth.triggerAttackRelease("C3", "8n");
+                }
+            },
+            playFail() {
+                if(!this.isReady) this.init();
+                if(this.isReady && Tone.context.state === 'running') {
+                    this.failSynth.triggerAttackRelease("G2", "4n");
+                }
+            },
+            playWin() {
+                if(!this.isReady) this.init();
+                if(this.isReady && Tone.context.state === 'running') {
+                    const now = Tone.now();
+                    this.winSynth.triggerAttackRelease("C4", "8n", now);
+                    this.winSynth.triggerAttackRelease("E4", "8n", now + 0.15);
+                    this.winSynth.triggerAttackRelease("G4", "4n", now + 0.3);
+                }
+            }
+        };
+
+        // --- Confetti System ---
+        class ConfettiSystem {
+            constructor() {
+                this.canvas = document.getElementById('confetti-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.particles = [];
+                this.colors = ['#58cc02', '#1cb0f6', '#ff4b4b', '#ffc800', '#ce82ff'];
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+                this.animate();
+            }
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+            burst() {
+                for (let i = 0; i < 200; i++) {
+                    this.particles.push({
+                        x: this.canvas.width / 2,
+                        y: this.canvas.height / 2 + 100,
+                        r: Math.random() * 6 + 4,
+                        dx: Math.random() * 25 - 12.5,
+                        dy: Math.random() * -25 - 5,
+                        color: this.colors[Math.floor(Math.random() * this.colors.length)],
+                        tilt: Math.random() * 10,
+                        tiltAngleInc: (Math.random() * 0.07) + 0.05,
+                        tiltAngle: 0
+                    });
+                }
+            }
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                for (let i = 0; i < this.particles.length; i++) {
+                    let p = this.particles[i];
+                    p.tiltAngle += p.tiltAngleInc;
+                    p.y += (Math.cos(p.tiltAngle) + 1 + p.r / 2) / 2;
+                    p.x += Math.sin(p.tiltAngle) * 2;
+                    p.dy += 0.3; // Gravity
+                    p.x += p.dx;
+                    p.y += p.dy;
+
+                    this.ctx.beginPath();
+                    this.ctx.lineWidth = p.r;
+                    this.ctx.strokeStyle = p.color;
+                    this.ctx.moveTo(p.x + p.tilt + p.r, p.y);
+                    this.ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r);
+                    this.ctx.stroke();
+
+                    // Remove off-screen particles
+                    if (p.y > this.canvas.height) {
+                        this.particles.splice(i, 1);
+                        i--;
+                    }
+                }
+            }
+        }
+        const confetti = new ConfettiSystem();
+
+        // --- Runner Engine ---
+        function Runner(containerSelector, config) {
+            const container = document.querySelector(containerSelector);
+            if (!container) return;
+            this.container = container;
+            this.config = Object.assign({
+                SPEED: 7, GRAVITY: 0.6, INITIAL_JUMP_VELOCITY: 14
+            }, config);
+            this.init();
+        }
+
+        Runner.prototype = {
+            init: function() {
+                this.canvas = document.createElement('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.container.appendChild(this.canvas);
+                
+                this.bunny = { x: 150, y: 0, vy: 0, jumping: false, width: 70, height: 80 };
+                this.obstacles = [];
+                this.decorations = []; // Trees/bushes
+                this.flowers = []; // Ground flowers
+                this.score = 0;
+                this.highScore = 0;
+                this.isGameOver = false;
+                this.isStarted = false;
+                this.frameCount = 0;
+                this.animationFrameId = null;
+
+                // Pre-generate background decor (Trees & Bushes)
+                for(let i=0; i<5; i++) {
+                    this.decorations.push({ x: Math.random() * 2000, type: 'tree' });
+                }
+                
+                // Pre-generate flowers
+                for(let i=0; i<12; i++) {
+                    this.flowers.push(this.createFlower(Math.random() * 2000));
+                }
+
+                this.bindEvents();
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+            },
+            resize: function() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+                this.floorY = this.canvas.height - 120; // Grass height from bottom
+                
+                // Snap bunny to floor if not jumping
+                if (!this.bunny.jumping) {
+                    this.bunny.y = this.floorY - this.bunny.height;
+                }
+                
+                // Re-adjust flowers Y to new floor
+                this.flowers.forEach(f => {
+                    f.y = this.floorY + 15 + Math.random() * 60;
+                });
+                
+                if(!this.isStarted) this.draw(); // Redraw initial frame
+            },
+            createFlower: function(xPos) {
+                const colors = ['#ff8fab', '#facc15', '#f87171', '#c084fc'];
+                return {
+                    x: xPos,
+                    y: (this.floorY || window.innerHeight - 120) + 15 + Math.random() * 60,
+                    color: colors[Math.floor(Math.random() * colors.length)]
+                };
+            },
+            bindEvents: function() {
+                const handleInput = (e) => {
+                    // Only process input if game screen is visible
+                    if(document.getElementById('game-screen').classList.contains('hidden-screen')) return;
+                    
+                    // Don't trigger on button clicks
+                    if(e.target.tagName.toLowerCase() === 'button') return;
+
+                    if (e && e.type === 'keydown' && e.code !== 'Space' && e.code !== 'ArrowUp') return;
+                    if (this.isGameOver) return; 
+                    
+                    if (!this.isStarted) {
+                        Tone.start(); 
+                        return this.isStarted = true;
+                    }
+                    this.jump();
+                };
+                window.addEventListener('keydown', handleInput);
+                this.canvas.addEventListener('mousedown', handleInput);
+                this.canvas.addEventListener('touchstart', (e) => { 
+                    if(e.target.tagName.toLowerCase() !== 'button') {
+                        e.preventDefault(); 
+                        handleInput(e); 
+                    }
+                }, {passive: false});
+            },
+            start: function() {
+                this.resize();
+                this.restart();
+                if(this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
+                this.gameLoop();
+                document.getElementById('floating-instruction').style.opacity = '1';
+                
+                // Hide instruction after 5 seconds
+                setTimeout(() => {
+                    document.getElementById('floating-instruction').style.opacity = '0';
+                }, 5000);
+            },
+            stop: function() {
+                if(this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
+            },
+            jump: function() {
+                if (!this.bunny.jumping) {
+                    this.bunny.vy = -this.config.INITIAL_JUMP_VELOCITY;
+                    this.bunny.jumping = true;
+                    SoundFX.playJump();
+                }
+            },
+            restart: function() {
+                document.getElementById('game-summary').style.display = 'none';
+                this.bunny.y = this.floorY - this.bunny.height;
+                this.bunny.vy = 0;
+                this.bunny.jumping = false;
+                this.obstacles = [];
+                this.score = 0; 
+                this.isGameOver = false; 
+                this.isStarted = true;
+                this.frameCount = 0;
+            },
+            update: function() {
+                if (!this.isStarted || this.isGameOver) return;
+
+                this.frameCount++;
+                this.score += 0.05; 
+
+                // Physics
+                this.bunny.y += this.bunny.vy;
+                this.bunny.vy += this.config.GRAVITY;
+                const restY = this.floorY - this.bunny.height;
+                
+                if (this.bunny.y > restY) {
+                    this.bunny.y = restY;
+                    this.bunny.vy = 0;
+                    this.bunny.jumping = false;
+                }
+
+                // Parallax Background elements (Trees)
+                this.decorations.forEach(d => {
+                    d.x -= this.config.SPEED * 0.4;
+                    if(d.x < -100) {
+                        d.x = this.canvas.width + 100 + Math.random() * 300;
+                    }
+                });
+                
+                // Ground elements (Flowers)
+                this.flowers.forEach(f => {
+                    f.x -= this.config.SPEED;
+                    if(f.x < -50) {
+                        Object.assign(f, this.createFlower(this.canvas.width + Math.random() * 200));
+                    }
+                });
+
+                // Spawn obstacles
+                const spawnRate = Math.max(60, Math.floor(140 - this.config.SPEED * 5));
+                if (this.frameCount % spawnRate === 0) {
+                    this.obstacles.push({ 
+                        x: this.canvas.width + 50, 
+                        w: 45 + Math.random() * 25, 
+                        h: 45 + Math.random() * 20,
+                        type: Math.random() > 0.5 ? 'rock' : 'log'
+                    });
+                }
+
+                // Update obstacles & Check Collision
+                this.obstacles.forEach(o => {
+                    o.x -= this.config.SPEED;
+                    
+                    // Collision Hitbox adjustments for better gameplay
+                    const bx = this.bunny.x + 20;
+                    const by = this.bunny.y + 15;
+                    const bw = this.bunny.width - 40;
+                    const bh = this.bunny.height - 25;
+
+                    const ox = o.x + 10;
+                    const oy = this.floorY - o.h + 10;
+                    const ow = o.w - 20;
+                    const oh = o.h - 10;
+
+                    if (bx < ox + ow && bx + bw > ox && by < oy + oh && by + bh > oy) {
+                        this.gameOver();
+                    }
+                });
+                
+                this.obstacles = this.obstacles.filter(o => o.x > -150);
+            },
+            gameOver: function() {
+                this.isGameOver = true;
+                SoundFX.playFail();
+                
+                setTimeout(() => {
+                    SoundFX.playWin();
+                    confetti.burst();
+                    this.showSummary();
+                }, 500);
+            },
+            showSummary: function() {
+                const summary = document.getElementById('game-summary');
+                const finalScore = document.getElementById('final-score');
+                const intScore = Math.floor(this.score);
+                finalScore.textContent = intScore;
+                summary.style.display = 'block';
+                
+                if (intScore > this.highScore) {
+                    this.highScore = intScore;
+                    document.getElementById('high-score-display').textContent = this.highScore;
+                    // Trigger custom save event
+                    window.dispatchEvent(new CustomEvent('saveHighScore', { detail: this.highScore }));
+                }
+            },
+            draw: function() {
+                // Clear
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // 1. Sky Gradient
+                const skyGrad = this.ctx.createLinearGradient(0, 0, 0, this.floorY);
+                skyGrad.addColorStop(0, '#7cd0fc');
+                skyGrad.addColorStop(1, '#dff4ff');
+                this.ctx.fillStyle = skyGrad;
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // 2. Sun (Fixed Top Left)
+                this.ctx.fillStyle = 'rgba(255, 234, 138, 0.4)'; // Glow
+                this.ctx.beginPath(); this.ctx.arc(100, 90, 70, 0, Math.PI * 2); this.ctx.fill();
+                this.ctx.fillStyle = '#ffdf6d'; // Sun center
+                this.ctx.beginPath(); this.ctx.arc(100, 90, 50, 0, Math.PI * 2); this.ctx.fill();
+
+                // 3. Static Rainbow (Center, Scales reasonably)
+                const rbColors = ['#e992aa', '#e5cd78', '#88d0c2', '#6ab1d1', '#54819d', '#cc95c0'];
+                this.ctx.lineWidth = Math.min(30, this.canvas.width / 40);
+                this.ctx.lineCap = 'butt';
+                const rbRadiusBase = Math.min(this.canvas.width * 0.4, 450);
+                
+                rbColors.forEach((color, i) => {
+                    this.ctx.strokeStyle = color;
+                    this.ctx.beginPath();
+                    this.ctx.arc(this.canvas.width / 2, this.floorY + 20, rbRadiusBase - i * (this.ctx.lineWidth - 1), Math.PI, 0);
+                    this.ctx.stroke();
+                });
+
+                // 4. Clouds (Static relative to width)
+                this.ctx.fillStyle = '#ffffff';
+                [[this.canvas.width * 0.2, 100], [this.canvas.width * 0.8, 80], [this.canvas.width * 0.5, 50]].forEach(pos => {
+                    this.ctx.beginPath();
+                    this.ctx.arc(pos[0], pos[1], 20, 0, Math.PI * 2);
+                    this.ctx.arc(pos[0] + 25, pos[1] - 12, 30, 0, Math.PI * 2);
+                    this.ctx.arc(pos[0] + 50, pos[1], 20, 0, Math.PI * 2);
+                    this.ctx.fill();
+                });
+
+                // 5. Parallax Trees
+                this.decorations.forEach(d => {
+                    // Tree Trunk
+                    this.ctx.fillStyle = '#9c6644';
+                    this.ctx.fillRect(d.x + 20, this.floorY - 70, 15, 70);
+                    // Tree Canopy
+                    this.ctx.fillStyle = '#4ade80';
+                    this.ctx.beginPath(); this.ctx.arc(d.x + 27, this.floorY - 80, 35, 0, Math.PI * 2); this.ctx.fill();
+                    // Canopy shadow/detail
+                    this.ctx.fillStyle = '#22c55e';
+                    this.ctx.beginPath(); this.ctx.arc(d.x + 20, this.floorY - 70, 18, 0, Math.PI * 2); this.ctx.fill();
+                });
+
+                // 6. Rolling Hills / Grass
+                // Back Hill
+                this.ctx.fillStyle = '#a3e635'; // Lighter green
+                this.ctx.beginPath();
+                this.ctx.moveTo(0, this.floorY - 25);
+                this.ctx.quadraticCurveTo(this.canvas.width / 2, this.floorY - 100, this.canvas.width, this.floorY - 10);
+                this.ctx.lineTo(this.canvas.width, this.canvas.height);
+                this.ctx.lineTo(0, this.canvas.height);
+                this.ctx.fill();
+
+                // Front Ground
+                this.ctx.fillStyle = '#65a30d'; // Darker lush green
+                this.ctx.beginPath();
+                this.ctx.moveTo(0, this.floorY + 15);
+                this.ctx.quadraticCurveTo(this.canvas.width / 3, this.floorY - 30, this.canvas.width, this.floorY + 30);
+                this.ctx.lineTo(this.canvas.width, this.canvas.height);
+                this.ctx.lineTo(0, this.canvas.height);
+                this.ctx.fill();
+
+                // Foreground Base Fill
+                this.ctx.fillStyle = '#65a30d';
+                this.ctx.fillRect(0, this.floorY + 15, this.canvas.width, this.canvas.height - this.floorY - 15);
+
+                // 7. Ground Flowers
+                this.flowers.forEach(f => {
+                    // Petals
+                    this.ctx.fillStyle = f.color;
+                    this.ctx.beginPath();
+                    this.ctx.arc(f.x - 5, f.y, 5, 0, Math.PI*2);
+                    this.ctx.arc(f.x + 5, f.y, 5, 0, Math.PI*2);
+                    this.ctx.arc(f.x, f.y - 5, 5, 0, Math.PI*2);
+                    this.ctx.arc(f.x, f.y + 5, 5, 0, Math.PI*2);
+                    this.ctx.fill();
+                    // Center
+                    this.ctx.fillStyle = '#ffffff';
+                    this.ctx.beginPath(); this.ctx.arc(f.x, f.y, 4, 0, Math.PI*2); this.ctx.fill();
+                });
+
+                // --- 8. Obstacles ---
+                this.obstacles.forEach(o => {
+                    const oy = this.floorY - o.h;
+                    if(o.type === 'rock') {
+                        this.ctx.fillStyle = '#afbac4'; 
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(o.x, this.floorY);
+                        this.ctx.lineTo(o.x + o.w/2, oy);
+                        this.ctx.lineTo(o.x + o.w, this.floorY);
+                        this.ctx.fill();
+                        this.ctx.fillStyle = '#8e9fac';
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(o.x + o.w/2, oy);
+                        this.ctx.lineTo(o.x + o.w, this.floorY);
+                        this.ctx.lineTo(o.x + o.w*0.8, this.floorY);
+                        this.ctx.fill();
+                    } else {
+                        // Log
+                        this.ctx.fillStyle = '#a67b5b'; 
+                        this.ctx.fillRect(o.x, oy + o.h/2, o.w, o.h/2);
+                        this.ctx.fillStyle = '#8b5a2b'; 
+                        this.ctx.fillRect(o.x, oy + o.h - 5, o.w, 5);
+                        this.ctx.fillStyle = '#d4b886';
+                        this.ctx.beginPath();
+                        this.ctx.ellipse(o.x, oy + o.h*0.75, 5, o.h/4, 0, 0, Math.PI*2);
+                        this.ctx.fill();
+                    }
+                });
+
+                // --- 9. Cute Bunny ---
+                const bx = this.bunny.x, by = this.bunny.y;
+                const jump = this.bunny.jumping;
+                
+                this.ctx.save();
+                this.ctx.translate(bx, by);
+                if(jump) {
+                    this.ctx.rotate(-0.1);
+                    this.ctx.translate(0, -5);
+                }
+
+                const bunnyColor = '#ffffff';
+                const earColor = '#ffb3c6';
+
+                // Scale up bunny slightly for full screen
+                const s = 1.2; 
+                this.ctx.scale(s, s);
+
+                // Ears 
+                this.ctx.fillStyle = bunnyColor;
+                this.ctx.beginPath(); this.ctx.ellipse(20, 15, 8, 25, -0.2, 0, Math.PI*2); this.ctx.fill();
+                this.ctx.fillStyle = earColor;
+                this.ctx.beginPath(); this.ctx.ellipse(20, 18, 4, 18, -0.2, 0, Math.PI*2); this.ctx.fill();
+                
+                this.ctx.fillStyle = bunnyColor;
+                this.ctx.beginPath(); this.ctx.ellipse(40, 10, 8, 25, 0.1, 0, Math.PI*2); this.ctx.fill();
+                this.ctx.fillStyle = earColor;
+                this.ctx.beginPath(); this.ctx.ellipse(40, 13, 4, 18, 0.1, 0, Math.PI*2); this.ctx.fill();
+
+                // Body
+                this.ctx.fillStyle = bunnyColor;
+                this.ctx.beginPath(); this.ctx.ellipse(35, 50, 25, 20, 0, 0, Math.PI*2); this.ctx.fill();
+                this.ctx.beginPath(); this.ctx.arc(35, 35, 20, 0, Math.PI*2); this.ctx.fill();
+
+                // Tail
+                this.ctx.fillStyle = '#f3f4f6';
+                this.ctx.beginPath(); this.ctx.arc(8, 55, 8, 0, Math.PI*2); this.ctx.fill();
+
+                // Face details
+                this.ctx.fillStyle = '#4b5563'; 
+                this.ctx.beginPath(); this.ctx.arc(42, 30, 3, 0, Math.PI*2); this.ctx.fill(); 
+                
+                this.ctx.fillStyle = '#ffb3c6'; 
+                this.ctx.beginPath(); this.ctx.arc(46, 38, 4, 0, Math.PI*2); this.ctx.fill();
+                
+                this.ctx.fillStyle = '#ff8fab'; 
+                this.ctx.beginPath(); this.ctx.arc(52, 34, 2, 0, Math.PI*2); this.ctx.fill();
+
+                // Legs
+                this.ctx.fillStyle = bunnyColor;
+                if(!jump) {
+                    const offset = Math.sin(this.frameCount * 0.5) * 4;
+                    this.ctx.beginPath(); this.ctx.ellipse(25 + offset, 68, 6, 4, 0, 0, Math.PI*2); this.ctx.fill();
+                    this.ctx.beginPath(); this.ctx.ellipse(45 - offset, 68, 6, 4, 0, 0, Math.PI*2); this.ctx.fill();
+                } else {
+                    this.ctx.beginPath(); this.ctx.ellipse(25, 72, 5, 8, 0.5, 0, Math.PI*2); this.ctx.fill();
+                }
+
+                this.ctx.restore();
+
+                // --- 10. UI Overlay (Score) ---
+                if (this.isStarted) {
+                    this.ctx.fillStyle = '#ffffff';
+                    this.ctx.font = '900 48px "Poppins"';
+                    this.ctx.textAlign = 'right';
+                    this.ctx.shadowColor = "rgba(0,0,0,0.2)";
+                    this.ctx.shadowBlur = 5;
+                    this.ctx.shadowOffsetX = 3;
+                    this.ctx.shadowOffsetY = 3;
+                    this.ctx.fillText(Math.floor(this.score).toString(), this.canvas.width - 30, 70);
+                    this.ctx.shadowColor = "transparent"; // reset shadow
+                }
+            },
+            gameLoop: function() {
+                this.update(); 
+                this.draw();
+                this.animationFrameId = requestAnimationFrame(() => this.gameLoop());
+            }
+        };
+
+        async function init() {
+            const form = document.getElementById('settings-form');
+            const speedVal = document.getElementById('speed-val');
+            const gravityVal = document.getElementById('gravity-val');
+            const highScoreDisplay = document.getElementById('high-score-display');
+            const userDisplay = document.getElementById('user-display');
+            
+            // Screens
+            const setupScreen = document.getElementById('setup-screen');
+            const gameScreen = document.getElementById('game-screen');
+            
+            // Buttons
+            const playNowBtn = document.getElementById('play-now-btn');
+            const restartBtn = document.getElementById('restart-btn');
+            const homeBtn = document.getElementById('home-btn');
+            
+            const runner = new Runner('#canvas-container');
+            
+            function syncForm(cfg) {
+                if (!form) return;
+                for (let key in cfg) {
+                    if (form.elements[key]) {
+                        form.elements[key].value = cfg[key];
+                        if (key === 'SPEED') speedVal.textContent = parseFloat(cfg[key]).toFixed(1);
+                        if (key === 'GRAVITY') gravityVal.textContent = parseFloat(cfg[key]).toFixed(2);
+                    }
+                }
+            }
+
+            if (auth && db) {
+                try {
+                    const { user } = await signInAnonymously(auth);
+                    userDisplay.textContent = "BUNNY-" + user.uid.substring(0, 4).toUpperCase();
+                    
+                    const docRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'config');
+                    const snap = await getDoc(docRef);
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        Object.assign(runner.config, data);
+                        if (data.highScore) {
+                            runner.highScore = data.highScore;
+                            highScoreDisplay.textContent = Math.floor(data.highScore);
+                        }
+                    }
+                    syncForm(runner.config);
+                } catch (e) { console.warn("Firebase limited", e); }
+            }
+
+            // Input handlers
+            form.addEventListener('input', async (e) => {
+                const key = e.target.name;
+                const val = parseFloat(e.target.value);
+                if (!isNaN(val)) {
+                    runner.config[key] = val;
+                    if (key === 'SPEED') speedVal.textContent = val.toFixed(1);
+                    if (key === 'GRAVITY') gravityVal.textContent = val.toFixed(2);
+                    
+                    if (auth && auth.currentUser) {
+                        try {
+                            await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'config'), {
+                                ...runner.config, highScore: runner.highScore
+                            });
+                        } catch(err) { console.error("Save error", err); }
+                    }
+                }
+            });
+
+            // Handle Custom Event for saving high score
+            window.addEventListener('saveHighScore', async (e) => {
+                const newScore = e.detail;
+                if (auth && auth.currentUser) {
+                    try {
+                        await setDoc(doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'settings', 'config'), {
+                            ...runner.config, highScore: newScore
+                        });
+                    } catch(err) { console.error("Save error", err); }
+                }
+            });
+
+            // Screen Navigation Events
+            playNowBtn.addEventListener('click', () => {
+                Tone.start(); // Init audio context
+                setupScreen.classList.add('hidden-screen');
+                gameScreen.classList.remove('hidden-screen');
+                runner.start();
+            });
+
+            restartBtn.addEventListener('click', () => {
+                Tone.start();
+                runner.restart();
+            });
+
+            homeBtn.addEventListener('click', () => {
+                gameScreen.classList.add('hidden-screen');
+                setupScreen.classList.remove('hidden-screen');
+                runner.stop();
+                document.getElementById('game-summary').style.display = 'none';
+                
+                // Ensure High Score on setup screen is updated if changed during play
+                highScoreDisplay.textContent = Math.floor(runner.highScore);
+            });
+        }
+        
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
