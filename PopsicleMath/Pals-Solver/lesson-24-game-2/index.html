@@ -1,1556 +1,914 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
- <head>
-  <link rel="stylesheet" href="../assets/brand.css">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Subtract from Ten!</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Import Poppins Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
-  <style>
-        body {
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ice Cream Multiplication - Ver 13</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --white: #ffffff;
+            --text-dark: #4B4B4B;
+            --primary: #FF4B4B;
+            --secondary: #FFC800;
+            --accent: #58CC02;
+            --accent-shadow: #58A700;
+            --skewer-color: #f4d35e;
+            
+            /* Màu sắc giỏ kem dễ phân biệt */
+            --stand-color: #FFD166; /* Vàng waffle cho giỏ */
+            --stand-dark: #F77F00;  /* Cam đậm cho viền giỏ */
+            --label-color: #9D4EDD; /* Tím cho nhãn x1, x2... */
+            --mouth-color: #FF4B4B; /* Đỏ cho block chứa số chính giữa */
+            
+            --font-main: 'Poppins', sans-serif;
+        }
+
+        * {
             box-sizing: border-box;
             margin: 0;
-            padding: 20px;
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #E0F7FA 0%, #FFF9C4 100%);
-            background-attachment: fixed;
-            height: 100%;
-            min-height: 100vh;
-            color: #4A5568;
-            overflow-x: hidden; /* Prevent scrollbar during animation */
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
-        html {
-            height: 100%;
-        }
-
-        .game-container {
-            max-width: 1100px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 30px;
-            box-shadow: 0 15px 35px rgba(100, 181, 246, 0.2);
-            border: 4px solid #B3E5FC;
-            padding: 30px;
-            min-height: calc(100vh - 40px);
+        body {
+            font-family: var(--font-main);
+            background: #87CEEB;
+            height: 100vh;
+            width: 100vw;
+            overflow-y: auto;
+            overflow-x: hidden;
             display: flex;
             flex-direction: column;
-            position: relative;
-            z-index: 10;
+            color: var(--text-dark);
+            touch-action: pan-y;
         }
 
-        .game-header {
-            text-align: center;
-            margin-bottom: 20px;
+        /* --- Bối cảnh thiên nhiên --- */
+        .world-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            background: linear-gradient(to bottom, #74d4f2 0%, #b3e5fc 100%);
         }
 
-        .game-title {
-            font-size: 3rem;
-            font-weight: 900;
-            background: linear-gradient(to right, #FF8A80, #FF80AB, #EA80FC);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin: 0 0 5px 0;
-            filter: drop-shadow(2px 2px 0px rgba(0,0,0,0.1));
-            letter-spacing: 1px;
-        }
-
-        .instructions {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: #78909C;
-            margin-bottom: 20px;
-            background: #E1F5FE;
-            display: inline-block;
-            padding: 8px 20px;
-            border-radius: 20px;
-        }
-        
-        .score-display {
+        .rainbow {
             position: absolute;
-            top: 30px;
-            right: 30px;
-            background: #FFF9C4;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 1.2rem;
-            color: #FBC02D;
-            border: 3px solid #FFF176;
-            box-shadow: 0 4px 0 #FDD835;
-        }
-
-        .question-area {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin-bottom: 20px;
-            align-items: center;
-            flex-grow: 1;
-        }
-
-        .visual-section {
-            text-align: center;
-            background: #FFF3E0;
-            padding: 20px;
-            border-radius: 25px;
-            border: 3px dashed #FFCC80;
-        }
-
-        .ten-frame-container {
-            display: inline-block;
-            margin-bottom: 15px;
-        }
-
-        .ten-frame {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-            background: #FFFFFF;
-            padding: 12px;
-            border-radius: 18px;
-            border: 4px solid #FFAB91;
-            margin-bottom: 10px;
-            box-shadow: 0 4px 0 #FF8A65;
-        }
-
-        .counter {
-            width: 55px;
-            height: 55px;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 130vw;
+            height: 130vw;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.2rem;
-            position: relative;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            background: white;
-            border: 2px solid #E0E0E0;
-        }
-
-        .counter.fruit {
-            background: #FFF9C4;
-            border: 2px solid #FFF59D;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-            transform: scale(1);
-            animation: popIn 0.3s ease-out backwards;
-        }
-
-        @keyframes popIn {
-            from { transform: scale(0); }
-            to { transform: scale(1); }
-        }
-
-        .counter.crossed-out::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(229, 57, 53, 0.1);
-            border-radius: 50%;
+            border: 45px solid transparent;
+            box-shadow: 
+                0 0 0 10px rgba(156, 39, 176, 0.4),
+                0 0 0 20px rgba(63, 81, 181, 0.4),
+                0 0 0 30px rgba(33, 150, 243, 0.4),
+                0 0 0 40px rgba(76, 175, 80, 0.4),
+                0 0 0 50px rgba(255, 235, 59, 0.4),
+                0 0 0 60px rgba(255, 152, 0, 0.4),
+                0 0 0 70px rgba(244, 67, 54, 0.4);
+            filter: blur(1px);
             z-index: 1;
         }
 
-        .counter.crossed-out::after {
-            content: '✖';
+        .sun {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #D32F2F;
-            font-size: 3rem;
-            font-weight: 900;
+            top: 40px; left: 60px;
+            width: 80px; height: 80px;
+            background: #ffea00;
+            border-radius: 50%;
+            box-shadow: 0 0 40px #ffea00;
             z-index: 2;
-            text-shadow: 2px 2px 0 white;
-            line-height: 1;
         }
 
-        .counter.empty {
-            background: #FAFAFA;
-            border: 2px dashed #CFD8DC;
-            border-radius: 50%;
-        }
-
-        .problem-text {
-            font-size: 2.2rem;
-            font-weight: 700;
-            color: #5D4037;
-            margin-top: 15px;
-            background: white;
-            padding: 10px 20px;
-            border-radius: 15px;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 4px 0 #D7CCC8;
-        }
-
-        .speaker-icon {
-            cursor: pointer;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #81D4FA;
-            color: white;
-            border-radius: 50%;
-            font-size: 1.2rem;
-            transition: all 0.2s ease;
-            box-shadow: 0 3px 0 #29B6F6;
-        }
-
-        .speaker-icon:hover {
-            transform: translateY(-2px);
-            background: #4FC3F7;
-        }
-        
-        .speaker-icon:active {
-            transform: translateY(1px);
-            box-shadow: 0 1px 0 #29B6F6;
-        }
-
-        .equations-section {
-            background: #F1F8E9;
-            padding: 25px;
-            border-radius: 25px;
-            border: 3px dashed #AED581;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .equation {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            margin: 15px 0;
-            font-size: 2rem;
-            font-weight: 700;
-            color: #33691E;
-            flex-wrap: wrap;
-        }
-
-        .equation-label {
-            color: #558B2F;
-            margin-bottom: 5px;
-            font-size: 1.2rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .answer-box {
-            width: 70px;
-            height: 70px;
-            border: 3px dashed #BDBDBD;
-            border-radius: 15px;
-            background: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            font-weight: 700;
-            color: #333;
-            transition: all 0.2s ease;
-            user-select: none;
-            box-shadow: inset 0 3px 6px rgba(0,0,0,0.05);
-        }
-        
-        .answer-box.drag-over {
-            background: #E0F2F1;
-            border-color: #26A69A;
-            transform: scale(1.1);
-        }
-
-        .answer-box.filled {
-            background: #FFFDE7;
-            border: 3px solid #FDD835;
-            box-shadow: 0 4px 0 #FBC02D;
-        }
-
-        .answer-box.correct {
-            background: #C8E6C9;
-            border: 3px solid #43A047;
-            box-shadow: 0 4px 0 #2E7D32;
-            color: #1B5E20;
-            animation: bounce 0.6s cubic-bezier(0.280, 0.840, 0.420, 1);
-        }
-
-        .answer-box.active {
-            background: #E1F5FE;
-            border: 3px solid #29B6F6;
-            box-shadow: 0 0 15px rgba(41, 182, 246, 0.3);
-            transform: scale(1.05);
-        }
-
-        .answer-options {
-            display: flex;
-            gap: 12px;
-            margin: 10px 0 25px 0;
-            flex-wrap: wrap;
-            justify-content: center;
-            background: rgba(255,255,255,0.5);
-            padding: 15px;
-            border-radius: 20px;
-        }
-
-        .option-button {
-            width: 60px;
-            height: 60px;
-            border: none;
-            border-radius: 50%;
-            background: white;
-            font-size: 1.5rem;
-            font-weight: 700;
-            cursor: grab;
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            color: #1565C0;
-            box-shadow: 0 4px 0 #90CAF9, 0 5px 10px rgba(0,0,0,0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            user-select: none;
-        }
-
-        .option-button:hover:not(.used) {
-            transform: translateY(-4px) scale(1.1);
-            background: #E3F2FD;
-        }
-
-        .option-button:active:not(.used) {
-            transform: translateY(2px);
-            box-shadow: 0 0 0 #90CAF9, inset 0 2px 5px rgba(0,0,0,0.1);
-            cursor: grabbing;
-        }
-        
-        .option-button.dragging {
-            opacity: 0.5;
-            transform: scale(1.1);
-        }
-
-        .feedback {
-            text-align: center;
-            margin: 15px 0;
-            font-size: 1.5rem;
-            font-weight: 700;
-            min-height: 40px;
-            text-shadow: 1px 1px 0px white;
-        }
-
-        .feedback.success {
-            color: #43A047;
-            animation: pulse 0.5s;
-        }
-
-        .feedback.error {
-            color: #E53935;
-            animation: shake 0.4s;
-        }
-
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin-top: auto;
-            padding-top: 10px;
-        }
-
-        .control-button {
-            padding: 12px 35px;
-            font-size: 1.2rem;
-            font-weight: 700;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .next-button {
-            background: #66BB6A;
-            color: white;
-            box-shadow: 0 5px 0 #388E3C;
-        }
-
-        .next-button:hover:not(:disabled) {
-            background: #4CAF50;
-            transform: translateY(-2px);
-        }
-        
-        .next-button:active:not(:disabled) {
-            transform: translateY(2px);
-            box-shadow: 0 0 0 #388E3C;
-        }
-
-        .next-button:disabled {
-            background: #CFD8DC;
-            color: #90A4AE;
-            box-shadow: none;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .back-button {
-            background: #FFB74D;
-            color: white;
-            box-shadow: 0 5px 0 #F57C00;
-        }
-
-        .back-button:hover:not(:disabled) {
-            background: #FFA726;
-            transform: translateY(-2px);
-        }
-
-        .back-button:active:not(:disabled) {
-            transform: translateY(2px);
-            box-shadow: 0 0 0 #F57C00;
-        }
-        
-        .back-button:disabled {
-            background: #FFE0B2;
-            color: #FFF3E0;
-            box-shadow: none;
-            cursor: default;
-            transform: none;
-            opacity: 0.6;
-        }
-
-        /* Animations */
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
-
-        /* Improved Fruit Floating Animation */
-        .floating-fruit {
-            position: fixed;
-            bottom: -50px;
-            font-size: 4rem;
-            z-index: 1005;
-            animation: floatUp 3s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
-            pointer-events: none;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
-        }
-
-        @keyframes floatUp {
-            0% {
-                transform: translateY(100px) rotate(0deg) scale(0.5);
-                opacity: 0;
-            }
-            10% {
-                opacity: 1;
-                transform: translateY(0) rotate(10deg) scale(1);
-            }
-            100% {
-                transform: translateY(-120vh) rotate(360deg) scale(1.2);
-                opacity: 0.8;
-            }
-        }
-
-        /* Firework Particles - High Z-index for visibility over modal */
-        .firework-particle {
+        .cloud {
             position: absolute;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 2005; 
-        }
-
-        /* Mystery Box Styles */
-        .mystery-box-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(40, 50, 70, 0.9);
-            backdrop-filter: blur(8px);
-            z-index: 1001;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        .mystery-box-title {
-            font-size: 2.5rem;
-            color: #FFECB3;
-            margin-bottom: 40px;
-            font-weight: 700;
-            text-shadow: 0 3px 6px rgba(0,0,0,0.3);
-            animation: bounceIn 0.5s ease-out;
-            text-align: center;
-        }
-
-        .mystery-boxes-container {
-            display: flex;
-            gap: 40px;
-            flex-wrap: wrap;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .mystery-box-wrapper {
-            position: relative;
-            width: 140px;
-            height: 140px;
-            perspective: 1000px;
-        }
-
-        .mystery-box {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            animation: mysteryBoxAppear 0.5s ease-out backwards;
-            box-shadow: 0 15px 35px rgba(230, 81, 0, 0.4), inset 0 2px 5px rgba(255,255,255,0.3);
-            border: 4px solid #FFE0B2;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            transform-style: preserve-3d;
-        }
-        
-        .mystery-box::before {
-            content: '';
-            position: absolute;
-            width: 20px;
-            height: 100%;
-            background: #FFEB3B;
-            left: 50%;
-            transform: translateX(-50%);
-            box-shadow: 0 0 5px rgba(0,0,0,0.1);
-        }
-        
-        .mystery-box::after {
-            content: '';
-            position: absolute;
-            height: 20px;
-            width: 100%;
-            background: #FFEB3B;
-            top: 50%;
-            transform: translateY(-50%);
-            box-shadow: 0 0 5px rgba(0,0,0,0.1);
-        }
-
-        .mystery-box-emoji {
-            font-size: 4rem;
-            z-index: 2;
-            filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2));
-        }
-
-        .mystery-box:nth-child(1) { animation-delay: 0.1s; }
-        .mystery-box:nth-child(2) { animation-delay: 0.2s; }
-        .mystery-box:nth-child(3) { animation-delay: 0.3s; }
-
-        .mystery-box-wrapper:hover .mystery-box {
-            transform: translateY(-15px) rotate(5deg);
-            box-shadow: 0 25px 50px rgba(230, 81, 0, 0.6), inset 0 2px 5px rgba(255,255,255,0.3);
-        }
-
-        .mystery-box.opening {
-            animation: boxOpen 0.8s ease-out forwards;
-            pointer-events: none;
-        }
-
-        .revealed-gift {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 8rem;
-            z-index: 1003;
-            animation: revealGift 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-            pointer-events: none;
-            filter: drop-shadow(0 10px 30px rgba(0,0,0,0.3));
-        }
-
-        /* Results Screen - REDESIGNED for Neatness */
-        .results-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            /* Dark semi-transparent background to make fireworks pop */
-            background: radial-gradient(circle at center, rgba(26, 35, 126, 0.95) 0%, rgba(13, 17, 60, 0.98) 100%);
-            z-index: 2000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            animation: fadeIn 0.5s ease-out;
-            padding: 20px;
-            overflow: hidden;
-        }
-
-        .results-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 30px;
-            padding: 30px;
-            max-width: 500px; /* Reduced width */
-            width: 90%;
-            box-shadow: 0 0 80px rgba(255, 215, 64, 0.3);
-            animation: bounceIn 0.8s ease-out;
-            text-align: center;
-            border: 4px solid #FFD54F;
-            z-index: 2001;
-            position: relative;
-        }
-
-        .results-title {
-            font-size: 2.2rem;
-            font-weight: 900;
-            background: linear-gradient(to right, #6A1B9A, #AB47BC);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .results-score-label {
-            font-size: 1.1rem;
-            color: #78909C;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .results-score .score-number {
-            font-size: 3.5rem;
-            font-weight: 900;
-            color: #43A047;
-            text-shadow: 2px 2px 0 #DCEDC8;
-            margin: 5px 0 15px 0;
-            line-height: 1;
-        }
-        
-        .results-gifts-grid {
-            background: #FFF8E1;
-            border: 2px dashed #FFCA28;
-            border-radius: 20px;
-            padding: 15px;
-            gap: 10px;
-            margin: 15px 0 25px 0;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            max-height: 220px;
-            overflow-y: auto;
-        }
-        
-        /* Custom scrollbar for gifts */
-        .results-gifts-grid::-webkit-scrollbar {
-            width: 8px;
-        }
-        .results-gifts-grid::-webkit-scrollbar-track {
-            background: #FFF8E1;
-            border-radius: 10px;
-        }
-        .results-gifts-grid::-webkit-scrollbar-thumb {
-            background: #FFD54F;
-            border-radius: 10px;
-        }
-
-        .gift-item {
-            font-size: 2.5rem;
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 15px;
             background: white;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.05);
-            transition: transform 0.2s;
-        }
-        
-        .gift-item:hover {
-            transform: scale(1.15) rotate(5deg);
-        }
-
-        .results-button {
-            padding: 15px 40px;
-            font-size: 1.3rem;
             border-radius: 50px;
-            font-family: 'Poppins', sans-serif;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 6px 0 #E65100;
+            width: 140px; height: 55px;
+            z-index: 2;
+            opacity: 0.9;
+        }
+        .cloud::before { content: ''; position: absolute; width: 70px; height: 70px; top: -35px; left: 20px; background: white; border-radius: 50%; }
+        .cloud::after { content: ''; position: absolute; width: 55px; height: 55px; top: -25px; left: 65px; background: white; border-radius: 50%; }
+        
+        .cloud-1 { top: 120px; right: 10%; animation: float 30s infinite linear; }
+        .cloud-2 { top: 200px; left: 15%; animation: float 35s infinite linear reverse; }
+
+        @keyframes float { from { transform: translateX(80px); } to { transform: translateX(-80px); } }
+
+        /* Cỏ và Hoa */
+        .grass-hill {
+            position: absolute;
+            bottom: 0; left: -10%;
+            width: 120%; height: 28vh;
+            background: #58CC02;
+            border-top-left-radius: 50% 100px;
+            border-top-right-radius: 50% 100px;
+            z-index: 3;
+            box-shadow: inset 0 20px 0 #46a302;
+        }
+
+        .flower {
+            position: absolute;
+            width: 24px; height: 24px;
+            background: white;
+            border-radius: 50%;
+            z-index: 4;
+            box-shadow: -12px 0 0 white, 12px 0 0 white, 0 -12px 0 white, 0 12px 0 white;
+            opacity: 0.9;
+        }
+        .flower::after {
+            content: ''; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 16px; height: 16px; background: #FFC800; border-radius: 50%;
+        }
+
+        /* --- UI Layers --- */
+        .ui-layer {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 50;
+            display: flex;
+            padding: 20px;
+            pointer-events: none;
+        }
+        .score-board {
+            background: var(--white);
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-weight: 800; font-size: 1.3rem;
+            color: var(--secondary);
+            box-shadow: 0 4px 0 #E5E5E5;
+            display: flex; align-items: center; gap: 10px;
+            pointer-events: auto;
+            border: 2px solid #F0F0F0;
+        }
+
+        /* --- Game Main Layout --- */
+        .main-wrapper {
+            position: relative;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
             width: 100%;
-            max-width: 250px;
-        }
-        
-        .restart-button:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 0 #E65100;
-        }
-        
-        .restart-button:active {
-            transform: translateY(2px);
-            box-shadow: 0 2px 0 #E65100;
+            z-index: 10;
+            padding-top: 80px; 
+            padding-bottom: 6vh; 
+            min-height: 600px; 
         }
 
-        /* Animations */
-        @keyframes mysteryBoxAppear {
-            0% { transform: scale(0) rotate(-180deg); opacity: 0; }
-            100% { transform: scale(1) rotate(0deg); opacity: 1; }
-        }
-        @keyframes bounceIn {
-            0% { transform: scale(0.3); opacity: 0; }
-            50% { transform: scale(1.05); opacity: 1; }
-            70% { transform: scale(0.9); }
-            100% { transform: scale(1); }
-        }
-        @keyframes boxOpen {
-            0% { transform: scale(1); }
-            20% { transform: scale(1.1) rotate(-10deg); }
-            40% { transform: scale(1.1) rotate(10deg); }
-            60% { transform: scale(1.1) rotate(-10deg); }
-            100% { transform: scale(0.8) rotate(0deg); opacity: 0; }
-        }
-        @keyframes revealGift {
-            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
-            70% { transform: translate(-50%, -50%) scale(0.9); }
-            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; top: 10%; }
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        .game-container {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
         }
 
-        /* Mobile Adjustments */
-        @media (max-width: 768px) {
-            .game-title { font-size: 2rem; }
-            .instructions { font-size: 1rem; padding: 6px 15px; }
-            .question-area { grid-template-columns: 1fr; gap: 20px; }
-            .counter { width: 35px; height: 35px; font-size: 1.2rem; }
-            .equation { font-size: 1.5rem; }
-            .answer-box { width: 50px; height: 50px; font-size: 1.5rem; }
-            .option-button { width: 50px; height: 50px; font-size: 1.3rem; }
-            .mystery-box { font-size: 4rem; }
-            .revealed-gift { font-size: 6rem; }
-            .results-title { font-size: 2rem; }
-            .results-score .score-number { font-size: 3rem; }
-            .controls { gap: 15px; }
-            .control-button { padding: 10px 20px; font-size: 1rem; }
-            .score-display { top: 10px; right: 10px; padding: 5px 15px; font-size: 1rem; }
+        /* Khu vực câu hỏi */
+        .header-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .equation-wrapper { display: flex; align-items: center; gap: 15px; margin-bottom: 5px; }
+        .equation-board {
+            background: var(--white); padding: 10px 30px; border-radius: 25px;
+            font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 800;
+            box-shadow: 0 6px 0 #E5E5E5; border: 3px solid #F0F0F0;
+        }
+        .equation-board span.highlight { color: var(--primary); }
+        .equation-board span.answer-highlight { color: var(--accent); }
+
+        .tts-btn {
+            background: var(--secondary); border: none; width: 55px; height: 55px; border-radius: 50%;
+            box-shadow: 0 5px 0 #D4A000; cursor: pointer; font-size: 1.6rem;
+            display: flex; justify-content: center; align-items: center;
+            transition: transform 0.1s;
+        }
+        .tts-btn:active { transform: translateY(4px); box-shadow: none; }
+
+        .mascot-msg {
+            background: var(--white); padding: 8px 25px; border-radius: 20px;
+            font-size: 1.1rem; font-weight: 700; color: #6a4c93;
+            box-shadow: 0 4px 0 #E5E5E5; margin-bottom: 5px;
+            text-align: center; border: 2px solid #F0F0F0;
+        }
+
+        /* --- Ice Cream Components --- */
+        .ice-cream-stand {
+            position: relative;
+            width: 95%;
+            max-width: 850px; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .cones-container {
+            display: flex;
+            justify-content: space-around; 
+            width: 100%;
+            padding: 0 2%; 
+            align-items: flex-end;
+            min-height: 250px;
+            padding-bottom: 5px;
+        }
+
+        .cone-slot {
+            width: 44px;
+            display: flex;
+            flex-direction: column-reverse; 
+            align-items: center;
+            position: relative;
+            padding-bottom: 55px; 
+        }
+
+        .cone-slot.error { animation: shake 0.4s; }
+        
+        .cone-base {
+            position: absolute;
+            bottom: 0;
+            width: 36px;
+            height: 65px;
+            background-color: #F8B500;
+            background-image: 
+                linear-gradient(45deg, rgba(0,0,0,0.15) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.15) 75%, rgba(0,0,0,0.15)),
+                linear-gradient(-45deg, rgba(0,0,0,0.15) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.15) 75%, rgba(0,0,0,0.15));
+            background-size: 12px 12px;
+            clip-path: polygon(5% 0, 95% 0, 50% 100%);
+            z-index: 1; 
+            transition: all 0.3s;
+        }
+
+        .cone-slot.complete .cone-base {
+            filter: drop-shadow(0 0 8px rgba(255, 214, 10, 0.8));
+            background-color: #ffcc00;
+        }
+
+        .cone-label {
+            position: absolute;
+            bottom: -36px; 
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--white);
+            background: var(--label-color);
+            border: 2px solid #fff;
+            padding: 3px 10px;
+            border-radius: 12px;
+            z-index: 20;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.15);
+        }
+
+        /* Ice Cream Scoop */
+        .scoop {
+            width: 46px; height: 46px;
+            border-radius: 50%;
+            position: relative;
+            display: flex; justify-content: center; align-items: center;
+            margin-bottom: -15px; 
+            z-index: 5;
+            cursor: pointer;
+            touch-action: none;
+        }
+        .scoop::before { 
+            content: ''; position: absolute; top: 12%; left: 18%;
+            width: 25%; height: 25%; background: rgba(255,255,255,0.6); border-radius: 50%;
+        }
+        
+        .scoop.red { background: radial-gradient(circle at 35% 35%, #ff9a9e, #fecfef); box-shadow: 0 4px 0 #ff758c; }
+        .scoop.yellow { background: radial-gradient(circle at 35% 35%, #fceabb, #f8b500); box-shadow: 0 4px 0 #e65100; }
+        .scoop.green { background: radial-gradient(circle at 35% 35%, #84fab0, #8fd3f4); box-shadow: 0 4px 0 #00b4d8; }
+        .scoop.purple { background: radial-gradient(circle at 35% 35%, #a18cd1, #fbc2eb); box-shadow: 0 4px 0 #89216b; }
+
+        .cone-slot .scoop {
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15); 
+        }
+
+        .stand-base {
+            width: 100%; 
+            height: 95px; 
+            background: var(--stand-color);
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 15px, rgba(255,255,255,0.3) 15px, rgba(255,255,255,0.3) 30px);
+            border-radius: 10px 10px 40px 40px;
+            box-shadow: 0 10px 0 var(--stand-dark);
+            display: flex; flex-direction: column; 
+            justify-content: flex-end; 
+            align-items: center;
+            padding-bottom: 12px; 
+            margin-top: -2px; z-index: 10;
+            border: 4px solid var(--stand-dark);
+            position: relative;
+        }
+        .stand-rim {
+            position: absolute; top: 0; width: 100.5%; height: 12px;
+            background: var(--stand-dark); border-radius: 10px;
+        }
+        
+        .stand-mouth {
+            width: 90px; height: 45px; background: #fff;
+            border-radius: 15px; border: 4px solid var(--mouth-color);
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-size: 1.8rem; font-weight: 800; color: var(--mouth-color);
+            z-index: 11;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* --- Tray & Buttons --- */
+        .tray {
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(10px);
+            padding: 15px 40px; border-radius: 35px;
+            display: flex; gap: 25px; margin: 10px 0;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            z-index: 20;
+            touch-action: none; /* Ngăn chặn cuộn trang khi kéo thả kem */
+        }
+
+        .action-area {
+            min-height: 80px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            z-index: 20;
+        }
+
+        .btn {
+            background: var(--accent); color: white; border: none;
+            padding: 14px 45px; font-size: 1.5rem; font-weight: 800;
+            border-radius: 20px; box-shadow: 0 6px 0 var(--accent-shadow);
+            cursor: pointer; text-transform: uppercase; letter-spacing: 1px;
+            transition: all 0.1s;
+        }
+        .btn:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 2px 0 var(--accent-shadow); }
+        .btn-blue { background: #1CB0F6; box-shadow: 0 6px 0 #1899D6; }
+        .btn:disabled { background: #ccc; box-shadow: 0 6px 0 #999; opacity: 0.6; cursor: not-allowed; }
+
+        .answers-container { display: none; gap: 20px; margin-bottom: 10px; }
+        .answer-bubble {
+            width: 80px; height: 80px; border-radius: 22px;
+            background: white; color: #1CB0F6; font-size: 2.2rem; font-weight: 800;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; box-shadow: 0 6px 0 #E5E5E5; border: 3px solid #F0F0F0;
+            transition: all 0.1s;
+        }
+        .answer-bubble:active { transform: translateY(4px); box-shadow: 0 2px 0 #E5E5E5; }
+
+        /* --- Screens --- */
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+            z-index: 200; display: flex; justify-content: center; align-items: center;
+            visibility: hidden; opacity: 0; transition: 0.3s;
+        }
+        .overlay.active { visibility: visible; opacity: 1; }
+        .modal {
+            background: white; padding: 40px; border-radius: 40px; text-align: center;
+            max-width: 90%; width: 450px; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            border: 4px solid #F0F0F0;
+        }
+
+        .number-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 25px; }
+        .num-toggle {
+            background: white; border: 3px solid #E5E5E5; font-size: 1.5rem; font-weight: 800;
+            padding: 12px 0; border-radius: 18px; cursor: pointer; box-shadow: 0 4px 0 #E5E5E5;
+        }
+        .num-toggle.selected { background: #1CB0F6; color: white; border-color: #1899D6; box-shadow: 0 4px 0 #1899D6; }
+
+        @keyframes popIn { 0% { transform: scale(0); } 80% { transform: scale(1.15); } 100% { transform: scale(1); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
+        /* Pháo giấy lớp cao nhất */
+        .confetti { 
+            position: fixed; 
+            z-index: 10000; 
+            pointer-events: none; 
+        }
+
+        #ghostScoop {
+            position: fixed; pointer-events: none; z-index: 1000; opacity: 0.95;
+            transform: translate(-50%, -50%); display: none;
+            box-shadow: 0 10px 15px rgba(0,0,0,0.2);
+            scale: 1.1;
+        }
+
+        /* --- Media Queries (Tối ưu thiết bị) --- */
+        @media (max-width: 600px) {
+            .rainbow { width: 180vw; height: 180vw; top: 15%; }
+            .ice-cream-stand { max-width: 100%; width: 98%; }
+            .cones-container { min-height: 200px; padding: 0 1%; gap: 6px; }
+            .cone-slot { width: 34px; padding-bottom: 45px;}
+            .cone-base { width: 28px; height: 50px; background-size: 8px 8px; }
+            .cone-label { bottom: -28px; font-size: 0.75rem; padding: 2px 5px; border-width: 1px; }
+            .scoop { width: 34px; height: 34px; margin-bottom: -10px; }
+            .cone-slot .scoop { width: 34px; height: 34px; }
+            
+            .stand-base { height: 75px; padding-bottom: 8px; border-radius: 8px 8px 25px 25px; }
+            .stand-mouth { width: 65px; height: 32px; font-size: 1.4rem; border-width: 3px;}
+            
+            .main-wrapper { padding-bottom: 10vh; min-height: 550px; }
+            .grass-hill { height: 25vh; border-top-left-radius: 50% 60px; border-top-right-radius: 50% 60px; }
+            .tray { gap: 15px; padding: 10px 20px; }
+        }
+
+        @media (max-height: 750px) {
+            .main-wrapper { padding-top: 60px; padding-bottom: 5vh; }
+            .grass-hill { height: 20vh; }
+            .cones-container { min-height: 180px; }
         }
     </style>
-  <style>@view-transition { navigation: auto; }</style>
- </head>
- <body>
-  <img src="../assets/logo-oodles-math.png" class="oodles-logo">
-  <main class="game-container">
-   <div class="score-display">
-    Score: <span id="currentScore">0</span>
-   </div>
-   <header class="game-header">
-    <h1 class="game-title" id="gameTitle">Subtract from Ten!</h1>
-    <p class="instructions" id="instructionText">Drag the numbers to complete the equations!</p>
-   </header>
-   <div class="question-area">
-    <div class="visual-section">
-     <div class="ten-frame-container" id="tenFrameContainer"><!-- Ten frames will be generated here -->
-     </div>
-     <div class="problem-text" id="problemText">
-      18 − 3 = ? <span class="speaker-icon" onclick="playAudio()">🔊</span>
-     </div>
+</head>
+<body>
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <div class="world-bg">
+        <div class="rainbow"></div>
+        <div class="sun"></div>
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+        <div class="grass-hill">
+            <div class="flower" style="left: 5%; top: 30px; transform: scale(0.5);"></div>
+            <div class="flower" style="left: 15%; top: 20px;"></div>
+            <div class="flower" style="left: 25%; top: 60px; transform: scale(0.7);"></div>
+            <div class="flower" style="left: 35%; top: 45px;"></div>
+            <div class="flower" style="left: 45%; top: 25px; transform: scale(0.4);"></div>
+            <div class="flower" style="left: 50%; top: 60px; transform: scale(0.45);"></div>
+            <div class="flower" style="left: 60%; top: 80px; transform: scale(0.6);"></div>
+            <div class="flower" style="left: 65%; top: 15px;"></div>
+            <div class="flower" style="left: 75%; top: 70px; transform: scale(0.5);"></div>
+            <div class="flower" style="left: 85%; top: 40px;"></div>
+            <div class="flower" style="left: 92%; top: 20px; transform: scale(0.6);"></div>
+            <div class="flower" style="left: 96%; top: 60px; transform: scale(0.4);"></div>
+        </div>
     </div>
-    <div class="equations-section">
-     <div class="equation-label">
-      Fill in the blanks:
-     </div>
-     <div class="equation"><span>10 −</span>
-      <div class="answer-box" id="box1" data-box="1"></div><span>=</span>
-      <div class="answer-box" id="box2" data-box="2"></div>
-     </div>
-     <div class="answer-options" id="options1"><!-- Options for first equation -->
-     </div>
-     <div class="equation">
-      <div class="answer-box" id="box3" data-box="3"></div><span>+</span>
-      <div class="answer-box" id="box4" data-box="4"></div><span>=</span>
-      <div class="answer-box" id="box5" data-box="5"></div>
-     </div>
-     <div class="answer-options" id="options2"><!-- Options for second equation -->
-     </div>
+
+    <div class="ui-layer">
+        <div class="score-board">⭐ <span id="scoreDisplay">0</span></div>
     </div>
-   </div>
-   <div class="feedback" id="feedback"></div>
-   <div class="controls"><button class="control-button back-button" onclick="previousQuestion()" id="backButton" disabled>◀ Back</button> <button class="control-button next-button" onclick="nextQuestion()" id="nextButton" disabled>Next ▶</button>
-   </div>
-  </main>
-  <div class="celebration" id="celebration"></div>
-  <script>
-        const defaultConfig = {
-            game_title: "Subtract from Ten!",
-            instruction_text: "Drag the numbers to complete the equations!",
-            celebration_text: "Great job!"
+
+    <div class="main-wrapper">
+        <div class="game-container">
+            
+            <div class="header-area">
+                <div class="equation-wrapper">
+                    <div class="equation-board" id="equationBoard">
+                        <span id="eqText">? × ? = ?</span>
+                    </div>
+                    <button class="tts-btn" id="ttsBtn" title="Listen">🔊</button>
+                </div>
+                <div class="mascot-msg" id="mascotMsg">Ready to serve ice cream?</div>
+            </div>
+
+            <div class="ice-cream-stand">
+                <div class="cones-container" id="conesContainer"></div>
+                <div class="stand-base">
+                    <div class="stand-rim"></div>
+                    <div class="stand-mouth" id="baseNumberDisplay">?</div>
+                </div>
+            </div>
+
+            <div class="tray" id="tray">
+                <div class="scoop red" data-color="red"></div>
+                <div class="scoop yellow" data-color="yellow"></div>
+                <div class="scoop green" data-color="green"></div>
+                <div class="scoop purple" data-color="purple"></div>
+            </div>
+
+            <div class="action-area">
+                <button class="btn btn-blue" id="checkGroupsBtn" style="display:none;">Check Now</button>
+                <div class="answers-container" id="answersContainer"></div>
+                <button class="btn" id="nextBtn" style="display:none;">Next Round</button>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Cục kem "bóng" hiển thị khi bé kéo thả -->
+    <div id="ghostScoop" class="scoop"></div>
+
+    <div class="overlay active" id="setupScreen">
+        <div class="modal">
+            <h1 style="color:var(--primary)">🍦 Ice Cream Shop</h1>
+            <p>Pick your math tables to start:</p>
+            <div class="number-grid" id="numberGrid"></div>
+            <button class="btn" id="startBtn" disabled>Start Selling!</button>
+        </div>
+    </div>
+
+    <div class="overlay" id="endScreen">
+        <div class="modal">
+            <h1 style="color:var(--accent)">Excellent! 🍦🌟</h1>
+            <p>You're an Ice Cream Master!</p>
+            <p style="font-size: 1.8rem; color: var(--primary); font-weight: 800;">Final Score: <span id="finalScore"></span>/5</p>
+            <button class="btn btn-blue" id="restartBtn" style="margin-top: 15px;">Play Again</button>
+        </div>
+    </div>
+
+<script>
+    let state = {
+        phase: 'setup',
+        round: 0,
+        maxRounds: 5,
+        score: 0,
+        selectedBases: [],
+        problemPool: [], 
+        base: 0,
+        multiplier: 0,
+        sound: true,
+        coneData: new Array(10).fill(0)
+    };
+
+    const els = {
+        scoreDisplay: document.getElementById('scoreDisplay'),
+        eqText: document.getElementById('eqText'),
+        ttsBtn: document.getElementById('ttsBtn'),
+        mascotMsg: document.getElementById('mascotMsg'),
+        baseNumberDisplay: document.getElementById('baseNumberDisplay'),
+        conesContainer: document.getElementById('conesContainer'),
+        tray: document.getElementById('tray'),
+        checkGroupsBtn: document.getElementById('checkGroupsBtn'),
+        answersContainer: document.getElementById('answersContainer'),
+        nextBtn: document.getElementById('nextBtn'),
+        setupScreen: document.getElementById('setupScreen'),
+        endScreen: document.getElementById('endScreen'),
+        numberGrid: document.getElementById('numberGrid'),
+        startBtn: document.getElementById('startBtn'),
+        restartBtn: document.getElementById('restartBtn'),
+        finalScore: document.getElementById('finalScore'),
+        ghostScoop: document.getElementById('ghostScoop')
+    };
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playTone(freq, type, duration, vol=0.1, slideFreq=null) {
+        if (!state.sound) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        if (slideFreq) osc.frequency.exponentialRampToValueAtTime(slideFreq, audioCtx.currentTime + duration);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + duration);
+    }
+
+    const sfx = {
+        pop: () => playTone(600, 'sine', 0.1, 0.2, 300),
+        bubble: () => playTone(400, 'sine', 0.2, 0.1, 800),
+        ding: () => playTone(880, 'triangle', 0.3, 0.2),
+        buzz: () => playTone(150, 'sawtooth', 0.3, 0.1),
+        tada: () => {
+            playTone(523, 'triangle', 0.4, 0.15);
+            setTimeout(()=>playTone(659, 'triangle', 0.4, 0.15), 100);
+            setTimeout(()=>playTone(784, 'triangle', 0.6, 0.2), 200);
+        }
+    };
+
+    function speak(text) {
+        if (!window.speechSynthesis || !state.sound) return;
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'en-US'; u.rate = 0.9;
+        window.speechSynthesis.speak(u);
+    }
+
+    function init() {
+        for (let i=2; i<=9; i++) {
+            const b = document.createElement('div'); b.className = 'num-toggle'; b.innerText = i;
+            b.onclick = () => {
+                b.classList.toggle('selected');
+                if (b.classList.contains('selected')) state.selectedBases.push(i);
+                else state.selectedBases = state.selectedBases.filter(n => n !== i);
+                els.startBtn.disabled = state.selectedBases.length === 0;
+            };
+            els.numberGrid.appendChild(b);
+        }
+
+        els.conesContainer.innerHTML = '';
+        for (let i=0; i<10; i++) {
+            const s = document.createElement('div'); 
+            s.className = 'cone-slot'; 
+            s.dataset.index = i;
+            
+            const base = document.createElement('div');
+            base.className = 'cone-base';
+            s.appendChild(base);
+
+            const label = document.createElement('div');
+            label.className = 'cone-label';
+            label.innerText = `x${i + 1}`;
+            s.appendChild(label);
+
+            els.conesContainer.appendChild(s);
+        }
+
+        els.startBtn.onclick = startGame;
+        els.restartBtn.onclick = () => location.reload();
+        
+        els.ttsBtn.onclick = () => {
+            if (state.phase === 'drag') {
+                speak(`${state.base} times ${state.multiplier} equals what?`);
+            } else {
+                speak(`${state.base} times ${state.multiplier} equals ${state.base * state.multiplier}`);
+            }
         };
 
-        let currentConfig = { ...defaultConfig };
+        els.checkGroupsBtn.onclick = checkGroups;
+        els.nextBtn.onclick = startRound;
 
-        const problems = [
-            { problem: "18 − 9", minuend: 18, subtrahend: 9, answer: 9, audio: "Eighteen take away nine equals what?" },
-            { problem: "17 − 9", minuend: 17, subtrahend: 9, answer: 8, audio: "Seventeen take away nine equals what?" },
-            { problem: "16 − 8", minuend: 16, subtrahend: 8, answer: 8, audio: "Sixteen take away eight equals what?" },
-            { problem: "15 − 7", minuend: 15, subtrahend: 7, answer: 8, audio: "Fifteen take away seven equals what?" },
-            { problem: "14 − 6", minuend: 14, subtrahend: 6, answer: 8, audio: "Fourteen take away six equals what?" },
-            { problem: "13 − 5", minuend: 13, subtrahend: 5, answer: 8, audio: "Thirteen take away five equals what?" },
-            { problem: "12 − 4", minuend: 12, subtrahend: 4, answer: 8, audio: "Twelve take away four equals what?" },
-            { problem: "11 − 5", minuend: 11, subtrahend: 5, answer: 6, audio: "Eleven take away five equals what?" },
-            { problem: "13 − 7", minuend: 13, subtrahend: 7, answer: 6, audio: "Thirteen take away seven equals what?" },
-            { problem: "14 − 8", minuend: 14, subtrahend: 8, answer: 6, audio: "Fourteen take away eight equals what?" },
-            { problem: "15 − 9", minuend: 15, subtrahend: 9, answer: 6, audio: "Fifteen take away nine equals what?" },
-            { problem: "11 − 7", minuend: 11, subtrahend: 7, answer: 4, audio: "Eleven take away seven equals what?" }
-        ];
+        // Xóa tính năng click cũ ở đây (để gộp chung vào pointer events)
+        // els.tray.onclick = (...)
 
-        let currentProblemIndex = 0;
-        let selectedBox = null;
-        let answers = {};
-        let correctBoxes = new Set();
-        let collectedGifts = [];
-        let totalScore = 0;
-        let currentQuestionScore = 10; // Default score for a question
+        els.conesContainer.onclick = (e) => {
+            if (state.phase !== 'drag') return;
+            const f = e.target.closest('.scoop');
+            if (f) {
+                const s = f.closest('.cone-slot');
+                const idx = s.dataset.index;
+                f.remove(); state.coneData[idx]--;
+                s.classList.remove('complete');
+                sfx.bubble();
+            }
+        };
+
+        // Gắn sự kiện cảm ứng kéo-thả và click gộp
+        els.tray.onpointerdown = handleDragStart;
+        document.onpointermove = handleDragMove;
+        document.onpointerup = handleDragEnd;
+    }
+
+    function startGame() {
+        state.round = 0; state.score = 0;
+        els.scoreDisplay.innerText = 0;
         
-        // Sound effects using Web Audio API
-        let audioContext = null;
-        
-        function initAudio() {
-            if (!audioContext) {
-                try {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                } catch (e) {
-                    console.log('Audio not supported');
-                }
+        let allProblems = [];
+        state.selectedBases.forEach(baseNum => {
+            for(let mult = 2; mult <= 9; mult++) {
+                allProblems.push({ base: baseNum, multiplier: mult });
             }
-            return audioContext;
-        }
-        
-        function playSound(frequency, duration, type = 'sine') {
-            const ctx = initAudio();
-            if (!ctx) return;
-            
-            try {
-                if (ctx.state === 'suspended') {
-                    ctx.resume();
-                }
-                
-                const oscillator = ctx.createOscillator();
-                const gainNode = ctx.createGain();
-                
-                oscillator.connect(gainNode);
-                gainNode.connect(ctx.destination);
-                
-                oscillator.frequency.setValueAtTime(frequency, ctx.currentTime);
-                oscillator.type = type;
-                
-                gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
-                
-                oscillator.start(ctx.currentTime);
-                oscillator.stop(ctx.currentTime + duration);
-                
-                showSoundIndicator();
-            } catch (e) {
-                console.log('Audio playback failed:', e);
-            }
-        }
-
-        function playCorrectSound() {
-            playSound(523.25, 0.2);
-            setTimeout(() => playSound(659.25, 0.2), 100);
-            setTimeout(() => playSound(783.99, 0.3), 200);
-        }
-
-        function playIncorrectSound() {
-            playSound(392, 0.3, 'triangle');
-            setTimeout(() => playSound(329.63, 0.4, 'triangle'), 150);
-        }
-
-        function playClickSound() {
-            playSound(800, 0.1, 'square');
-        }
-
-        function playExplosionSound() {
-            playSound(200, 0.1, 'sawtooth');
-            setTimeout(() => playSound(100, 0.3, 'sawtooth'), 50);
-        }
-
-        function showSoundIndicator() {
-            const indicator = document.createElement('div');
-            indicator.className = 'sound-indicator';
-            indicator.textContent = '🔊';
-            document.body.appendChild(indicator);
-            
-            setTimeout(() => {
-                if (indicator.parentNode) {
-                    indicator.parentNode.removeChild(indicator);
-                }
-            }, 500);
-        }
-        
-        // Safe emoji array - only using widely supported emojis
-        const fruits = ['🍎', '🍌', '🍇', '🍓', '🍑', '🍒', '🍍', '🍈', '🍉', '🍋', '🍐', '🥕', '🌽', '🍅', '🥒', '🧅', '🥦', '🍆', '🥝'];
-
-        function generateTenFrames(minuend, subtrahend) {
-            const container = document.getElementById('tenFrameContainer');
-            container.innerHTML = '';
-
-            const currentFruit = fruits[currentProblemIndex % fruits.length];
-            
-            const totalFrames = Math.ceil(minuend / 10);
-            
-            for (let frame = 0; frame < totalFrames; frame++) {
-                const frameDiv = document.createElement('div');
-                frameDiv.className = 'ten-frame';
-                
-                const startIndex = frame * 10;
-                
-                for (let i = 0; i < 10; i++) {
-                    const counter = document.createElement('div');
-                    const globalIndex = startIndex + i;
-                    
-                    if (globalIndex < minuend) {
-                        counter.className = 'counter fruit';
-                        counter.textContent = currentFruit;
-                        
-                        if (frame === 0 && i < subtrahend) {
-                            counter.classList.add('crossed-out');
-                        }
-                    } else {
-                        counter.className = 'counter empty';
-                    }
-                    
-                    frameDiv.appendChild(counter);
-                }
-                
-                container.appendChild(frameDiv);
-            }
-        }
-
-        function calculateBreakApart(minuend, subtrahend) {
-            const onesInMinuend = minuend % 10;
-            
-            return {
-                subtractFromTen: subtrahend,
-                remainingInTen: 10 - subtrahend,
-                additionLeft: 10 - subtrahend,
-                additionRight: onesInMinuend
-            };
-        }
-
-        function generateOptions(correctAnswer, type) {
-            const options = [correctAnswer];
-            const range = type === 'small' ? 5 : 10;
-            
-            while (options.length < 3) {
-                const option = Math.max(0, Math.min(20, correctAnswer + Math.floor(Math.random() * range) - Math.floor(range/2)));
-                if (!options.includes(option)) {
-                    options.push(option);
-                }
-            }
-            
-            return options.sort(() => Math.random() - 0.5);
-        }
-
-        function loadProblem() {
-            const problem = problems[currentProblemIndex];
-            const breakdown = calculateBreakApart(problem.minuend, problem.subtrahend);
-            
-            generateTenFrames(problem.minuend, problem.subtrahend);
-            document.getElementById('problemText').innerHTML = `${problem.problem} = ? <span class="speaker-icon" onclick="playAudio()">🔊</span>`;
-            
-            answers = {};
-            correctBoxes.clear();
-            selectedBox = null;
-            touchSelectedValue = null;
-            touchSelectedButton = null;
-            currentQuestionScore = 10; // Reset score potential for new question
-            
-            for (let i = 1; i <= 5; i++) {
-                const box = document.getElementById(`box${i}`);
-                box.textContent = '';
-                box.className = 'answer-box';
-                // Reset classes
-                box.classList.remove('filled', 'correct', 'active');
-            }
-            
-            const correctAnswers = {
-                1: breakdown.subtractFromTen,
-                2: breakdown.remainingInTen,
-                3: breakdown.additionLeft,
-                4: breakdown.additionRight,
-                5: problem.answer
-            };
-            
-            const options1 = generateOptions(correctAnswers[1], 'small').concat(generateOptions(correctAnswers[2], 'small'));
-            const uniqueOptions1 = [...new Set(options1)].slice(0, 6);
-            
-            const options2 = [correctAnswers[3], correctAnswers[4], correctAnswers[5]]
-                .concat(generateOptions(correctAnswers[3], 'large'))
-                .concat(generateOptions(correctAnswers[4], 'small'))
-                .concat(generateOptions(correctAnswers[5], 'large'));
-            const uniqueOptions2 = [...new Set(options2)].slice(0, 8);
-            
-            displayOptions('options1', uniqueOptions1);
-            displayOptions('options2', uniqueOptions2);
-            
-            window.correctAnswers = correctAnswers;
-            
-            document.getElementById('backButton').disabled = currentProblemIndex === 0;
-            document.getElementById('nextButton').disabled = true;
-            document.getElementById('feedback').textContent = '';
-            document.getElementById('feedback').className = 'feedback';
-            
-            setupDragAndDrop();
-        }
-
-        function displayOptions(containerId, options) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = '';
-            
-            options.forEach(option => {
-                const button = document.createElement('button');
-                button.className = 'option-button';
-                button.textContent = option;
-                button.dataset.value = option;
-                
-                container.appendChild(button);
-            });
-        }
-
-        let touchSelectedValue = null;
-        let touchSelectedButton = null;
-
-        function setupDragAndDrop() {
-            document.querySelectorAll('.option-button').forEach(button => {
-                button.setAttribute('draggable', 'true');
-                
-                // Desktop drag events
-                button.addEventListener('dragstart', function(e) {
-                    playClickSound();
-                    button.classList.add('dragging');
-                    e.dataTransfer.effectAllowed = 'move';
-                    e.dataTransfer.setData('text/plain', button.dataset.value);
-                });
-                
-                button.addEventListener('dragend', function() {
-                    button.classList.remove('dragging');
-                });
-                
-                // Mobile touch events - tap to select
-                button.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    // Clear previous selection
-                    if (touchSelectedButton && touchSelectedButton !== button) {
-                        touchSelectedButton.style.border = 'none';
-                        touchSelectedButton.style.background = 'white';
-                        touchSelectedButton.style.transform = 'none';
-                        touchSelectedButton.style.boxShadow = '0 4px 0 #90CAF9, 0 5px 10px rgba(0,0,0,0.1)';
-                    }
-                    
-                    // Select this button
-                    touchSelectedValue = parseInt(button.dataset.value);
-                    touchSelectedButton = button;
-                    button.style.transform = 'scale(1.1) translateY(-5px)';
-                    button.style.background = '#E1F5FE';
-                    button.style.boxShadow = '0 0 0 4px #29B6F6';
-                    playClickSound();
-                });
-            });
-            
-            document.querySelectorAll('.answer-box').forEach(box => {
-                // Desktop drag events
-                box.addEventListener('dragover', function(e) {
-                    if (box.classList.contains('correct')) return;
-                    
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
-                    box.classList.add('drag-over');
-                });
-                
-                box.addEventListener('dragleave', function() {
-                    box.classList.remove('drag-over');
-                });
-                
-                box.addEventListener('drop', function(e) {
-                    e.preventDefault();
-                    box.classList.remove('drag-over');
-                    
-                    if (box.classList.contains('correct')) return;
-                    
-                    const value = parseInt(e.dataTransfer.getData('text/plain'));
-                    const boxNumber = parseInt(box.dataset.box);
-                    
-                    selectAnswer(boxNumber, value);
-                });
-                
-                // Mobile touch events - tap box to place selected value
-                box.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    if (box.classList.contains('correct')) return;
-                    
-                    if (touchSelectedValue !== null) {
-                        const boxNumber = parseInt(box.dataset.box);
-                        selectAnswer(boxNumber, touchSelectedValue);
-                        
-                        // Clear selection
-                        if (touchSelectedButton) {
-                            touchSelectedButton.style.border = 'none';
-                            touchSelectedButton.style.background = 'white';
-                            touchSelectedButton.style.transform = 'none';
-                            touchSelectedButton.style.boxShadow = '0 4px 0 #90CAF9, 0 5px 10px rgba(0,0,0,0.1)';
-                        }
-                        touchSelectedValue = null;
-                        touchSelectedButton = null;
-                    }
-                });
-            });
-        }
-
-        function selectAnswer(boxNumber, value) {
-            const box = document.getElementById(`box${boxNumber}`);
-            
-            box.textContent = value;
-            box.classList.add('filled');
-            
-            answers[boxNumber] = value;
-            
-            if (value === window.correctAnswers[boxNumber]) {
-                playCorrectSound();
-                box.classList.add('correct');
-                correctBoxes.add(boxNumber);
-                
-                document.getElementById('feedback').textContent = 'Correct! 🎉';
-                document.getElementById('feedback').className = 'feedback success';
-            } else {
-                playIncorrectSound();
-                // Set score for this question to 0 because of wrong answer
-                currentQuestionScore = 0;
-                
-                document.getElementById('feedback').textContent = 'Try again! 😊';
-                document.getElementById('feedback').className = 'feedback error';
-                setTimeout(() => {
-                    box.textContent = '';
-                    box.className = 'answer-box';
-                    delete answers[boxNumber];
-                    document.getElementById('feedback').textContent = '';
-                }, 1500);
-            }
-            
-            checkAllAnswers();
-        }
-
-        function checkAllAnswers() {
-            const allCorrect = Object.keys(window.correctAnswers).every(key => 
-                answers[key] === window.correctAnswers[key]
-            );
-            
-            if (allCorrect && Object.keys(answers).length === 5) {
-                const problem = problems[currentProblemIndex];
-                document.getElementById('feedback').textContent = `${currentConfig.celebration_text} ${problem.problem} = ${problem.answer}!`;
-                document.getElementById('feedback').className = 'feedback success';
-                
-                // Add points
-                totalScore += currentQuestionScore;
-                document.getElementById('currentScore').textContent = totalScore;
-                
-                document.getElementById('nextButton').disabled = false;
-                
-                // Trigger animations
-                animateFruits();
-                
-                // Auto-advance logic
-                setTimeout(() => {
-                   if (currentProblemIndex < problems.length - 1) {
-                        showMysteryBoxBeforeNext();
-                   } else {
-                        setTimeout(() => showResults(), 1000);
-                   }
-                }, 2500); // Wait longer for fruit animation
-            }
-        }
-        
-        function animateFruits() {
-            const currentFruit = fruits[currentProblemIndex % fruits.length];
-            const container = document.body;
-            
-            // Create 15 floating fruits
-            for (let i = 0; i < 15; i++) {
-                setTimeout(() => {
-                    const fruit = document.createElement('div');
-                    fruit.className = 'floating-fruit';
-                    fruit.textContent = currentFruit;
-                    fruit.style.left = Math.random() * 90 + 5 + '%'; // Random horizontal position
-                    fruit.style.animationDuration = (Math.random() * 1.5 + 2) + 's'; // Random speed
-                    container.appendChild(fruit);
-                    
-                    // Cleanup
-                    setTimeout(() => {
-                        if (fruit.parentNode) fruit.parentNode.removeChild(fruit);
-                    }, 4000);
-                }, i * 150); // Stagger start times
-            }
-        }
-
-        function playAudio() {
-            playClickSound();
-            const problem = problems[currentProblemIndex];
-            
-            if ('speechSynthesis' in window) {
-                const utterance = new SpeechSynthesisUtterance(problem.audio);
-                // Try to find a good English voice
-                const voices = speechSynthesis.getVoices();
-                const englishVoice = voices.find(v => v.lang.includes('en'));
-                if (englishVoice) utterance.voice = englishVoice;
-
-                utterance.rate = 0.9;
-                utterance.pitch = 1.1;
-                utterance.volume = 1.0;
-                speechSynthesis.speak(utterance);
-            } else {
-                const tones = [523, 587, 659, 698, 784];
-                tones.forEach((tone, index) => {
-                    setTimeout(() => playSound(tone, 0.3, 'triangle'), index * 200);
-                });
-            }
-            
-            // Visual feedback for sound
-            const btn = document.querySelector('.speaker-icon');
-            btn.style.transform = 'scale(1.2)';
-            setTimeout(() => btn.style.transform = 'scale(1)', 200);
-        }
-
-        function nextQuestion() {
-            playClickSound();
-            if (currentProblemIndex < problems.length - 1) {
-                // Logic handled by mystery box usually, but button triggers it too if clicked manually
-                showMysteryBoxBeforeNext();
-            }
-        }
-        
-        function showMysteryBoxBeforeNext() {
-            // Prevent multiple overlays
-            if (document.querySelector('.mystery-box-overlay')) return;
-
-            const gifts = ['🎁', '🎉', '🏆', '⭐', '🌟', '🎊', '🎈', '🍎', '🍊', '🍌', '🍇', '🍓', '🍑', '🍒', '🍍', '💎', '🌺', '🎀', '🍬', '🧁', '🍰'];
-            
-            // Create overlay
-            const overlay = document.createElement('div');
-            overlay.className = 'mystery-box-overlay';
-            
-            // Create title
-            const title = document.createElement('div');
-            title.className = 'mystery-box-title';
-            title.textContent = 'Pick a Mystery Box! 🎉';
-            overlay.appendChild(title);
-            
-            // Create container for boxes
-            const container = document.createElement('div');
-            container.className = 'mystery-boxes-container';
-            
-            // Create 3 mystery boxes
-            for (let i = 0; i < 3; i++) {
-                const randomGift = gifts[Math.floor(Math.random() * gifts.length)];
-                
-                const wrapper = document.createElement('div');
-                wrapper.className = 'mystery-box-wrapper';
-                
-                const box = document.createElement('div');
-                box.className = 'mystery-box';
-                // Emoji inside
-                const emoji = document.createElement('div');
-                emoji.className = 'mystery-box-emoji';
-                emoji.textContent = '🎁'; // Default closed box appearance
-                box.appendChild(emoji);
-                
-                box.dataset.gift = randomGift;
-                
-                wrapper.appendChild(box);
-                
-                box.addEventListener('click', function() {
-                    if (box.classList.contains('opening')) return;
-                    
-                    playCorrectSound();
-                    
-                    // Disable all boxes
-                    document.querySelectorAll('.mystery-box').forEach(b => {
-                        b.style.pointerEvents = 'none';
-                    });
-                    
-                    // Open clicked box
-                    box.classList.add('opening');
-                    
-                    setTimeout(() => {
-                        // Show revealed gift
-                        const revealedGift = document.createElement('div');
-                        revealedGift.className = 'revealed-gift';
-                        revealedGift.textContent = box.dataset.gift;
-                        document.body.appendChild(revealedGift);
-                        
-                        // Save the gift
-                        collectedGifts.push(box.dataset.gift);
-                        totalScore += 10; // Bonus points for mystery box
-                        document.getElementById('currentScore').textContent = totalScore;
-                        
-                        setTimeout(() => {
-                            if (revealedGift.parentNode) {
-                                revealedGift.parentNode.removeChild(revealedGift);
-                            }
-                        }, 1500);
-                    }, 500);
-                    
-                    // Remove overlay and move to next question or show results
-                    setTimeout(() => {
-                        if (overlay.parentNode) {
-                            overlay.parentNode.removeChild(overlay);
-                        }
-                        // Move to next question after box is opened
-                        currentProblemIndex++;
-                        
-                        // Check if this was the last question
-                        if (currentProblemIndex >= problems.length) {
-                            showResults();
-                        } else {
-                            loadProblem();
-                        }
-                    }, 2000);
-                });
-                
-                container.appendChild(wrapper);
-            }
-            
-            overlay.appendChild(container);
-            document.body.appendChild(overlay);
-        }
-
-        function previousQuestion() {
-            playClickSound();
-            if (currentProblemIndex > 0) {
-                currentProblemIndex--;
-                loadProblem();
-            }
-        }
-
-        function createFirework(x, y) {
-            const colors = ['#FF5252', '#E040FB', '#448AFF', '#69F0AE', '#FFD740'];
-            const particleCount = 40;
-            
-            for (let i = 0; i < particleCount; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'firework-particle';
-                
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                particle.style.backgroundColor = color;
-                particle.style.boxShadow = `0 0 6px ${color}`;
-                
-                // Start position
-                particle.style.left = x + 'px';
-                particle.style.top = y + 'px';
-                
-                // Random direction
-                const angle = Math.random() * Math.PI * 2;
-                const velocity = Math.random() * 150 + 50;
-                
-                const tx = Math.cos(angle) * velocity;
-                const ty = Math.sin(angle) * velocity;
-                
-                // Animation
-                particle.animate([
-                    { transform: 'translate(0, 0) scale(1)', opacity: 1 },
-                    { transform: `translate(${tx}px, ${ty}px) scale(0)`, opacity: 0 }
-                ], {
-                    duration: 1000 + Math.random() * 500,
-                    easing: 'cubic-bezier(0, .9, .57, 1)',
-                    fill: 'forwards'
-                });
-                
-                document.body.appendChild(particle);
-                
-                setTimeout(() => {
-                    if (particle.parentNode) particle.parentNode.removeChild(particle);
-                }, 1500);
-            }
-        }
-
-        function launchFireworks() {
-            const duration = 8000;
-            const end = Date.now() + duration;
-
-            (function frame() {
-                // Launch random fireworks
-                if (Math.random() > 0.7) {
-                    const x = Math.random() * window.innerWidth;
-                    const y = Math.random() * (window.innerHeight / 2); // Top half
-                    createFirework(x, y);
-                    playExplosionSound();
-                }
-
-                if (Date.now() < end) {
-                    requestAnimationFrame(frame);
-                }
-            }());
-        }
-
-        function showResults() {
-            playCorrectSound();
-            
-            const resultsScreen = document.createElement('div');
-            resultsScreen.className = 'results-screen';
-            
-            const resultsContainer = document.createElement('div');
-            resultsContainer.className = 'results-container';
-            
-            // Title
-            const title = document.createElement('div');
-            title.className = 'results-title';
-            title.textContent = '🎉 Awesome! 🎉';
-            resultsContainer.appendChild(title);
-            
-            // Score
-            const scoreDiv = document.createElement('div');
-            scoreDiv.className = 'results-score';
-            scoreDiv.innerHTML = `
-                <div class="results-score-label">Final Score</div>
-                <div class="score-number">${totalScore}</div>
-            `;
-            resultsContainer.appendChild(scoreDiv);
-            
-            // Gifts collected
-            if (collectedGifts.length > 0) {
-                const giftsTitle = document.createElement('div');
-                giftsTitle.className = 'results-score-label';
-                giftsTitle.textContent = `You Collected (${collectedGifts.length})`;
-                resultsContainer.appendChild(giftsTitle);
-                
-                const giftsGrid = document.createElement('div');
-                giftsGrid.className = 'results-gifts-grid';
-                
-                collectedGifts.forEach(gift => {
-                    const giftItem = document.createElement('div');
-                    giftItem.className = 'gift-item';
-                    giftItem.textContent = gift;
-                    giftsGrid.appendChild(giftItem);
-                });
-                
-                resultsContainer.appendChild(giftsGrid);
-            }
-            
-            // Buttons
-            const buttonsDiv = document.createElement('div');
-            buttonsDiv.className = 'results-buttons';
-            
-            const restartButton = document.createElement('button');
-            restartButton.className = 'results-button restart-button';
-            restartButton.style.background = '#FF7043';
-            restartButton.style.color = 'white';
-            restartButton.textContent = '🔄 Play Again';
-            restartButton.onclick = restartGame;
-            buttonsDiv.appendChild(restartButton);
-            
-            resultsContainer.appendChild(buttonsDiv);
-            resultsScreen.appendChild(resultsContainer);
-            document.body.appendChild(resultsScreen);
-            
-            // Fireworks effect
-            launchFireworks();
-        }
-
-        function restartGame() {
-            playClickSound();
-            
-            // Remove results screen
-            const resultsScreen = document.querySelector('.results-screen');
-            if (resultsScreen) {
-                resultsScreen.remove();
-            }
-            
-            // Reset game state
-            currentProblemIndex = 0;
-            collectedGifts = [];
-            totalScore = 0;
-            document.getElementById('currentScore').textContent = '0';
-            
-            // Load first question
-            loadProblem();
-        }
-
-        async function onConfigChange(config) {
-            currentConfig = { ...config };
-            document.getElementById('gameTitle').textContent = config.game_title || defaultConfig.game_title;
-            document.getElementById('instructionText').textContent = config.instruction_text || defaultConfig.instruction_text;
-        }
-
-        function mapToCapabilities(config) {
-            return {
-                recolorables: [],
-                borderables: [],
-                fontEditable: {},
-                fontSizeable: {}
-            };
-        }
-
-        function mapToEditPanelValues(config) {
-            return new Map([
-                ["game_title", config.game_title || defaultConfig.game_title],
-                ["instruction_text", config.instruction_text || defaultConfig.instruction_text],
-                ["celebration_text", config.celebration_text || defaultConfig.celebration_text]
-            ]);
-        }
-
-        function enableAudio() {
-            const ctx = initAudio();
-            if (ctx && ctx.state === 'suspended') {
-                ctx.resume().then(() => {
-                    console.log('Audio enabled');
-                });
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            if (window.elementSdk) {
-                window.elementSdk.init({
-                    defaultConfig,
-                    onConfigChange,
-                    mapToCapabilities,
-                    mapToEditPanelValues
-                });
-            }
-            
-            document.addEventListener('click', enableAudio, { once: true });
-            document.addEventListener('touchstart', enableAudio, { once: true });
-            
-            loadProblem();
         });
-    </script>
- </body>
+        
+        for (let i = allProblems.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [allProblems[i], allProblems[j]] = [allProblems[j], allProblems[i]];
+        }
+        
+        state.problemPool = allProblems.slice(0, state.maxRounds);
+        state.maxRounds = Math.min(5, state.problemPool.length);
+
+        els.setupScreen.classList.remove('active');
+        startRound();
+    }
+
+    function startRound() {
+        state.round++;
+        if (state.round > state.maxRounds) return endGame();
+
+        const currentProblem = state.problemPool[state.round - 1];
+        state.base = currentProblem.base;
+        state.multiplier = currentProblem.multiplier;
+        
+        state.phase = 'drag';
+        state.coneData.fill(0);
+
+        els.eqText.innerHTML = `<span class="highlight">${state.base}</span> × <span class="highlight">${state.multiplier}</span> = ?`;
+        els.baseNumberDisplay.innerText = state.base;
+        setMsg(`Challenge: Put ${state.base} scoops on ${state.multiplier} cones!`);
+
+        document.querySelectorAll('.cone-slot').forEach((s) => {
+            s.className = 'cone-slot';
+            s.querySelectorAll('.scoop').forEach(f => f.remove());
+        });
+
+        els.checkGroupsBtn.style.display = 'block';
+        els.answersContainer.style.display = 'none';
+        els.nextBtn.style.display = 'none';
+        els.tray.style.display = 'flex';
+        
+        speak(`${state.base} times ${state.multiplier} equals what?`);
+    }
+
+    function setMsg(t) { els.mascotMsg.innerText = t; }
+
+    /* --- Logic Kéo Thả & Tự động lấp đầy (Drag & Drop + Click Auto-fill) --- */
+    let startX = 0, startY = 0;
+    let isDragging = false, draggedColor = '';
+
+    function handleDragStart(e) {
+        if (state.phase !== 'drag') return;
+        const target = e.target.closest('.scoop');
+        if (!target) return;
+        
+        e.preventDefault(); // Ngăn hành vi vuốt trang trên di động
+        
+        draggedColor = target.dataset.color;
+        startX = e.clientX;
+        startY = e.clientY;
+        isDragging = false;
+    }
+
+    function handleDragMove(e) { 
+        if (!draggedColor) return;
+        
+        // Đo khoảng cách vuốt. Nếu lớn hơn 8px, kích hoạt tính năng "Kéo Thả"
+        if (!isDragging) {
+            const dist = Math.hypot(e.clientX - startX, e.clientY - startY);
+            if (dist > 8) {
+                isDragging = true;
+                els.ghostScoop.className = `scoop ${draggedColor}`;
+                els.ghostScoop.style.display = 'flex';
+                sfx.pop();
+            }
+        }
+        
+        if (isDragging) {
+            updateGhost(e.clientX, e.clientY); 
+        }
+    }
+
+    function updateGhost(x, y) { 
+        els.ghostScoop.style.left = x + 'px'; 
+        els.ghostScoop.style.top = y + 'px'; 
+    }
+
+    function handleDragEnd(e) {
+        if (!draggedColor) return;
+        
+        if (isDragging) {
+            // === XỬ LÝ KÉO THẢ VÀO ỐC QUẾ ===
+            els.ghostScoop.style.display = 'none';
+            // Lấy object tại vị trí thả
+            const elAtPoint = document.elementFromPoint(e.clientX, e.clientY);
+            const targetCone = elAtPoint?.closest('.cone-slot');
+            
+            if (targetCone) {
+                addScoopToCone(targetCone, draggedColor);
+            }
+        } else {
+            // === XỬ LÝ CLICK NHANH (Tự động điền) ===
+            // Nếu người dùng chỉ nhấn (khoảng cách vuốt = 0)
+            let foundIdx = -1;
+            for (let i = 0; i < 10; i++) {
+                if (state.coneData[i] < state.base) { foundIdx = i; break; }
+            }
+            if (foundIdx !== -1) {
+                addScoopToCone(document.querySelector(`.cone-slot[data-index="${foundIdx}"]`), draggedColor);
+            } else {
+                sfx.buzz(); // Tất cả các ốc quế đều đã đầy
+            }
+        }
+        
+        // Reset trạng thái
+        isDragging = false;
+        draggedColor = '';
+    }
+
+    function addScoopToCone(cone, color) {
+        const idx = cone.dataset.index;
+        if (state.coneData[idx] >= state.base) {
+            cone.classList.add('error'); setTimeout(()=>cone.classList.remove('error'), 400);
+            sfx.buzz(); return;
+        }
+        state.coneData[idx]++;
+        const f = document.createElement('div'); f.className = `scoop ${color}`;
+        cone.appendChild(f);
+        sfx.pop();
+        if (state.coneData[idx] === state.base) cone.classList.add('complete');
+    }
+
+    function checkGroups() {
+        let full = 0, partial = 0;
+        state.coneData.forEach((count) => {
+            if (count === state.base) full++;
+            else if (count > 0) partial++;
+        });
+
+        if (partial > 0 || full !== state.multiplier) {
+            sfx.buzz(); setMsg(`Almost! You need exactly ${state.multiplier} cones with ${state.base} scoops.`);
+            return;
+        }
+
+        sfx.ding(); state.phase = 'answer';
+        els.checkGroupsBtn.style.display = 'none'; els.tray.style.display = 'none';
+        setMsg("Correct groups! Now, what is the total?");
+        showAnswers();
+    }
+
+    function showAnswers() {
+        const correct = state.base * state.multiplier;
+        let arr = [correct];
+        while(arr.length < 3) {
+            let w = correct + (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random()*5)+1);
+            if (w > 0 && !arr.includes(w)) arr.push(w);
+        }
+        arr.sort(()=>Math.random()-0.5);
+        els.answersContainer.innerHTML = '';
+        arr.forEach(a => {
+            const b = document.createElement('div'); b.className = 'answer-bubble'; b.innerText = a;
+            b.onclick = () => {
+                if (state.phase !== 'answer') return;
+                if (a === correct) {
+                    sfx.tada(); state.score++; els.scoreDisplay.innerText = state.score;
+                    els.eqText.innerHTML = `${state.base} × ${state.multiplier} = <span class="answer-highlight">${correct}</span>`;
+                    setMsg("Amazing job! Count them: " + correct);
+                    speak(`${state.base} times ${state.multiplier} equals ${correct}`);
+                    state.phase = 'wait'; createConfetti(50);
+                    setTimeout(() => { els.answersContainer.style.display = 'none'; els.nextBtn.style.display = 'block'; }, 1500);
+                } else {
+                    sfx.buzz(); b.style.animation = 'shake 0.4s'; b.style.background = '#ff4d6d'; b.style.color = 'white';
+                }
+            };
+            els.answersContainer.appendChild(b);
+        });
+        els.answersContainer.style.display = 'flex';
+    }
+
+    function endGame() {
+        state.phase = 'end'; els.finalScore.innerText = state.score;
+        els.endScreen.classList.add('active'); 
+        sfx.tada(); createConfetti(200); 
+    }
+
+    function createConfetti(n) {
+        const colors = ['#FF4B4B', '#FFC800', '#58CC02', '#1CB0F6', '#CE82FF', '#ff9800', '#e91e63'];
+        for (let i = 0; i < n; i++) {
+            const c = document.createElement('div');
+            c.className = 'confetti';
+            c.style.background = colors[Math.floor(Math.random() * colors.length)];
+            
+            const type = Math.random();
+            let w = 8 + Math.random() * 10;
+            let h = w;
+            if (type < 0.3) {
+                c.style.borderRadius = '50%';
+            } else if (type < 0.6) {
+                h = w * (1.5 + Math.random() * 2);
+            }
+            c.style.width = w + 'px';
+            c.style.height = h + 'px';
+
+            c.style.left = '50vw';
+            c.style.top = '50vh';
+            document.body.appendChild(c);
+
+            const duration = 3 + Math.random() * 2;
+            const keyframes = [];
+            const steps = 30; 
+            
+            const vx = (Math.random() - 0.5) * 1000; 
+            const vy = -(Math.random() * 600 + 400); 
+            const g = 800; 
+            const swayFreq = Math.random() * 3 + 1; 
+            const swayAmp = Math.random() * 50 + 20; 
+            
+            const rotXSpeed = (Math.random() - 0.5) * 1000;
+            const rotYSpeed = (Math.random() - 0.5) * 1000;
+            const rotZSpeed = (Math.random() - 0.5) * 500;
+
+            for (let step = 0; step <= steps; step++) {
+                const t = step / steps;
+                const time = t * duration;
+                
+                const cx = vx * time + Math.sin(time * swayFreq) * swayAmp;
+                const cy = vy * time + 0.5 * g * time * time;
+                
+                const rotX = rotXSpeed * time;
+                const rotY = rotYSpeed * time;
+                const rotZ = rotZSpeed * time;
+
+                keyframes.push({
+                    transform: `translate3d(${cx}px, ${cy}px, 0) rotateX(${rotX}deg) rotateY(${rotY}deg) rotateZ(${rotZ}deg)`,
+                    opacity: t > 0.8 ? (1 - (t - 0.8) * 5) : 1
+                });
+            }
+
+            c.animate(keyframes, {
+                duration: duration * 1000,
+                easing: 'linear',
+                fill: 'forwards'
+            });
+            
+            setTimeout(() => c.remove(), duration * 1000);
+        }
+    }
+
+    window.onload = init;
+</script>
+</body>
 </html>
