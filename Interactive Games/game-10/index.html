@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tower Builder V7: Kids Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sky-top: #1cb0f6;      
+            --sky-bottom: #89d4fb;   
+            --hill-back: #2ebd59;    
+            --hill-front: #58cc02;   
+            --btn-green: #58cc02;
+            --btn-green-shadow: #58a700;
+            --btn-blue: #1cb0f6;
+            --btn-blue-shadow: #1899d6;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+            background: var(--sky-bottom);
+        }
+
+        /* --- BACKGROUND ELEMENTS --- */
+        #bg-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, var(--sky-top) 0%, var(--sky-bottom) 100%);
+            z-index: 0; overflow: hidden;
+        }
+
+        .rainbow {
+            position: absolute;
+            bottom: 20%; left: 0; width: 100%; height: 80%;
+            background: radial-gradient(circle at 50% 100%,
+                transparent 40%,
+                rgba(148, 0, 211, 0.2) 41%, rgba(148, 0, 211, 0.2) 44%,
+                rgba(75, 0, 130, 0.2) 45%, rgba(75, 0, 130, 0.2) 48%,
+                rgba(0, 0, 255, 0.2) 49%, rgba(0, 0, 255, 0.2) 52%,
+                rgba(0, 255, 0, 0.2) 53%, rgba(0, 255, 0, 0.2) 56%,
+                rgba(255, 255, 0, 0.2) 57%, rgba(255, 255, 0, 0.2) 60%,
+                rgba(255, 127, 0, 0.2) 61%, rgba(255, 127, 0, 0.2) 64%,
+                rgba(255, 0, 0, 0.2) 65%, rgba(255, 0, 0, 0.2) 68%,
+                transparent 69%
+            );
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .hill { position: absolute; bottom: -5%; width: 150%; height: 40%; border-radius: 100% 100% 0 0; }
+        .hill-back { left: -20%; background: var(--hill-back); transform: rotate(-5deg); z-index: 1; }
+        .hill-front { left: -10%; background: var(--hill-front); transform: rotate(3deg); z-index: 2; }
+
+        .tree { position: absolute; z-index: 1; }
+        .tree-trunk { width: 14px; height: 35px; background: #78350f; border-radius: 4px; position: absolute; bottom: -10px; left: -7px; }
+        .tree-top { width: 65px; height: 65px; background: #15803d; border-radius: 50%; position: absolute; bottom: 15px; left: -32.5px; box-shadow: inset -10px -10px 0 rgba(0,0,0,0.15); }
+        .tree-top.light { background: #16a34a; }
+        
+        .flower { 
+            position: absolute; width: 12px; height: 12px; background: #facc15; border-radius: 50%; z-index: 3;
+            box-shadow: 0 -7px 0 -1.5px white, 0 7px 0 -1.5px white, -7px 0 0 -1.5px white, 7px 0 0 -1.5px white, -5px -5px 0 -1.5px white, 5px 5px 0 -1.5px white, -5px 5px 0 -1.5px white, 5px -5px 0 -1.5px white;
+        }
+
+        .sun {
+            position: absolute; top: 5vh; left: 5vw; width: 120px; height: 120px; background: #facc15; border-radius: 50%;
+            box-shadow: 0 0 0 15px rgba(250, 204, 21, 0.3), 0 0 0 30px rgba(250, 204, 21, 0.1);
+            z-index: 1; animation: pulse 4s infinite alternate;
+        }
+
+        .cloud-container { position: absolute; pointer-events: none; z-index: 2; }
+        .cloud-shape { width: 140px; height: 50px; background: white; border-radius: 50px; position: relative; }
+        .cloud-shape::after, .cloud-shape::before { content: ''; position: absolute; background: white; border-radius: 50%; }
+        .cloud-shape::after { width: 70px; height: 70px; top: -35px; left: 20px; }
+        .cloud-shape::before { width: 60px; height: 60px; top: -25px; right: 20px; }
+
+        .cloud-move-1 { animation: float 40s infinite linear; top: 15%; opacity: 0.9;}
+        .cloud-move-2 { animation: float 55s infinite linear reverse; top: 25%; opacity: 0.7;}
+
+        @keyframes float { from { transform: translateX(-20vw); } to { transform: translateX(120vw); } }
+        @keyframes pulse { 0% { transform: scale(1); } 100% { transform: scale(1.05); } }
+
+        /* --- CANVAS --- */
+        canvas { display: block; position: absolute; top: 0; left: 0; z-index: 10; background: transparent; cursor: pointer; }
+        #confettiCanvas { z-index: 9999; pointer-events: none; }
+
+        /* --- UI LAYER --- */
+        .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .interactive { pointer-events: auto; }
+        .text-bubbly { text-shadow: 2px 4px 0px rgba(0,0,0,0.15); }
+        .card-bubbly { background: white; border-radius: 32px; box-shadow: 0 10px 0px rgba(0,0,0,0.1); border: 6px solid white; }
+
+        .btn-duo { border-radius: 16px; text-transform: uppercase; font-weight: 900; transition: transform 0.1s, box-shadow 0.1s; position: relative; cursor: pointer; }
+        .btn-duo-green { background-color: var(--btn-green); color: white; box-shadow: 0 8px 0 var(--btn-green-shadow); }
+        .btn-duo-green:active { transform: translateY(8px); box-shadow: 0 0px 0 var(--btn-green-shadow); }
+        .btn-duo-blue { background-color: var(--btn-blue); color: white; box-shadow: 0 8px 0 var(--btn-blue-shadow); }
+        .btn-duo-blue:active { transform: translateY(8px); box-shadow: 0 0px 0 var(--btn-blue-shadow); }
+
+        .pop-in { animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes spinStar { 100% { transform: rotate(360deg); } }
+
+        /* Custom Slider Styling */
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none; width: 26px; height: 26px; background: #3b82f6;
+            border-radius: 50%; border: 4px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .hud-container { position: absolute; top: 0; left: 0; width: 100%; display: flex; justify-content: space-between; padding: max(16px, 2vh) max(16px, 4vw); box-sizing: border-box; }
+        
+        #instruction {
+            position: absolute; bottom: 8%; width: 100%; text-align: center;
+            font-size: 1.8rem; font-weight: 900; color: white; text-shadow: 3px 3px 0 rgba(0,0,0,0.3);
+            animation: pulse 1s infinite alternate; pointer-events: none;
+        }
+
+        /* Float Banner for level completion */
+        .float-banner {
+            position: absolute; bottom: 5%; width: 100%; display: flex; justify-content: center; pointer-events: none; z-index: 50; padding: 0 16px;
+        }
+
+        @media (max-width: 600px) {
+            .sun { width: 80px; height: 80px; box-shadow: 0 0 0 10px rgba(250, 204, 21, 0.3), 0 0 0 20px rgba(250, 204, 21, 0.1); }
+            .card-bubbly { border-width: 4px; padding: 20px; }
+            #instruction { font-size: 1.3rem; bottom: 12%; }
+        }
+    </style>
+</head>
+<body>
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- Background Container -->
+    <div id="bg-container">
+        <div class="rainbow"></div>
+        <div class="sun"></div>
+        <div class="cloud-container cloud-move-1" style="left: 10%;"><div class="cloud-shape"></div></div>
+        <div class="cloud-container cloud-move-2" style="right: 5%;"><div class="cloud-shape" style="transform: scale(0.8); opacity: 0.8;"></div></div>
+        
+        <div class="hill hill-back">
+            <div class="tree" style="left: 15%; bottom: 95%;"><div class="tree-top"></div><div class="tree-trunk"></div></div>
+            <div class="tree" style="left: 45%; bottom: 90%; transform: scale(1.3);"><div class="tree-top"></div><div class="tree-trunk"></div></div>
+            <div class="tree" style="left: 75%; bottom: 100%; transform: scale(0.9);"><div class="tree-top"></div><div class="tree-trunk"></div></div>
+        </div>
+        <div class="hill hill-front">
+            <div class="tree" style="left: 25%; bottom: 95%; transform: scale(1.4);"><div class="tree-top light"></div><div class="tree-trunk"></div></div>
+            <div class="tree" style="left: 85%; bottom: 90%; transform: scale(1.1);"><div class="tree-top light"></div><div class="tree-trunk"></div></div>
+            
+            <div class="flower" style="left: 10%; bottom: 80%;"></div>
+            <div class="flower" style="left: 35%; bottom: 85%;"></div>
+            <div class="flower" style="left: 55%; bottom: 75%;"></div>
+            <div class="flower" style="left: 70%; bottom: 88%;"></div>
+            <div class="flower" style="left: 92%; bottom: 82%;"></div>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+    <canvas id="confettiCanvas"></canvas>
+
+    <!-- UI Overlay -->
+    <div class="ui-layer">
+        
+        <!-- Top HUD -->
+        <div class="hud-container pointer-events-none z-10 opacity-0 transition-opacity duration-500" id="hud">
+            <!-- Level Display -->
+            <div class="bg-white/90 backdrop-blur-md border-[4px] border-blue-400 rounded-3xl px-4 py-2 shadow-lg flex items-center justify-center">
+                <span class="text-blue-500 font-black text-2xl sm:text-3xl text-bubbly uppercase">Level <span id="levelDisplay">1</span></span>
+            </div>
+
+            <!-- Block Progress -->
+            <div class="bg-white/90 backdrop-blur-md border-[4px] border-yellow-400 rounded-3xl px-4 py-2 shadow-lg flex items-center justify-center">
+                <span class="text-yellow-500 font-black text-2xl sm:text-3xl text-bubbly"><span id="currentScore">0</span> / <span id="targetScoreDisplay">5</span></span>
+            </div>
+        </div>
+
+        <div id="instruction" class="hidden">TAP TO DROP!</div>
+
+        <!-- Start Screen -->
+        <div id="startScreen" class="absolute inset-0 flex items-center justify-center bg-sky-900/50 backdrop-blur-sm interactive z-50 p-4">
+            <div class="card-bubbly p-6 sm:p-8 w-full max-w-sm text-center pop-in relative">
+                <div class="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-yellow-400 rounded-full p-4 border-4 border-white shadow-lg animate-bounce">
+                    <svg viewBox="0 0 24 24" fill="white" class="w-10 h-10 sm:w-12 sm:h-12"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+                </div>
+                <h1 class="text-4xl sm:text-5xl font-black text-sky-500 mt-6 mb-2 text-bubbly leading-tight">Tower Builder!</h1>
+                <p class="text-slate-500 mb-4 font-bold text-base sm:text-lg">Drop the blocks carefully to build a balanced tower. Top it off with a roof!</p>
+                
+                <!-- Speed Slider Block -->
+                <div class="mb-6 bg-slate-50 rounded-2xl p-4 border-2 border-slate-200">
+                    <label for="speedSlider" class="block text-slate-600 font-bold mb-2 text-sm sm:text-base uppercase tracking-wider text-bubbly">Crane Speed</label>
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl drop-shadow-sm">🐢</span>
+                        <input type="range" id="speedSlider" min="0.5" max="1.5" step="0.1" value="1" class="w-full h-3 bg-sky-200 rounded-lg appearance-none cursor-pointer">
+                        <span class="text-2xl drop-shadow-sm">🐇</span>
+                    </div>
+                </div>
+
+                <button id="startBtn" class="w-full btn-duo btn-duo-green text-xl sm:text-2xl py-4 flex justify-center items-center gap-2">
+                    PLAY NOW <svg viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameOverScreen" class="hidden absolute inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm interactive z-50 p-4">
+            <div class="card-bubbly p-6 sm:p-8 w-full max-w-sm text-center pop-in">
+                <div class="text-6xl sm:text-7xl mb-4 drop-shadow-md" style="animation: spinStar 2s linear infinite;">💥</div>
+                <h1 class="text-4xl sm:text-5xl font-black text-red-500 mb-2 text-bubbly">OH NO!</h1>
+                <p class="text-slate-500 font-bold mb-6 text-base sm:text-lg">The tower fell over!</p>
+                <button id="retryBtn" class="w-full btn-duo btn-duo-blue text-xl sm:text-2xl py-4">TRY AGAIN ↺</button>
+            </div>
+        </div>
+
+        <!-- Congrats Screen (Now a non-blocking banner at the bottom) -->
+        <div id="congratsScreen" class="hidden float-banner">
+            <div class="card-bubbly p-4 sm:p-6 w-full max-w-md text-center pop-in relative shadow-[0_10px_30px_rgba(250,204,21,0.6)] interactive bg-white/95 backdrop-blur-md">
+                <h1 id="congratsTitle" class="text-3xl sm:text-4xl font-black text-yellow-500 mb-3 text-bubbly">HOUSE BUILT!</h1>
+                <div class="flex justify-center items-center gap-2 mb-3">
+                    <svg viewBox="0 0 24 24" fill="#facc15" stroke="#ca8a04" stroke-width="1.5" class="star-svg w-8 h-8 sm:w-10 sm:h-10" style="animation-delay: 0s;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    <svg viewBox="0 0 24 24" fill="#facc15" stroke="#ca8a04" stroke-width="1.5" class="star-svg w-10 h-10 sm:w-12 sm:h-12" style="animation-delay: 0.2s; transform: scale(1.1);"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    <svg viewBox="0 0 24 24" fill="#facc15" stroke="#ca8a04" stroke-width="1.5" class="star-svg w-8 h-8 sm:w-10 sm:h-10" style="animation-delay: 0.4s;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                </div>
+                <button id="nextLevelBtn" class="w-full btn-duo btn-duo-blue text-xl sm:text-2xl py-3 mt-2">NEXT LEVEL ➔</button>
+                <button id="finalResetBtn" class="hidden w-full btn-duo btn-duo-green text-xl sm:text-2xl py-3 mt-2">PLAY AGAIN ↺</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- AUDIO SYSTEM ---
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playTone(freq, type, duration, vol = 0.1) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        }
+
+        const SFX = {
+            drop: () => playTone(300, 'sine', 0.1, 0.1),
+            landPerfect: () => { playTone(800, 'sine', 0.1, 0.1); setTimeout(() => playTone(1200, 'sine', 0.1, 0.1), 100); },
+            landOkay: () => playTone(500, 'square', 0.1, 0.1),
+            crash: () => { playTone(150, 'sawtooth', 0.5, 0.2); setTimeout(() => playTone(100, 'sawtooth', 0.5, 0.2), 200); },
+            win: () => { const notes = [400, 500, 600, 800, 1000]; notes.forEach((freq, i) => setTimeout(() => playTone(freq, 'sine', 0.15, 0.1), i * 120)); }
+        };
+
+        // --- CANVAS SETUP ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const cfCanvas = document.getElementById('confettiCanvas');
+        const cfCtx = cfCanvas.getContext('2d');
+        
+        let gw = window.innerWidth;
+        let gh = window.innerHeight;
+
+        // --- LEVEL DEFINITIONS ---
+        const LEVELS = [
+            { levelNum: 1, target: 4, speed: 1.2 },
+            { levelNum: 2, target: 5, speed: 1.5 },
+            { levelNum: 3, target: 6, speed: 1.8 },
+            { levelNum: 4, target: 7, speed: 2.1 },
+            { levelNum: 5, target: 8, speed: 2.5 }
+        ];
+
+        // --- GAME STATE ---
+        let currentLevelIndex = 0;
+        let score = 0;
+        let gameActive = false;
+        let state = 'waiting'; // waiting, swinging, dropping, gameover, congrats
+        
+        let blocks = []; // Stacked blocks
+        let activeBlock = null; 
+        
+        let speedMultiplier = 1.0; // From User Slider
+        let globalScale = 1.0;
+        let targetScale = 1.0;
+        let groundY = 0; 
+        let cameraY = 0;
+        let targetCameraY = 0;
+
+        let time = 0; 
+        let lastFrameTime = 0;
+        let confettiParticles = [];
+
+        // Colors for floors
+        const floorColors = ['#facc15', '#4ade80', '#3b82f6', '#a855f7', '#ec4899', '#f97316'];
+
+        function resize() {
+            const dpr = window.devicePixelRatio || 1;
+            gw = window.innerWidth;
+            gh = window.innerHeight;
+            
+            canvas.width = gw * dpr; canvas.height = gh * dpr;
+            canvas.style.width = gw + 'px'; canvas.style.height = gh + 'px';
+            cfCanvas.width = gw * dpr; cfCanvas.height = gh * dpr;
+            cfCanvas.style.width = gw + 'px'; cfCanvas.style.height = gh + 'px';
+            
+            ctx.scale(dpr, dpr); cfCtx.scale(dpr, dpr);
+            
+            groundY = gh - 150;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // --- GAME LOGIC ---
+        function initGame() {
+            const lvl = LEVELS[currentLevelIndex];
+            score = 0; 
+            blocks = [];
+            cameraY = 0;
+            targetCameraY = 0;
+            globalScale = 1.0;
+            targetScale = 1.0;
+            time = 0;
+            
+            blocks.push({
+                x: gw / 2, y: groundY, w: 200, h: 50, type: 'ground'
+            });
+
+            document.getElementById('levelDisplay').innerText = lvl.levelNum;
+            document.getElementById('targetScoreDisplay').innerText = lvl.target;
+            
+            updateHUD();
+            document.getElementById('hud').classList.remove('opacity-0');
+            
+            const instr = document.getElementById('instruction');
+            instr.innerText = "TAP TO DROP!";
+            instr.classList.remove('hidden');
+            
+            state = 'swinging';
+            spawnBlock();
+            
+            lastFrameTime = performance.now();
+        }
+
+        function spawnBlock() {
+            const lvl = LEVELS[currentLevelIndex];
+            const isRoof = (score === lvl.target - 1);
+            
+            activeBlock = {
+                x: gw / 2,
+                y: getCraneY(),
+                w: isRoof ? 130 : 100,
+                h: isRoof ? 80 : 70,
+                type: isRoof ? 'roof' : 'floor',
+                color: floorColors[score % floorColors.length],
+                vx: 0, vy: 0, va: 0, angle: 0
+            };
+        }
+
+        function getTopBlock() {
+            return blocks[blocks.length - 1];
+        }
+
+        function getCraneY() {
+            return getTopBlock().y - getTopBlock().h - 300;
+        }
+
+        function updateCamera() {
+            if (state === 'congrats') {
+                // Zoom Out Logic
+                let H = groundY - (getCraneY() - 260); // Total tower + crane height
+                targetScale = Math.min(1.0, (groundY - 20) / H); // Fit from Y=20 to Ground
+                targetCameraY = 0; // Pinned to the HTML ground
+            } else {
+                targetScale = 1.0;
+                targetCameraY = Math.max(0, 150 - getCraneY()); // Normal upward panning
+            }
+            cameraY += (targetCameraY - cameraY) * 0.05; 
+            globalScale += (targetScale - globalScale) * 0.05;
+        }
+
+        // TRUE CENTER OF GRAVITY PHYSICS
+        function checkTowerStability() {
+            let totalMassX = 0;
+            let totalMass = 0;
+
+            for (let i = blocks.length - 1; i >= 1; i--) { 
+                let block = blocks[i];
+                let blockMass = block.type === 'roof' ? (block.w * block.h) / 2 : block.w * block.h; 
+
+                totalMassX += block.x * blockMass;
+                totalMass += blockMass;
+
+                let comX = totalMassX / totalMass;
+                let supportBlock = blocks[i - 1];
+
+                if (Math.abs(comX - supportBlock.x) > supportBlock.w / 2) {
+                    return false; 
+                }
+            }
+            return true;
+        }
+
+        function triggerCollapse() {
+            state = 'gameover';
+            SFX.crash();
+            document.getElementById('instruction').classList.add('hidden');
+            document.getElementById('hud').classList.add('opacity-0');
+            
+            for(let i=1; i<blocks.length; i++) { 
+                let b = blocks[i];
+                b.vx = (Math.random() - 0.5) * 15;
+                b.vy = -Math.random() * 10 - 5;
+                b.va = (Math.random() - 0.5) * 0.2;
+            }
+            if(activeBlock) {
+                activeBlock.vx = (Math.random() - 0.5) * 15;
+                activeBlock.vy = -5;
+                activeBlock.va = (Math.random() - 0.5) * 0.2;
+            }
+            
+            setTimeout(() => {
+                document.getElementById('gameOverScreen').classList.remove('hidden');
+            }, 1000);
+        }
+
+        // --- DRAWING ---
+        function roundRectPath(x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+        }
+
+        function drawCuteWorker(x, y) {
+            ctx.save(); 
+            ctx.translate(x, y);
+            
+            // Boots
+            ctx.fillStyle = '#451a03'; 
+            roundRectPath(-12, -8, 10, 8, 3); ctx.fill();
+            roundRectPath(2, -8, 10, 8, 3); ctx.fill();
+
+            // Legs
+            ctx.fillStyle = '#1e3a8a'; 
+            roundRectPath(-10, -20, 8, 15, 2); ctx.fill();
+            roundRectPath(2, -20, 8, 15, 2); ctx.fill();
+
+            // Body (Shirt)
+            ctx.fillStyle = '#f97316'; 
+            roundRectPath(-15, -45, 30, 25, 8); ctx.fill();
+
+            // Overalls
+            ctx.fillStyle = '#1d4ed8'; 
+            roundRectPath(-15, -30, 30, 15, 6); ctx.fill();
+            ctx.fillRect(-10, -40, 6, 15); 
+            ctx.fillRect(4, -40, 6, 15); 
+            ctx.fillStyle = '#facc15'; 
+            ctx.beginPath(); ctx.arc(-7, -35, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(7, -35, 2, 0, Math.PI*2); ctx.fill();
+
+            // Arms
+            ctx.fillStyle = '#f97316';
+            ctx.save(); ctx.translate(-15, -40); ctx.rotate(0.6); roundRectPath(-5, 0, 10, 18, 5); ctx.fill(); ctx.restore(); 
+            ctx.save(); ctx.translate(15, -40); ctx.rotate(-0.3); roundRectPath(-5, 0, 10, 18, 5); ctx.fill(); ctx.restore(); 
+
+            // Hands
+            ctx.fillStyle = '#fde047';
+            ctx.beginPath(); ctx.arc(-24, -22, 4.5, 0, Math.PI*2); ctx.fill(); 
+            ctx.beginPath(); ctx.arc(18, -24, 4.5, 0, Math.PI*2); ctx.fill(); 
+
+            // Head
+            ctx.fillStyle = '#fde047'; 
+            ctx.beginPath(); ctx.arc(0, -56, 14, 0, Math.PI * 2); ctx.fill();
+            
+            // Face
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath(); ctx.arc(-4, -58, 2.5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(4, -58, 2.5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = 'rgba(248, 113, 113, 0.5)';
+            ctx.beginPath(); ctx.arc(-8, -54, 3, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(8, -54, 3, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#0f172a';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.arc(0, -55, 6, 0.2, Math.PI - 0.2); ctx.stroke();
+            
+            // Hard Hat
+            ctx.fillStyle = '#facc15'; 
+            ctx.beginPath(); ctx.arc(0, -60, 15, Math.PI, 0); ctx.fill(); 
+            roundRectPath(-18, -62, 36, 5, 2); ctx.fill(); 
+            roundRectPath(-5, -77, 10, 4, 2); ctx.fill(); 
+            
+            // Remote Control
+            ctx.fillStyle = '#475569';
+            ctx.save(); ctx.translate(-26, -24); ctx.rotate(0.5);
+            roundRectPath(-6, -10, 12, 18, 3); ctx.fill();
+            ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(0, -5, 2.5, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#22c55e'; ctx.beginPath(); ctx.arc(0, 2, 2.5, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0,-10); ctx.lineTo(0,-15); ctx.stroke();
+            ctx.restore();
+            
+            ctx.restore();
+        }
+
+        // Tower Crane
+        function drawCrane(craneBaseY) {
+            ctx.save();
+            const mastX = Math.min(gw - 60, gw / 2 + 180); 
+            const mastWidth = 35;
+            const jibY = craneBaseY; 
+
+            ctx.strokeStyle = '#eab308'; 
+            ctx.fillStyle = '#eab308';
+
+            // Mast (Vertical)
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(mastX, jibY - 40);
+            ctx.lineTo(mastX, groundY);
+            ctx.moveTo(mastX + mastWidth, jibY - 40);
+            ctx.lineTo(mastX + mastWidth, groundY);
+            ctx.stroke();
+
+            // Mast truss
+            ctx.beginPath();
+            ctx.lineWidth = 2;
+            for (let y = jibY - 40; y < groundY; y += 35) {
+                ctx.moveTo(mastX, y); ctx.lineTo(mastX + mastWidth, y + 35);
+                ctx.moveTo(mastX + mastWidth, y); ctx.lineTo(mastX, y + 35);
+            }
+            ctx.stroke();
+
+            // Jib (Horizontal)
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(mastX - gw, jibY); 
+            ctx.lineTo(mastX + 70, jibY);  
+            ctx.moveTo(mastX - gw, jibY + 25);
+            ctx.lineTo(mastX + 70, jibY + 25);
+            ctx.stroke();
+
+            // Jib truss
+            ctx.beginPath();
+            ctx.lineWidth = 2;
+            for (let x = mastX - gw; x < mastX + 50; x += 30) {
+                ctx.moveTo(x, jibY); ctx.lineTo(x + 30, jibY + 25);
+                ctx.moveTo(x + 30, jibY); ctx.lineTo(x, jibY + 25);
+            }
+            ctx.stroke();
+
+            // Cables
+            ctx.beginPath();
+            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = '#475569';
+            const topPointY = jibY - 60;
+            ctx.moveTo(mastX + mastWidth/2, topPointY); ctx.lineTo(mastX - 150, jibY); 
+            ctx.moveTo(mastX + mastWidth/2, topPointY); ctx.lineTo(mastX + 60, jibY); 
+            ctx.moveTo(mastX, jibY - 40); ctx.lineTo(mastX + mastWidth/2, topPointY); ctx.lineTo(mastX + mastWidth, jibY - 40);
+            ctx.stroke();
+
+            // Cabin & Counterweights
+            ctx.fillStyle = '#ca8a04'; roundRectPath(mastX - 25, jibY + 25, 35, 45, 4); ctx.fill();
+            ctx.fillStyle = '#bae6fd'; ctx.fillRect(mastX - 20, jibY + 30, 15, 20);
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillRect(mastX + 35, jibY + 5, 10, 40); ctx.fillRect(mastX + 47, jibY + 5, 10, 40); ctx.fillRect(mastX + 59, jibY + 5, 10, 40);
+
+            ctx.restore();
+        }
+
+        function drawBlock(b) {
+            ctx.save();
+            ctx.translate(b.x, b.y);
+            ctx.rotate(b.angle || 0);
+
+            if (b.type === 'ground') {
+                // Grass Platform
+                ctx.fillStyle = '#65a30d';
+                roundRectPath(-b.w/2, 0, b.w, b.h + 100, 12); ctx.fill();
+                ctx.fillStyle = '#84cc16';
+                roundRectPath(-b.w/2, 0, b.w, 20, 12); ctx.fill();
+
+                // Target Zone for Drop (Ellipse)
+                ctx.save();
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.lineWidth = 4;
+                ctx.setLineDash([12, 10]);
+                ctx.beginPath();
+                ctx.ellipse(0, 10, 50, 12, 0, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+                ctx.fill();
+                ctx.restore();
+            } 
+            else if (b.type === 'floor') {
+                ctx.fillStyle = b.color;
+                roundRectPath(-b.w/2, -b.h, b.w, b.h, 6); ctx.fill();
+                
+                ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                roundRectPath(-b.w/2, -b.h, b.w, 10, 6); ctx.fill();
+                
+                ctx.fillStyle = '#93c5fd';
+                roundRectPath(-b.w/2 + 15, -b.h + 20, 25, 30, 4); ctx.fill();
+                roundRectPath(b.w/2 - 40, -b.h + 20, 25, 30, 4); ctx.fill();
+                
+                ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+                ctx.lineWidth = 3;
+                roundRectPath(-b.w/2, -b.h, b.w, b.h, 6); ctx.stroke();
+            } 
+            else if (b.type === 'roof') {
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.moveTo(-b.w/2, 0); ctx.lineTo(b.w/2, 0); ctx.lineTo(0, -b.h);
+                ctx.closePath(); ctx.fill();
+                
+                ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+                ctx.lineWidth = 3; ctx.stroke();
+
+                ctx.fillStyle = '#93c5fd';
+                ctx.beginPath(); ctx.arc(0, -b.h/3, 12, 0, Math.PI*2); ctx.fill();
+                ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        // --- UNIFIED GAME LOOP ---
+        function gameLoop(timestamp) {
+            requestAnimationFrame(gameLoop);
+            
+            const currentTimestamp = timestamp || performance.now();
+            const dt = (currentTimestamp - lastFrameTime) / 1000;
+            lastFrameTime = currentTimestamp;
+            if (dt > 0.5) return;
+
+            if (gameActive) {
+                ctx.clearRect(0, 0, gw, gh);
+                updateCamera();
+
+                ctx.save();
+                // Apply Zoom Transformation mapped to Ground Level
+                ctx.translate(gw/2, groundY);
+                ctx.scale(globalScale, globalScale);
+                ctx.translate(-gw/2, -groundY);
+                ctx.translate(0, cameraY);
+
+                const craneBaseY = getCraneY() - 200;
+                drawCrane(craneBaseY);
+
+                // Draw Blocks
+                drawBlock(blocks[0]); 
+                drawCuteWorker(gw/2 + 140, groundY);
+                for(let i=1; i<blocks.length; i++) {
+                    drawBlock(blocks[i]);
+                }
+
+                // Handle Sub-states
+                if (state === 'swinging' && activeBlock) {
+                    time += 0.016;
+                    const lvl = LEVELS[currentLevelIndex];
+                    const swingRange = gw/2 - Math.max(80, gw*0.1);
+                    
+                    // Apply speed multiplier from slider
+                    activeBlock.x = gw/2 + Math.sin(time * lvl.speed * speedMultiplier) * swingRange;
+                    
+                    const trolleyY = craneBaseY + 25; 
+                    ctx.fillStyle = '#475569'; ctx.fillRect(activeBlock.x - 15, trolleyY - 10, 30, 15);
+                    ctx.fillStyle = '#eab308';
+                    ctx.beginPath(); ctx.arc(activeBlock.x - 8, trolleyY + 5, 4, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(activeBlock.x + 8, trolleyY + 5, 4, 0, Math.PI*2); ctx.fill();
+
+                    ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.moveTo(activeBlock.x, trolleyY + 5); ctx.lineTo(activeBlock.x, activeBlock.y - activeBlock.h); ctx.stroke();
+                    ctx.fillStyle = '#475569'; ctx.fillRect(activeBlock.x - 15, activeBlock.y - activeBlock.h - 10, 30, 10);
+
+                    drawBlock(activeBlock);
+
+                } 
+                else if (state === 'dropping' && activeBlock) {
+                    activeBlock.y += 18; 
+                    const topBlock = getTopBlock();
+                    
+                    if (activeBlock.y >= topBlock.y - topBlock.h) {
+                        const diffX = Math.abs(activeBlock.x - topBlock.x);
+                        if (diffX > topBlock.w / 2) {
+                            activeBlock.y = topBlock.y - topBlock.h;
+                            drawBlock(activeBlock);
+                            triggerCollapse();
+                        } else {
+                            if (diffX < 15) { activeBlock.x = topBlock.x; SFX.landPerfect(); } 
+                            else { SFX.landOkay(); }
+                            
+                            activeBlock.y = topBlock.y - topBlock.h; 
+                            blocks.push(activeBlock);
+                            
+                            if (!checkTowerStability()) {
+                                triggerCollapse();
+                            } else {
+                                score++;
+                                updateHUD();
+                                if (score >= LEVELS[currentLevelIndex].target) {
+                                    triggerCompletion();
+                                } else {
+                                    state = 'swinging';
+                                    spawnBlock();
+                                }
+                            }
+                        }
+                    } else {
+                        drawBlock(activeBlock);
+                    }
+                }
+                else if (state === 'gameover') {
+                    const gravity = 0.5;
+                    for(let i=1; i<blocks.length; i++) {
+                        let b = blocks[i]; b.vy += gravity; b.x += b.vx; b.y += b.vy; b.angle += b.va; drawBlock(b);
+                    }
+                    if(activeBlock) {
+                        activeBlock.vy += gravity; activeBlock.x += activeBlock.vx; activeBlock.y += activeBlock.vy; activeBlock.angle += activeBlock.va; drawBlock(activeBlock);
+                    }
+                }
+                else if (state === 'congrats') {
+                    // Draw Empty Hook waiting
+                    const trolleyY = craneBaseY + 25;
+                    const trolleyX = gw / 2;
+                    ctx.fillStyle = '#475569'; ctx.fillRect(trolleyX - 15, trolleyY - 10, 30, 15);
+                    ctx.fillStyle = '#eab308';
+                    ctx.beginPath(); ctx.arc(trolleyX - 8, trolleyY + 5, 4, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(trolleyX + 8, trolleyY + 5, 4, 0, Math.PI*2); ctx.fill();
+                    ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.moveTo(trolleyX, trolleyY + 5); ctx.lineTo(trolleyX, trolleyY + 60); ctx.stroke();
+                    ctx.fillStyle = '#475569'; ctx.fillRect(trolleyX - 15, trolleyY + 60, 30, 10);
+                }
+
+                ctx.restore(); 
+
+                // Draw Confetti Overlay
+                if (state === 'congrats') {
+                    time += 0.016;
+                    drawConfetti();
+                }
+            }
+        }
+
+        requestAnimationFrame(gameLoop);
+
+        // --- INTERACTION ---
+        function handleTap(e) {
+            if (!gameActive) return;
+
+            // Handle Tap during Congrats state (Zoom Out Screen)
+            if (state === 'congrats') {
+                const instr = document.getElementById('instruction');
+                if (!instr.classList.contains('hidden')) {
+                    e.preventDefault();
+                    SFX.drop();
+                    clearConfettiCanvas(); // Fix for shadow bug on level transition
+                    const isLastLevel = currentLevelIndex === LEVELS.length - 1;
+                    if (isLastLevel) { currentLevelIndex = 0; } 
+                    else { currentLevelIndex++; }
+                    initGame(); 
+                }
+                return;
+            }
+
+            if (state !== 'swinging' || e.target.closest('#gameOverScreen') || e.target.closest('#startScreen')) return;
+            e.preventDefault();
+            SFX.drop();
+            state = 'dropping';
+        }
+
+        canvas.addEventListener('mousedown', handleTap);
+        canvas.addEventListener('touchstart', handleTap, {passive: false});
+
+        // --- GAME FLOW ---
+        function updateHUD() { 
+            document.getElementById('currentScore').innerText = score;
+        }
+
+        function triggerCompletion() {
+            state = 'congrats'; // Game stays active to render Zoom Out
+            SFX.win(); 
+            document.getElementById('hud').classList.add('opacity-0');
+            document.getElementById('instruction').classList.add('hidden'); // Hide temporarily
+            
+            activeBlock = null; // Remove dropping block
+            const isLastLevel = currentLevelIndex === LEVELS.length - 1;
+            
+            // Wait a few seconds for the beautiful zoom out and confetti to play before showing "Next Level" prompt
+            setTimeout(() => {
+                const instr = document.getElementById('instruction');
+                instr.innerText = isLastLevel ? "TAP TO REPLAY ALL!" : "TAP FOR NEXT LEVEL!";
+                instr.classList.remove('hidden');
+            }, 2500);
+
+            confettiParticles = [];
+            for(let i=0; i<200; i++) { createConfetti(); }
+        }
+
+        function createConfetti() {
+            const colors = ['#facc15', '#f87171', '#60a5fa', '#4ade80', '#d946ef', '#f97316', '#ffffff'];
+            confettiParticles.push({
+                x: Math.random() * gw,
+                y: Math.random() * gh - gh, 
+                w: Math.random() * 10 + 8,
+                h: Math.random() * 10 + 8,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                vx: Math.random() * 4 - 2,
+                vy: Math.random() * 3 + 2,
+                rot: Math.random() * 360,
+                rotSpeed: Math.random() * 15 - 7.5
+            });
+        }
+
+        // Bulletproof fix for Trail/Ghosting bugs on all DPI/Retina displays
+        function clearConfettiCanvas() {
+            cfCtx.save();
+            cfCtx.setTransform(1, 0, 0, 1, 0, 0);
+            cfCtx.clearRect(0, 0, cfCanvas.width, cfCanvas.height);
+            cfCtx.restore();
+        }
+
+        function drawConfetti() {
+            clearConfettiCanvas();
+            for(let i = confettiParticles.length - 1; i >= 0; i--) {
+                const p = confettiParticles[i];
+                p.x += p.vx; p.y += p.vy; p.rot += p.rotSpeed;
+                p.vx += Math.sin(time * 3 + p.y * 0.01) * 0.1;
+
+                if (p.y > gh + 50) {
+                    confettiParticles.splice(i, 1);
+                    if (state === 'congrats') createConfetti(); 
+                } else { 
+                    cfCtx.save();
+                    cfCtx.translate(p.x, p.y); cfCtx.rotate(p.rot * Math.PI / 180);
+                    cfCtx.fillStyle = p.color; cfCtx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+                    cfCtx.fillStyle = 'rgba(255,255,255,0.4)';
+                    cfCtx.fillRect(-p.w/2, -p.h/2, p.w, p.h/3);
+                    cfCtx.restore();
+                }
+            }
+        }
+
+        // Global Button Events
+        document.getElementById('startBtn').onclick = () => {
+            initAudio(); SFX.drop();
+            speedMultiplier = parseFloat(document.getElementById('speedSlider').value) || 1.0;
+            
+            document.getElementById('startScreen').classList.add('hidden');
+            currentLevelIndex = 0;
+            gameActive = true; 
+            initGame(); 
+        };
+
+        document.getElementById('retryBtn').onclick = () => {
+            SFX.drop(); 
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            gameActive = true; 
+            initGame(); 
+        };
+
+    </script>
+</body>
+</html>
