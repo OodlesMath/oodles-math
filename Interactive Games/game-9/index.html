@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Balloon Pop V3: Kids Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sky-top: #1cb0f6;      
+            --sky-bottom: #89d4fb;   
+            --hill-back: #2ebd59;    
+            --hill-front: #58cc02;   
+            --btn-green: #58cc02;
+            --btn-green-shadow: #58a700;
+            --btn-blue: #1cb0f6;
+            --btn-blue-shadow: #1899d6;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+            background: var(--sky-bottom);
+        }
+
+        /* --- BACKGROUND ELEMENTS --- */
+        #bg-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, var(--sky-top) 0%, var(--sky-bottom) 100%);
+            z-index: 0; overflow: hidden;
+        }
+
+        .rainbow {
+            position: absolute;
+            bottom: 20%; left: 0; width: 100%; height: 80%;
+            background: radial-gradient(circle at 50% 100%,
+                transparent 40%,
+                rgba(148, 0, 211, 0.2) 41%, rgba(148, 0, 211, 0.2) 44%,
+                rgba(75, 0, 130, 0.2) 45%, rgba(75, 0, 130, 0.2) 48%,
+                rgba(0, 0, 255, 0.2) 49%, rgba(0, 0, 255, 0.2) 52%,
+                rgba(0, 255, 0, 0.2) 53%, rgba(0, 255, 0, 0.2) 56%,
+                rgba(255, 255, 0, 0.2) 57%, rgba(255, 255, 0, 0.2) 60%,
+                rgba(255, 127, 0, 0.2) 61%, rgba(255, 127, 0, 0.2) 64%,
+                rgba(255, 0, 0, 0.2) 65%, rgba(255, 0, 0, 0.2) 68%,
+                transparent 69%
+            );
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .hill { position: absolute; bottom: -5%; width: 150%; height: 40%; border-radius: 100% 100% 0 0; }
+        .hill-back { left: -20%; background: var(--hill-back); transform: rotate(-5deg); z-index: 1; }
+        .hill-front { left: -10%; background: var(--hill-front); transform: rotate(3deg); z-index: 2; }
+
+        .tree { position: absolute; z-index: 1; }
+        .tree-trunk { width: 14px; height: 35px; background: #78350f; border-radius: 4px; position: absolute; bottom: -10px; left: -7px; }
+        .tree-top { width: 65px; height: 65px; background: #15803d; border-radius: 50%; position: absolute; bottom: 15px; left: -32.5px; box-shadow: inset -10px -10px 0 rgba(0,0,0,0.15); }
+        .tree-top.light { background: #16a34a; }
+        
+        .flower { 
+            position: absolute; width: 12px; height: 12px; background: #facc15; border-radius: 50%; z-index: 3;
+            box-shadow: 0 -7px 0 -1.5px white, 0 7px 0 -1.5px white, -7px 0 0 -1.5px white, 7px 0 0 -1.5px white, -5px -5px 0 -1.5px white, 5px 5px 0 -1.5px white, -5px 5px 0 -1.5px white, 5px -5px 0 -1.5px white;
+        }
+
+        .sun {
+            position: absolute; top: 5vh; left: 5vw; width: 120px; height: 120px; background: #facc15; border-radius: 50%;
+            box-shadow: 0 0 0 15px rgba(250, 204, 21, 0.3), 0 0 0 30px rgba(250, 204, 21, 0.1);
+            z-index: 1; animation: pulse 4s infinite alternate;
+        }
+
+        .cloud-container { position: absolute; pointer-events: none; z-index: 2; }
+        .cloud-shape { width: 140px; height: 50px; background: white; border-radius: 50px; position: relative; }
+        .cloud-shape::after, .cloud-shape::before { content: ''; position: absolute; background: white; border-radius: 50%; }
+        .cloud-shape::after { width: 70px; height: 70px; top: -35px; left: 20px; }
+        .cloud-shape::before { width: 60px; height: 60px; top: -25px; right: 20px; }
+
+        .cloud-move-1 { animation: float 40s infinite linear; top: 15%; opacity: 0.9;}
+        .cloud-move-2 { animation: float 55s infinite linear reverse; top: 25%; opacity: 0.7;}
+
+        @keyframes float { from { transform: translateX(-20vw); } to { transform: translateX(120vw); } }
+        @keyframes pulse { 0% { transform: scale(1); } 100% { transform: scale(1.05); } }
+
+        /* --- CANVAS --- */
+        canvas { display: block; position: absolute; top: 0; left: 0; z-index: 10; background: transparent; cursor: crosshair; }
+        
+        /* CONFETTI MUST BE ON TOP OF EVERYTHING */
+        #confettiCanvas { z-index: 9999; pointer-events: none; }
+
+        /* --- UI LAYER --- */
+        .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .interactive { pointer-events: auto; }
+        .text-bubbly { text-shadow: 2px 4px 0px rgba(0,0,0,0.15); }
+        .card-bubbly { background: white; border-radius: 32px; box-shadow: 0 10px 0px rgba(0,0,0,0.1); border: 6px solid white; }
+
+        .btn-duo { border-radius: 16px; text-transform: uppercase; font-weight: 900; transition: transform 0.1s, box-shadow 0.1s; position: relative; cursor: pointer; }
+        .btn-duo-green { background-color: var(--btn-green); color: white; box-shadow: 0 8px 0 var(--btn-green-shadow); }
+        .btn-duo-green:active { transform: translateY(8px); box-shadow: 0 0px 0 var(--btn-green-shadow); }
+        .btn-duo-blue { background-color: var(--btn-blue); color: white; box-shadow: 0 8px 0 var(--btn-blue-shadow); }
+        .btn-duo-blue:active { transform: translateY(8px); box-shadow: 0 0px 0 var(--btn-blue-shadow); }
+
+        .pop-in { animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        .star-svg { width: 50px; height: 50px; display: inline-block; animation: spinStar 10s linear infinite; }
+        @keyframes spinStar { 100% { transform: rotate(360deg); } }
+
+        /* Responsive Tweaks */
+        .hud-container { position: absolute; top: 0; left: 0; width: 100%; display: flex; justify-content: space-between; padding: max(16px, 2vh) max(16px, 4vw); box-sizing: border-box; }
+        
+        @media (max-width: 600px) {
+            .sun { width: 80px; height: 80px; box-shadow: 0 0 0 10px rgba(250, 204, 21, 0.3), 0 0 0 20px rgba(250, 204, 21, 0.1); }
+            .card-bubbly { border-width: 4px; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Container -->
+    <div id="bg-container">
+        <div class="rainbow"></div>
+        <div class="sun"></div>
+        <div class="cloud-container cloud-move-1" style="left: 10%;"><div class="cloud-shape"></div></div>
+        <div class="cloud-container cloud-move-2" style="right: 5%;"><div class="cloud-shape" style="transform: scale(0.8); opacity: 0.8;"></div></div>
+        
+        <div class="hill hill-back">
+            <div class="tree" style="left: 15%; bottom: 95%;"><div class="tree-top"></div><div class="tree-trunk"></div></div>
+            <div class="tree" style="left: 45%; bottom: 90%; transform: scale(1.3);"><div class="tree-top"></div><div class="tree-trunk"></div></div>
+            <div class="tree" style="left: 75%; bottom: 100%; transform: scale(0.9);"><div class="tree-top"></div><div class="tree-trunk"></div></div>
+        </div>
+        <div class="hill hill-front">
+            <div class="tree" style="left: 25%; bottom: 95%; transform: scale(1.4);"><div class="tree-top light"></div><div class="tree-trunk"></div></div>
+            <div class="tree" style="left: 85%; bottom: 90%; transform: scale(1.1);"><div class="tree-top light"></div><div class="tree-trunk"></div></div>
+            
+            <div class="flower" style="left: 10%; bottom: 80%;"></div>
+            <div class="flower" style="left: 35%; bottom: 85%;"></div>
+            <div class="flower" style="left: 55%; bottom: 75%;"></div>
+            <div class="flower" style="left: 70%; bottom: 88%;"></div>
+            <div class="flower" style="left: 92%; bottom: 82%;"></div>
+        </div>
+    </div>
+
+    <!-- Canvas -->
+    <canvas id="gameCanvas"></canvas>
+    
+    <!-- Confetti on highest layer -->
+    <canvas id="confettiCanvas"></canvas>
+
+    <!-- UI Overlay -->
+    <div class="ui-layer">
+        
+        <!-- Top HUD -->
+        <div class="hud-container pointer-events-none z-10 opacity-0 transition-opacity duration-500" id="hud">
+            <!-- Level & Timer -->
+            <div class="bg-white/90 backdrop-blur-md border-[4px] border-blue-400 rounded-3xl px-3 py-1 sm:px-4 sm:py-2 shadow-lg flex items-center gap-2 sm:gap-3">
+                <div class="bg-blue-100 text-blue-600 font-black px-2 py-1 rounded-xl text-lg sm:text-xl border-2 border-blue-300 text-bubbly shadow-inner">
+                    LVL <span id="levelDisplay">1</span>
+                </div>
+                <div class="flex items-center gap-1 text-red-500 font-black text-2xl sm:text-3xl text-bubbly drop-shadow-sm">
+                    ⏱ <span id="timeDisplay">30</span>s
+                </div>
+            </div>
+
+            <!-- Score / Target -->
+            <div class="bg-white/90 backdrop-blur-md border-[4px] border-yellow-400 rounded-3xl px-4 py-1 sm:px-6 sm:py-2 shadow-lg flex items-center justify-center">
+                <span class="text-yellow-500 font-black text-2xl sm:text-3xl text-bubbly"><span id="currentScore">0</span> / <span id="targetScoreDisplay">15</span></span>
+            </div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="startScreen" class="absolute inset-0 flex items-center justify-center bg-sky-900/50 backdrop-blur-sm interactive z-50 p-4">
+            <div class="card-bubbly p-6 sm:p-8 w-full max-w-sm text-center pop-in relative">
+                <div class="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-yellow-400 rounded-full p-4 border-4 border-white shadow-lg animate-bounce">
+                    <svg viewBox="0 0 24 24" fill="white" class="w-10 h-10 sm:w-12 sm:h-12"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+                </div>
+                <h1 class="text-4xl sm:text-5xl font-black text-sky-500 mt-6 mb-2 text-bubbly leading-tight">Balloon Pop!</h1>
+                <p class="text-slate-500 mb-6 font-bold text-base sm:text-lg">Pop enough balloons before time runs out! There are 3 levels to beat.</p>
+                <button id="startBtn" class="w-full btn-duo btn-duo-green text-xl sm:text-2xl py-4 flex justify-center items-center gap-2">
+                    PLAY NOW <svg viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameOverScreen" class="hidden absolute inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm interactive z-50 p-4">
+            <div class="card-bubbly p-6 sm:p-8 w-full max-w-sm text-center pop-in">
+                <div class="text-6xl sm:text-7xl mb-4 animate-bounce drop-shadow-md">⏰</div>
+                <h1 class="text-4xl sm:text-5xl font-black text-red-500 mb-2 text-bubbly">TIME'S UP!</h1>
+                <p class="text-slate-500 font-bold mb-6 text-base sm:text-lg">You didn't pop enough balloons!</p>
+                <button id="retryBtn" class="w-full btn-duo btn-duo-blue text-xl sm:text-2xl py-4">TRY AGAIN ↺</button>
+            </div>
+        </div>
+
+        <!-- Congrats Screen -->
+        <div id="congratsScreen" class="hidden absolute inset-0 flex items-center justify-center bg-yellow-400/30 backdrop-blur-md interactive z-50 p-4">
+            <div class="card-bubbly p-6 sm:p-8 w-full max-w-sm text-center pop-in relative shadow-[0_0_50px_rgba(250,204,21,0.6)]">
+                <h1 id="congratsTitle" class="text-4xl sm:text-5xl font-black text-yellow-500 mb-4 text-bubbly">LEVEL CLEARED!</h1>
+                <div class="flex justify-center items-center gap-2 mb-4">
+                    <svg viewBox="0 0 24 24" fill="#facc15" stroke="#ca8a04" stroke-width="1.5" class="star-svg w-10 h-10 sm:w-12 sm:h-12" style="animation-delay: 0s;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    <svg viewBox="0 0 24 24" fill="#facc15" stroke="#ca8a04" stroke-width="1.5" class="star-svg w-14 h-14 sm:w-16 sm:h-16" style="animation-delay: 0.2s; transform: scale(1.1);"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    <svg viewBox="0 0 24 24" fill="#facc15" stroke="#ca8a04" stroke-width="1.5" class="star-svg w-10 h-10 sm:w-12 sm:h-12" style="animation-delay: 0.4s;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                </div>
+                <div class="bg-gray-100 rounded-2xl py-3 mb-6 border-2 border-gray-200">
+                    <div class="text-lg font-bold text-slate-500 uppercase tracking-widest">Target Score</div>
+                    <div id="finalScoreDisplay" class="text-green-500 font-black text-4xl text-bubbly">15 / 15</div>
+                </div>
+                <button id="nextLevelBtn" class="w-full btn-duo btn-duo-blue text-xl sm:text-2xl py-4 mb-3">NEXT LEVEL ➔</button>
+                <button id="finalResetBtn" class="hidden w-full btn-duo btn-duo-green text-xl sm:text-2xl py-4">PLAY AGAIN ↺</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- AUDIO SYSTEM ---
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playTone(freq, type, duration, vol = 0.1) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        }
+
+        const SFX = {
+            tap: () => playTone(600, 'sine', 0.1, 0.1),
+            pop: () => {
+                playTone(800, 'sine', 0.05, 0.15);
+                setTimeout(() => playTone(1200, 'triangle', 0.05, 0.1), 30);
+            },
+            win: () => { const notes = [400, 500, 600, 800, 1000]; notes.forEach((freq, i) => setTimeout(() => playTone(freq, 'sine', 0.15, 0.1), i * 120)); },
+            lose: () => { playTone(250, 'sawtooth', 0.4, 0.1); setTimeout(() => playTone(150, 'sawtooth', 0.6, 0.1), 300); }
+        };
+
+        // --- CANVAS SETUP ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const cfCanvas = document.getElementById('confettiCanvas');
+        const cfCtx = cfCanvas.getContext('2d');
+        
+        let gw = window.innerWidth;
+        let gh = window.innerHeight;
+
+        // --- LEVEL DEFINITIONS ---
+        const LEVELS = [
+            { levelNum: 1, time: 30, target: 15, spawnMod: 1.0, speedMod: 1.0 },
+            { levelNum: 2, time: 30, target: 25, spawnMod: 1.5, speedMod: 1.3 },
+            { levelNum: 3, time: 30, target: 40, spawnMod: 2.2, speedMod: 1.6 }
+        ];
+
+        // --- GAME STATE ---
+        let currentLevelIndex = 0;
+        let score = 0;
+        let timeRemaining = 0;
+        let gameActive = false;
+        let state = 'waiting'; 
+        let balloons = [];
+        let pops = []; 
+        let floatingTexts = []; 
+        let confettiParticles = [];
+        
+        let lastFrameTime = 0;
+        let time = 0; // For visual sine waves
+
+        function resize() {
+            const dpr = window.devicePixelRatio || 1;
+            gw = window.innerWidth;
+            gh = window.innerHeight;
+            
+            canvas.width = gw * dpr; canvas.height = gh * dpr;
+            canvas.style.width = gw + 'px'; canvas.style.height = gh + 'px';
+            
+            cfCanvas.width = gw * dpr; cfCanvas.height = gh * dpr;
+            cfCanvas.style.width = gw + 'px'; cfCanvas.style.height = gh + 'px';
+            
+            ctx.scale(dpr, dpr); cfCtx.scale(dpr, dpr);
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // --- GAME LOGIC ---
+        const balloonColors = ['#ef4444', '#f97316', '#facc15', '#4ade80', '#3b82f6', '#a855f7', '#ec4899', '#14b8a6'];
+
+        function initGame() {
+            const lvl = LEVELS[currentLevelIndex];
+            score = 0; 
+            timeRemaining = lvl.time;
+            balloons = [];
+            pops = [];
+            floatingTexts = [];
+            state = 'playing';
+            
+            document.getElementById('levelDisplay').innerText = lvl.levelNum;
+            document.getElementById('targetScoreDisplay').innerText = lvl.target;
+            
+            updateHUD();
+            document.getElementById('hud').classList.remove('opacity-0');
+            
+            lastFrameTime = performance.now();
+        }
+
+        function spawnBalloon(speedMod) {
+            const minR = 30;
+            const maxR = Math.min(60, gw * 0.08); 
+            const r = minR + Math.random() * (maxR - minR);
+            
+            balloons.push({
+                x: r + 15 + Math.random() * (gw - r * 2 - 30),
+                y: gh + r + 20,
+                r: r,
+                color: balloonColors[Math.floor(Math.random() * balloonColors.length)],
+                speed: (1.5 + Math.random() * 2) * speedMod,
+                wobbleSpeed: 0.02 + Math.random() * 0.03,
+                wobblePhase: Math.random() * Math.PI * 2
+            });
+        }
+
+        function createPopEffect(x, y, color) {
+            for(let i=0; i<10; i++) {
+                const angle = (Math.PI * 2 / 10) * i;
+                const speed = 2 + Math.random() * 4;
+                pops.push({
+                    x: x, y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    color: color,
+                    life: 1.0 
+                });
+            }
+            floatingTexts.push({ x: x, y: y, life: 1.0 });
+        }
+
+        // --- DRAWING ---
+        function drawRealisticBalloon(b) {
+            ctx.save();
+            ctx.translate(b.x, b.y);
+            
+            // String
+            ctx.beginPath();
+            ctx.moveTo(0, b.r);
+            ctx.bezierCurveTo(-10, b.r + 20, 10, b.r + 40, -5, b.r + 60);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Knot
+            ctx.fillStyle = b.color;
+            ctx.beginPath();
+            ctx.moveTo(0, b.r - 2);
+            ctx.lineTo(-6, b.r + 8);
+            ctx.lineTo(6, b.r + 8);
+            ctx.fill();
+
+            // Balloon Body
+            ctx.scale(1, 1.2); 
+            ctx.fillStyle = b.color;
+            ctx.beginPath();
+            ctx.arc(0, 0, b.r, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 3D Gradient Overlay
+            let grad = ctx.createRadialGradient(-b.r*0.3, -b.r*0.3, b.r*0.1, 0, 0, b.r);
+            grad.addColorStop(0, 'rgba(255,255,255,0.7)');
+            grad.addColorStop(0.3, 'rgba(255,255,255,0)');
+            grad.addColorStop(0.7, 'rgba(0,0,0,0)');
+            grad.addColorStop(1, 'rgba(0,0,0,0.35)');
+            
+            ctx.fillStyle = grad;
+            ctx.fill();
+
+            // Outline
+            ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function drawEffects() {
+            for (let i = pops.length - 1; i >= 0; i--) {
+                let p = pops[i];
+                p.x += p.vx; p.y += p.vy; p.life -= 0.05;
+                if (p.life <= 0) {
+                    pops.splice(i, 1);
+                } else {
+                    ctx.globalAlpha = p.life;
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI*2); ctx.fill();
+                    ctx.globalAlpha = 1.0;
+                }
+            }
+
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                let t = floatingTexts[i];
+                t.y -= 2; t.life -= 0.03;
+                if (t.life <= 0) {
+                    floatingTexts.splice(i, 1);
+                } else {
+                    ctx.globalAlpha = t.life;
+                    ctx.fillStyle = '#facc15';
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 4;
+                    ctx.font = '900 32px Poppins';
+                    ctx.textAlign = 'center';
+                    ctx.strokeText('+1', t.x, t.y);
+                    ctx.fillText('+1', t.x, t.y);
+                    ctx.globalAlpha = 1.0;
+                }
+            }
+        }
+
+        // --- UNIFIED GAME LOOP ---
+        function gameLoop(timestamp) {
+            requestAnimationFrame(gameLoop);
+            
+            const currentTimestamp = timestamp || performance.now();
+            const dt = (currentTimestamp - lastFrameTime) / 1000; // in seconds
+            lastFrameTime = currentTimestamp;
+
+            // Prevent huge jumps if tab was inactive
+            if (dt > 0.5) return;
+
+            if (gameActive && state === 'playing') {
+                ctx.clearRect(0, 0, gw, gh);
+                time += 0.016;
+
+                // Update Timer
+                timeRemaining -= dt;
+                
+                if (timeRemaining <= 0) {
+                    timeRemaining = 0;
+                    updateHUD();
+                    if (score < LEVELS[currentLevelIndex].target) {
+                        triggerGameOver();
+                        return;
+                    }
+                } else {
+                    updateHUD();
+                }
+
+                const lvl = LEVELS[currentLevelIndex];
+                const maxBalloons = Math.min(15, 5 + Math.floor(gw / 120)); 
+                const spawnRate = (0.015 + (score * 0.001)) * lvl.spawnMod; 
+                
+                if (Math.random() < spawnRate && balloons.length < maxBalloons) {
+                    spawnBalloon(lvl.speedMod);
+                }
+
+                for (let i = balloons.length - 1; i >= 0; i--) {
+                    let b = balloons[i];
+                    b.y -= b.speed;
+                    b.x += Math.sin(time * 60 * b.wobbleSpeed + b.wobblePhase) * 1.5;
+
+                    if(b.x < b.r) b.x = b.r;
+                    if(b.x > gw - b.r) b.x = gw - b.r;
+
+                    if (b.y + b.r * 1.5 < -50) {
+                        balloons.splice(i, 1);
+                        // No lives lost, just despawn
+                    } else {
+                        drawRealisticBalloon(b);
+                    }
+                }
+
+                drawEffects();
+
+            } else if (state === 'congrats') {
+                time += 0.016;
+                drawConfetti();
+            }
+        }
+
+        // Start the loop (it idles until gameActive is true)
+        requestAnimationFrame(gameLoop);
+
+        // --- INTERACTION ---
+        function handleTap(e) {
+            if (state !== 'playing' || !gameActive) return;
+            e.preventDefault();
+            
+            let touchX, touchY;
+            if (e.type.includes('touch')) {
+                touchX = e.touches[0].clientX;
+                touchY = e.touches[0].clientY;
+            } else {
+                touchX = e.clientX;
+                touchY = e.clientY;
+            }
+
+            for (let i = balloons.length - 1; i >= 0; i--) {
+                let b = balloons[i];
+                const dist = Math.hypot(touchX - b.x, touchY - b.y);
+                if (dist <= b.r * 1.4) {
+                    createPopEffect(b.x, b.y, b.color);
+                    balloons.splice(i, 1);
+                    SFX.pop();
+                    score++;
+                    updateHUD();
+                    
+                    if(score >= LEVELS[currentLevelIndex].target) {
+                        triggerCompletion();
+                    }
+                    break; 
+                }
+            }
+        }
+
+        canvas.addEventListener('mousedown', handleTap);
+        canvas.addEventListener('touchstart', handleTap, {passive: false});
+
+        // --- GAME FLOW ---
+        function updateHUD() { 
+            document.getElementById('currentScore').innerText = score;
+            document.getElementById('timeDisplay').innerText = Math.max(0, Math.ceil(timeRemaining));
+        }
+
+        function triggerGameOver() {
+            state = 'gameover'; gameActive = false; 
+            SFX.lose();
+            document.getElementById('hud').classList.add('opacity-0');
+            document.getElementById('gameOverScreen').classList.remove('hidden');
+        }
+
+        function triggerCompletion() {
+            state = 'congrats'; gameActive = false; SFX.win(); 
+            document.getElementById('hud').classList.add('opacity-0');
+            
+            const isLastLevel = currentLevelIndex === LEVELS.length - 1;
+            document.getElementById('congratsTitle').innerText = isLastLevel ? "YOU BEAT ALL LEVELS!" : "LEVEL CLEARED!";
+            document.getElementById('finalScoreDisplay').innerText = score + " / " + LEVELS[currentLevelIndex].target;
+            
+            if (isLastLevel) {
+                document.getElementById('nextLevelBtn').classList.add('hidden');
+                document.getElementById('finalResetBtn').classList.remove('hidden');
+            } else {
+                document.getElementById('nextLevelBtn').classList.remove('hidden');
+                document.getElementById('finalResetBtn').classList.add('hidden');
+            }
+
+            document.getElementById('congratsScreen').classList.remove('hidden');
+            
+            ctx.clearRect(0, 0, gw, gh); 
+            drawEffects(); 
+
+            confettiParticles = [];
+            for(let i=0; i<200; i++) { createConfetti(); }
+        }
+
+        function createConfetti() {
+            const colors = ['#facc15', '#f87171', '#60a5fa', '#4ade80', '#d946ef', '#f97316', '#ffffff'];
+            confettiParticles.push({
+                x: Math.random() * gw,
+                y: Math.random() * gh - gh, 
+                w: Math.random() * 10 + 8,
+                h: Math.random() * 10 + 8,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                vx: Math.random() * 4 - 2,
+                vy: Math.random() * 3 + 2,
+                rot: Math.random() * 360,
+                rotSpeed: Math.random() * 15 - 7.5
+            });
+        }
+
+        function drawConfetti() {
+            cfCtx.clearRect(0, 0, gw, gh);
+            for(let i = confettiParticles.length - 1; i >= 0; i--) {
+                const p = confettiParticles[i];
+                p.x += p.vx; p.y += p.vy; p.rot += p.rotSpeed;
+                p.vx += Math.sin(time * 3 + p.y * 0.01) * 0.1;
+
+                if (p.y > gh + 50) {
+                    confettiParticles.splice(i, 1);
+                    if (state === 'congrats') createConfetti(); 
+                } else { 
+                    cfCtx.save();
+                    cfCtx.translate(p.x, p.y); cfCtx.rotate(p.rot * Math.PI / 180);
+                    cfCtx.fillStyle = p.color; cfCtx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+                    
+                    cfCtx.fillStyle = 'rgba(255,255,255,0.4)';
+                    cfCtx.fillRect(-p.w/2, -p.h/2, p.w, p.h/3);
+                    cfCtx.restore();
+                }
+            }
+        }
+
+        // Global Button Events
+        document.getElementById('startBtn').onclick = () => {
+            initAudio(); SFX.tap();
+            document.getElementById('startScreen').classList.add('hidden');
+            currentLevelIndex = 0;
+            gameActive = true; 
+            initGame(); 
+        };
+
+        document.getElementById('retryBtn').onclick = () => {
+            SFX.tap(); document.getElementById('gameOverScreen').classList.add('hidden');
+            gameActive = true; 
+            initGame(); 
+        };
+
+        document.getElementById('nextLevelBtn').onclick = () => {
+            SFX.tap(); document.getElementById('congratsScreen').classList.add('hidden');
+            cfCtx.clearRect(0, 0, gw, gh); 
+            currentLevelIndex++;
+            gameActive = true; 
+            initGame(); 
+        };
+
+        document.getElementById('finalResetBtn').onclick = () => {
+            SFX.tap(); document.getElementById('congratsScreen').classList.add('hidden');
+            cfCtx.clearRect(0, 0, gw, gh); 
+            currentLevelIndex = 0;
+            gameActive = true; 
+            initGame(); 
+        };
+
+    </script>
+</body>
+</html>
