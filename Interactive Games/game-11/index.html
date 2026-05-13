@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Abacus Adventure - V5</title>
+    
+    <!-- Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tone.js for Sound Effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    
+    <!-- Canvas Confetti for Win Screen -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --duo-green: #58cc02;
+            --duo-green-dark: #58a700;
+            --duo-blue: #1cb0f6;
+            --duo-blue-dark: #1899d6;
+            --duo-red: #ff4b4b;
+            --duo-red-dark: #ea2b2b;
+            --duo-yellow: #ffc800;
+            --duo-yellow-dark: #dca300;
+            --duo-orange: #ff9600;
+            --duo-orange-dark: #cc7800;
+            --duo-gray: #e5e5e5;
+            --duo-gray-dark: #cecece;
+            --text-main: #374151;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: linear-gradient(180deg, #48b1fa 0%, #87cefa 30%, #d7f4fc 100%);
+            background-attachment: fixed;
+        }
+
+        /* --- Background Scenery Elements --- */
+        .sun {
+            position: fixed;
+            top: 6%;
+            left: 8%;
+            width: 110px;
+            height: 110px;
+            background: #FFD700;
+            border-radius: 50%;
+            box-shadow: 0 0 0 10px rgba(255, 215, 0, 0.4), 
+                        0 0 0 25px rgba(255, 215, 0, 0.2), 
+                        0 0 60px rgba(255, 215, 0, 0.8);
+            z-index: 1; /* Above mountains, below clouds */
+            animation: pulseSun 4s infinite alternate ease-in-out;
+        }
+
+        @keyframes pulseSun {
+            0% { transform: scale(1) rotate(0deg); }
+            100% { transform: scale(1.1) rotate(10deg); }
+        }
+
+        .rainbow {
+            position: fixed;
+            bottom: -5vh;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140vw;
+            height: 140vw;
+            max-width: 1100px;
+            max-height: 1100px;
+            border-radius: 50%;
+            background: radial-gradient(circle at center,
+                transparent 50%,
+                #a881fb 50%, #a881fb 53%, 
+                #1cb0f6 53%, #1cb0f6 56%, 
+                #58cc02 56%, #58cc02 59%, 
+                #ffc800 59%, #ffc800 62%, 
+                #ff9600 62%, #ff9600 65%, 
+                #ff4b4b 65%, #ff4b4b 68%, 
+                transparent 68%
+            );
+            opacity: 0.4;
+            z-index: 1; /* In front of mountains */
+            pointer-events: none;
+        }
+
+        .cloud {
+            position: fixed;
+            background: #ffffff;
+            border-radius: 50px;
+            z-index: 2; /* In front of rainbow */
+            opacity: 0.95;
+            pointer-events: none;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.06), inset 0 -4px 0 #eaf6ff;
+        }
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background: #ffffff;
+            border-radius: 50%;
+        }
+        .cloud::before { width: 50px; height: 50px; top: -20px; left: 15px; }
+        .cloud::after { width: 70px; height: 70px; top: -30px; right: 15px; }
+
+        .cloud1 { width: 130px; height: 45px; top: 15%; animation: floatCloud 50s linear infinite; }
+        .cloud2 { width: 180px; height: 55px; top: 32%; animation: floatCloud 60s linear infinite; animation-delay: -25s; transform: scale(0.85); }
+        .cloud3 { width: 110px; height: 40px; top: 50%; animation: floatCloud 40s linear infinite; animation-delay: -12s; transform: scale(1.15); }
+
+        @keyframes floatCloud {
+            0% { left: -20%; }
+            100% { left: 120%; }
+        }
+
+        /* --- Mountains (Ver 5 Update) --- */
+        .mountains {
+            position: fixed;
+            bottom: 14vh; /* Sits directly on the grass */
+            left: 0;
+            width: 100%;
+            height: 38vh;
+            z-index: 0; /* Deepest background, Behind rainbow */
+            pointer-events: none;
+        }
+        
+        .mountain {
+            position: absolute;
+            bottom: 0;
+            /* Pointy triangle shape for mountain */
+            clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+        }
+        
+        .snow-cap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 40%;
+            background: rgba(255, 255, 255, 0.9);
+            /* Zigzag path for the bottom edge of the snow cap */
+            clip-path: polygon(50% 0%, 100% 100%, 80% 80%, 65% 100%, 50% 85%, 35% 100%, 20% 80%, 0% 100%);
+        }
+
+        .mountain-1 {
+            width: 60%;
+            height: 85%;
+            left: -15%;
+            background: linear-gradient(to bottom, #5a9fd6, #89cff0);
+        }
+        .mountain-2 {
+            width: 55%;
+            height: 100%;
+            right: -10%;
+            background: linear-gradient(to bottom, #4a90e2, #7abde0);
+        }
+        .mountain-3 {
+            width: 45%;
+            height: 70%;
+            left: 30%;
+            background: linear-gradient(to bottom, #7bb8eb, #a0d8f1);
+        }
+
+        /* --- Grass --- */
+        .grass-bg {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 15vh;
+            background-color: #58cc02;
+            border-top: 10px solid #46a302;
+            z-index: 3;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+        }
+
+        /* --- Trees --- */
+        .tree {
+            position: absolute;
+            bottom: 100%;
+            width: 18px;
+            height: 45px;
+            background: #8b5a2b;
+            border-radius: 4px;
+        }
+        .tree::after {
+            content: '';
+            position: absolute;
+            bottom: 25px;
+            left: -31px;
+            width: 80px;
+            height: 80px;
+            background: #46a302;
+            border-radius: 50%;
+            border: 5px solid #337a01;
+            box-shadow: inset -10px -10px 0 rgba(0,0,0,0.1);
+        }
+        .tree-1 { left: 10%; transform: scale(1.1); }
+        .tree-2 { right: 12%; transform: scale(0.85); }
+        .tree-3 { right: 35%; transform: scale(0.6); }
+
+        /* --- Flowers --- */
+        .flower {
+            position: absolute;
+            bottom: 100%;
+            width: 5px;
+            height: 18px;
+            background: #46a302;
+        }
+        .flower::after {
+            position: absolute;
+            top: -18px;
+            left: -12px;
+            font-size: 1.4rem;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.25));
+        }
+        .flower-pink::after { content: '🌸'; }
+        .flower-yellow::after { content: '🌼'; }
+        .flower-sun::after { content: '🌻'; }
+        
+        .flower-1 { left: 20%; }
+        .flower-2 { left: 45%; }
+        .flower-3 { right: 25%; transform: scale(1.2); }
+        .flower-4 { right: 48%; transform: scale(0.8); }
+        .flower-5 { left: 5%; transform: scale(0.9); }
+
+        #app-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            pointer-events: none; /* Pass clicks to bg elements if needed */
+        }
+
+        .screen {
+            pointer-events: auto;
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.96);
+            padding: 2rem;
+            border-radius: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            border: 4px solid var(--duo-gray);
+            transition: all 0.3s ease-in-out;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .screen.hidden {
+            display: none !important;
+        }
+
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.9) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* Duolingo style 3D Buttons */
+        .duo-btn {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            margin: 0.5rem 0;
+            font-size: 1.25rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 1rem;
+            cursor: pointer;
+            transition: all 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-blue {
+            background-color: var(--duo-blue);
+            color: white;
+            border: 2px solid var(--duo-blue-dark);
+            border-bottom-width: 6px;
+        }
+        .btn-blue:active { border-bottom-width: 2px; transform: translateY(4px); }
+
+        .btn-green {
+            background-color: var(--duo-green);
+            color: white;
+            border: 2px solid var(--duo-green-dark);
+            border-bottom-width: 6px;
+        }
+        .btn-green:active { border-bottom-width: 2px; transform: translateY(4px); }
+        .btn-green:disabled { background: var(--duo-gray); border-color: var(--duo-gray-dark); color: #999; cursor: not-allowed; border-bottom-width: 6px; transform: none; }
+
+        .btn-orange {
+            background-color: var(--duo-orange);
+            color: white;
+            border: 2px solid var(--duo-orange-dark);
+            border-bottom-width: 6px;
+        }
+        .btn-orange:active { border-bottom-width: 2px; transform: translateY(4px); }
+
+        .btn-outline {
+            background-color: white;
+            color: var(--duo-blue);
+            border: 2px solid var(--duo-gray-dark);
+            border-bottom-width: 6px;
+        }
+        .btn-outline:active { border-bottom-width: 2px; transform: translateY(4px); }
+
+        .icon-lg { font-size: 2rem; }
+        
+        .screen-title {
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--text-main);
+            text-align: center;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        /* Game Specific Layout */
+        #screen-game {
+            max-width: 600px;
+            padding: 1rem;
+            background: transparent;
+            box-shadow: none;
+            border: none;
+            justify-content: flex-start;
+            height: 98vh; /* Fit within screen */
+            position: relative; /* Base for inner absolutely positioned elements */
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- HUD Update for Ver 5 (Star and Quit combined at bottom left) --- */
+        .game-footer {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: auto;
+            padding-bottom: 0.5rem;
+            gap: 10px;
+            z-index: 20;
+        }
+
+        .bottom-left-hud {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .hud-star {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 900;
+            background: white;
+            color: var(--duo-orange);
+            border: 2px solid var(--duo-gray);
+            border-bottom-width: 4px;
+            border-radius: 0.8rem;
+            padding: 0.4rem 0.8rem;
+            font-size: 1.3rem; 
+        }
+
+        .btn-quit {
+            background-color: var(--duo-red);
+            color: white;
+            border: 2px solid var(--duo-red-dark);
+            border-bottom-width: 4px;
+            border-radius: 0.8rem;
+            padding: 0.5rem 1rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.1s;
+            font-size: 1rem;
+        }
+        .btn-quit:active {
+            border-bottom-width: 2px;
+            transform: translateY(2px);
+        }
+
+        .controls-container {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            flex-grow: 1;
+        }
+
+        /* Responsive Layout for the bottom bar on mobile screens */
+        @media (max-width: 480px) {
+            .game-footer {
+                flex-direction: column;
+                align-items: flex-start; /* Keep everything left-aligned on small screens */
+                gap: 12px;
+            }
+            .controls-container {
+                width: 100%;
+            }
+        }
+
+        /* --- Question Card Update --- */
+        .question-card {
+            background: white;
+            border: 3px solid var(--duo-gray);
+            border-radius: 1rem;
+            padding: 0.5rem 1.5rem;
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: var(--text-main);
+            text-align: center;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 6px 0 var(--duo-gray);
+            width: auto;
+            align-self: center; /* Center horizontally in flex column */
+            min-width: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .math-symbol { color: var(--duo-orange); }
+        .question-mark { color: var(--duo-blue); }
+
+        /* --- Abacus Visuals --- */
+        .abacus-wrapper {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        .abacus-container {
+            background: linear-gradient(to bottom, #d99a5b, #b0743b);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3), inset 0 0 20px rgba(0,0,0,0.4);
+            border: 4px solid #8b5a2b;
+            position: relative;
+            transform-origin: center center;
+        }
+
+        .abacus-face {
+            background: #fff5e6;
+            height: 50px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid #a37648;
+            box-shadow: inset 0 -3px 0 rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .eyes { display: flex; gap: 30px; }
+        .eye { width: 12px; height: 16px; background: #333; border-radius: 50%; position: relative;}
+        .eye::after { content:''; position:absolute; top:2px; right:2px; width:5px; height:6px; background:white; border-radius:50%;}
+        .blush { position: absolute; width: 16px; height: 8px; background: #ffb3b3; border-radius: 50%; top: 25px; opacity: 0.8;}
+        .blush.left { left: calc(50% - 45px); }
+        .blush.right { right: calc(50% - 45px); }
+        .mouth { position: absolute; top: 22px; width: 14px; height: 8px; border-bottom-left-radius: 14px; border-bottom-right-radius: 14px; background: #ff4d4d; border: 2px solid #333; border-top: none;}
+
+        .abacus-frame {
+            display: flex;
+            background: rgba(139, 90, 43, 0.4);
+            padding: 15px 10px;
+            border-radius: 10px;
+            border: inset 4px #5c3a21;
+            position: relative;
+        }
+
+        .reckoning-bar {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 18px;
+            background: linear-gradient(to bottom, #8b4513, #5c2e0b); 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.6);
+            z-index: 5;
+            border-top: 2px solid #a0522d;
+            border-bottom: 3px solid #3e1b04;
+        }
+
+        .column {
+            width: 46px;
+            margin: 0 6px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(0,0,0,0.08);
+            border-radius: 20px;
+        }
+
+        .rod {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 100%;
+            background: linear-gradient(to right, #e6c200, #ffd700, #b38f00);
+            box-shadow: inset -2px 0 3px rgba(0,0,0,0.3), inset 2px 0 3px rgba(255,255,255,0.5);
+            z-index: 1;
+            border-radius: 4px;
+        }
+
+        .bead {
+            width: 44px;
+            height: 26px;
+            border-radius: 13px;
+            position: absolute;
+            z-index: 10;
+            cursor: pointer;
+            box-shadow: inset -3px -5px 6px rgba(0,0,0,0.3), 
+                        inset 2px 3px 5px rgba(255,255,255,0.6), 
+                        0 4px 6px rgba(0,0,0,0.5);
+            transition: top 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        .bead:active { filter: brightness(1.2); transform: scale(0.96); }
+
+        /* Beautiful realistic bead colors */
+        .col-0 .bead { background: linear-gradient(to bottom, #ff5e5e, #cc0000); border-bottom: 2px solid #8b0000; }
+        .col-1 .bead { background: linear-gradient(to bottom, #ffb347, #ff8c00); border-bottom: 2px solid #cc7000; }
+        .col-2 .bead { background: linear-gradient(to bottom, #fff68f, #e6c200); border-bottom: 2px solid #b39700; }
+        .col-3 .bead { background: linear-gradient(to bottom, #7fff00, #32cd32); border-bottom: 2px solid #228b22; }
+        .col-4 .bead { background: linear-gradient(to bottom, #4da6ff, #0073e6); border-bottom: 2px solid #004d99; }
+
+        /* Feedback Animation Overlay */
+        #feedback-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 100;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .feedback-msg {
+            font-size: 4rem;
+            font-weight: 900;
+            text-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            transform: scale(0.5);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-align: center;
+        }
+        #feedback-overlay.show { opacity: 1; }
+        #feedback-overlay.show .feedback-msg { transform: scale(1); }
+        .msg-correct { color: var(--duo-green); }
+        .msg-wrong { color: var(--duo-red); }
+
+        /* Current Value display */
+        .current-value-hud {
+            position: absolute;
+            bottom: -35px;
+            background: white;
+            padding: 2px 15px;
+            border-radius: 10px;
+            font-weight: 800;
+            color: var(--duo-blue);
+            border: 2px solid var(--duo-gray);
+        }
+
+    </style>
+</head>
+<body>
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- Sky Elements -->
+    <div class="sun"></div>
+    <div class="rainbow"></div>
+    <div class="cloud cloud1"></div>
+    <div class="cloud cloud2"></div>
+    <div class="cloud cloud3"></div>
+    
+    <!-- Mountains (Ver 5) -->
+    <div class="mountains">
+        <div class="mountain mountain-1"><div class="snow-cap"></div></div>
+        <div class="mountain mountain-2"><div class="snow-cap"></div></div>
+        <div class="mountain mountain-3"><div class="snow-cap"></div></div>
+    </div>
+    
+    <!-- Ground Elements -->
+    <div class="grass-bg">
+        <div class="tree tree-1"></div>
+        <div class="tree tree-2"></div>
+        <div class="tree tree-3"></div>
+        
+        <div class="flower flower-pink flower-1"></div>
+        <div class="flower flower-yellow flower-2"></div>
+        <div class="flower flower-sun flower-3"></div>
+        <div class="flower flower-pink flower-4"></div>
+        <div class="flower flower-yellow flower-5"></div>
+    </div>
+
+    <!-- Main UI Container -->
+    <div id="app-container">
+
+        <!-- Screen 1: Choose Abacus Type -->
+        <div id="screen-type" class="screen">
+            <h1 class="screen-title">Choose Abacus</h1>
+            <button class="duo-btn btn-blue" onclick="selectType('chinese')">
+                <span class="icon-lg">🐉</span> Suanpan (Chinese)
+                <div class="text-xs font-normal ml-2 opacity-80">(2 top, 5 bottom)</div>
+            </button>
+            <button class="duo-btn btn-blue" onclick="selectType('japanese')">
+                <span class="icon-lg">🌸</span> Soroban (Japanese)
+                <div class="text-xs font-normal ml-2 opacity-80">(1 top, 4 bottom)</div>
+            </button>
+        </div>
+
+        <!-- Screen 2: Choose Game Mode -->
+        <div id="screen-mode" class="screen hidden">
+            <h1 class="screen-title">Choose Activity</h1>
+            <button class="duo-btn btn-orange" onclick="selectMode('count')">
+                <span class="icon-lg">🔢</span> Number Counting
+            </button>
+            <button class="duo-btn btn-orange" onclick="selectMode('add')">
+                <span class="icon-lg">➕</span> Addition
+            </button>
+            <button class="duo-btn btn-orange" onclick="selectMode('sub')">
+                <span class="icon-lg">➖</span> Subtraction
+            </button>
+            <button class="duo-btn btn-outline mt-4" onclick="navTo('screen-type')">Back</button>
+        </div>
+
+        <!-- Screen 3: Choose Number Range -->
+        <div id="screen-range" class="screen hidden">
+            <h1 class="screen-title">Max Number</h1>
+            <div class="grid grid-cols-2 gap-3 w-full">
+                <button class="duo-btn btn-green" onclick="selectRange(10)">10</button>
+                <button class="duo-btn btn-green" onclick="selectRange(20)">20</button>
+                <button class="duo-btn btn-green" onclick="selectRange(50)">50</button>
+                <button class="duo-btn btn-green" onclick="selectRange(100)">100</button>
+            </div>
+            <button class="duo-btn btn-blue mt-3" onclick="selectRange('random')">
+                <span class="icon-lg">🎲</span> Random
+            </button>
+            <button class="duo-btn btn-outline mt-4" onclick="navTo('screen-mode')">Back</button>
+        </div>
+
+        <!-- Screen 4: The Game Arena -->
+        <div id="screen-game" class="screen hidden">
+            
+            <!-- Smaller Question Card -->
+            <div class="question-card" id="question-card">
+                <!-- Content injected via JS -->
+                5 <span class="math-symbol">+</span> 3 <span class="math-symbol">=</span> <span class="question-mark">?</span>
+            </div>
+
+            <div class="abacus-wrapper" id="abacus-wrapper">
+                <div class="abacus-container" id="abacus-container">
+                    <div class="abacus-face">
+                        <div class="blush left"></div>
+                        <div class="eyes"><div class="eye"></div><div class="eye"></div></div>
+                        <div class="mouth"></div>
+                        <div class="blush right"></div>
+                    </div>
+                    
+                    <div class="abacus-frame" id="frame-inner">
+                        <div class="reckoning-bar" id="reckoning-bar"></div>
+                        <!-- Columns generated here -->
+                    </div>
+                    <!-- Display current value entered by kid -->
+                    <div class="flex justify-center w-full relative">
+                        <div class="current-value-hud">Entered: <span id="current-entered">0</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ver 5 Footer: HUD and Controls combined -->
+            <div class="game-footer">
+                <div class="bottom-left-hud">
+                    <div class="hud-star">
+                        <span>⭐</span> <span id="score-display">0</span>
+                    </div>
+                    <button class="btn-quit" onclick="quitGame()">Quit</button>
+                </div>
+                
+                <div class="controls-container">
+                    <button class="duo-btn btn-outline text-sm py-2" style="flex: 1; max-width: 100px;" onclick="resetAbacus()">Clear</button>
+                    <button class="duo-btn btn-green" style="flex: 2" id="btn-check" onclick="checkAnswer()">CHECK!</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen 5: End Screen -->
+        <div id="screen-end" class="screen hidden">
+            <h1 class="screen-title text-5xl mb-2">Amazing! 🎉</h1>
+            <div class="text-6xl mb-6">🏆</div>
+            <div class="text-2xl font-bold text-gray-600 mb-2">Final Score</div>
+            <div class="text-6xl font-black text-amber-500 mb-8 drop-shadow-md" id="final-score">10/10</div>
+            
+            <button class="duo-btn btn-green" onclick="resetFullGame()">Play Again</button>
+        </div>
+
+    </div>
+
+    <!-- Feedback Overlay -->
+    <div id="feedback-overlay">
+        <div class="feedback-msg msg-correct hidden" id="msg-correct">Awesome! ✨</div>
+        <div class="feedback-msg msg-wrong hidden" id="msg-wrong">Try Again! 🤔</div>
+    </div>
+
+    <script>
+        // --- AUDIO SETUP (Tone.js) ---
+        let audioInit = false;
+        let synth;
+        let successSynth;
+        
+        async function initAudio() {
+            if (audioInit) return;
+            await Tone.start();
+            
+            // Synth for beads
+            synth = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: 'triangle' },
+                envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 }
+            }).toDestination();
+            synth.volume.value = -10;
+
+            // Synth for feedback
+            successSynth = new Tone.PolySynth(Tone.AMSynth).toDestination();
+            successSynth.volume.value = -5;
+            
+            audioInit = true;
+        }
+
+        function playBeadSound() {
+            if(!audioInit) return;
+            synth.triggerAttackRelease("G5", "32n");
+        }
+
+        function playCorrectSound() {
+            if(!audioInit) return;
+            successSynth.triggerAttackRelease(["C5", "E5", "G5"], "8n");
+        }
+
+        function playWrongSound() {
+            if(!audioInit) return;
+            synth.triggerAttackRelease("C3", "8n");
+        }
+
+        function playWinSound() {
+            if(!audioInit) return;
+            const now = Tone.now();
+            successSynth.triggerAttackRelease(["C5", "E5", "G5"], "8n", now);
+            successSynth.triggerAttackRelease(["E5", "G5", "C6"], "8n", now + 0.2);
+            successSynth.triggerAttackRelease(["G5", "C6", "E6"], "4n", now + 0.4);
+        }
+
+        // --- GAME STATE ---
+        const state = {
+            type: 'japanese', // 'chinese', 'japanese'
+            mode: 'count',    // 'count', 'add', 'sub'
+            range: 10,        // 10, 20, 50, 100, 999
+            
+            // Abacus config
+            columns: 5,
+            beadsTop: 1,
+            beadsBottom: 4,
+            beadHeight: 26,
+            gap: 4,
+            slideDistance: 0,
+            topDeckHeight: 0,
+            bottomDeckHeight: 0,
+            barHeight: 18,
+            barPosition: 0,
+            beadData: [],
+            currentEnteredValue: 0,
+            
+            // Gameplay
+            currentQuestionIdx: 0,
+            totalQuestions: 10,
+            score: 0,
+            targetAnswer: 0,
+            hasFailedCurrent: false, // Track if they missed the current question
+            
+            isChecking: false
+        };
+
+        const BEAD_VALUES = { top: 5, bottom: 1 };
+
+        // DOM Elements
+        const screens = {
+            type: document.getElementById('screen-type'),
+            mode: document.getElementById('screen-mode'),
+            range: document.getElementById('screen-range'),
+            game: document.getElementById('screen-game'),
+            end: document.getElementById('screen-end')
+        };
+        const frameInner = document.getElementById('frame-inner');
+        const reckoningBar = document.getElementById('reckoning-bar');
+        const qCard = document.getElementById('question-card');
+        const scoreDisp = document.getElementById('score-display');
+        const valDisp = document.getElementById('current-entered');
+        const btnCheck = document.getElementById('btn-check');
+
+        // --- NAVIGATION & FLOW ---
+        function navTo(screenId) {
+            initAudio(); // Initialize audio on first user interaction
+            Object.values(screens).forEach(s => s.classList.add('hidden'));
+            document.getElementById(screenId).classList.remove('hidden');
+        }
+
+        function selectType(type) {
+            state.type = type;
+            state.beadsTop = (type === 'chinese') ? 2 : 1;
+            state.beadsBottom = (type === 'chinese') ? 5 : 4;
+            navTo('screen-mode');
+        }
+
+        function selectMode(mode) {
+            state.mode = mode;
+            navTo('screen-range');
+        }
+
+        function selectRange(range) {
+            if (range === 'random') {
+                const ranges = [10, 20, 50, 100];
+                state.range = ranges[Math.floor(Math.random() * ranges.length)];
+            } else {
+                state.range = parseInt(range);
+            }
+            startGame();
+        }
+
+        function buildAbacusLayout() {
+            // Calculate critical spacing for sliding
+            state.slideDistance = state.beadHeight * 1.5; 
+
+            // Top Deck: tightly packed beads + slide space
+            const topPacked = (state.beadsTop * state.beadHeight) + ((state.beadsTop - 1) * state.gap);
+            state.topDeckHeight = topPacked + state.slideDistance;
+
+            // Bottom Deck
+            const bottomPacked = (state.beadsBottom * state.beadHeight) + ((state.beadsBottom - 1) * state.gap);
+            state.bottomDeckHeight = bottomPacked + state.slideDistance;
+
+            state.barPosition = state.topDeckHeight;
+            const totalHeight = state.topDeckHeight + state.barHeight + state.bottomDeckHeight;
+
+            // Clear frame
+            document.querySelectorAll('.column').forEach(e => e.remove());
+            state.beadData = [];
+
+            reckoningBar.style.top = `${state.barPosition + 15}px`; // +15 for frame padding
+
+            for (let c = 0; c < state.columns; c++) {
+                const colDiv = document.createElement('div');
+                colDiv.className = `column col-${c}`;
+                colDiv.style.height = `${totalHeight}px`;
+
+                const rod = document.createElement('div');
+                rod.className = 'rod';
+                colDiv.appendChild(rod);
+
+                const colBeads = [];
+
+                for (let i = 0; i < state.beadsTop; i++) {
+                    const bead = createBead(c, i, 'top');
+                    colDiv.appendChild(bead.element);
+                    colBeads.push(bead);
+                }
+
+                for (let i = 0; i < state.beadsBottom; i++) {
+                    const bead = createBead(c, i, 'bottom');
+                    colDiv.appendChild(bead.element);
+                    colBeads.push(bead);
+                }
+
+                state.beadData.push(colBeads);
+                frameInner.appendChild(colDiv);
+            }
+            
+            positionAllBeads();
+            updateDisplayValue();
+            resizeAbacus();
+        }
+
+        function createBead(colIndex, indexWithinDeck, deckType) {
+            const el = document.createElement('div');
+            el.className = 'bead';
+            
+            const beadObj = { element: el, col: colIndex, index: indexWithinDeck, deck: deckType, active: false };
+
+            const interact = (e) => {
+                e.preventDefault();
+                if (state.isChecking) return;
+                handleBeadClick(beadObj);
+                playBeadSound();
+            };
+
+            el.addEventListener('mousedown', interact);
+            el.addEventListener('touchstart', interact, {passive: false});
+
+            return beadObj;
+        }
+
+        // Resize abacus to fit mobile screens dynamically
+        function resizeAbacus() {
+            const wrapper = document.getElementById('abacus-wrapper');
+            const container = document.getElementById('abacus-container');
+            
+            // Reset transform to measure true size
+            container.style.transform = 'scale(1)';
+            
+            const wrapperWidth = wrapper.clientWidth;
+            const containerWidth = container.offsetWidth;
+            
+            // If container is wider than wrapper, scale it down
+            if (containerWidth > wrapperWidth) {
+                const scale = wrapperWidth / (containerWidth + 20); // 20px buffer
+                container.style.transform = `scale(${scale})`;
+            }
+        }
+        window.addEventListener('resize', resizeAbacus);
+
+        function handleBeadClick(clickedBead) {
+            const col = clickedBead.col;
+            const deck = clickedBead.deck;
+            const idx = clickedBead.index;
+            
+            if (deck === 'top') {
+                if (!clickedBead.active) {
+                    for (let i = idx; i < state.beadsTop; i++) findBead(col, 'top', i).active = true;
+                } else {
+                    for (let i = 0; i <= idx; i++) findBead(col, 'top', i).active = false;
+                }
+            } else {
+                if (!clickedBead.active) {
+                    for (let i = 0; i <= idx; i++) findBead(col, 'bottom', i).active = true;
+                } else {
+                    for (let i = idx; i < state.beadsBottom; i++) findBead(col, 'bottom', i).active = false;
+                }
+            }
+
+            positionAllBeads();
+            updateDisplayValue();
+        }
+
+        function findBead(col, deck, index) {
+            return state.beadData[col].find(b => b.deck === deck && b.index === index);
+        }
+
+        function positionAllBeads() {
+            state.beadData.forEach(colBeads => {
+                
+                // TOP DECK
+                let topInactiveStartY = 0; 
+                let topActiveBottomEdge = state.barPosition; 
+                
+                for (let i = 0; i < state.beadsTop; i++) {
+                    const b = findBead(colBeads[0].col, 'top', i);
+                    if (b) {
+                        if (b.active) {
+                            const activeCountBelow = state.beadsTop - 1 - i; 
+                            const yPos = topActiveBottomEdge - state.beadHeight - (activeCountBelow * (state.beadHeight + state.gap));
+                            b.element.style.top = `${yPos}px`;
+                        } else {
+                            b.element.style.top = `${topInactiveStartY + (i * (state.beadHeight + state.gap))}px`;
+                        }
+                    }
+                }
+
+                // BOTTOM DECK
+                const barBottomEdge = state.barPosition + state.barHeight;
+                let bottomActiveStartY = barBottomEdge; 
+                
+                const totalColHeight = state.topDeckHeight + state.barHeight + state.bottomDeckHeight;
+                let bottomInactiveBottomEdge = totalColHeight;
+
+                for (let i = 0; i < state.beadsBottom; i++) {
+                    const b = findBead(colBeads[0].col, 'bottom', i);
+                    if (b) {
+                        if (b.active) {
+                            b.element.style.top = `${bottomActiveStartY + (i * (state.beadHeight + state.gap))}px`;
+                        } else {
+                            const fromBottomIdx = (state.beadsBottom - 1) - i;
+                            const yPos = bottomInactiveBottomEdge - state.beadHeight - (fromBottomIdx * (state.beadHeight + state.gap));
+                            b.element.style.top = `${yPos}px`;
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateDisplayValue() {
+            let totalValue = 0;
+            const multipliers = [10000, 1000, 100, 10, 1]; // Left to right
+
+            state.beadData.forEach((colBeads, colIndex) => {
+                let colValue = 0;
+                colBeads.forEach(bead => {
+                    if (bead.active) colValue += BEAD_VALUES[bead.deck];
+                });
+                totalValue += colValue * multipliers[colIndex];
+            });
+
+            state.currentEnteredValue = totalValue;
+            valDisp.innerText = totalValue;
+        }
+
+        function resetAbacus() {
+            if(state.isChecking) return;
+            state.beadData.forEach(colBeads => {
+                colBeads.forEach(bead => bead.active = false);
+            });
+            positionAllBeads();
+            updateDisplayValue();
+        }
+
+        function startGame() {
+            state.currentQuestionIdx = 0;
+            state.score = 0;
+            scoreDisp.innerText = state.score;
+            buildAbacusLayout();
+            navTo('screen-game');
+            nextQuestion();
+        }
+
+        function quitGame() {
+            navTo('screen-type');
+        }
+
+        function resetFullGame() {
+            navTo('screen-type');
+        }
+
+        function nextQuestion() {
+            state.currentQuestionIdx++;
+            if (state.currentQuestionIdx > state.totalQuestions) {
+                endGame();
+                return;
+            }
+
+            state.hasFailedCurrent = false; // Reset failure flag for new question
+            state.isChecking = false;
+            btnCheck.disabled = false;
+            resetAbacus();
+            generateMath();
+        }
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function generateMath() {
+            let a, b, answer;
+            const max = state.range;
+
+            if (state.mode === 'count') {
+                answer = getRandomInt(1, max);
+                qCard.innerHTML = `<span style="font-size: 1.5rem">Make:</span> <span class="text-duo-blue mx-2">${answer}</span>`;
+                state.targetAnswer = answer;
+            } 
+            else if (state.mode === 'add') {
+                a = getRandomInt(1, max - 1);
+                b = getRandomInt(1, max - a);
+                answer = a + b;
+                qCard.innerHTML = `${a} <span class="math-symbol">+</span> ${b} <span class="math-symbol">=</span> <span class="question-mark">?</span>`;
+                state.targetAnswer = answer;
+            } 
+            else if (state.mode === 'sub') {
+                a = getRandomInt(2, max);
+                b = getRandomInt(1, a - 1); // Ensure positive result
+                answer = a - b;
+                qCard.innerHTML = `${a} <span class="math-symbol">-</span> ${b} <span class="math-symbol">=</span> <span class="question-mark">?</span>`;
+                state.targetAnswer = answer;
+            }
+        }
+
+        function showFeedback(isCorrect) {
+            const overlay = document.getElementById('feedback-overlay');
+            const msgCorrect = document.getElementById('msg-correct');
+            const msgWrong = document.getElementById('msg-wrong');
+
+            msgCorrect.classList.add('hidden');
+            msgWrong.classList.add('hidden');
+
+            if (isCorrect) {
+                msgCorrect.classList.remove('hidden');
+                document.body.style.backgroundColor = "var(--duo-green)"; // Flash bg
+            } else {
+                msgWrong.classList.remove('hidden');
+                // No red flash to keep it friendly
+            }
+
+            overlay.classList.add('show');
+
+            setTimeout(() => {
+                overlay.classList.remove('show');
+                document.body.style.backgroundColor = ""; // reset bg
+                
+                if (isCorrect) {
+                    nextQuestion();
+                } else {
+                    // Let them try again without moving to next question
+                    state.isChecking = false;
+                    btnCheck.disabled = false;
+                }
+            }, 1500);
+        }
+
+        function checkAnswer() {
+            if (state.isChecking) return;
+            state.isChecking = true;
+            btnCheck.disabled = true;
+
+            const isCorrect = (state.currentEnteredValue === state.targetAnswer);
+
+            if (isCorrect) {
+                // Only give star if they haven't failed this question before
+                if (!state.hasFailedCurrent) {
+                    state.score++;
+                    scoreDisp.innerText = state.score;
+                }
+                
+                playCorrectSound();
+                
+                // Update question card to show correct answer temporarily
+                if(state.mode !== 'count') {
+                    qCard.innerHTML = qCard.innerHTML.replace('<span class="question-mark">?</span>', `<span class="text-green-500">${state.targetAnswer}</span>`);
+                }
+
+                showFeedback(true);
+            } else {
+                state.hasFailedCurrent = true; // Mark as failed so no star is awarded later
+                playWrongSound();
+                
+                // Shake abacus
+                const abacus = document.getElementById('abacus-container');
+                abacus.animate([
+                    { transform: abacus.style.transform + ' translateX(0px)' },
+                    { transform: abacus.style.transform + ' translateX(-10px)' },
+                    { transform: abacus.style.transform + ' translateX(10px)' },
+                    { transform: abacus.style.transform + ' translateX(-10px)' },
+                    { transform: abacus.style.transform + ' translateX(10px)' },
+                    { transform: abacus.style.transform + ' translateX(0px)' }
+                ], { duration: 400, iterations: 1 });
+
+                showFeedback(false);
+            }
+        }
+
+        function endGame() {
+            navTo('screen-end');
+            document.getElementById('final-score').innerText = `${state.score} / ${state.totalQuestions}`;
+            playWinSound();
+            fireConfetti();
+        }
+
+        function fireConfetti() {
+            const duration = 3000;
+            const end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0, y: 0.8 },
+                    colors: ['#58cc02', '#1cb0f6', '#ffc800', '#ff4b4b']
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1, y: 0.8 },
+                    colors: ['#58cc02', '#1cb0f6', '#ffc800', '#ff4b4b']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+
+    </script>
+</body>
+</html>
