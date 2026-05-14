@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Category Sorting - Version 3</title>
+    <title>Category Sorting - Version 5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -20,8 +21,12 @@
 
         body {
             font-family: 'Poppins', sans-serif;
-            background: url('image_0.png') no-repeat center center fixed;
-            background-size: cover;
+            /* Vibrant, kid-friendly polka dot background */
+            background-color: #a0e0ff;
+            background-image: radial-gradient(#82d3ff 15%, transparent 16%),
+                              radial-gradient(#82d3ff 15%, transparent 16%);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
             overflow: hidden;
             touch-action: none;
             user-select: none;
@@ -32,13 +37,34 @@
             flex-direction: column;
         }
 
-        /* Fun, colorful text styles for kids */
-        .kid-title {
-            background: linear-gradient(to right, var(--duo-blue), var(--duo-purple), var(--duo-red));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            text-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+        #minigame-overlay {
+            /* Magical purple polka dot background for bonus game */
+            background-color: #b862f7; 
+            background-image: radial-gradient(#a34de3 15%, transparent 16%),
+                              radial-gradient(#a34de3 15%, transparent 16%);
+            background-size: 80px 80px;
+            background-position: 0 0, 40px 40px;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(-3deg); }
+            50% { transform: translateY(-6px) rotate(-1deg); }
+        }
+
+        .main-title {
+            color: #ffffff;
+            -webkit-text-stroke: 2px var(--duo-blue-dark);
+            text-shadow: 0px 5px 0px var(--duo-blue-dark), 0px 10px 15px rgba(0,0,0,0.15);
+            font-weight: 800;
+            display: inline-block;
+            animation: float 3.5s ease-in-out infinite;
+            letter-spacing: 1px;
+        }
+
+        .magic-title {
+            color: #ffffff;
+            -webkit-text-stroke: 2px #d97700;
+            text-shadow: 0px 5px 0px #d97700, 0px 0px 30px #ffc800;
             font-weight: 800;
         }
         
@@ -48,7 +74,7 @@
         .shape-text { color: #ce82ff; text-shadow: 1px 1px 0px #a668cc; }
 
         .fuel-bar-container {
-            height: 20px;
+            height: 16px; 
             background: #e5e7eb;
             border-radius: 999px;
             overflow: hidden;
@@ -75,6 +101,11 @@
             height: 4px;
             background: rgba(255,255,255,0.4);
             border-radius: 999px;
+        }
+
+        #active-card {
+            /* Fixes lag by telling the browser to prep the GPU for these changes */
+            will-change: transform, opacity;
         }
 
         .card-shadow {
@@ -129,27 +160,27 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            z-index: 9999; /* Ensure it's on top of everything */
+            z-index: 9999;
         }
 
         .hidden { display: none !important; }
 
-        /* Minigame Styles */
         .box-container {
             perspective: 1000px;
+            height: 160px; 
         }
         
         .mystery-box {
-            width: 100px;
-            height: 100px;
-            background: linear-gradient(135deg, var(--duo-purple), #9b51e0);
-            border-radius: 20px;
-            box-shadow: 0 10px 0 #7b3fb3, 0 15px 20px rgba(0,0,0,0.2);
-            border: 4px solid white;
+            width: 130px; 
+            height: 130px; 
+            background: linear-gradient(135deg, var(--duo-yellow), #ff9600);
+            border-radius: 25px;
+            box-shadow: 0 12px 0 #d97700, 0 15px 25px rgba(0,0,0,0.3);
+            border: 5px solid white;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 3rem;
+            font-size: 4rem; 
             cursor: pointer;
             transition: transform 0.5s ease;
             position: absolute;
@@ -159,13 +190,13 @@
             content: '🎁';
             color: white;
             font-weight: bold;
-            font-size: 4rem;
-            text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+            font-size: 5.2rem; 
+            text-shadow: 3px 3px 0px rgba(0,0,0,0.2);
         }
 
         .mystery-box.open {
-            background: white;
-            box-shadow: 0 5px 0 #e2e8f0;
+            background: radial-gradient(circle at center, #ffffff, #f0f4f8); 
+            box-shadow: 0 5px 0 #e2e8f0, 0 0 20px var(--duo-yellow); 
             transform: translateY(10px);
             cursor: default;
         }
@@ -174,12 +205,6 @@
             display: none;
         }
 
-        #minigame-overlay {
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(5px);
-        }
-
-        /* Responsive adjustments for the main game area */
         #main-content {
             display: flex;
             flex-direction: column;
@@ -242,19 +267,15 @@
     </style>
 </head>
 <body>
-
-    <header class="bg-white/80 backdrop-blur-md px-6 py-4 border-b-4 border-slate-200 flex flex-col gap-3 z-50">
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <header class="bg-white/70 backdrop-blur-md px-6 py-4 border-b-4 border-white flex flex-col gap-3 z-50 shadow-sm">
         <div class="flex justify-between items-center max-w-5xl mx-auto w-full">
-            <h1 class="kid-title text-3xl md:text-4xl tracking-wide">Sort It Out!</h1>
-            <button id="mute-toggle" class="p-3 bg-white rounded-2xl hover:bg-slate-50 transition-colors shadow-sm border-2 border-slate-200">
-                <span id="mute-icon" class="text-2xl">🔊</span>
-            </button>
+            <h1 class="main-title text-4xl md:text-5xl">Sort It Out!</h1>
         </div>
         
-        <div class="flex flex-col gap-1 max-w-5xl mx-auto w-full">
-            <div class="flex justify-between text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">
+        <div class="flex flex-col gap-1 max-w-xs mx-auto w-full">
+            <div class="flex justify-center text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">
                 <span id="progress-text">0 / 16 Sorted</span>
-                <span class="text-[var(--duo-blue)]">Keep Going!</span>
             </div>
             <div class="fuel-bar-container">
                 <div id="fuel-fill"></div>
@@ -265,16 +286,14 @@
     <main class="relative overflow-hidden flex-1 flex">
         <div id="main-content">
             
-            <!-- Draggable Card Area -->
             <div id="deck-slot" class="flex items-center justify-center relative w-full h-64 md:h-80 z-20">
                 <div id="active-card" 
-                     class="w-40 h-40 md:w-56 md:h-56 bg-white rounded-[2rem] card-shadow flex items-center justify-center text-7xl md:text-8xl cursor-grab active:cursor-grabbing border-4 border-white select-none transition-transform">
+                     class="w-40 h-40 md:w-56 md:h-56 bg-white rounded-[2rem] card-shadow flex items-center justify-center text-7xl md:text-8xl cursor-grab active:cursor-grabbing border-4 border-white select-none">
                     <!-- Emoji injected here -->
                 </div>
-                <div id="empty-state" class="hidden text-slate-400 font-bold text-3xl animate-pulse">All done!</div>
+                <div id="empty-state" class="hidden text-white font-bold text-3xl animate-pulse drop-shadow-lg">All done!</div>
             </div>
 
-            <!-- Drop Zones Grid -->
             <div class="game-grid z-10">
                 <!-- Animals -->
                 <div data-category="animals" class="drop-zone p-4 md:p-6 flex flex-col items-center justify-center gap-2 aspect-square">
@@ -310,17 +329,17 @@
 
     <div id="minigame-overlay" class="fixed inset-0 z-[100] flex flex-col items-center justify-center hidden">
         <div class="text-center mb-12">
-            <h2 class="kid-title text-4xl md:text-5xl mb-4">Bonus Game!</h2>
-            <p class="text-xl md:text-2xl font-bold text-slate-600">Find the Trophy! 🏆</p>
+            <h2 class="magic-title text-6xl md:text-7xl mb-4">Bonus Game!</h2>
+            <p class="text-3xl font-bold text-white drop-shadow-md">Find the Trophy! 🏆</p>
         </div>
         
-        <div id="boxes-area" class="relative w-full max-w-md h-40 flex justify-center items-center box-container">
+        <div id="boxes-area" class="relative w-full max-w-lg flex justify-center items-center box-container">
             <!-- Boxes created via JS -->
         </div>
 
-        <div id="minigame-result" class="mt-12 text-center hidden">
-            <h3 id="minigame-message" class="text-3xl font-bold mb-6"></h3>
-            <button onclick="endMinigame()" class="duo-button px-10 py-4 text-xl font-bold shadow-lg">
+        <div id="minigame-result" class="mt-16 text-center hidden">
+            <h3 id="minigame-message" class="text-5xl font-black mb-8 drop-shadow-lg"></h3>
+            <button onclick="endMinigame()" class="duo-button px-12 py-5 text-2xl font-bold shadow-lg">
                 Continue Sorting
             </button>
         </div>
@@ -329,7 +348,7 @@
     <div id="victory-screen" class="fixed inset-0 bg-white/95 backdrop-blur-sm z-[200] flex flex-col items-center justify-center p-8 hidden">
         <div class="text-center space-y-8 max-w-lg bg-white p-10 rounded-[3rem] shadow-2xl border-8 border-[var(--duo-blue)] relative z-10">
             <div class="text-8xl mb-4">🌟</div>
-            <h2 class="kid-title text-5xl md:text-7xl">Awesome!</h2>
+            <h2 class="magic-title text-5xl md:text-7xl" style="-webkit-text-stroke: 2px var(--duo-blue-dark); text-shadow: 0px 5px 0px var(--duo-blue-dark);">Awesome!</h2>
             <div class="bg-slate-100 rounded-2xl p-6 my-6 border-4 border-slate-200">
                 <p class="text-slate-500 text-xl font-bold mb-2">Total Score</p>
                 <p class="text-5xl font-black text-[var(--duo-yellow)] drop-shadow-md">100%</p>
@@ -341,11 +360,9 @@
         </div>
     </div>
 
-    <!-- Confetti canvas on top of everything -->
     <canvas id="confetti"></canvas>
 
     <script>
-        // More realistic/vibrant emojis
         const ITEMS = [
             { emoji: '🦁', cat: 'animals' }, { emoji: '🐘', cat: 'animals' },
             { emoji: '🦒', cat: 'animals' }, { emoji: '🦓', cat: 'animals' },
@@ -363,19 +380,14 @@
             isDragging: false,
             startX: 0, startY: 0,
             currentX: 0, currentY: 0,
-            muted: false,
-            itemsSortedSinceMinigame: 0,
-            minigamesPlayed: 0
+            itemsSortedSinceMinigame: 0
         };
 
         const MINIGAME_THRESHOLD = 4;
-
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
         function playTone(freq, type = 'sine', duration = 0.2, volume = 0.1) {
-            if (state.muted) return;
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = type;
@@ -392,16 +404,15 @@
             pop: () => playTone(500, 'sine', 0.1, 0.15),
             slide: () => playTone(300, 'triangle', 0.1, 0.05),
             success: () => {
-                playTone(523.25, 'sine', 0.15, 0.2); // C5
-                setTimeout(() => playTone(659.25, 'sine', 0.15, 0.2), 100); // E5
-                setTimeout(() => playTone(783.99, 'sine', 0.3, 0.2), 200); // G5
+                playTone(523.25, 'sine', 0.15, 0.2); 
+                setTimeout(() => playTone(659.25, 'sine', 0.15, 0.2), 100); 
+                setTimeout(() => playTone(783.99, 'sine', 0.3, 0.2), 200); 
             },
             error: () => {
                 playTone(250, 'sawtooth', 0.2, 0.1);
                 setTimeout(() => playTone(200, 'sawtooth', 0.3, 0.1), 150);
             },
             fanfare: () => {
-                // Simple victory fanfare
                 const notes = [523.25, 523.25, 523.25, 659.25, 783.99, 659.25, 783.99];
                 const times = [0, 150, 300, 450, 600, 750, 900];
                 notes.forEach((f, i) => {
@@ -409,7 +420,6 @@
                 });
             },
             magic: () => {
-                // Minigame sound
                 for(let i=0; i<5; i++) {
                     setTimeout(() => playTone(400 + i*100, 'sine', 0.1, 0.1), i*50);
                 }
@@ -432,7 +442,6 @@
 
             dropZones.forEach(zone => {
                 const rect = zone.getBoundingClientRect();
-                // Increased hit area slightly for easier play
                 if (cx > rect.left - 20 && cx < rect.right + 20 && 
                     cy > rect.top - 20 && cy < rect.bottom + 20) {
                     zone.classList.add('active');
@@ -452,7 +461,7 @@
             state.currentX = e.clientX;
             state.currentY = e.clientY;
             card.setPointerCapture(e.pointerId);
-            card.style.transition = 'none'; // Remove transition while dragging
+            card.style.transition = 'none';
             sounds.pop();
             requestAnimationFrame(updateCardPos);
         }
@@ -518,14 +527,20 @@
 
         function showNext() {
             card.textContent = state.deck[state.index].emoji;
+            
+            // Snap to invisible starting point
             card.style.transition = 'none';
             card.style.opacity = '0';
-            card.style.transform = 'scale(0.5)';
+            card.style.transform = 'scale(0.3) translate3d(0, -30px, 0)';
             
+            // Force browser reflow to prevent animation lag/flicker
+            void card.offsetWidth;
+
+            // Animate smoothly to resting position
             requestAnimationFrame(() => {
-                card.style.transition = 'all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                card.style.transition = 'all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
                 card.style.opacity = '1';
-                card.style.transform = 'scale(1)';
+                card.style.transform = 'scale(1) translate3d(0, 0, 0)';
             });
         }
 
@@ -572,21 +587,16 @@
             boxesArea.innerHTML = '';
             minigameBoxes = [];
             
-            // Determine initial trophy position
             trophyIndex = Math.floor(Math.random() * 3);
-            
-            const boxSpacing = window.innerWidth < 500 ? 110 : 130;
-            const startX = -boxSpacing; // Center is 0, left is -space, right is +space
+            const boxSpacing = window.innerWidth < 500 ? 140 : 160;
+            const startX = -boxSpacing; 
 
-            // Create boxes
             for(let i=0; i<3; i++) {
                 const box = document.createElement('div');
                 box.className = 'mystery-box';
-                // Initially show contents
                 box.innerHTML = i === trophyIndex ? '👑' : '🍎';
                 box.classList.add('open');
                 
-                // Position
                 const posX = startX + (i * boxSpacing);
                 box.style.transform = `translateX(${posX}px) translateY(10px)`;
                 box.dataset.pos = i;
@@ -598,16 +608,13 @@
                 box.addEventListener('click', () => handleBoxClick(i));
             }
 
-            // Sequence: Show -> Hide -> Shuffle -> Allow pick
             setTimeout(() => {
-                // Close boxes
                 minigameBoxes.forEach(box => {
                     box.classList.remove('open');
                     box.innerHTML = '';
                     box.style.transform = `translateX(${box.dataset.actualX}px) translateY(0)`;
                 });
                 sounds.pop();
-                
                 setTimeout(shuffleBoxes, 1000);
             }, 2000);
         }
@@ -615,7 +622,7 @@
         function shuffleBoxes() {
             isShuffling = true;
             let shuffles = 0;
-            const maxShuffles = 5; // Slow, easy shuffles for kids
+            const maxShuffles = 5; 
             const speed = 600;
 
             function doShuffle() {
@@ -624,7 +631,6 @@
                     return;
                 }
 
-                // Pick two random indices to swap
                 let idx1 = Math.floor(Math.random() * 3);
                 let idx2 = Math.floor(Math.random() * 3);
                 while(idx1 === idx2) idx2 = Math.floor(Math.random() * 3);
@@ -632,12 +638,10 @@
                 const box1 = minigameBoxes[idx1];
                 const box2 = minigameBoxes[idx2];
 
-                // Swap their visual positions
                 const tempX = box1.dataset.actualX;
                 box1.dataset.actualX = box2.dataset.actualX;
                 box2.dataset.actualX = tempX;
 
-                // Add a slight arc to the movement for effect
                 box1.style.transform = `translateX(${box1.dataset.actualX}px) translateY(-20px) scale(1.05)`;
                 box2.style.transform = `translateX(${box2.dataset.actualX}px) translateY(20px) scale(0.95)`;
                 
@@ -648,11 +652,9 @@
                     box2.style.transform = `translateX(${box2.dataset.actualX}px) translateY(0) scale(1)`;
                 }, speed / 2);
 
-                // Swap in array to track actual contents
                 minigameBoxes[idx1] = box2;
                 minigameBoxes[idx2] = box1;
 
-                // Track where the trophy went
                 if (trophyIndex === idx1) trophyIndex = idx2;
                 else if (trophyIndex === idx2) trophyIndex = idx1;
 
@@ -666,12 +668,9 @@
         function handleBoxClick(clickedVisualIndex) {
             if (isShuffling) return;
             
-            // Find which logical box index corresponds to the clicked visual element
-            // Since we swapped DOM elements in the array, we need to find the one that was clicked
             let logicalIndex = minigameBoxes.findIndex(box => box.dataset.pos == clickedVisualIndex);
-
             const box = minigameBoxes[logicalIndex];
-            if (box.classList.contains('open')) return; // Already open
+            if (box.classList.contains('open')) return;
 
             box.classList.add('open');
             
@@ -682,17 +681,18 @@
                 box.innerHTML = '👑';
                 sounds.success();
                 msgEl.textContent = "You found it! 🎉";
-                msgEl.className = "text-3xl font-black text-[var(--duo-green)] mb-6";
-                // Open others
+                msgEl.className = "text-5xl font-black text-white mb-8 drop-shadow-md";
+                msgEl.style.webkitTextStroke = "2px var(--duo-green-dark)";
                 minigameBoxes.forEach((b, i) => {
                     if(i !== logicalIndex) { b.classList.add('open'); b.innerHTML = '🍎'; }
                 });
             } else {
                 box.innerHTML = '🍎';
                 sounds.error();
-                msgEl.textContent = "Oops, it was an apple! 🍎";
-                msgEl.className = "text-3xl font-black text-[var(--duo-red)] mb-6";
-                // Reveal trophy
+                msgEl.textContent = "Oops, an apple! 🍎";
+                msgEl.className = "text-5xl font-black text-white mb-8 drop-shadow-md";
+                msgEl.style.webkitTextStroke = "2px var(--duo-red)";
+                
                 const trophyBox = minigameBoxes[trophyIndex];
                 setTimeout(() => {
                     trophyBox.classList.add('open');
@@ -701,7 +701,7 @@
                 }, 500);
             }
 
-            isShuffling = true; // Prevent further clicks
+            isShuffling = true; 
             setTimeout(() => {
                 resultArea.classList.remove('hidden');
             }, 1000);
@@ -744,7 +744,6 @@
                 p.y += p.vy;
                 p.x += p.vx;
                 p.r += p.vr;
-                // Add slight gravity
                 p.vy += 0.05;
                 
                 if (p.y > canvas.height) {
@@ -758,7 +757,6 @@
                 ctx.translate(p.x, p.y);
                 ctx.rotate(p.r * Math.PI / 180);
                 
-                // Draw different shapes (squares and rectangles)
                 if(Math.random() > 0.5) {
                     ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
                 } else {
@@ -775,15 +773,13 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
 
-        // Event Listeners
         card.addEventListener('pointerdown', onPointerDown);
         window.addEventListener('pointermove', onPointerMove);
         window.addEventListener('pointerup', onPointerUp);
         window.addEventListener('resize', () => {
             resizeCanvas();
-            // Re-center minigame boxes if open
             if(!document.getElementById('minigame-overlay').classList.contains('hidden') && !isShuffling) {
-                const boxSpacing = window.innerWidth < 500 ? 110 : 130;
+                const boxSpacing = window.innerWidth < 500 ? 140 : 160;
                 const startX = -boxSpacing;
                 minigameBoxes.forEach((box, i) => {
                     const posX = startX + (i * boxSpacing);
@@ -793,12 +789,6 @@
             }
         });
         
-        document.getElementById('mute-toggle').onclick = () => {
-            state.muted = !state.muted;
-            document.getElementById('mute-icon').textContent = state.muted ? '🔇' : '🔊';
-        };
-
-        // Start
         window.onload = resetGame;
 
     </script>
