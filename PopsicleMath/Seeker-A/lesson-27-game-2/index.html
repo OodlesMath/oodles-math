@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Category Sorting - Version 3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --duo-green: #58cc02;
+            --duo-green-dark: #46a302;
+            --duo-blue: #1cb0f6;
+            --duo-blue-dark: #1899d6;
+            --duo-yellow: #ffc800;
+            --duo-orange: #ff9600;
+            --duo-red: #ff4b4b;
+            --duo-purple: #ce82ff;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: url('image_0.png') no-repeat center center fixed;
+            background-size: cover;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+            color: #334155;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Fun, colorful text styles for kids */
+        .kid-title {
+            background: linear-gradient(to right, var(--duo-blue), var(--duo-purple), var(--duo-red));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+            font-weight: 800;
+        }
+        
+        .animal-text { color: #ff9600; text-shadow: 1px 1px 0px #d97700; }
+        .food-text { color: #ff4b4b; text-shadow: 1px 1px 0px #cc3c3c; }
+        .drink-text { color: #1cb0f6; text-shadow: 1px 1px 0px #158bc2; }
+        .shape-text { color: #ce82ff; text-shadow: 1px 1px 0px #a668cc; }
+
+        .fuel-bar-container {
+            height: 20px;
+            background: #e5e7eb;
+            border-radius: 999px;
+            overflow: hidden;
+            border: 3px solid white;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #fuel-fill {
+            height: 100%;
+            background: linear-gradient(180deg, #79e02c 0%, var(--duo-green) 100%);
+            width: 0%;
+            transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border-radius: 999px;
+            position: relative;
+            box-shadow: 0 2px 0 var(--duo-green-dark);
+        }
+
+        #fuel-fill::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            right: 4px;
+            height: 4px;
+            background: rgba(255,255,255,0.4);
+            border-radius: 999px;
+        }
+
+        .card-shadow {
+            box-shadow: 0 10px 0 #e2e8f0, 0 15px 20px rgba(0, 0, 0, 0.1);
+            border: 4px solid white;
+        }
+
+        .drop-zone {
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: white;
+            box-shadow: 0 6px 0 #e2e8f0;
+            border-radius: 2rem;
+            position: relative;
+        }
+
+        .drop-zone::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 2rem;
+            border: 4px solid transparent;
+            transition: border-color 0.2s;
+            pointer-events: none;
+        }
+
+        .drop-zone.active {
+            transform: scale(1.05) translateY(-4px);
+            box-shadow: 0 10px 0 #cbd5e1;
+        }
+        
+        .drop-zone[data-category="animals"].active::after { border-color: var(--duo-orange); }
+        .drop-zone[data-category="food"].active::after { border-color: var(--duo-red); }
+        .drop-zone[data-category="drinks"].active::after { border-color: var(--duo-blue); }
+        .drop-zone[data-category="shapes"].active::after { border-color: var(--duo-purple); }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-15px) rotate(-5deg); }
+            40% { transform: translateX(15px) rotate(5deg); }
+            60% { transform: translateX(-10px) rotate(-3deg); }
+            80% { transform: translateX(10px) rotate(3deg); }
+        }
+
+        .shake-animation {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        canvas#confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999; /* Ensure it's on top of everything */
+        }
+
+        .hidden { display: none !important; }
+
+        /* Minigame Styles */
+        .box-container {
+            perspective: 1000px;
+        }
+        
+        .mystery-box {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, var(--duo-purple), #9b51e0);
+            border-radius: 20px;
+            box-shadow: 0 10px 0 #7b3fb3, 0 15px 20px rgba(0,0,0,0.2);
+            border: 4px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            cursor: pointer;
+            transition: transform 0.5s ease;
+            position: absolute;
+        }
+        
+        .mystery-box::before {
+            content: '🎁';
+            color: white;
+            font-weight: bold;
+            font-size: 4rem;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+        }
+
+        .mystery-box.open {
+            background: white;
+            box-shadow: 0 5px 0 #e2e8f0;
+            transform: translateY(10px);
+            cursor: default;
+        }
+        
+        .mystery-box.open::before {
+            display: none;
+        }
+
+        #minigame-overlay {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(5px);
+        }
+
+        /* Responsive adjustments for the main game area */
+        #main-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            width: 100%;
+            height: 100%;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            width: 100%;
+            max-width: 600px;
+            padding: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .game-grid {
+                grid-template-columns: repeat(4, 1fr);
+                max-width: 800px;
+                gap: 1.5rem;
+            }
+            #deck-slot {
+                height: 300px;
+            }
+        }
+        
+        @media (orientation: landscape) and (max-height: 600px) {
+            #main-content {
+                flex-direction: row;
+                justify-content: space-around;
+            }
+            #deck-slot {
+                width: 40%;
+                height: auto;
+            }
+            .game-grid {
+                width: 50%;
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .duo-button {
+            background: var(--duo-green);
+            color: white;
+            border-bottom: 4px solid var(--duo-green-dark);
+            border-radius: 1rem;
+            transition: all 0.1s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .duo-button:active {
+            transform: translateY(4px);
+            border-bottom-width: 0px;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="bg-white/80 backdrop-blur-md px-6 py-4 border-b-4 border-slate-200 flex flex-col gap-3 z-50">
+        <div class="flex justify-between items-center max-w-5xl mx-auto w-full">
+            <h1 class="kid-title text-3xl md:text-4xl tracking-wide">Sort It Out!</h1>
+            <button id="mute-toggle" class="p-3 bg-white rounded-2xl hover:bg-slate-50 transition-colors shadow-sm border-2 border-slate-200">
+                <span id="mute-icon" class="text-2xl">🔊</span>
+            </button>
+        </div>
+        
+        <div class="flex flex-col gap-1 max-w-5xl mx-auto w-full">
+            <div class="flex justify-between text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">
+                <span id="progress-text">0 / 16 Sorted</span>
+                <span class="text-[var(--duo-blue)]">Keep Going!</span>
+            </div>
+            <div class="fuel-bar-container">
+                <div id="fuel-fill"></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="relative overflow-hidden flex-1 flex">
+        <div id="main-content">
+            
+            <!-- Draggable Card Area -->
+            <div id="deck-slot" class="flex items-center justify-center relative w-full h-64 md:h-80 z-20">
+                <div id="active-card" 
+                     class="w-40 h-40 md:w-56 md:h-56 bg-white rounded-[2rem] card-shadow flex items-center justify-center text-7xl md:text-8xl cursor-grab active:cursor-grabbing border-4 border-white select-none transition-transform">
+                    <!-- Emoji injected here -->
+                </div>
+                <div id="empty-state" class="hidden text-slate-400 font-bold text-3xl animate-pulse">All done!</div>
+            </div>
+
+            <!-- Drop Zones Grid -->
+            <div class="game-grid z-10">
+                <!-- Animals -->
+                <div data-category="animals" class="drop-zone p-4 md:p-6 flex flex-col items-center justify-center gap-2 aspect-square">
+                    <div class="bg-orange-100 rounded-full p-3 md:p-4 mb-2">
+                        <span class="text-4xl md:text-5xl">🐻</span>
+                    </div>
+                    <span class="font-extrabold text-lg md:text-xl animal-text uppercase tracking-wide">Animals</span>
+                </div>
+                <!-- Food -->
+                <div data-category="food" class="drop-zone p-4 md:p-6 flex flex-col items-center justify-center gap-2 aspect-square">
+                    <div class="bg-red-100 rounded-full p-3 md:p-4 mb-2">
+                        <span class="text-4xl md:text-5xl">🍎</span>
+                    </div>
+                    <span class="font-extrabold text-lg md:text-xl food-text uppercase tracking-wide">Food</span>
+                </div>
+                <!-- Drinks -->
+                <div data-category="drinks" class="drop-zone p-4 md:p-6 flex flex-col items-center justify-center gap-2 aspect-square">
+                    <div class="bg-blue-100 rounded-full p-3 md:p-4 mb-2">
+                        <span class="text-4xl md:text-5xl">🧃</span>
+                    </div>
+                    <span class="font-extrabold text-lg md:text-xl drink-text uppercase tracking-wide">Drinks</span>
+                </div>
+                <!-- Shapes -->
+                <div data-category="shapes" class="drop-zone p-4 md:p-6 flex flex-col items-center justify-center gap-2 aspect-square">
+                    <div class="bg-purple-100 rounded-full p-3 md:p-4 mb-2">
+                        <span class="text-4xl md:text-5xl">⭐</span>
+                    </div>
+                    <span class="font-extrabold text-lg md:text-xl shape-text uppercase tracking-wide">Shapes</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="minigame-overlay" class="fixed inset-0 z-[100] flex flex-col items-center justify-center hidden">
+        <div class="text-center mb-12">
+            <h2 class="kid-title text-4xl md:text-5xl mb-4">Bonus Game!</h2>
+            <p class="text-xl md:text-2xl font-bold text-slate-600">Find the Trophy! 🏆</p>
+        </div>
+        
+        <div id="boxes-area" class="relative w-full max-w-md h-40 flex justify-center items-center box-container">
+            <!-- Boxes created via JS -->
+        </div>
+
+        <div id="minigame-result" class="mt-12 text-center hidden">
+            <h3 id="minigame-message" class="text-3xl font-bold mb-6"></h3>
+            <button onclick="endMinigame()" class="duo-button px-10 py-4 text-xl font-bold shadow-lg">
+                Continue Sorting
+            </button>
+        </div>
+    </div>
+
+    <div id="victory-screen" class="fixed inset-0 bg-white/95 backdrop-blur-sm z-[200] flex flex-col items-center justify-center p-8 hidden">
+        <div class="text-center space-y-8 max-w-lg bg-white p-10 rounded-[3rem] shadow-2xl border-8 border-[var(--duo-blue)] relative z-10">
+            <div class="text-8xl mb-4">🌟</div>
+            <h2 class="kid-title text-5xl md:text-7xl">Awesome!</h2>
+            <div class="bg-slate-100 rounded-2xl p-6 my-6 border-4 border-slate-200">
+                <p class="text-slate-500 text-xl font-bold mb-2">Total Score</p>
+                <p class="text-5xl font-black text-[var(--duo-yellow)] drop-shadow-md">100%</p>
+            </div>
+            <p class="text-slate-600 text-2xl font-bold">You are a sorting master!</p>
+            <button onclick="resetGame()" class="duo-button px-12 py-5 text-2xl font-bold w-full shadow-xl mt-4">
+                Play Again
+            </button>
+        </div>
+    </div>
+
+    <!-- Confetti canvas on top of everything -->
+    <canvas id="confetti"></canvas>
+
+    <script>
+        // More realistic/vibrant emojis
+        const ITEMS = [
+            { emoji: '🦁', cat: 'animals' }, { emoji: '🐘', cat: 'animals' },
+            { emoji: '🦒', cat: 'animals' }, { emoji: '🦓', cat: 'animals' },
+            { emoji: '🍕', cat: 'food' }, { emoji: '🍔', cat: 'food' },
+            { emoji: '🍓', cat: 'food' }, { emoji: '🍩', cat: 'food' },
+            { emoji: '🥛', cat: 'drinks' }, { emoji: '🧃', cat: 'drinks' },
+            { emoji: '🥤', cat: 'drinks' }, { emoji: '☕', cat: 'drinks' },
+            { emoji: '🔴', cat: 'shapes' }, { emoji: '🟦', cat: 'shapes' },
+            { emoji: '🔺', cat: 'shapes' }, { emoji: '⭐', cat: 'shapes' }
+        ];
+
+        let state = {
+            deck: [],
+            index: 0,
+            isDragging: false,
+            startX: 0, startY: 0,
+            currentX: 0, currentY: 0,
+            muted: false,
+            itemsSortedSinceMinigame: 0,
+            minigamesPlayed: 0
+        };
+
+        const MINIGAME_THRESHOLD = 4;
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playTone(freq, type = 'sine', duration = 0.2, volume = 0.1) {
+            if (state.muted) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        const sounds = {
+            pop: () => playTone(500, 'sine', 0.1, 0.15),
+            slide: () => playTone(300, 'triangle', 0.1, 0.05),
+            success: () => {
+                playTone(523.25, 'sine', 0.15, 0.2); // C5
+                setTimeout(() => playTone(659.25, 'sine', 0.15, 0.2), 100); // E5
+                setTimeout(() => playTone(783.99, 'sine', 0.3, 0.2), 200); // G5
+            },
+            error: () => {
+                playTone(250, 'sawtooth', 0.2, 0.1);
+                setTimeout(() => playTone(200, 'sawtooth', 0.3, 0.1), 150);
+            },
+            fanfare: () => {
+                // Simple victory fanfare
+                const notes = [523.25, 523.25, 523.25, 659.25, 783.99, 659.25, 783.99];
+                const times = [0, 150, 300, 450, 600, 750, 900];
+                notes.forEach((f, i) => {
+                    setTimeout(() => playTone(f, 'square', i === notes.length-1 ? 0.6 : 0.15, 0.15), times[i]);
+                });
+            },
+            magic: () => {
+                // Minigame sound
+                for(let i=0; i<5; i++) {
+                    setTimeout(() => playTone(400 + i*100, 'sine', 0.1, 0.1), i*50);
+                }
+            }
+        };
+
+        const card = document.getElementById('active-card');
+        const dropZones = document.querySelectorAll('.drop-zone');
+
+        function updateCardPos() {
+            if (!state.isDragging) return;
+            const dx = state.currentX - state.startX;
+            const dy = state.currentY - state.startY;
+            
+            card.style.transform = `translate3d(${dx}px, ${dy}px, 0) rotate(${dx * 0.03}deg) scale(1.05)`;
+            
+            const cardRect = card.getBoundingClientRect();
+            const cx = cardRect.left + cardRect.width / 2;
+            const cy = cardRect.top + cardRect.height / 2;
+
+            dropZones.forEach(zone => {
+                const rect = zone.getBoundingClientRect();
+                // Increased hit area slightly for easier play
+                if (cx > rect.left - 20 && cx < rect.right + 20 && 
+                    cy > rect.top - 20 && cy < rect.bottom + 20) {
+                    zone.classList.add('active');
+                } else {
+                    zone.classList.remove('active');
+                }
+            });
+
+            requestAnimationFrame(updateCardPos);
+        }
+
+        function onPointerDown(e) {
+            if (state.index >= state.deck.length) return;
+            state.isDragging = true;
+            state.startX = e.clientX;
+            state.startY = e.clientY;
+            state.currentX = e.clientX;
+            state.currentY = e.clientY;
+            card.setPointerCapture(e.pointerId);
+            card.style.transition = 'none'; // Remove transition while dragging
+            sounds.pop();
+            requestAnimationFrame(updateCardPos);
+        }
+
+        function onPointerMove(e) {
+            if (!state.isDragging) return;
+            state.currentX = e.clientX;
+            state.currentY = e.clientY;
+        }
+
+        function onPointerUp(e) {
+            if (!state.isDragging) return;
+            state.isDragging = false;
+            
+            let droppedCategory = null;
+            dropZones.forEach(zone => {
+                if (zone.classList.contains('active')) {
+                    droppedCategory = zone.dataset.category;
+                    zone.classList.remove('active');
+                }
+            });
+
+            const currentItem = state.deck[state.index];
+            if (droppedCategory === currentItem.cat) {
+                handleSuccess();
+            } else {
+                handleError();
+            }
+        }
+
+        function handleSuccess() {
+            sounds.success();
+            state.index++;
+            state.itemsSortedSinceMinigame++;
+            updateUI();
+            
+            card.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.3) translate3d(0, 100px, 0)';
+
+            setTimeout(() => {
+                if (state.index >= state.deck.length) {
+                    showVictory();
+                } else if (state.itemsSortedSinceMinigame >= MINIGAME_THRESHOLD) {
+                    startMinigame();
+                } else {
+                    showNext();
+                }
+            }, 400);
+        }
+
+        function handleError() {
+            sounds.error();
+            card.classList.add('shake-animation');
+            card.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+            card.style.transform = 'translate3d(0,0,0)';
+            
+            setTimeout(() => {
+                card.classList.remove('shake-animation');
+                card.style.transition = '';
+            }, 500);
+        }
+
+        function showNext() {
+            card.textContent = state.deck[state.index].emoji;
+            card.style.transition = 'none';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.5)';
+            
+            requestAnimationFrame(() => {
+                card.style.transition = 'all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                card.style.opacity = '1';
+                card.style.transform = 'scale(1)';
+            });
+        }
+
+        function updateUI() {
+            const fill = document.getElementById('fuel-fill');
+            const percent = (state.index / state.deck.length) * 100;
+            fill.style.width = `${percent}%`;
+            document.getElementById('progress-text').textContent = `${state.index} / ${state.deck.length} Sorted`;
+        }
+
+        function showVictory() {
+            card.classList.add('hidden');
+            document.getElementById('empty-state').classList.remove('hidden');
+            document.getElementById('victory-screen').classList.remove('hidden');
+            sounds.fanfare();
+            startConfetti();
+        }
+
+        function resetGame() {
+            state.deck = [...ITEMS].sort(() => Math.random() - 0.5);
+            state.index = 0;
+            state.itemsSortedSinceMinigame = 0;
+            document.getElementById('victory-screen').classList.add('hidden');
+            document.getElementById('empty-state').classList.add('hidden');
+            card.classList.remove('hidden');
+            stopConfetti();
+            updateUI();
+            showNext();
+        }
+
+        let minigameBoxes = [];
+        let trophyIndex = 0;
+        let isShuffling = false;
+
+        function startMinigame() {
+            state.itemsSortedSinceMinigame = 0;
+            sounds.magic();
+            const overlay = document.getElementById('minigame-overlay');
+            const boxesArea = document.getElementById('boxes-area');
+            const resultArea = document.getElementById('minigame-result');
+            
+            overlay.classList.remove('hidden');
+            resultArea.classList.add('hidden');
+            boxesArea.innerHTML = '';
+            minigameBoxes = [];
+            
+            // Determine initial trophy position
+            trophyIndex = Math.floor(Math.random() * 3);
+            
+            const boxSpacing = window.innerWidth < 500 ? 110 : 130;
+            const startX = -boxSpacing; // Center is 0, left is -space, right is +space
+
+            // Create boxes
+            for(let i=0; i<3; i++) {
+                const box = document.createElement('div');
+                box.className = 'mystery-box';
+                // Initially show contents
+                box.innerHTML = i === trophyIndex ? '👑' : '🍎';
+                box.classList.add('open');
+                
+                // Position
+                const posX = startX + (i * boxSpacing);
+                box.style.transform = `translateX(${posX}px) translateY(10px)`;
+                box.dataset.pos = i;
+                box.dataset.actualX = posX;
+                
+                boxesArea.appendChild(box);
+                minigameBoxes.push(box);
+
+                box.addEventListener('click', () => handleBoxClick(i));
+            }
+
+            // Sequence: Show -> Hide -> Shuffle -> Allow pick
+            setTimeout(() => {
+                // Close boxes
+                minigameBoxes.forEach(box => {
+                    box.classList.remove('open');
+                    box.innerHTML = '';
+                    box.style.transform = `translateX(${box.dataset.actualX}px) translateY(0)`;
+                });
+                sounds.pop();
+                
+                setTimeout(shuffleBoxes, 1000);
+            }, 2000);
+        }
+
+        function shuffleBoxes() {
+            isShuffling = true;
+            let shuffles = 0;
+            const maxShuffles = 5; // Slow, easy shuffles for kids
+            const speed = 600;
+
+            function doShuffle() {
+                if (shuffles >= maxShuffles) {
+                    isShuffling = false;
+                    return;
+                }
+
+                // Pick two random indices to swap
+                let idx1 = Math.floor(Math.random() * 3);
+                let idx2 = Math.floor(Math.random() * 3);
+                while(idx1 === idx2) idx2 = Math.floor(Math.random() * 3);
+
+                const box1 = minigameBoxes[idx1];
+                const box2 = minigameBoxes[idx2];
+
+                // Swap their visual positions
+                const tempX = box1.dataset.actualX;
+                box1.dataset.actualX = box2.dataset.actualX;
+                box2.dataset.actualX = tempX;
+
+                // Add a slight arc to the movement for effect
+                box1.style.transform = `translateX(${box1.dataset.actualX}px) translateY(-20px) scale(1.05)`;
+                box2.style.transform = `translateX(${box2.dataset.actualX}px) translateY(20px) scale(0.95)`;
+                
+                sounds.slide();
+
+                setTimeout(() => {
+                    box1.style.transform = `translateX(${box1.dataset.actualX}px) translateY(0) scale(1)`;
+                    box2.style.transform = `translateX(${box2.dataset.actualX}px) translateY(0) scale(1)`;
+                }, speed / 2);
+
+                // Swap in array to track actual contents
+                minigameBoxes[idx1] = box2;
+                minigameBoxes[idx2] = box1;
+
+                // Track where the trophy went
+                if (trophyIndex === idx1) trophyIndex = idx2;
+                else if (trophyIndex === idx2) trophyIndex = idx1;
+
+                shuffles++;
+                setTimeout(doShuffle, speed + 100);
+            }
+
+            doShuffle();
+        }
+
+        function handleBoxClick(clickedVisualIndex) {
+            if (isShuffling) return;
+            
+            // Find which logical box index corresponds to the clicked visual element
+            // Since we swapped DOM elements in the array, we need to find the one that was clicked
+            let logicalIndex = minigameBoxes.findIndex(box => box.dataset.pos == clickedVisualIndex);
+
+            const box = minigameBoxes[logicalIndex];
+            if (box.classList.contains('open')) return; // Already open
+
+            box.classList.add('open');
+            
+            const msgEl = document.getElementById('minigame-message');
+            const resultArea = document.getElementById('minigame-result');
+
+            if (logicalIndex === trophyIndex) {
+                box.innerHTML = '👑';
+                sounds.success();
+                msgEl.textContent = "You found it! 🎉";
+                msgEl.className = "text-3xl font-black text-[var(--duo-green)] mb-6";
+                // Open others
+                minigameBoxes.forEach((b, i) => {
+                    if(i !== logicalIndex) { b.classList.add('open'); b.innerHTML = '🍎'; }
+                });
+            } else {
+                box.innerHTML = '🍎';
+                sounds.error();
+                msgEl.textContent = "Oops, it was an apple! 🍎";
+                msgEl.className = "text-3xl font-black text-[var(--duo-red)] mb-6";
+                // Reveal trophy
+                const trophyBox = minigameBoxes[trophyIndex];
+                setTimeout(() => {
+                    trophyBox.classList.add('open');
+                    trophyBox.innerHTML = '👑';
+                    sounds.pop();
+                }, 500);
+            }
+
+            isShuffling = true; // Prevent further clicks
+            setTimeout(() => {
+                resultArea.classList.remove('hidden');
+            }, 1000);
+        }
+
+        function endMinigame() {
+            document.getElementById('minigame-overlay').classList.add('hidden');
+            showNext();
+        }
+
+        const canvas = document.getElementById('confetti');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let animationFrame;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function startConfetti() {
+            resizeCanvas();
+            const colors = ['#58cc02', '#1cb0f6', '#ffc800', '#ff4b4b', '#ce82ff'];
+            particles = Array.from({ length: 200 }, () => ({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height - canvas.height,
+                size: Math.random() * 12 + 6,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                vx: Math.random() * 8 - 4,
+                vy: Math.random() * 5 + 3,
+                r: Math.random() * 360,
+                vr: Math.random() * 10 - 5
+            }));
+            loopConfetti();
+        }
+
+        function loopConfetti() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.y += p.vy;
+                p.x += p.vx;
+                p.r += p.vr;
+                // Add slight gravity
+                p.vy += 0.05;
+                
+                if (p.y > canvas.height) {
+                    p.y = -20;
+                    p.x = Math.random() * canvas.width;
+                    p.vy = Math.random() * 5 + 3;
+                }
+                
+                ctx.fillStyle = p.color;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.r * Math.PI / 180);
+                
+                // Draw different shapes (squares and rectangles)
+                if(Math.random() > 0.5) {
+                    ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+                } else {
+                    ctx.fillRect(-p.size/2, -p.size/4, p.size, p.size/2);
+                }
+                
+                ctx.restore();
+            });
+            animationFrame = requestAnimationFrame(loopConfetti);
+        }
+
+        function stopConfetti() {
+            if(animationFrame) cancelAnimationFrame(animationFrame);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Event Listeners
+        card.addEventListener('pointerdown', onPointerDown);
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp);
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            // Re-center minigame boxes if open
+            if(!document.getElementById('minigame-overlay').classList.contains('hidden') && !isShuffling) {
+                const boxSpacing = window.innerWidth < 500 ? 110 : 130;
+                const startX = -boxSpacing;
+                minigameBoxes.forEach((box, i) => {
+                    const posX = startX + (i * boxSpacing);
+                    box.dataset.actualX = posX;
+                    box.style.transform = `translateX(${posX}px) translateY(${box.classList.contains('open') ? '10px' : '0'})`;
+                });
+            }
+        });
+        
+        document.getElementById('mute-toggle').onclick = () => {
+            state.muted = !state.muted;
+            document.getElementById('mute-icon').textContent = state.muted ? '🔇' : '🔊';
+        };
+
+        // Start
+        window.onload = resetGame;
+
+    </script>
+</body>
+</html>
