@@ -180,7 +180,7 @@
     .skill:hover { transform: translateY(-4px); box-shadow: 0 8px 15px rgba(0,0,0,0.08); }
     .skill:active { transform: translateY(2px); box-shadow: 0 0 0; }
     .skill.active { border-color: var(--c-blue); background: #f0f9ff; box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.25); transform: translateY(-2px); }
-    .skill.done { border-color: #cbd5e1; background: rgba(248, 250, 252, 0.8); box-shadow: none; transform: none; }
+    .skill.done { border-color: #cbd5e1; background: rgba(248, 250, 252, 0.8); box-shadow: none; transform: none; opacity: 0.6; pointer-events: none;}
     
     .sico { width: 44px; height: 44px; border-radius: 12px; background: #fff; border: 2px solid #e2e8f0; display: grid; place-items: center; flex-shrink: 0; box-shadow: 0 4px 0 #f1f5f9; font-size: 20px;}
     .skill div:last-child { flex: 1; min-width: 0; }
@@ -372,7 +372,7 @@
           <!-- Skills Grid -->
           <div class="skills" id="skillGrid"></div>
           
-          <div style="margin-top: 20px;">
+          <div style="margin-top: 20px;" id="startWrapper">
             <button class="btn green" id="startBtn" style="width: 100%;">▶ Start Exam</button>
           </div>
         </div>
@@ -441,7 +441,7 @@
          <span id="bScore" style="font-size:24px; color:#1e293b; font-weight:900; margin-left:10px; background: rgba(255,255,255,0.9); padding: 8px 24px; border-radius: 99px; box-shadow: 0 4px 0 rgba(0,0,0,0.1);">Score: 0</span>
        </div>
        <div class="timer-badge" id="bTimer">30s</div>
-       <button class="btn ghost" onclick="stopBonus()">Close</button>
+       <button class="btn ghost" onclick="stopBonus()">Quit</button>
     </div>
     <canvas id="bonusCanvas" style="position: absolute; top:0; left:0; width: 100%; height:100%; z-index: 20; cursor: crosshair;"></canvas>
   </div>
@@ -722,7 +722,7 @@
             { name: 'tower', svg: (s) => `<svg viewBox="0 0 100 180" style="height:180px; width:auto;"><path d="M20,180 C30,120 40,80 45,30 L55,30 C60,80 70,120 80,180 Z" fill="#ef4444"/><path d="M35,180 C40,150 45,130 50,130 C55,130 60,150 65,180 Z" fill="#f8fafc"/><rect x="35" y="110" width="30" height="8" fill="#334155" rx="2"/><rect x="40" y="60" width="20" height="6" fill="#334155" rx="2"/><rect x="48" y="0" width="4" height="30" fill="#94a3b8"/><circle cx="50" cy="0" r="4" fill="#ef4444"/></svg>` }
           ],
           [
-            { name: 'snowman', svg: (s) => `<svg viewBox="0 0 100 130" style="height:130px; width:auto;"><circle cx="50" cy="100" r="30" fill="#fff"/><circle cx="50" cy="55" r="22" fill="#fff"/><circle cx="50" cy="22" r="16" fill="#fff"/><rect x="35" y="0" width="30" height="10" fill="#1e293b"/><rect x="25" y="10" width="50" height="4" fill="#1e293b"/><circle cx="45" cy="18" r="2" fill="#000"/><circle cx="55" cy="18" r="2" fill="#000"/><polygon points="50,22 65,25 50,26" fill="#f97316"/><circle cx="50" cy="50" r="3" fill="#000"/><circle cx="50" cy="65" r="3" fill="#000"/></svg>` },
+            { name: 'snowman', svg: (s) => `<svg viewBox="0 0 100 130" style="height:90px; width:auto;"><circle cx="50" cy="100" r="30" fill="#fff"/><circle cx="50" cy="55" r="22" fill="#fff"/><circle cx="50" cy="22" r="16" fill="#fff"/><rect x="35" y="0" width="30" height="10" fill="#1e293b"/><rect x="25" y="10" width="50" height="4" fill="#1e293b"/><circle cx="45" cy="18" r="2" fill="#000"/><circle cx="55" cy="18" r="2" fill="#000"/><polygon points="50,22 65,25 50,26" fill="#f97316"/><circle cx="50" cy="50" r="3" fill="#000"/><circle cx="50" cy="65" r="3" fill="#000"/></svg>` },
             { name: 'sunflower', svg: (s) => `<svg viewBox="0 0 100 130" style="height:130px; width:auto;"><rect x="46" y="30" width="8" height="100" fill="#22c55e"/><path d="M46,80 Q20,80 20,50 Q40,60 46,70 Z" fill="#16a34a"/><path d="M54,90 Q80,90 80,60 Q60,70 54,80 Z" fill="#16a34a"/><circle cx="50" cy="30" r="25" fill="#facc15"/><circle cx="50" cy="30" r="15" fill="#78350f"/></svg>` },
             { name: 'rocket', svg: (s) => `<svg viewBox="0 0 100 170" style="height:170px; width:auto;"><polygon points="30,170 10,170 20,110" fill="#ef4444"/><polygon points="70,170 90,170 80,110" fill="#ef4444"/><path d="M30,140 L70,140 L70,50 C70,20 50,0 50,0 C50,0 30,20 30,50 Z" fill="#e2e8f0"/><circle cx="50" cy="60" r="14" fill="#38bdf8" stroke="#94a3b8" stroke-width="4"/><polygon points="35,140 65,140 75,170 25,170" fill="#cbd5e1"/></svg>` }
           ]
@@ -735,16 +735,22 @@
         const target = askTallest ? tallest : shortest;
         const targetIdx = shufGroup.findIndex(item => item.name === target.name);
 
+        const labels = ['A', 'B', 'C'];
+        const targetLabel = labels[targetIdx];
+
         const choicesHTML = shufGroup.map((item, i) => ({
-           val: i.toString(),
-           html: `<div style="pointer-events:none; filter:drop-shadow(0 5px 5px rgba(0,0,0,0.15)); display:flex; flex-direction:column; justify-content:flex-end; height:100%;">${item.svg(1)}</div>`
+           val: labels[i],
+           html: `<div style="pointer-events:none; filter:drop-shadow(0 5px 5px rgba(0,0,0,0.15)); display:flex; flex-direction:column; justify-content:flex-end; align-items:center; height:100%; gap: 12px;">
+                    ${item.svg(1)}
+                    <div style="font-size:20px; font-weight:900; color:var(--c-purple); background:#fff; border-radius:50%; width:36px; height:36px; display:grid; place-items:center; box-shadow:0 4px 0 #e2e8f0; border:2px solid #e2e8f0; flex-shrink: 0;">${labels[i]}</div>
+                  </div>`
         }));
 
         return {
             tag: `<span style="font-size:24px;">🦒</span> Measurement`, text: `Tap the ${askTallest ? 'TALLEST' : 'SHORTEST'} item.`,
             vis: ``, 
-            choicesData: choicesHTML, answer: targetIdx.toString(), gridStyle: 'choices-scene',
-            explain: `You correctly picked the ${askTallest ? 'tallest' : 'shortest'} one!`
+            choicesData: choicesHTML, answer: targetLabel, gridStyle: 'choices-scene',
+            explain: `You correctly picked ${targetLabel}, the ${askTallest ? 'tallest' : 'shortest'} one!`
         };
 
       } else if(type === 1) {
@@ -794,7 +800,12 @@
         // LENGTH
         const lengths = [3, 5, 8]; const shufL = shuffle(lengths);
         const longestIdx = shufL.indexOf(8); const shortestIdx = shufL.indexOf(3);
-        const askLongest = Math.random() > 0.5; const ansVal = askLongest ? longestIdx.toString() : shortestIdx.toString();
+        const askLongest = Math.random() > 0.5; 
+        const ansVal = askLongest ? longestIdx.toString() : shortestIdx.toString();
+        
+        const labels = ['A', 'B', 'C'];
+        const ansLabel = labels[parseInt(ansVal)];
+
         const lenThemes = [
           { type: 'cubes', name: 'cube train' }, { type: 'pencil', name: 'pencil' },
           { type: 'pen', name: 'pen' }, { type: 'stick', name: 'wooden stick' }, { type: 'chain', name: 'chain' }
@@ -822,7 +833,13 @@
                }
                visual = `<svg viewBox="0 0 ${shufL[i]*20 + 20} 20" preserveAspectRatio="xMinYMid meet" style="width:${shufL[i]*11}%; height:30px; filter: drop-shadow(0 4px 2px rgba(0,0,0,0.2));">${chainHTML}</svg>`;
            }
-           choicesHTML.push({ val: i.toString(), html: `<div style="display:flex; align-items:center; width: 100%; pointer-events:none; min-height: 50px;">${visual}</div>` });
+           choicesHTML.push({ 
+             val: labels[i], 
+             html: `<div style="display:flex; align-items:center; width: 100%; pointer-events:none; min-height: 50px; gap: 16px;">
+                      <div style="font-size:20px; font-weight:900; color:var(--c-purple); background:#fff; border-radius:50%; width:36px; height:36px; display:grid; place-items:center; box-shadow:0 4px 0 #e2e8f0; border:2px solid #e2e8f0; flex-shrink: 0;">${labels[i]}</div>
+                      <div style="flex:1;">${visual}</div>
+                    </div>` 
+           });
         }
         
         return { 
@@ -830,9 +847,9 @@
             text: `Tap the ${askLongest ? 'LONGEST' : 'SHORTEST'} ${t.name}.`, 
             vis: ``, 
             choicesData: choicesHTML, 
-            answer: ansVal, 
+            answer: ansLabel, 
             gridStyle: 'choices-vertical', 
-            explain: `You correctly picked the ${askLongest ? 'longest' : 'shortest'} one!` 
+            explain: `You correctly picked ${ansLabel}, the ${askLongest ? 'longest' : 'shortest'} one!` 
         };
       }
     }
@@ -849,7 +866,8 @@
     qNum: document.getElementById("chipQ"), playAgain: document.getElementById("playAgain"),
     bonusBtn: document.getElementById("bonusBtn"), bonusGame: document.getElementById("bonusGame"), bar: document.getElementById("bar"), 
     mini: document.getElementById("mini"), summary: document.getElementById("summary"), skillGrid: document.getElementById("skillGrid"),
-    mainGameContainer: document.getElementById("mainGameContainer"), chipTimer: document.getElementById("chipTimer")
+    mainGameContainer: document.getElementById("mainGameContainer"), chipTimer: document.getElementById("chipTimer"),
+    startWrapper: document.getElementById("startWrapper")
   };
 
   function init(){ renderSkills(); fitCanvas(); }
@@ -859,6 +877,9 @@
     userAnswers = new Array(10).fill(null);
     historyLog = [];
     
+    // Hide the start button explicitly after starting the exam
+    els.startWrapper.style.display = "none";
+
     // Generate the 10 questions once per session
     generatedQuestions = skills.map(s => {
         let q = BUILDERS[s.key]();
@@ -1102,12 +1123,16 @@
       bLoop = requestAnimationFrame(updateBonus);
   }
 
-  function endBonusGame() {
+  function stopBonus() {
       cancelAnimationFrame(bLoop); clearInterval(bTimerInterval);
+      els.bonusGame.style.display = 'none';
+      els.mainGameContainer.style.display = 'block'; 
+  }
+
+  function endBonusGame() {
+      stopBonus();
       setTimeout(() => {
          alert(`Time's Up! ⏰\nYou caught ${bScore} fruits!`);
-         els.bonusGame.style.display = 'none';
-         els.mainGameContainer.style.display = 'block'; 
       }, 50);
   }
 
