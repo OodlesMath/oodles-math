@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mass Adventure - Heavy & Light</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --duo-green: #58cc02;
+            --duo-green-dark: #58a700;
+            --duo-blue: #1cb0f6;
+            --duo-blue-dark: #1899d6;
+            --duo-yellow: #ffc800;
+            --duo-yellow-dark: #e5b400;
+            --duo-red: #ff4b4b;
+            --duo-red-dark: #ea2b2b;
+            --bg-sky: #93dfff;
+        }
+
+        body {
+            font-family: 'Nunito', 'Poppins', sans-serif;
+            touch-action: manipulation;
+            user-select: none;
+            overflow: hidden;
+            background-color: var(--bg-sky);
+        }
+
+        /* --- NÚT ĐIỀU KHIỂN --- */
+        .duo-btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 1.5rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            box-shadow: 0 8px 0 rgba(0,0,0,0.15);
+        }
+        
+        .duo-btn:active {
+            transform: translateY(8px) !important;
+            box-shadow: 0 0 0 transparent !important;
+        }
+
+        .duo-btn-green { background-color: var(--duo-green); color: white; border: 2px solid var(--duo-green-dark); box-shadow: 0 8px 0 var(--duo-green-dark); }
+        .duo-btn-white { background-color: #ffffff; color: #374151; border: 3px solid #e5e7eb; box-shadow: 0 8px 0 #d1d5db; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .duo-btn-white:hover { transform: translateY(-5px); }
+
+        /* --- CHỮ 3D --- */
+        .text-title-3d {
+            font-family: 'Nunito', sans-serif;
+            color: white;
+            text-shadow: 0px 6px 0px var(--duo-blue-dark), 0px 12px 15px rgba(0,0,0,0.3);
+            letter-spacing: 2px;
+        }
+
+        .emoji-sticker {
+            display: inline-block;
+            filter: drop-shadow(0 15px 10px rgba(0,0,0,0.35)) drop-shadow(0 4px 4px rgba(0,0,0,0.2));
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* --- KHUNG CẢNH NỀN (Mặt trời, Mây, Thảm cỏ, Cây cỏ, Hoa lá) --- */
+        .scenery-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .sun {
+            position: absolute;
+            top: 5vh; left: 5vw;
+            width: 120px; height: 120px;
+            background: #ffeb3b;
+            border-radius: 50%;
+            box-shadow: 0 0 60px 30px rgba(255, 235, 59, 0.4);
+            animation: pulseSun 4s infinite alternate;
+        }
+
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 100px;
+            opacity: 0.9;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        }
+        .cloud::before, .cloud::after {
+            content: ''; position: absolute; background: white; border-radius: 50%;
+        }
+        .cloud-1 { top: 12vh; right: 10vw; width: 140px; height: 45px; animation: floatCloud 40s linear infinite; }
+        .cloud-1::before { width: 60px; height: 60px; top: -25px; left: 20px; }
+        .cloud-1::after { width: 70px; height: 70px; top: -35px; right: 25px; }
+
+        .cloud-2 { top: 22vh; left: 15vw; width: 100px; height: 35px; animation: floatCloud 50s linear infinite reverse; opacity: 0.6; transform: scale(0.8); }
+        .cloud-2::before { width: 40px; height: 40px; top: -15px; left: 15px; }
+        .cloud-2::after { width: 50px; height: 50px; top: -25px; right: 15px; }
+
+        /* Dốc cỏ mượt mà */
+        .grass-back {
+            position: absolute;
+            bottom: 0; left: 0; width: 100%; height: 38vh;
+            background: linear-gradient(to top, #73d13d, #95de64);
+            mask-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path fill="black" d="M0,160 C320,80 640,240 960,160 C1280,80 1360,120 1440,160 L1440,320 L0,320 Z"></path></svg>');
+            mask-size: 100% 100%;
+            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path fill="black" d="M0,160 C320,80 640,240 960,160 C1280,80 1360,120 1440,160 L1440,320 L0,320 Z"></path></svg>');
+            -webkit-mask-size: 100% 100%;
+            z-index: 2;
+        }
+
+        .grass-front {
+            position: absolute;
+            bottom: 0; left: 0; width: 100%; height: 26vh;
+            background: linear-gradient(to top, #389e0d, #52c41a);
+            mask-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path fill="black" d="M0,220 C240,160 480,260 720,200 C960,140 1200,240 1440,180 L1440,320 L0,320 Z"></path></svg>');
+            mask-size: 100% 100%;
+            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path fill="black" d="M0,220 C240,160 480,260 720,200 C960,140 1200,240 1440,180 L1440,320 L0,320 Z"></path></svg>');
+            -webkit-mask-size: 100% 100%;
+            z-index: 3;
+        }
+
+        /* Thiết kế cây xanh được tinh chỉnh đẹp hơn, tán lá phồng, 3 lớp màu */
+        .tree {
+            position: absolute;
+            z-index: 4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .tree-leaves {
+            width: 85px; height: 85px;
+            background: #237804; /* Lớp đổ bóng */
+            border-radius: 50%;
+            box-shadow: inset -10px -15px 0 rgba(0,0,0,0.15);
+            position: relative;
+            z-index: 2;
+        }
+        .tree-leaves::before { 
+            content: ''; position: absolute; 
+            width: 70px; height: 70px; 
+            background: #52c41a; /* Lớp trung gian */
+            border-radius: 50%; 
+            top: -2px; left: -18px; 
+        }
+        .tree-leaves::after { 
+            content: ''; position: absolute; 
+            width: 55px; height: 55px; 
+            background: #73d13d; /* Lớp bắt sáng */
+            border-radius: 50%; 
+            top: 8px; right: -12px; 
+        }
+        .tree-trunk {
+            width: 20px; height: 60px;
+            background: linear-gradient(to right, #613400, #a05a00, #613400);
+            border-radius: 4px;
+            margin-top: -15px;
+            box-shadow: inset 0 -5px 10px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
+        }
+        /* Cụm cỏ bám dưới gốc cây giúp cây bám chắc vào nền */
+        .tree-trunk::after {
+            content: '🌿';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%) scale(1.1);
+            font-size: 14px;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
+        }
+
+        .flower { 
+            position: absolute; 
+            font-size: 1.5rem; 
+            z-index: 4; 
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2)); 
+        }
+
+        @keyframes pulseSun { 0% { transform: scale(1); } 100% { transform: scale(1.05); } }
+        @keyframes floatCloud { 0% { transform: translateX(-5vw); } 50% { transform: translateX(5vw); } 100% { transform: translateX(-5vw); } }
+
+        /* --- MÔ PHỎNG VẬT LÝ CHIẾC CÂN --- */
+        .game-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            padding: 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .scale-wrapper {
+            position: relative;
+            transform-origin: bottom center;
+            transform: scale(min(1, min(calc(100vw / 550), calc(100vh / 650))));
+            width: 480px;
+            height: 320px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            margin-top: 2vh;
+        }
+
+        .scale-base-new {
+            width: 300px; height: 40px;
+            background: linear-gradient(to bottom, #d97706, #b45309);
+            border-radius: 20px 20px 10px 10px;
+            position: absolute; bottom: 0;
+            border-bottom: 8px solid #78350f;
+            box-shadow: 0 15px 25px rgba(0,0,0,0.3);
+        }
+
+        .scale-pillar-new {
+            width: 36px; height: 240px;
+            background: linear-gradient(to right, #f59e0b, #fbbf24, #f59e0b);
+            position: absolute; bottom: 40px;
+            border-radius: 20px 20px 0 0;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.1);
+            border: 2px solid #b45309;
+        }
+
+        .scale-pivot-new {
+            width: 60px; height: 60px;
+            background: radial-gradient(circle at 30% 30%, #fcd34d, #f59e0b, #b45309);
+            border-radius: 50%;
+            position: absolute; bottom: 235px; 
+            display: flex; justify-content: center; align-items: center;
+            z-index: 20;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+            border: 3px solid #78350f;
+        }
+
+        .scale-beam-new {
+            width: 460px; height: 24px;
+            background: linear-gradient(to bottom, #fcd34d, #f59e0b);
+            position: absolute; bottom: 260px;
+            border-radius: 12px;
+            transition: transform 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-origin: center;
+            z-index: 15;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            border: 2px solid #b45309;
+        }
+
+        .pan-hinge {
+            position: absolute; top: 12px;
+            width: 16px; height: 70px;
+            background: linear-gradient(to right, #cbd5e1, #94a3b8);
+            border-radius: 8px;
+            transform-origin: top center;
+            transition: transform 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 16;
+            border: 2px solid #64748b;
+        }
+
+        .pan-plate {
+            position: absolute; top: 65px; left: 50%; transform: translateX(-50%);
+            width: 160px; height: 35px;
+            background: linear-gradient(to bottom, #ef4444, #b91c1c);
+            border-radius: 0 0 80px 80px;
+            border-top: 6px solid #991b1b;
+            box-shadow: 0 15px 25px rgba(0,0,0,0.4), inset 0 4px 8px rgba(255,255,255,0.3);
+            display: flex; justify-content: center; align-items: flex-end;
+            padding-bottom: 5px;
+        }
+
+        .scale-obj-left, .scale-obj-right {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: -10px;
+            font-size: 7.5rem; 
+            z-index: 25;
+            pointer-events: none;
+        }
+
+        /* --- HIỆU ỨNG CHUYỂN ĐỘNG --- */
+        .pop-in { animation: pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        @keyframes pop { 0% { transform: scale(0.3); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        .bounce-soft { animation: bounceSoft 2s infinite; }
+        @keyframes bounceSoft { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        .pulse-glow { animation: pulseGlow 2s infinite; }
+        @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(88, 204, 2, 0.4); } 50% { box-shadow: 0 0 20px 10px rgba(88, 204, 2, 0.8); } }
+
+        .shake-wrong { animation: shakeWrong 0.4s ease-in-out; }
+        @keyframes shakeWrong { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px) rotate(-5deg); } 50% { transform: translateX(10px) rotate(5deg); } 75% { transform: translateX(-10px) rotate(-5deg); } }
+
+        #confettiCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col relative text-slate-800">
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- KHUNG CẢNH NỀN -->
+    <div class="scenery-layer">
+        <div class="sun"></div>
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+        <div class="grass-back"></div>
+        <div class="grass-front"></div>
+        
+        <!-- Bố trí 4 cây xanh cân đối (2 gần, 2 xa) tạo cảm giác rừng núi có chiều sâu -->
+        <!-- Trái (Gần) -->
+        <div class="tree" style="bottom: 7vh; left: 8vw; transform: scale(1.15); z-index: 4;">
+            <div class="tree-leaves"></div><div class="tree-trunk" style="height: 65px;"></div>
+        </div>
+        <!-- Trái (Xa, mờ hơn) -->
+        <div class="tree" style="bottom: 18vh; left: 22vw; transform: scale(0.85); z-index: 2; filter: brightness(0.95);">
+            <div class="tree-leaves"></div><div class="tree-trunk" style="height: 50px;"></div>
+        </div>
+        <!-- Phải (Gần) -->
+        <div class="tree" style="bottom: 5vh; right: 10vw; transform: scale(1.25); z-index: 4;">
+            <div class="tree-leaves"></div><div class="tree-trunk" style="height: 70px;"></div>
+        </div>
+        <!-- Phải (Xa, mờ hơn) -->
+        <div class="tree" style="bottom: 16vh; right: 26vw; transform: scale(0.9); z-index: 2; filter: brightness(0.95);">
+            <div class="tree-leaves"></div><div class="tree-trunk" style="height: 55px;"></div>
+        </div>
+
+        <!-- Hoa cỏ sặc sỡ đung đưa nhẹ nhàng -->
+        <div class="flower" style="bottom: 6vh; left: 25vw; animation: bounceSoft 2.5s infinite;">🌸</div>
+        <div class="flower" style="bottom: 12vh; left: 45vw; animation: bounceSoft 3s infinite;">🌼</div>
+        <div class="flower" style="bottom: 4vh; right: 35vw; animation: bounceSoft 2s infinite;">🌷</div>
+        <div class="flower" style="bottom: 10vh; right: 20vw; animation: bounceSoft 3.2s infinite;">🌺</div>
+    </div>
+
+    <!-- UI HEADER (Vị trí khối lệnh mới) -->
+    <div id="game-ui" class="hidden fixed top-0 left-0 w-full h-full z-40 pointer-events-none">
+        
+        <!-- Nhóm bên trái: Score & Round (Luôn bám cố định góc trái) -->
+        <div class="absolute left-3 top-3 sm:left-6 sm:top-5 flex items-center gap-2 pointer-events-auto z-20 shrink-0">
+            <!-- Điểm sao -->
+            <div class="bg-white/95 backdrop-blur rounded-2xl px-3 py-1.5 sm:px-5 sm:py-2 border-b-4 border-slate-200 shadow-md flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <span class="text-lg sm:text-2xl drop-shadow-sm">⭐</span>
+                <span id="score-text" class="text-base sm:text-xl font-black text-yellow-500 leading-none">0</span>
+            </div>
+            <!-- Vòng chơi -->
+            <div class="bg-white/95 backdrop-blur rounded-2xl px-3 py-1 sm:px-4 sm:py-1.5 border-b-4 border-slate-200 shadow-md flex flex-col items-center justify-center shrink-0">
+                <span class="text-[8px] sm:text-[10px] text-slate-400 font-bold tracking-wider uppercase leading-none mb-0.5">Round</span>
+                <span id="level-text" class="text-xs sm:text-base font-black text-sky-500 leading-none">1/10</span>
+            </div>
+        </div>
+
+        <!-- Block câu hỏi (Vị trí ở CHÍNH GIỮA) -->
+        <!-- Responsive: Trên mobile tự động đẩy xuống (top-16) để không đè lên Score. Trên desktop căn đúng giữa (top-5). -->
+        <div class="absolute w-full top-16 sm:top-5 left-0 flex justify-center pointer-events-none z-10 px-2">
+            <div class="bg-white/95 backdrop-blur px-5 py-2 sm:px-8 sm:py-3 rounded-full shadow-[0_8px_20px_rgba(0,0,0,0.15)] border-b-[5px] border-slate-200 flex items-center justify-center gap-2 sm:gap-4 pointer-events-auto pop-in max-w-full">
+                <h2 id="instruction-text" class="text-sm sm:text-2xl font-black text-slate-700 text-center tracking-wide uppercase truncate flex items-center">
+                    <!-- Injected -->
+                </h2>
+                <button onclick="readInstruction()" class="w-8 h-8 sm:w-10 sm:h-10 bg-sky-100 hover:bg-sky-200 text-sky-500 rounded-full flex items-center justify-center border-b-2 border-sky-300 text-base sm:text-xl active:translate-y-0.5 active:border-b-0 transition-all shrink-0 ml-1 sm:ml-2">
+                    🔊
+                </button>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- 0. MÀN HÌNH BẮT ĐẦU -->
+    <div id="screen-start" class="absolute inset-0 z-[100] flex items-center justify-center bg-black/20 backdrop-blur-sm px-4">
+        <div class="bg-white/95 rounded-[3rem] p-8 sm:p-12 max-w-md w-full text-center shadow-2xl border-b-[12px] border-slate-200 pop-in relative overflow-hidden">
+            <h1 class="text-5xl sm:text-6xl font-black mb-2 text-title-3d uppercase">Mass</h1>
+            <h2 class="text-4xl sm:text-5xl font-black mb-8 text-sky-500 uppercase tracking-wide">Adventure</h2>
+            
+            <div class="flex justify-center gap-4 mb-10 text-6xl relative z-10">
+                <div class="bounce-soft emoji-sticker" style="animation-delay: 0s">🐘</div>
+                <div class="bounce-soft emoji-sticker" style="animation-delay: 0.2s">⚖️</div>
+                <div class="bounce-soft emoji-sticker" style="animation-delay: 0.4s">🍓</div>
+            </div>
+            
+            <button onclick="startGame()" class="duo-btn duo-btn-green w-full text-2xl py-4 pulse-glow">
+                LET'S PLAY! ▶
+            </button>
+        </div>
+    </div>
+
+    <!-- 1. MÀN HÌNH TRÒ CHƠI CHÍNH -->
+    <main id="screen-game" class="hidden w-full h-full flex flex-col relative z-10 pt-28 sm:pt-28 pb-4">
+        
+        <!-- Khu vực cân đo -->
+        <div class="game-area">
+            <div class="scale-wrapper pointer-events-none">
+                <div class="scale-base-new"></div>
+                <div class="scale-pillar-new"></div>
+                
+                <div id="weigh-scale-beam" class="scale-beam-new">
+                    <!-- Đĩa cân bên trái -->
+                    <div id="weigh-pan-left-hinge" class="pan-hinge" style="left: 0px;">
+                        <div class="pan-plate relative">
+                            <div id="obj-left" class="scale-obj-left emoji-sticker">🍎</div>
+                        </div>
+                    </div>
+                    <!-- Đĩa cân bên phải -->
+                    <div id="weigh-pan-right-hinge" class="pan-hinge" style="right: 0px;">
+                        <div class="pan-plate relative">
+                            <div id="obj-right" class="scale-obj-right emoji-sticker">🍃</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="scale-pivot-new"><div class="w-6 h-6 bg-yellow-100 rounded-full shadow-inner"></div></div>
+            </div>
+        </div>
+        
+        <!-- Khu vực các nút bấm chọn lựa -->
+        <div class="w-full flex justify-center items-center z-30 px-4 pb-6 sm:pb-10 shrink-0 gap-6 sm:gap-12 mt-auto">
+            <button id="btn-left" onclick="checkAnswer('left')" class="duo-btn duo-btn-white flex flex-col items-center justify-center p-6 w-36 sm:w-48 gap-3">
+                <div id="btn-icon-left" class="text-5xl sm:text-6xl emoji-sticker">🍎</div>
+                <div id="btn-name-left" class="font-black text-lg sm:text-xl text-slate-600 uppercase tracking-wide">Apple</div>
+            </button>
+            <button id="btn-right" onclick="checkAnswer('right')" class="duo-btn duo-btn-white flex flex-col items-center justify-center p-6 w-36 sm:w-48 gap-3">
+                <div id="btn-icon-right" class="text-5xl sm:text-6xl emoji-sticker">🍃</div>
+                <div id="btn-name-right" class="font-black text-lg sm:text-xl text-slate-600 uppercase tracking-wide">Leaf</div>
+            </button>
+        </div>
+    </main>
+
+    <!-- 2. MÀN HÌNH KẾT THÚC -->
+    <div id="screen-end" class="hidden absolute inset-0 z-[9000] flex items-center justify-center bg-black/40 backdrop-blur-md px-4">
+        <div class="bg-white rounded-[3rem] p-10 w-full max-w-lg text-center shadow-2xl border-b-[12px] border-slate-200 pop-in relative z-[9001]">
+            <h1 class="text-5xl sm:text-6xl font-black mb-4 text-yellow-400 uppercase tracking-wider drop-shadow-sm">Awesome!</h1>
+            <div class="text-7xl sm:text-8xl mb-6 emoji-sticker bounce-soft">🏆</div>
+            
+            <div class="bg-slate-50 rounded-2xl p-6 mb-8 border-b-4 border-slate-200">
+                <p class="text-xl text-slate-500 font-bold uppercase mb-1">Final Score</p>
+                <p class="text-6xl font-black text-sky-500" id="final-score">0</p>
+            </div>
+            
+            <button onclick="location.reload()" class="duo-btn duo-btn-green w-full text-2xl py-4">
+                PLAY AGAIN ↺
+            </button>
+        </div>
+    </div>
+
+    <!-- Canvas bắn pháo giấy (Confetti) phủ trên cùng màn hình -->
+    <canvas id="confettiCanvas"></canvas>
+
+    <script>
+        // --- DANH SÁCH ICON 100% TRÁI CÂY & ĐỘNG VẬT QUEN THUỘC (Khối lượng phân chia hợp lý) ---
+        const ITEMS = [
+            { id: 'ant', name: 'Ant', emoji: '🐜', mass: 1 },
+            { id: 'snail', name: 'Snail', emoji: '🐌', mass: 2 },
+            { id: 'strawberry', name: 'Strawberry', emoji: '🍓', mass: 3 },
+            { id: 'cherry', name: 'Cherry', emoji: '🍒', mass: 4 },
+            { id: 'frog', name: 'Frog', emoji: '🐸', mass: 5 },
+            { id: 'banana', name: 'Banana', emoji: '🍌', mass: 6 },
+            { id: 'apple', name: 'Apple', emoji: '🍎', mass: 7 },
+            { id: 'rabbit', name: 'Rabbit', emoji: '🐰', mass: 8 },
+            { id: 'cat', name: 'Cat', emoji: '🐱', mass: 9 },
+            { id: 'dog', name: 'Dog', emoji: '🐶', mass: 10 },
+            { id: 'watermelon', name: 'Watermelon', emoji: '🍉', mass: 11 },
+            { id: 'monkey', name: 'Monkey', emoji: '🐒', mass: 12 },
+            { id: 'lion', name: 'Lion', emoji: '🦁', mass: 13 },
+            { id: 'cow', name: 'Cow', emoji: '🐄', mass: 14 },
+            { id: 'elephant', name: 'Elephant', emoji: '🐘', mass: 15 }
+        ];
+
+        let state = {
+            level: 1, 
+            maxLevels: 10, 
+            score: 0,
+            questionType: '', 
+            leftItem: null, 
+            rightItem: null,
+            busy: false
+        };
+
+        // --- HỆ THỐNG ÂM THANH SINH ĐỘNG ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSfx(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const now = audioCtx.currentTime;
+            
+            if (type === 'correct') {
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => { // C Major Arpeggio vang lên vui nhộn
+                    const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                    osc.connect(gain); gain.connect(audioCtx.destination);
+                    osc.type = 'triangle'; osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0, now + i*0.1);
+                    gain.gain.linearRampToValueAtTime(0.2, now + i*0.1 + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + i*0.1 + 0.5);
+                    osc.start(now + i*0.1); osc.stop(now + i*0.1 + 0.6);
+                });
+            } else if (type === 'wrong') {
+                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(250, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.4);
+                gain.gain.setValueAtTime(0.3, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now); osc.stop(now + 0.4);
+            } else if (type === 'pop') {
+                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.type = 'sine'; osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+                gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            }
+        }
+
+        // --- HỆ THỐNG PHÁT ÂM TIẾNG ANH ---
+        function readTextOutLoud(text) {
+            if (!window.speechSynthesis) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US'; utterance.rate = 0.9; utterance.pitch = 1.2;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function readInstruction() {
+            let text = state.questionType === 'heavier' ? "Which one is heavier?" : "Which one is lighter?";
+            readTextOutLoud(text);
+        }
+
+        // --- ĐIỀU HƯỚNG MÀN HÌNH ---
+        function startGame() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            document.getElementById('screen-start').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+            document.getElementById('game-ui').classList.remove('hidden');
+            
+            state.level = 1;
+            state.score = 0;
+            generateRound();
+        }
+
+        // --- KHỞI TẠO VÒNG CHƠI MỚI ---
+        function generateRound() {
+            if (state.level > state.maxLevels) {
+                showGameOver();
+                return;
+            }
+            
+            state.busy = false;
+            updateUI();
+
+            // Luân phiên câu hỏi nặng hơn và nhẹ hơn
+            state.questionType = (state.level % 2 !== 0) ? 'heavier' : 'lighter';
+            let qText = state.questionType === 'heavier' ? 
+                'Which is <span class="text-rose-500 bg-rose-100 px-3 py-0.5 sm:py-1 rounded-2xl ml-1 shadow-sm border border-rose-200">HEAVIER?</span>' : 
+                'Which is <span class="text-sky-500 bg-sky-100 px-3 py-0.5 sm:py-1 rounded-2xl ml-1 shadow-sm border border-sky-200">LIGHTER?</span>';
+            document.getElementById('instruction-text').innerHTML = qText;
+
+            // Lấy ngẫu nhiên 2 vật có cân nặng khác nhau
+            let shuffled = [...ITEMS].sort(() => 0.5 - Math.random());
+            state.leftItem = shuffled[0];
+            state.rightItem = shuffled[1];
+            
+            while(state.leftItem.mass === state.rightItem.mass) {
+                shuffled = [...ITEMS].sort(() => 0.5 - Math.random());
+                state.leftItem = shuffled[0];
+                state.rightItem = shuffled[1];
+            }
+
+            // Gán dữ liệu hiển thị lên giao diện
+            document.getElementById('obj-left').innerText = state.leftItem.emoji;
+            document.getElementById('btn-icon-left').innerText = state.leftItem.emoji;
+            document.getElementById('btn-name-left').innerText = state.leftItem.name;
+
+            document.getElementById('obj-right').innerText = state.rightItem.emoji;
+            document.getElementById('btn-icon-right').innerText = state.rightItem.emoji;
+            document.getElementById('btn-name-right').innerText = state.rightItem.name;
+
+            // Reset các nút lựa chọn
+            const btnL = document.getElementById('btn-left');
+            const btnR = document.getElementById('btn-right');
+            btnL.className = "duo-btn duo-btn-white flex flex-col items-center justify-center p-6 w-36 sm:w-48 gap-3 pop-in";
+            btnR.className = "duo-btn duo-btn-white flex flex-col items-center justify-center p-6 w-36 sm:w-48 gap-3 pop-in";
+            btnL.style.transform = ''; btnR.style.transform = '';
+
+            // Mô phỏng hiệu ứng cân nghiêng thực tế
+            const beam = document.getElementById('weigh-scale-beam');
+            const panLeft = document.getElementById('weigh-pan-left-hinge');
+            const panRight = document.getElementById('weigh-pan-right-hinge');
+            
+            let tilt = state.leftItem.mass > state.rightItem.mass ? -18 : 18;
+            
+            // Đưa cân về trạng thái thăng bằng trước khi nghiêng
+            beam.style.transition = 'none'; panLeft.style.transition = 'none'; panRight.style.transition = 'none';
+            beam.style.transform = `rotate(0deg)`; panLeft.style.transform = `rotate(0deg)`; panRight.style.transform = `rotate(0deg)`;
+            
+            setTimeout(() => {
+                beam.style.transition = 'transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                panLeft.style.transition = 'transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                panRight.style.transition = 'transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                
+                beam.style.transform = `rotate(${tilt}deg)`;
+                panLeft.style.transform = `rotate(${-tilt}deg)`;
+                panRight.style.transform = `rotate(${-tilt}deg)`;
+                playSfx('pop');
+            }, 50);
+
+            setTimeout(readInstruction, 500);
+        }
+
+        function updateUI() {
+            document.getElementById('score-text').innerText = state.score;
+            document.getElementById('level-text').innerText = `${state.level}/${state.maxLevels}`;
+        }
+
+        // --- KIỂM TRA ĐÁP ÁN ---
+        function checkAnswer(side) {
+            if (state.busy) return;
+            
+            let selectedItem = side === 'left' ? state.leftItem : state.rightItem;
+            let otherItem = side === 'left' ? state.rightItem : state.leftItem;
+            let isCorrect = false;
+
+            if (state.questionType === 'heavier') {
+                isCorrect = selectedItem.mass > otherItem.mass;
+            } else {
+                isCorrect = selectedItem.mass < otherItem.mass;
+            }
+
+            const btnEl = side === 'left' ? document.getElementById('btn-left') : document.getElementById('btn-right');
+
+            if (isCorrect) {
+                state.busy = true;
+                playSfx('correct');
+                state.score += 10;
+                updateUI();
+                
+                // Hiệu ứng nút chuyển sang màu xanh lá cây cực đẹp
+                btnEl.classList.remove('duo-btn-white');
+                btnEl.classList.add('duo-btn-green');
+                btnEl.style.transform = 'scale(1.15)';
+                
+                setTimeout(() => {
+                    state.level++;
+                    generateRound();
+                }, 1500);
+            } else {
+                playSfx('wrong');
+                btnEl.classList.add('shake-wrong');
+                btnEl.style.borderColor = '#ff4b4b';
+                
+                setTimeout(() => {
+                    btnEl.classList.remove('shake-wrong');
+                    btnEl.style.borderColor = '';
+                }, 400);
+            }
+        }
+
+        // --- KẾT THÚC VÀ BẮN PHÁO GIẤY ---
+        function showGameOver() {
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('game-ui').classList.add('hidden');
+            document.getElementById('screen-end').classList.remove('hidden');
+            document.getElementById('final-score').innerText = state.score;
+            playSfx('correct');
+            startConfetti();
+        }
+
+        const cvs = document.getElementById('confettiCanvas');
+        const ctx = cvs.getContext('2d');
+        let confettis = [];
+        
+        function resizeCvs() { cvs.width = window.innerWidth; cvs.height = window.innerHeight; }
+        window.addEventListener('resize', resizeCvs); resizeCvs();
+
+        function startConfetti() {
+            const colors = ['#1cb0f6', '#ff4b4b', '#ffc800', '#58cc02', '#ce82ff'];
+            for(let i=0; i<150; i++) {
+                confettis.push({
+                    x: Math.random() * cvs.width,
+                    y: Math.random() * -cvs.height,
+                    w: Math.random() * 12 + 8,
+                    h: Math.random() * 12 + 8,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    vx: Math.random() * 6 - 3,
+                    vy: Math.random() * 4 + 3,
+                    rot: Math.random() * 360,
+                    rotSpeed: Math.random() * 10 - 5,
+                    isCircle: Math.random() > 0.5
+                });
+            }
+            animateConfetti();
+        }
+
+        function animateConfetti() {
+            ctx.clearRect(0, 0, cvs.width, cvs.height);
+            let active = false;
+            confettis.forEach(c => {
+                c.x += c.vx;
+                c.y += c.vy;
+                c.rot += c.rotSpeed;
+                c.x += Math.sin(c.y / 50) * 1.5; 
+
+                if (c.y < cvs.height) active = true;
+
+                ctx.save();
+                ctx.translate(c.x, c.y);
+                ctx.rotate(c.rot * Math.PI / 180);
+                ctx.fillStyle = c.color;
+                
+                if(c.isCircle) {
+                    ctx.beginPath(); ctx.arc(0, 0, c.w/2, 0, Math.PI*2); ctx.fill();
+                } else {
+                    ctx.fillRect(-c.w/2, -c.h/2, c.w, c.h);
+                }
+                ctx.restore();
+            });
+            
+            if(active) requestAnimationFrame(animateConfetti);
+        }
+    </script>
+</body>
+</html>
