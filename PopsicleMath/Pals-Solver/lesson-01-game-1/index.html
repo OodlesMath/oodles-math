@@ -4,7 +4,7 @@
     <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Make Tens Strategy Game - Ver4</title>
+    <title>Make Tens Strategy Game - Ver 3</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -250,16 +250,19 @@
         /* Animations */
         @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
         .animate-pop-in { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        
         @keyframes bounce-sm { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
         .animate-bounce-sm { animation: bounce-sm 1s ease-in-out infinite; }
+        
         @keyframes twinkle { 0%, 100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 8px rgba(255,215,0,0.8)); } 50% { opacity: 0.8; transform: scale(0.85); filter: drop-shadow(0 0 3px rgba(255,215,0,0.4)); } }
         .animate-twinkle { animation: twinkle 1.5s infinite; }
+        
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
         .animate-shake { animation: shake 0.2s ease-in-out 2; }
     </style>
 </head>
 <body class="w-full h-screen flex flex-col text-slate-800 relative select-none">
-    <img src="../assets/logo-oodles-math.png" class="oodles-logo z-20 relative">
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo" onerror="this.style.display='none'">
     
     <!-- Scenic Background -->
     <div id="scenic-bg" class="absolute inset-0 z-0 pointer-events-none">
@@ -358,20 +361,20 @@
             gameState: 'start', 
             score: 0,
             completedQuestions: 0,
-            targets: [],
-            numbers: [],
+            targets: [], // For Ver 2, this will contain exactly 2 numbers
+            numbers: [], // Matches targets, structured {tens, ones, isTransformed}
             options: [], 
-            maxSum: 30, // Default range
+            maxSum: 30,
             
             hasGuessedWrong: false,
-            wrongGuesses: [], // Track incorrect answers clicked
+            wrongGuesses: [],
             correctAnswer: null,
             showFinalAnswer: false,
 
             stars: [],
             jar: { x: window.innerWidth / 2, caught: 0, target: 10 }
         };
-        const MAX_QUESTIONS = 5;
+        const MAX_QUESTIONS = 6;
 
         // --- SVGs & Icons ---
         const Icons = {
@@ -379,10 +382,7 @@
             Reload: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>`,
             CheckBig: `<svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 sm:w-20 sm:h-20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
             XBig: `<svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 sm:w-20 sm:h-20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
-            Plus: `<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 sm:w-8 sm:h-8 drop-shadow-sm text-[#0ea5e9]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
-            Puzzle: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="w-16 h-16 sm:w-20 sm:h-20 drop-shadow-md">
-                        <path d="M38.5,14H25.5c-1.7,0-3,1.3-3,3v3.5c0,1.4-1.1,2.5-2.5,2.5S17.5,21.9,17.5,20.5V17c0-1.7-1.3-3-3-3s-3,1.3-3,3v19c0,1.7,1.3,3,3,3s3-1.3,3-3v-3.5c0-1.4,1.1-2.5,2.5-2.5s2.5,1.1,2.5,2.5V39c0,1.7,1.3,3,3,3s3-1.3,3-3V20c0-1.7-1.3-3-3-3s-3,1.3-3,3v3.5c0,1.4-1.1,2.5-2.5,2.5S38.5,21.9,38.5,20.5V17C38.5,15.3,37.2,14,38.5,14z" fill="#79e82c" stroke="#46a302" stroke-width="3" stroke-linejoin="round"/>
-                    </svg>`,
+            Puzzle: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="w-16 h-16 sm:w-20 sm:h-20 drop-shadow-md"><path d="M38.5,14H25.5c-1.7,0-3,1.3-3,3v3.5c0,1.4-1.1,2.5-2.5,2.5S17.5,21.9,17.5,20.5V17c0-1.7-1.3-3-3-3s-3,1.3-3,3v19c0,1.7,1.3,3,3,3s3-1.3,3-3v-3.5c0-1.4,1.1-2.5,2.5-2.5s2.5,1.1,2.5,2.5V39c0,1.7,1.3,3,3,3s3-1.3,3-3V20c0-1.7-1.3-3-3-3s-3,1.3-3,3v3.5c0,1.4-1.1,2.5-2.5,2.5S38.5,21.9,38.5,20.5V17C38.5,15.3,37.2,14,38.5,14z" fill="#79e82c" stroke="#46a302" stroke-width="3" stroke-linejoin="round"/></svg>`,
             Star: `
                 <svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
                     <defs>
@@ -398,7 +398,6 @@
             `
         };
 
-        // --- Audio Engine ---
         let audioCtx = null;
         function initAudio() {
             if (!audioCtx) {
@@ -449,7 +448,6 @@
             }
         }
 
-        // --- HTML Generators for Blocks ---
         function getTenRodHTML(isNew, extraClass = "") {
             let segments = "";
             for(let i=0; i<10; i++) {
@@ -469,32 +467,27 @@
             </div>`;
         }
 
-        // --- Core Logic ---
         function generateQuestion() {
             const maxVal = state.maxSum || 30;
-            let minAns = 21, maxAns = 30;
-            if (maxVal === 50) { minAns = 31; maxAns = 50; }
+            let minAns = 11, maxAns = 30;
+            if (maxVal === 20) { minAns = 11; maxAns = 20; }
+            else if (maxVal === 30) { minAns = 21; maxAns = 30; }
+            else if (maxVal === 40) { minAns = 31; maxAns = 40; }
+            else if (maxVal === 50) { minAns = 41; maxAns = 50; }
             else if (maxVal === 100) { minAns = 51; maxAns = 100; }
 
             const ans = Math.floor(Math.random() * (maxAns - minAns + 1)) + minAns;
             
-            // Randomly split ans into 3 numbers (n1, n2, n3 >= 1)
-            let n1 = Math.floor(Math.random() * (ans - 2)) + 1;
-            let remaining = ans - n1;
-            let n2 = Math.floor(Math.random() * (remaining - 1)) + 1;
-            let n3 = remaining - n2;
+            // Generate 2 numbers that sum to 'ans'
+            let n1, n2;
+            let attempts = 0;
+            do {
+                n1 = Math.floor(Math.random() * (ans - 2)) + 1;
+                n2 = ans - n1;
+                attempts++;
+            } while (attempts < 10 && (n1 % 10 === 0 && n2 % 10 === 0)); // Ensure there are some ones to play with
 
-            if (maxVal === 100 && (n1 < 10 || n2 < 10 || n3 < 10)) {
-               n1 = Math.floor(ans / 3) + Math.floor(Math.random() * 10) - 5;
-               if(n1 <= 0) n1 = 1;
-               remaining = ans - n1;
-               n2 = Math.floor(remaining / 2) + Math.floor(Math.random() * 10) - 5;
-               if(n2 <= 0) n2 = 1;
-               n3 = remaining - n2;
-               if(n3 <= 0) { n3 = 1; n2 = remaining - 1; }
-            }
-
-            state.targets = [n1, n2, n3];
+            state.targets = [n1, n2];
             
             state.numbers = state.targets.map(num => ({
                 tens: Math.floor(num / 10),
@@ -581,10 +574,10 @@
                 }
                 state.correctAnswer = guessVal;
                 state.showFinalAnswer = true;
-                renderApp(); 
+                renderApp();
                 
                 setTimeout(() => {
-                    showFeedback(true, () => startMinigame());
+                    showFeedback(true, () => handleLevelComplete());
                 }, 800);
             } else {
                 playSound('wrong');
@@ -605,9 +598,20 @@
             }
         }
 
-        // --- Drag and Drop Handling ---
+        function handleLevelComplete() {
+            state.completedQuestions++;
+            if (state.completedQuestions === 3 || state.completedQuestions === 6) {
+                startMinigame(); // Trigger minigame after level 3 and level 6
+            } else {
+                state.gameState = 'regrouping';
+                generateQuestion();
+                renderApp();
+            }
+        }
+
         let isDragging = false;
         let dragSourceIdx = null;
+        let dragType = null;
 
         document.addEventListener('pointerdown', (e) => {
             if(state.gameState !== 'regrouping') return;
@@ -618,18 +622,27 @@
             const dragAction = target.getAttribute('data-drag');
             if (dragAction === 'unit') {
                 const idx = parseInt(target.getAttribute('data-idx'));
-                startDrag(e, idx);
+                startDrag(e, idx, 'unit');
+                playSound('pop');
+            } else if (dragAction === 'ten') {
+                const idx = parseInt(target.getAttribute('data-idx'));
+                startDrag(e, idx, 'ten');
                 playSound('pop');
             }
         });
 
-        function startDrag(e, sourceIdx) {
+        function startDrag(e, sourceIdx, type) {
             e.preventDefault();
             isDragging = true;
             dragSourceIdx = sourceIdx;
+            dragType = type;
 
             const proxy = document.getElementById('drag-proxy');
-            proxy.innerHTML = `<div class="w-10 h-10 shadow-2xl">${getOneCubeHTML(false)}</div>`; 
+            if (type === 'unit') {
+                proxy.innerHTML = `<div class="w-10 h-10 shadow-2xl">${getOneCubeHTML(false)}</div>`; 
+            } else {
+                proxy.innerHTML = `<div class="w-24 shadow-2xl">${getTenRodHTML(false, "!mb-0")}</div>`; 
+            }
             proxy.style.display = 'block';
             updateProxyPos(e.clientX, e.clientY);
         }
@@ -662,26 +675,33 @@
             if (slotEl) {
                 const targetIdx = parseInt(slotEl.getAttribute('data-slot-idx'));
                 if (targetIdx !== dragSourceIdx) {
-                    if (state.numbers[targetIdx].ones < 10) {
-                        state.numbers[dragSourceIdx].ones--;
-                        state.numbers[targetIdx].ones++;
-                        
-                        if (state.numbers[targetIdx].ones === 10) {
-                            state.numbers[targetIdx].ones = 0;
-                            state.numbers[targetIdx].tens++;
-                            state.numbers[targetIdx].isTransformed = true;
-                            playSound('magic');
-                            showNotification("Awesome! TEN Made! 🌟");
+                    if (dragType === 'unit') {
+                        if (state.numbers[targetIdx].ones < 10) {
+                            state.numbers[dragSourceIdx].ones--;
+                            state.numbers[targetIdx].ones++;
+                            
+                            if (state.numbers[targetIdx].ones === 10) {
+                                state.numbers[targetIdx].ones = 0;
+                                state.numbers[targetIdx].tens++;
+                                state.numbers[targetIdx].isTransformed = true;
+                                playSound('magic');
+                                showNotification("Awesome! TEN Made! 🌟");
+                            } else {
+                                playSound('drop');
+                            }
                         } else {
-                            playSound('drop');
+                            showNotification("This slot is already full!");
+                            playSound('wrong');
                         }
-                    } else {
-                        showNotification("This slot is already full!");
-                        playSound('wrong');
+                    } else if (dragType === 'ten') {
+                        state.numbers[dragSourceIdx].tens--;
+                        state.numbers[targetIdx].tens++;
+                        playSound('drop');
                     }
                 }
             }
             dragSourceIdx = null;
+            dragType = null;
             renderApp();
         });
 
@@ -707,7 +727,6 @@
             }
         });
 
-        // --- Minigame: Catching Stars ---
         let animFrame;
         function startMinigame() {
             state.gameState = 'minigame';
@@ -816,13 +835,12 @@
             cancelAnimationFrame(animFrame);
             shootConfetti();
             setTimeout(() => {
-                if (state.completedQuestions + 1 >= MAX_QUESTIONS) {
+                if (state.completedQuestions >= MAX_QUESTIONS) {
                     state.gameState = 'finished';
                     document.getElementById('scenic-bg').style.display = 'block';
                     renderApp();
                     shootConfetti();
                 } else {
-                    state.completedQuestions++;
                     state.gameState = 'regrouping';
                     generateQuestion();
                     renderApp();
@@ -843,8 +861,6 @@
                 if (Date.now() < end) requestAnimationFrame(frame);
             }());
         }
-
-        // --- Render Functions ---
 
         function renderHeader() {
             if (state.gameState === 'start' || state.gameState === 'finished' || state.gameState === 'minigame') return '';
@@ -901,13 +917,62 @@
         }
 
         function renderBoard() {
-            let html = `<div class="flex flex-row flex-wrap md:flex-nowrap items-center justify-center gap-x-4 gap-y-6 sm:gap-6 w-full max-w-6xl mt-4 sm:mt-8">`;
-            
-            state.targets.forEach((targetVal, idx) => {
+            // Using exact 2 items logic
+            const val1 = state.numbers[0].tens * 10 + state.numbers[0].ones;
+            const val2 = state.numbers[1].tens * 10 + state.numbers[1].ones;
+            const total = state.targets[0] + state.targets[1];
+
+            const wholeStr = state.showFinalAnswer ?
+                `<span class="text-3xl sm:text-4xl font-black text-[#d97706] chunky-number animate-pop-in">${total}</span>` :
+                `<span class="text-3xl sm:text-4xl font-black text-slate-300 chunky-number">?</span>`;
+
+            const mobileNumberBond = `
+            <div class="flex lg:hidden flex-col items-center w-full mb-2 relative z-20">
+                <div class="w-16 h-16 rounded-full border-[4px] border-[#1cb0f6] bg-white flex items-center justify-center shadow-[0_3px_0_#1899d6] z-10 relative">
+                   ${wholeStr}
+                </div>
+                <div class="relative w-32 h-10 -mt-2 z-0">
+                     <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                         <line x1="50%" y1="0" x2="15%" y2="100%" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round"/>
+                         <line x1="50%" y1="0" x2="85%" y2="100%" stroke="#cbd5e1" stroke-width="4" stroke-linecap="round"/>
+                     </svg>
+                </div>
+                <div class="flex gap-16 -mt-2 z-10">
+                     <div class="w-14 h-14 rounded-full border-[4px] border-[#e5e7eb] bg-white flex items-center justify-center shadow-[0_3px_0_#d1d5db]">
+                         <span class="font-black text-xl text-[#0284c7] chunky-number">${val1}</span>
+                     </div>
+                     <div class="w-14 h-14 rounded-full border-[4px] border-[#e5e7eb] bg-white flex items-center justify-center shadow-[0_3px_0_#d1d5db]">
+                         <span class="font-black text-xl text-[#0284c7] chunky-number">${val2}</span>
+                     </div>
+                </div>
+            </div>`;
+
+            const desktopNumberBond = `
+            <div class="hidden lg:flex flex-col items-center justify-center mx-6 shrink-0 z-20 w-48 translate-y-[-20px]">
+                <div class="w-20 h-20 rounded-full border-[5px] border-[#1cb0f6] bg-white flex items-center justify-center shadow-[0_4px_0_#1899d6] z-10 relative">
+                   ${wholeStr}
+                </div>
+                <div class="relative w-full h-16 -mt-2 z-0">
+                     <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                         <line x1="50%" y1="10%" x2="20%" y2="90%" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round"/>
+                         <line x1="50%" y1="10%" x2="80%" y2="90%" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round"/>
+                     </svg>
+                </div>
+                <div class="flex w-full justify-between -mt-3 z-10">
+                     <div class="w-16 h-16 rounded-full border-[5px] border-[#e5e7eb] bg-white flex items-center justify-center shadow-[0_4px_0_#d1d5db]">
+                         <span class="font-black text-2xl text-[#0284c7] chunky-number">${val1}</span>
+                     </div>
+                     <div class="w-16 h-16 rounded-full border-[5px] border-[#e5e7eb] bg-white flex items-center justify-center shadow-[0_4px_0_#d1d5db]">
+                         <span class="font-black text-2xl text-[#0284c7] chunky-number">${val2}</span>
+                     </div>
+                </div>
+            </div>`;
+
+            const slotHTML = state.targets.map((targetVal, idx) => {
                 const currentVal = state.numbers[idx].tens * 10 + state.numbers[idx].ones;
                 const isRounded = state.numbers[idx].ones === 0 && currentVal > 0;
                 
-                html += `
+                return `
                 <div class="game-slot flex flex-col p-3 sm:p-4 card-duo w-[150px] sm:w-[200px] md:w-[240px] shrink-0 transition-all duration-300" data-slot-idx="${idx}">
                     
                     <div class="text-center pb-2 border-b-[3px] border-slate-100 mb-3">
@@ -918,9 +983,11 @@
                         <!-- Tens Section -->
                         <div class="flex flex-col items-center justify-start bg-[#58cc02]/5 rounded-xl sm:rounded-2xl p-2 sm:p-3 w-full border-[2px] sm:border-[3px] border-[#58cc02]/40 relative min-h-[60px] sm:min-h-[80px]">
                             <span class="absolute -top-3 bg-white px-2 sm:px-3 text-[10px] sm:text-[12px] font-extrabold text-[#58cc02] uppercase tracking-widest rounded-full border-2 border-[#58cc02]/20">Tens</span>
-                            <div class="flex flex-col items-center justify-start w-full pt-2">
+                            <div class="flex flex-col items-center justify-start w-full pt-2 gap-1 sm:gap-2">
                                 ${Array(state.numbers[idx].tens).fill(0).map((_, tIdx) => 
-                                    getTenRodHTML(state.numbers[idx].isTransformed && tIdx === state.numbers[idx].tens - 1)
+                                    `<div data-drag="ten" data-idx="${idx}" class="cursor-grab active:cursor-grabbing touch-none pointer-events-auto w-full flex justify-center">
+                                        ${getTenRodHTML(state.numbers[idx].isTransformed && tIdx === state.numbers[idx].tens - 1, "!mb-0")}
+                                    </div>`
                                 ).join('')}
                             </div>
                         </div>
@@ -949,14 +1016,18 @@
                         </div>
                     </div>
                 </div>`;
-
-                if (idx < state.targets.length - 1) {
-                    html += `<div class="self-center mx-0 sm:mx-2 drop-shadow-md shrink-0 hidden md:block">${Icons.Plus}</div>`;
-                }
             });
 
-            html += `</div>`;
-            return html;
+            return `
+            <div class="flex flex-col items-center w-full mt-4 sm:mt-6">
+                ${mobileNumberBond}
+                <div class="flex flex-row flex-wrap md:flex-nowrap items-center justify-center w-full max-w-6xl">
+                    ${slotHTML[0]}
+                    <div class="lg:hidden mx-2 sm:mx-6 shrink-0 drop-shadow-md text-3xl sm:text-4xl font-black text-[#0ea5e9] chunky-number">+</div>
+                    ${desktopNumberBond}
+                    ${slotHTML[1]}
+                </div>
+            </div>`;
         }
 
         function renderBottomControls() {
@@ -981,7 +1052,7 @@
             }).join('');
 
             return `
-            <div class="pt-4 sm:pt-6 pb-2 px-2 sm:px-4 flex items-center justify-center z-30 w-full shrink-0">
+            <div class="pt-4 sm:pt-6 pb-2 px-2 sm:px-4 flex items-center justify-center z-30 w-full shrink-0 mt-auto">
                 <div class="grid grid-cols-4 w-full max-w-4xl gap-2 sm:gap-4">
                     ${optionsHtml}
                 </div>
@@ -1000,17 +1071,19 @@
                         <div class="w-24 h-24 bg-[#1cb0f6] rounded-[1.5rem] mb-6 flex items-center justify-center shadow-[0_6px_0_#1480b3] border-4 border-white animate-bounce-sm">
                             ${Icons.Puzzle}
                         </div>
-                        <h1 class="text-4xl sm:text-5xl font-black text-[#1e293b] mb-1 tracking-tight text-center">Make Tens</h1>
-                        <p class="text-[#94a3b8] font-bold text-sm sm:text-base uppercase tracking-widest text-center">Strategy Game</p>
+                        <h1 class="text-4xl sm:text-5xl font-black text-[#1e293b] mb-1 tracking-tight text-center leading-tight">Make<br/>Tens</h1>
+                        <p class="text-[#94a3b8] font-bold text-sm sm:text-base uppercase tracking-widest text-center mt-2">Strategy Game</p>
                     </div>
 
                     <!-- Max Sum Selection (More Prominent) -->
                     <div class="mb-6 w-full max-w-[360px] animate-slide-up bg-white/90 p-5 rounded-3xl border-4 border-white shadow-xl" style="animation-delay: 0.15s">
                         <p class="text-slate-800 font-black mb-4 text-base uppercase tracking-wider text-center">Select Max Sum:</p>
-                        <div class="flex flex-wrap justify-center gap-3 w-full">
-                            <button data-action="set-range" data-val="30" class="range-btn ${state.maxSum === 30 ? 'btn-duo-blue text-white chunky-number border-b-[5px] border-[#1899d6]' : 'btn-duo-white text-slate-600 border-b-[5px] border-slate-300'} flex-1 min-w-[60px] py-3 rounded-xl font-black text-xl transition-transform shadow-md">30</button>
-                            <button data-action="set-range" data-val="50" class="range-btn ${state.maxSum === 50 ? 'btn-duo-blue text-white chunky-number border-b-[5px] border-[#1899d6]' : 'btn-duo-white text-slate-600 border-b-[5px] border-slate-300'} flex-1 min-w-[60px] py-3 rounded-xl font-black text-xl transition-transform shadow-md">50</button>
-                            <button data-action="set-range" data-val="100" class="range-btn ${state.maxSum === 100 ? 'btn-duo-blue text-white chunky-number border-b-[5px] border-[#1899d6]' : 'btn-duo-white text-slate-600 border-b-[5px] border-slate-300'} flex-1 min-w-[60px] py-3 rounded-xl font-black text-xl transition-transform shadow-md">100</button>
+                        <div class="flex flex-wrap justify-center gap-2 sm:gap-3 w-full">
+                            <button data-action="set-range" data-val="20" class="range-btn ${state.maxSum === 20 ? 'btn-duo-blue text-white chunky-number border-b-[5px] border-[#1899d6]' : 'btn-duo-white text-slate-600 border-b-[5px] border-slate-300'} flex-1 min-w-[50px] py-2 sm:py-3 rounded-xl font-black text-lg sm:text-xl transition-transform shadow-md">20</button>
+                            <button data-action="set-range" data-val="30" class="range-btn ${state.maxSum === 30 ? 'btn-duo-blue text-white chunky-number border-b-[5px] border-[#1899d6]' : 'btn-duo-white text-slate-600 border-b-[5px] border-slate-300'} flex-1 min-w-[50px] py-2 sm:py-3 rounded-xl font-black text-lg sm:text-xl transition-transform shadow-md">30</button>
+                            <button data-action="set-range" data-val="40" class="range-btn ${state.maxSum === 40 ? 'btn-duo-blue text-white chunky-number border-b-[5px] border-[#1899d6]' : 'btn-duo-white text-slate-600 border-b-[5px] border-slate-300'} flex-1 min-w-[50px] py-2 sm:py-3 rounded-xl font-black text-lg sm:text-xl transition-transform shadow-md">40</button>
+                            <button data-action="set-range" data-val="50" class="range-btn ${state.maxSum === 50 ? 'btn-duo-blue text-white chunky-number border-b-[5px] border-[#1899d6]' : 'btn-duo-white text-slate-600 border-b-[5px] border-slate-300'} flex-1 min-w-[50px] py-2 sm:py-3 rounded-xl font-black text-lg sm:text-xl transition-transform shadow-md">50</button>
+                            <button data-action="set-range" data-val="100" class="range-btn ${state.maxSum === 100 ? 'btn-duo-blue text-white chunky-number border-b-[5px] border-[#1899d6]' : 'btn-duo-white text-slate-600 border-b-[5px] border-slate-300'} flex-1 min-w-[50px] py-2 sm:py-3 rounded-xl font-black text-lg sm:text-xl transition-transform shadow-md">100</button>
                         </div>
                     </div>
                     
@@ -1058,7 +1131,7 @@
             } else {
                 html = `
                 ${renderHeader()}
-                <div class="flex-1 w-full overflow-y-auto z-10 flex flex-col pt-[70px] sm:pt-[80px] pb-4 scrollbar-hide">
+                <div class="flex-1 w-full overflow-y-auto overflow-x-hidden z-10 flex flex-col pt-[70px] sm:pt-[80px] pb-4 scrollbar-hide">
                     <div class="my-auto w-full flex flex-col items-center justify-center px-2 sm:px-4 min-h-min">
                         ${renderEquation()}
                         ${renderBoard()}
