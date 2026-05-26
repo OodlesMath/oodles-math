@@ -4,450 +4,309 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Billiard Ball Adventure</title>
-    <!-- Use Poppins font as requested -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        /* --- CSS Variables & Theming (Duolingo-inspired) --- */
         :root {
-            --primary-bg: #89e219;
+            /* Theme Colors */
+            --sky-blue: #87CEEB;
+            --grass-green: #7CFC00;
             --table-green: #2b7a0b;
             --table-border: #8b5a2b;
             --text-main: #3c3c3c;
-            --text-light: #ffffff;
             
             /* UI Colors */
             --btn-blue: #1cb0f6;
             --btn-blue-shadow: #1899d6;
             --btn-green: #58cc02;
             --btn-green-shadow: #46a302;
+            --btn-orange: #ff9600;
+            --btn-orange-shadow: #d87f00;
+            --btn-gray: #e5e5e5;
             --card-bg: #ffffff;
-            --shadow-color: rgba(0, 0, 0, 0.15);
             
-            /* Ball Colors */
+            /* Standard Pool Ball Colors */
             --ball-white: #f0f0f0;
-            --ball-red: #ff4b4b;
-            --ball-blue: #1cb0f6;
-            --ball-yellow: #ffc800;
-            --ball-green: #58cc02;
-            --ball-purple: #ce82ff;
-            --ball-orange: #ff9600;
+            --ball-black: #222222;
+            --ball-yellow: #ffc800; /* 1, 9 */
+            --ball-blue: #1cb0f6;   /* 2, 10 */
+            --ball-red: #ff4b4b;    /* 3, 11 */
+            --ball-purple: #ce82ff; /* 4, 12 */
+            --ball-orange: #ff9600; /* 5, 13 */
+            --ball-green: #58cc02;  /* 6, 14 */
+            --ball-brown: #8b2b2b;  /* 7, 15 */
         }
 
-        /* --- Reset & Base Styles --- */
         * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: none; /* Crucial for touch physics dragging */
+            box-sizing: border-box; margin: 0; padding: 0;
+            user-select: none; -webkit-tap-highlight-color: transparent; touch-action: none;
         }
 
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: var(--primary-bg);
-            background-image: radial-gradient(circle at 20px 20px, rgba(255,255,255,0.2) 2px, transparent 0);
-            background-size: 40px 40px;
             color: var(--text-main);
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            overflow: hidden; height: 100vh; width: 100vw;
+            display: flex; justify-content: center; align-items: center;
+            background: var(--sky-blue);
         }
 
-        /* Top Layer Overlay for Sound Toggle */
-        #ui-layer {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 100;
-        }
+        /* --- CUTE SCENERY BACKGROUND --- */
+        .scenery { position: fixed; top:0; left:0; width:100vw; height:100vh; z-index: 0; pointer-events: none; }
+        .sky { position: absolute; width: 100%; height: 50%; top: 0; left: 0; background: #87CEEB; }
+        .grass { position: absolute; width: 100%; height: 50%; bottom: 0; left: 0; background: linear-gradient(to bottom, #90EE90, #32CD32); border-top: 6px solid #7CFC00; }
+        .sun { position: absolute; top: 5%; right: 8%; font-size: clamp(3rem, 8vw, 5rem); animation: pulseSun 4s infinite; }
+        .cloud { position: absolute; font-size: clamp(3rem, 8vw, 5rem); opacity: 0.9; }
+        .cloud1 { top: 12%; left: 10%; animation: float 8s infinite alternate ease-in-out; }
+        .cloud2 { top: 25%; right: 25%; animation: float 12s infinite alternate-reverse ease-in-out; }
+        .cloud3 { top: 5%; left: 40%; font-size: clamp(2rem, 5vw, 3rem); animation: float 10s infinite alternate ease-in-out; }
+        .tree { position: absolute; font-size: clamp(4rem, 10vw, 6rem); bottom: 45%; z-index: 1; }
+        .tree1 { left: 5%; } .tree2 { right: 5%; }
+        .flower { position: absolute; font-size: clamp(1.5rem, 5vw, 3rem); z-index: 1; }
+        .f1 { bottom: 15%; left: 8%; } .f2 { bottom: 8%; left: 25%; } .f3 { bottom: 18%; right: 12%; } .f4 { bottom: 5%; right: 30%; }
+
+        @keyframes pulseSun { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px #ff0); } 50% { transform: scale(1.1); filter: drop-shadow(0 0 20px #ff0); } }
+        @keyframes float { 0% { transform: translateY(0); } 100% { transform: translateY(-20px); } }
+
+        /* --- UI LAYERS --- */
+        #ui-layer { position: absolute; top: 15px; right: 15px; z-index: 100; display: flex; gap: 10px; }
 
         .icon-btn {
-            background: white;
-            border: 2px solid #e5e5e5;
-            border-bottom: 4px solid #e5e5e5;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            transition: all 0.1s;
+            background: white; border: 2px solid #e5e5e5; border-bottom: 4px solid #e5e5e5;
+            border-radius: 50%; width: 45px; height: 45px;
+            display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.1s;
         }
+        .icon-btn:active { transform: translateY(2px); border-bottom: 2px solid #e5e5e5; }
+        .icon-btn svg { width: 22px; height: 22px; fill: var(--text-main); }
 
-        .icon-btn:active {
-            transform: translateY(2px);
-            border-bottom: 2px solid #e5e5e5;
-        }
-
-        .icon-btn svg { width: 24px; height: 24px; fill: var(--text-main); }
-
-        /* --- Screen Management --- */
         .screen {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            height: 100%;
-            padding: 20px;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 10;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            width: 100%; height: 100%; padding: 10px; position: absolute; top: 0; left: 0; z-index: 10;
         }
-
         .screen.active { display: flex; animation: fadeIn 0.5s ease-out; }
 
-        /* --- Typography & Cards --- */
         h1 {
-            font-size: clamp(2rem, 6vw, 3.5rem);
-            color: white;
-            text-shadow: 2px 2px 0 var(--table-green), -2px -2px 0 var(--table-green), 2px -2px 0 var(--table-green), -2px 2px 0 var(--table-green), 0px 4px 10px rgba(0,0,0,0.3);
-            text-align: center;
-            margin-bottom: 10px;
-            line-height: 1.2;
+            font-size: clamp(2rem, 6vw, 3.5rem); color: white;
+            text-shadow: 2px 2px 0 #555, -2px -2px 0 #555, 2px -2px 0 #555, -2px 2px 0 #555, 0px 4px 10px rgba(0,0,0,0.3);
+            text-align: center; margin-bottom: 5px; line-height: 1.2; z-index: 5;
         }
-
-        p.subtitle {
-            font-size: clamp(1.2rem, 4vw, 1.8rem);
-            color: white;
-            font-weight: 600;
-            text-shadow: 1px 1px 4px rgba(0,0,0,0.4);
-            margin-bottom: 30px;
-            text-align: center;
-        }
+        p.subtitle { font-size: clamp(1rem, 4vw, 1.5rem); color: white; font-weight: 800; text-shadow: 1px 1px 4px rgba(0,0,0,0.6); margin-bottom: 15px; text-align: center; z-index: 5;}
 
         .card {
-            background: var(--card-bg);
-            border-radius: 24px;
-            padding: clamp(20px, 5vw, 40px);
-            box-shadow: 0 10px 0 var(--shadow-color);
-            text-align: center;
-            max-width: 600px;
-            width: 90%;
-            border: 2px solid #e5e5e5;
+            background: var(--card-bg); border-radius: 24px; padding: clamp(15px, 4vw, 25px);
+            box-shadow: 0 10px 0 var(--shadow-color); text-align: center; max-width: 600px; width: 95%; border: 2px solid #e5e5e5;
+            max-height: 85vh; overflow-y: auto; z-index: 5;
         }
 
-        .instruction-list {
-            text-align: left;
-            margin: 20px 0;
-            font-size: clamp(1rem, 3vw, 1.2rem);
-            color: #777;
+        .setup-section { margin: 15px 0; text-align: center; }
+        .setup-section h3 { font-size: 1.1rem; color: #777; margin-bottom: 10px; }
+        .option-group { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        
+        .toggle-btn {
+            background: var(--btn-gray); color: #777; font-family: 'Poppins', sans-serif;
+            font-size: 1rem; font-weight: 800; border: 2px solid #ccc; border-radius: 12px;
+            padding: 8px 15px; cursor: pointer; transition: all 0.2s;
         }
+        .toggle-btn.active { background: var(--btn-blue); color: white; border-color: var(--btn-blue-shadow); box-shadow: 0 4px 0 var(--btn-blue-shadow); transform: translateY(-2px); }
 
-        .instruction-list p { margin: 10px 0; display: flex; align-items: center; }
-        .instruction-list span { font-size: 1.5rem; margin-right: 10px; }
-
-        /* --- Buttons --- */
         .btn {
-            background-color: var(--btn-blue);
-            color: white;
-            font-family: 'Poppins', sans-serif;
-            font-size: clamp(1.2rem, 4vw, 1.5rem);
-            font-weight: 800;
-            border: none;
-            border-radius: 16px;
-            padding: 15px 40px;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 6px 0 var(--btn-blue-shadow);
-            transition: all 0.1s ease;
-            display: inline-block;
-            margin-top: 10px;
-            width: 100%;
-            max-width: 300px;
+            background-color: var(--btn-blue); color: white; font-family: 'Poppins', sans-serif; font-size: clamp(1rem, 3vw, 1.3rem); font-weight: 800;
+            border: none; border-radius: 16px; padding: 12px 30px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 6px 0 var(--btn-blue-shadow); transition: all 0.1s ease; display: inline-block; margin: 5px; max-width: 300px;
         }
-
         .btn:active { transform: translateY(6px); box-shadow: 0 0px 0 var(--btn-blue-shadow); }
         .btn.green { background-color: var(--btn-green); box-shadow: 0 6px 0 var(--btn-green-shadow); }
         .btn.green:active { box-shadow: 0 0px 0 var(--btn-green-shadow); }
+        .btn.orange { background-color: var(--btn-orange); box-shadow: 0 6px 0 var(--btn-orange-shadow); }
+        .btn.orange:active { box-shadow: 0 0px 0 var(--btn-orange-shadow); }
+        .btn.small { padding: 8px 15px; font-size: 0.9rem; border-radius: 12px; box-shadow: 0 4px 0 var(--btn-blue-shadow); }
+        .btn.small:active { transform: translateY(4px); box-shadow: 0 0px 0 var(--btn-blue-shadow); }
 
-        /* --- Game Screen Specifics --- */
-        .game-header {
-            width: 100%;
-            max-width: 800px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 20px;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            z-index: 20;
+        .game-top-bar { width: 100%; max-width: 800px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; z-index: 20; }
+        .rule-helper {
+            background: white; padding: 10px 20px; border-radius: 20px; border: 2px solid #e5e5e5; border-bottom: 5px solid #e5e5e5;
+            font-size: clamp(1rem, 3vw, 1.3rem); font-weight: 800; text-align: center; color: var(--text-main); flex-grow: 1; margin: 0 10px;
         }
+        .rule-helper.p1 { border-color: var(--btn-blue); color: var(--btn-blue); }
+        .rule-helper.p2 { border-color: var(--ball-red); color: var(--ball-red); }
+        .rule-subtext { font-size: 0.85rem; color: #777; font-weight: 600; display: block; margin-top: 2px;}
 
-        .progress-container {
-            flex-grow: 1;
-            margin: 0 20px;
-            height: 15px;
-            background: #e5e5e5;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .progress-bar {
-            height: 100%;
-            background: var(--btn-green);
-            width: 0%;
-            transition: width 0.3s ease;
-            border-radius: 10px;
-        }
-
-        .stats { font-weight: 800; color: #afafaf; font-size: 1.2rem; display: flex; align-items: center; gap: 5px; }
-        .stats span { color: var(--btn-orange, #ff9600); }
-
-        .question-box {
-            background: white;
-            padding: 15px 30px;
-            border-radius: 20px;
-            border: 2px solid #e5e5e5;
-            border-bottom: 6px solid #e5e5e5;
-            font-size: clamp(1.2rem, 4vw, 2rem);
-            font-weight: 800;
-            text-align: center;
-            color: var(--text-main);
-            margin-bottom: 20px;
-            max-width: 90%;
-            z-index: 20;
-        }
-
-        /* --- The Billiard Table --- */
+        /* --- 2:1 Aspect Ratio Table Wrapper --- */
         .billiard-table-wrapper {
-            background: var(--table-border);
-            padding: clamp(15px, 4vw, 25px);
-            border-radius: 30px;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.3), inset 0 5px 10px rgba(255,255,255,0.2);
-            width: 95%;
-            max-width: 800px;
-            height: 50vh;
-            min-height: 350px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
+            background: var(--table-border); padding: clamp(15px, 3vw, 25px); border-radius: 30px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4), inset 0 5px 10px rgba(255,255,255,0.3);
+            width: 95%; max-width: 800px;
+            aspect-ratio: 2 / 1; /* STRICT RATIO */
+            display: flex; justify-content: center; align-items: center; position: relative; z-index: 20;
         }
-
+        
         .billiard-table-surface {
-            background: var(--table-green);
-            background-image: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.2) 100%);
-            border-radius: 15px;
-            width: 100%;
-            height: 100%;
-            box-shadow: inset 0 10px 20px rgba(0,0,0,0.6);
-            position: relative;
-            overflow: visible; /* Let pockets stick out slightly */
-            cursor: crosshair;
+            background: var(--table-green); background-image: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.25) 100%);
+            border-radius: 15px; width: 100%; height: 100%; box-shadow: inset 0 10px 20px rgba(0,0,0,0.6); position: relative; cursor: crosshair;
         }
 
-        /* 6 Pockets */
         .pocket {
-            position: absolute;
-            width: clamp(35px, 6vw, 45px);
-            height: clamp(35px, 6vw, 45px);
-            background: #111;
-            border-radius: 50%;
-            box-shadow: inset 0 5px 10px rgba(0,0,0,0.9), 0 2px 2px rgba(255,255,255,0.2);
-            z-index: 5;
+            position: absolute; width: 6%; aspect-ratio: 1/1; min-width: 25px;
+            background: #0a0a0a; border-radius: 50%; box-shadow: inset 0 5px 10px rgba(0,0,0,0.9), 0 2px 2px rgba(255,255,255,0.2); z-index: 5;
         }
-        /* Corners */
-        .pocket.tl { top: -10px; left: -10px; }
-        .pocket.tr { top: -10px; right: -10px; }
-        .pocket.bl { bottom: -10px; left: -10px; }
-        .pocket.br { bottom: -10px; right: -10px; }
-        /* Middle pockets */
-        .pocket.tc { top: -15px; left: 50%; transform: translateX(-50%); }
-        .pocket.bc { bottom: -15px; left: 50%; transform: translateX(-50%); }
+        .pocket.tl { top: -2%; left: -1%; } .pocket.tr { top: -2%; right: -1%; }
+        .pocket.bl { bottom: -2%; left: -1%; } .pocket.br { bottom: -2%; right: -1%; }
+        .pocket.tc { top: -3%; left: 50%; transform: translateX(-50%); } .pocket.bc { bottom: -3%; left: 50%; transform: translateX(-50%); }
 
-        /* --- Physics Balls --- */
+        #balls-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none;}
+
         .ball {
-            /* Smaller size for realistic physics */
-            width: clamp(30px, 5vw, 40px);
-            height: clamp(30px, 5vw, 40px);
-            border-radius: 50%;
-            position: absolute;
-            /* Center the element on its x,y coordinates */
-            transform: translate(-50%, -50%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: inset -5px -5px 10px rgba(0,0,0,0.4), 3px 5px 8px rgba(0,0,0,0.3);
-            z-index: 10;
+            border-radius: 50%; position: absolute; transform: translate(-50%, -50%); display: flex; justify-content: center; align-items: center;
+            box-shadow: inset -3px -3px 6px rgba(0,0,0,0.4), 2px 3px 5px rgba(0,0,0,0.3); pointer-events: none;
         }
-
-        /* Glossy Highlight */
-        .ball::before {
-            content: '';
-            position: absolute;
-            top: 10%;
-            left: 20%;
-            width: 35%;
-            height: 35%;
-            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
-            border-radius: 50%;
-            pointer-events: none;
-        }
-
-        .ball-inner {
-            width: 50%;
-            height: 50%;
-            background: white;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
-            pointer-events: none;
-        }
-
-        .ball-number {
-            font-size: clamp(0.8rem, 2vw, 1.2rem);
-            font-weight: 800;
-            color: #222;
-            line-height: 1;
-            border-bottom: 1px solid #222; 
-            padding-bottom: 1px;
-        }
+        .ball::before { content: ''; position: absolute; top: 10%; left: 20%; width: 35%; height: 35%; background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%); border-radius: 50%; pointer-events: none; }
+        .ball-inner { width: 45%; height: 45%; background: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: inset 0 1px 2px rgba(0,0,0,0.2); pointer-events: none; }
+        .ball-number { font-size: clamp(0.6rem, 1.5vw, 0.9rem); font-weight: 800; color: #222; line-height: 1; border-bottom: 1px solid #222; padding-bottom: 1px; }
 
         .bg-white { background-color: var(--ball-white); }
-        .bg-red { background-color: var(--ball-red); }
-        .bg-blue { background-color: var(--ball-blue); }
-        .bg-yellow { background-color: var(--ball-yellow); }
-        .bg-green { background-color: var(--ball-green); }
-        .bg-purple { background-color: var(--ball-purple); }
-        .bg-orange { background-color: var(--ball-orange); }
+        .bg-black { background-color: var(--ball-black); }
+        .bg-black .ball-inner { background: white; }
+        .bg-black .ball-number { color: #222; border-bottom-color: #222; }
+        
+        .bg-yellow { background-color: var(--ball-yellow); } .bg-blue { background-color: var(--ball-blue); }
+        .bg-red { background-color: var(--ball-red); } .bg-purple { background-color: var(--ball-purple); }
+        .bg-orange { background-color: var(--ball-orange); } .bg-green { background-color: var(--ball-green); }
+        .bg-brown { background-color: var(--ball-brown); }
 
-        /* Cue Stick */
+        .stripe-yellow { background: linear-gradient(to bottom, #fff 25%, var(--ball-yellow) 25%, var(--ball-yellow) 75%, #fff 75%); }
+        .stripe-blue { background: linear-gradient(to bottom, #fff 25%, var(--ball-blue) 25%, var(--ball-blue) 75%, #fff 75%); }
+        .stripe-red { background: linear-gradient(to bottom, #fff 25%, var(--ball-red) 25%, var(--ball-red) 75%, #fff 75%); }
+        .stripe-purple { background: linear-gradient(to bottom, #fff 25%, var(--ball-purple) 25%, var(--ball-purple) 75%, #fff 75%); }
+        .stripe-orange { background: linear-gradient(to bottom, #fff 25%, var(--ball-orange) 25%, var(--ball-orange) 75%, #fff 75%); }
+        .stripe-green { background: linear-gradient(to bottom, #fff 25%, var(--ball-green) 25%, var(--ball-green) 75%, #fff 75%); }
+        .stripe-brown { background: linear-gradient(to bottom, #fff 25%, var(--ball-brown) 25%, var(--ball-brown) 75%, #fff 75%); }
+
         #cue-stick {
-            position: absolute;
-            height: 8px;
-            width: 200px;
+            position: absolute; height: 6px; width: 150px; top: 0; left: 0;
             background: linear-gradient(to right, #d4a373 0%, #d4a373 80%, #ffffff 80%, #ffffff 95%, #4a4e69 95%, #4a4e69 100%);
-            border-radius: 4px;
-            transform-origin: left center;
-            display: none;
-            z-index: 15;
-            box-shadow: 0 10px 10px rgba(0,0,0,0.4);
-            pointer-events: none;
+            border-radius: 3px; transform-origin: left center; display: none; z-index: 15; box-shadow: 0 10px 10px rgba(0,0,0,0.4); pointer-events: none;
         }
 
-        /* --- Aiming Hint --- */
-        #aim-hint {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: rgba(255,255,255,0.6);
-            font-size: 1.2rem;
-            font-weight: bold;
-            pointer-events: none;
-            text-align: center;
-            animation: pulse 2s infinite;
+        #aim-line {
+            position: absolute; height: 2px; top: 0; left: 0; border-bottom: 2px dashed rgba(255, 255, 255, 0.8);
+            transform-origin: left center; display: none; z-index: 12; pointer-events: none; filter: drop-shadow(0px 2px 1px rgba(0,0,0,0.5));
         }
 
-        /* --- Feedback Overlay --- */
+        #game-hint {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: rgba(255,255,255,0.9); font-size: 1.2rem; font-weight: 800; pointer-events: none; text-align: center; text-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 20;
+        }
+        .pulse-anim { animation: pulseText 1.5s infinite; }
+
         .feedback {
-            position: absolute;
-            bottom: -100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: white;
-            padding: 15px 40px;
-            border-radius: 20px;
-            font-size: 1.5rem;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 50;
+            position: absolute; bottom: -100px; left: 50%; transform: translateX(-50%); background: white;
+            padding: 15px 30px; border-radius: 20px; font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; gap: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 50;
         }
-        .feedback.show { bottom: 30px; }
+        .feedback.show { bottom: 20px; }
         .feedback.correct { color: var(--btn-green); border: 2px solid var(--btn-green); }
         .feedback.wrong { color: #ff4b4b; border: 2px solid #ff4b4b; }
 
-        /* --- End Screen Specifics --- */
-        .end-icon { font-size: 5rem; margin-bottom: 10px; }
-        .final-score-text { font-size: 1.5rem; color: #777; margin-bottom: 20px; }
-        .big-score { font-size: 3rem; color: var(--btn-orange, #ff9600); font-weight: 800; }
-
-        /* --- Confetti Canvas --- */
-        #confetti-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            pointer-events: none;
-            z-index: 9999;
+        #modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6);
+            display: none; justify-content: center; align-items: center; z-index: 200;
         }
+        #modal-overlay.active { display: flex; animation: fadeIn 0.3s; }
 
-        /* --- Animations --- */
+        .end-icon { font-size: 4rem; margin-bottom: 10px; }
+        #confetti-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; }
+
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.8; } }
+        @keyframes pulseText { 0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7;} 50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1;} }
         @keyframes popIn { 0% { transform: translate(-50%, -50%) scale(0); } 80% { transform: translate(-50%, -50%) scale(1.2); } 100% { transform: translate(-50%, -50%) scale(1); } }
-        
-        .anim-pop { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards; }
-
-        @media (max-width: 600px) {
-            .billiard-table-wrapper { height: 55vh; }
-            .question-box { font-size: 1.1rem; padding: 10px 15px; }
-            #aim-hint { font-size: 1rem; }
-        }
+        .anim-pop { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards; }
     </style>
 </head>
 <body>
+    <!-- Scenery Background Layer -->
+    <div class="scenery">
+        <div class="sky"></div>
+        <div class="sun">☀️</div>
+        <div class="cloud cloud1">☁️</div>
+        <div class="cloud cloud2">☁️</div>
+        <div class="cloud cloud3">☁️</div>
+        <div class="grass"></div>
+        <div class="tree tree1">🌳</div>
+        <div class="tree tree2">🌲</div>
+        <div class="flower f1">🌻</div>
+        <div class="flower f2">🌷</div>
+        <div class="flower f3">🌼</div>
+        <div class="flower f4">🍄</div>
+    </div>
 
-    <!-- Sound Toggle -->
+    <!-- UI Overlay Controls -->
     <div id="ui-layer">
+        <button class="icon-btn" id="btn-info" aria-label="Show Rules">
+            <svg viewBox="0 0 24 24"><path d="M11 17h2v-6h-2v6zm1-15C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM11 9h2V7h-2v2z"/></svg>
+        </button>
         <button class="icon-btn" id="sound-toggle" aria-label="Toggle Sound">
             <svg id="icon-sound-on" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
             <svg id="icon-sound-off" viewBox="0 0 24 24" style="display:none;"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
         </button>
     </div>
 
-    <!-- Start Screen -->
+    <!-- START SCREEN -->
     <div id="start-screen" class="screen active">
-        <h1>Billiard Ball Adventure</h1>
-        <p class="subtitle">Drag & shoot the correct ball!</p>
+        <h1>Billiard Adventure</h1>
+        <p class="subtitle">Learn and Play like a Pro!</p>
         
         <div class="card">
-            <h2>How to play:</h2>
-            <div class="instruction-list">
-                <p><span>👀</span> Read the question.</p>
-                <p><span>🎱</span> Drag on the screen to aim the white cue ball.</p>
-                <p><span>🎯</span> Hit the correct ball into any pocket!</p>
+            <h2>Game Setup</h2>
+            <div class="setup-section">
+                <h3>Select Mode</h3>
+                <div class="option-group">
+                    <button class="toggle-btn active" data-group="mode" data-val="practice">Practice</button>
+                    <button class="toggle-btn" data-group="mode" data-val="tournament">Tournament</button>
+                </div>
             </div>
+
+            <div id="tournament-options" style="display:none;">
+                <div class="setup-section">
+                    <h3>Rules</h3>
+                    <div class="option-group">
+                        <button class="toggle-btn active" data-group="rules" data-val="9ball">9 Balls</button>
+                        <button class="toggle-btn" data-group="rules" data-val="15ball">15 Balls (8-Ball)</button>
+                    </div>
+                </div>
+                <div class="setup-section">
+                    <h3>Opponent</h3>
+                    <div class="option-group">
+                        <button class="toggle-btn active" data-group="opponent" data-val="cpu">Computer</button>
+                        <button class="toggle-btn" data-group="opponent" data-val="p2">2 Players</button>
+                    </div>
+                </div>
+            </div>
+
             <button class="btn green" id="btn-start">Start Game</button>
         </div>
     </div>
 
-    <!-- Game Screen -->
+    <!-- GAME SCREEN -->
     <div id="game-screen" class="screen">
-        <div class="game-header">
-            <div class="stats">Round: <span id="round-display">1/10</span></div>
-            <div class="progress-container"><div class="progress-bar" id="progress-bar"></div></div>
-            <div class="stats">⭐ <span id="score-display">0</span></div>
+        <div class="game-top-bar">
+            <button class="btn small" id="btn-menu" style="background:#fff; color:#777; border:2px solid #ccc; box-shadow: 0 4px 0 #ccc;">Menu</button>
+            <div class="rule-helper" id="rule-helper">
+                <span id="rule-main">Player 1</span>
+                <span class="rule-subtext" id="rule-sub">Target: Hit Ball 1</span>
+            </div>
+            <button class="btn small orange" id="btn-restart">Restart</button>
         </div>
 
-        <div class="question-box" id="question-text">Hit ball number 5!</div>
-
-        <div class="billiard-table-wrapper">
+        <div class="billiard-table-wrapper" id="table-wrapper">
             <div class="billiard-table-surface" id="table-surface">
                 <!-- 6 Pockets -->
                 <div class="pocket tl"></div><div class="pocket tc"></div><div class="pocket tr"></div>
                 <div class="pocket bl"></div><div class="pocket bc"></div><div class="pocket br"></div>
                 
-                <div id="aim-hint">Drag anywhere to aim!</div>
+                <!-- Dynamic Elements Layer -->
+                <div id="balls-layer"></div>
+
+                <div id="aim-line"></div>
                 <div id="cue-stick"></div>
-                <!-- Balls injected via JS -->
+                <div id="game-hint" class="pulse-anim">Drag anywhere to aim!</div>
             </div>
         </div>
 
@@ -456,14 +315,26 @@
         </div>
     </div>
 
-    <!-- End Screen -->
+    <!-- END SCREEN -->
     <div id="end-screen" class="screen">
         <div class="card">
-            <div class="end-icon">🏆</div>
-            <h1 style="color: var(--text-main); text-shadow: none;">Amazing job!</h1>
-            <p class="final-score-text">You are a billiard star!</p>
-            <div><span class="big-score" id="final-score">10</span><span style="font-size: 1.5rem; color: #777; font-weight: bold;">/ 10</span></div>
-            <button class="btn btn-blue" id="btn-restart" style="margin-top: 30px;">Play Again</button>
+            <div class="end-icon" id="end-emoji">🏆</div>
+            <h1 id="end-title" style="color: var(--text-main); text-shadow: none;">Amazing job!</h1>
+            <p class="subtitle" id="end-subtitle" style="color: #777; text-shadow: none;">You are a billiard star!</p>
+            <div id="end-score-box"><span class="btn orange" style="font-size: 2rem; padding: 10px 40px; cursor:default;" id="final-score">10/10</span></div>
+            <div style="margin-top: 20px;">
+                <button class="btn btn-blue" id="btn-play-again">Play Again</button>
+                <button class="btn btn-gray" id="btn-end-menu" style="background:#fff; color:#777; border:2px solid #ccc; box-shadow: 0 4px 0 #ccc;">Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TUTORIAL / MODAL -->
+    <div id="modal-overlay">
+        <div class="card">
+            <h2 id="modal-title" style="margin-bottom:15px;">Tutorial</h2>
+            <p id="modal-text" style="font-size:1.1rem; line-height:1.5; margin-bottom:20px; color:#555;">Instructions go here.</p>
+            <button class="btn green" id="btn-close-modal">Got it!</button>
         </div>
     </div>
 
@@ -471,375 +342,553 @@
 
     <script>
         /**
-         * Billiard Ball Adventure V2 - Physics Engine & Logic
+         * BILLIARD BALL ADVENTURE V10 - RULES & PHYSICS ENGINE
          */
-
-        // --- Config & State ---
-        const TOTAL_ROUNDS = 10;
-        const FRICTION = 0.985;
-        const MIN_VELOCITY = 0.1;
-        const BALL_RADIUS = window.innerWidth < 600 ? 15 : 20; // Will be responsive
+        const config = { mode: 'practice', rules: '9ball', opponent: 'cpu' };
+        const TOTAL_PRACTICE_ROUNDS = 10;
         
-        let currentRound = 1;
-        let score = 0;
-        let soundEnabled = true;
-        let isWaitingForNextRound = false;
-        let currentCorrectAnswer = null;
-        let tableBounds = { width: 0, height: 0 };
-        let pocketsData = [];
-
-        // Physics State
-        let balls = []; // { id, x, y, vx, vy, radius, color, isWhite, el }
-        let isAiming = false;
-        let aimStartPos = { x: 0, y: 0 };
-        let aimCurrentPos = { x: 0, y: 0 };
-        let physicsLoopId;
-
-        const ballColors = [
-            { id: 'red', class: 'bg-red', name: 'red' },
-            { id: 'blue', class: 'bg-blue', name: 'blue' },
-            { id: 'yellow', class: 'bg-yellow', name: 'yellow' },
-            { id: 'green', class: 'bg-green', name: 'green' },
-            { id: 'purple', class: 'bg-purple', name: 'purple' },
-            { id: 'orange', class: 'bg-orange', name: 'orange' }
-        ];
-
-        // --- DOM Elements ---
-        const screens = { start: document.getElementById('start-screen'), game: document.getElementById('game-screen'), end: document.getElementById('end-screen') };
-        const els = {
-            btnStart: document.getElementById('btn-start'), btnRestart: document.getElementById('btn-restart'),
-            btnSound: document.getElementById('sound-toggle'), iconSoundOn: document.getElementById('icon-sound-on'), iconSoundOff: document.getElementById('icon-sound-off'),
-            roundDisplay: document.getElementById('round-display'), scoreDisplay: document.getElementById('score-display'), progressBar: document.getElementById('progress-bar'),
-            questionText: document.getElementById('question-text'), tableSurface: document.getElementById('table-surface'),
-            feedbackMsg: document.getElementById('feedback-msg'), feedbackIcon: document.getElementById('feedback-icon'), feedbackText: document.getElementById('feedback-text'),
-            finalScore: document.getElementById('final-score'), cueStick: document.getElementById('cue-stick'), aimHint: document.getElementById('aim-hint'),
-            confettiCanvas: document.getElementById('confetti-canvas')
+        let state = {
+            currentRound: 1, score: 0, soundEnabled: true,
+            currentPlayer: 1, turnPhase: 'idle', // idle, moving, evaluating, cpu_thinking
+            isBallInHand: false,
+            firstBallHit: null, contactOccurred: false, railHitAfterContact: false,
+            pocketedThisTurn: [], foulOccurred: false, foulReason: "",
+            p1Group: null, p2Group: null, 
+            practiceTarget: null,
+            gameOver: false,
+            lowestBallAtStart: 1,
+            p1ClearedAtStart: false,
+            p2ClearedAtStart: false
         };
 
-        // --- Audio System ---
+        const FRICTION = 0.985;
+        const MIN_VELOCITY = 0.05;
+        let BALL_RADIUS = 15; 
+        let tableBounds = { width: 0, height: 0 };
+        let pocketsData = [];
+        let balls = []; 
+        let physicsLoopId;
+        
+        let isAiming = false; let isDraggingCue = false;
+        let aimStartPos = { x: 0, y: 0 }; let aimCurrentPos = { x: 0, y: 0 };
+        let lastClackTime = 0;
+
+        const colorMap = [
+            { id: 'yellow', class: 'bg-yellow' }, { id: 'blue', class: 'bg-blue' },
+            { id: 'red', class: 'bg-red' }, { id: 'purple', class: 'bg-purple' },
+            { id: 'orange', class: 'bg-orange' }, { id: 'green', class: 'bg-green' },
+            { id: 'brown', class: 'bg-brown' }, { id: 'black', class: 'bg-black' }
+        ];
+
+        const els = {
+            screens: { start: document.getElementById('start-screen'), game: document.getElementById('game-screen'), end: document.getElementById('end-screen') },
+            setup: { tourneyOpts: document.getElementById('tournament-options'), toggles: document.querySelectorAll('.toggle-btn') },
+            ui: {
+                ruleMain: document.getElementById('rule-main'), ruleSub: document.getElementById('rule-sub'), ruleHelper: document.getElementById('rule-helper'),
+                tableWrapper: document.getElementById('table-wrapper'), table: document.getElementById('table-surface'), ballsLayer: document.getElementById('balls-layer'),
+                cue: document.getElementById('cue-stick'), aimLine: document.getElementById('aim-line'), gameHint: document.getElementById('game-hint'),
+                feedbackMsg: document.getElementById('feedback-msg'), feedbackIcon: document.getElementById('feedback-icon'), feedbackText: document.getElementById('feedback-text'),
+                modal: document.getElementById('modal-overlay'), modalTitle: document.getElementById('modal-title'), modalText: document.getElementById('modal-text')
+            }
+        };
+
+        // --- AUDIO ---
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         let audioCtx;
-        function initAudio() {
-            if (!audioCtx) audioCtx = new AudioContext();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-        }
+        function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
         function playTone(freq, type, duration, vol = 0.1) {
-            if (!soundEnabled || !audioCtx) return;
+            if (!state.soundEnabled || !audioCtx) return;
             try {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
+                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
                 osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-                gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.start(); osc.stop(audioCtx.currentTime + duration);
+                gain.gain.setValueAtTime(vol, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + duration);
             } catch(e) {}
         }
         const sounds = {
-            click: () => playTone(600, 'sine', 0.1, 0.05),
-            hit: () => playTone(200, 'square', 0.1, 0.1),
-            clack: () => playTone(1200, 'triangle', 0.05, 0.08), // Ball collision
+            click: () => playTone(600, 'sine', 0.1, 0.05), hit: () => playTone(200, 'square', 0.1, 0.1), clack: () => playTone(1200, 'triangle', 0.03, 0.04),
             pocket: () => { playTone(300, 'sine', 0.1, 0.1); setTimeout(() => playTone(150, 'sine', 0.2, 0.1), 100); },
             correct: () => { playTone(440, 'sine', 0.15, 0.1); setTimeout(() => playTone(554, 'sine', 0.15, 0.1), 100); setTimeout(() => playTone(659, 'sine', 0.3, 0.1), 200); },
             wrong: () => { playTone(300, 'triangle', 0.2, 0.1); setTimeout(() => playTone(250, 'triangle', 0.3, 0.1), 150); },
             celebrate: () => { const notes = [523, 659, 783, 1046]; notes.forEach((f, i) => setTimeout(() => playTone(f, 'square', 0.2, 0.05), i * 150)); setTimeout(() => playTone(1046, 'square', 0.6, 0.05), notes.length * 150); }
         };
 
-        // --- Core Game Functions ---
-        function switchScreen(name) { Object.values(screens).forEach(s => s.classList.remove('active')); screens[name].classList.add('active'); }
-        function toggleSound() {
-            soundEnabled = !soundEnabled;
-            els.iconSoundOn.style.display = soundEnabled ? 'block' : 'none';
-            els.iconSoundOff.style.display = soundEnabled ? 'none' : 'block';
-            if (soundEnabled) { initAudio(); sounds.click(); }
+        // --- SETUP LOGIC ---
+        els.setup.toggles.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                sounds.click();
+                const group = e.target.dataset.group; const val = e.target.dataset.val;
+                document.querySelectorAll(`.toggle-btn[data-group="${group}"]`).forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active'); config[group] = val;
+                if (group === 'mode') els.setup.tourneyOpts.style.display = val === 'tournament' ? 'block' : 'none';
+            });
+        });
+
+        function switchScreen(name) { Object.values(els.screens).forEach(s => s.classList.remove('active')); els.screens[name].classList.add('active'); }
+        
+        function showModal(title, text) {
+            els.ui.modalTitle.textContent = title;
+            els.ui.modalText.innerHTML = text;
+            els.ui.modal.classList.add('active');
         }
+
+        // --- CORE GAME FLOW ---
         function startGame() {
             initAudio(); sounds.click();
-            currentRound = 1; score = 0;
-            updateStatsUI(); switchScreen('game');
+            switchScreen('game');
             updateTableBounds();
-            generateRound();
+            state.gameOver = false;
+            state.p1Group = null; state.p2Group = null;
+            
+            if (config.mode === 'practice') {
+                state.currentRound = 1; state.score = 0;
+                generatePracticeRound(); updateHelperUI();
+            } else {
+                state.currentPlayer = 1; state.isBallInHand = true;
+                generateTournamentRack(); updateHelperUI();
+                
+                let tut = config.rules === '9ball' 
+                    ? "<b>9-Ball Rules:</b><br>- Always hit the lowest numbered ball first.<br>- Pocket the 9-ball legally to win.<br>- Scratching or hitting the wrong ball is a foul (Ball in Hand)."
+                    : "<b>15-Ball (8-Ball) Rules:</b><br>- Pocket a solid or stripe to claim your group.<br>- Hit your own group first.<br>- Pocket all your balls, then pocket the black 8-ball to win.<br>- Don't pocket the 8-ball early!";
+                showModal("How to Play", tut);
+            }
             startPhysicsLoop(); stopConfetti();
         }
 
-        // --- Table & Physics Setup ---
         function updateTableBounds() {
-            const rect = els.tableSurface.getBoundingClientRect();
-            tableBounds.width = rect.width;
-            tableBounds.height = rect.height;
+            const rect = els.ui.table.getBoundingClientRect();
+            tableBounds.width = rect.width; tableBounds.height = rect.height;
+            BALL_RADIUS = tableBounds.width * 0.022; 
             
-            // Define Pocket Centers & Radius
-            const pr = 25; // pocket radius threshold
+            const pr = tableBounds.width * 0.04; 
             pocketsData = [
-                { x: 0, y: 0, r: pr }, { x: rect.width/2, y: 0, r: pr }, { x: rect.width, y: 0, r: pr },
-                { x: 0, y: rect.height, r: pr }, { x: rect.width/2, y: rect.height, r: pr }, { x: rect.width, y: rect.height, r: pr }
+                { x: 0, y: 0, r: pr }, { x: rect.width/2, y: -rect.height*0.03, r: pr }, { x: rect.width, y: 0, r: pr },
+                { x: 0, y: rect.height, r: pr }, { x: rect.width/2, y: rect.height + rect.height*0.03, r: pr }, { x: rect.width, y: rect.height, r: pr }
             ];
+            
+            balls.forEach(b => {
+                b.radius = BALL_RADIUS;
+                if(b.el) { b.el.style.width = `${BALL_RADIUS*2}px`; b.el.style.height = `${BALL_RADIUS*2}px`; }
+            });
         }
-        window.addEventListener('resize', () => { if(screens.game.classList.contains('active')) updateTableBounds(); });
+        window.addEventListener('resize', () => { if(els.screens.game.classList.contains('active')) updateTableBounds(); });
 
-        function createDOMBall(data, isWhite) {
+        // --- RACK GENERATION ---
+        function getBallStyle(num) {
+            if (num === 8) return { class: 'bg-black', name: 'black' };
+            const baseColor = colorMap[(num - 1) % 7];
+            if (num > 8) return { class: `stripe-${baseColor.id}`, name: `striped ${baseColor.id}` };
+            return { class: baseColor.class, name: baseColor.id };
+        }
+
+        function createDOMBall(num, isWhite) {
             const el = document.createElement('div');
-            el.className = `ball ${isWhite ? 'bg-white' : data.colorData.class} anim-pop`;
-            el.style.width = `${BALL_RADIUS*2}px`;
-            el.style.height = `${BALL_RADIUS*2}px`;
+            el.className = `ball anim-pop`; el.style.width = `${BALL_RADIUS*2}px`; el.style.height = `${BALL_RADIUS*2}px`;
             
-            if (!isWhite) {
+            if (isWhite) el.classList.add('bg-white');
+            else {
+                const styleData = getBallStyle(num); el.classList.add(styleData.class);
                 const inner = document.createElement('div'); inner.className = 'ball-inner';
-                const num = document.createElement('div'); num.className = 'ball-number'; num.textContent = data.number;
-                inner.appendChild(num); el.appendChild(inner);
+                const numEl = document.createElement('div'); numEl.className = 'ball-number'; numEl.textContent = num;
+                inner.appendChild(numEl); el.appendChild(inner);
             }
-            els.tableSurface.appendChild(el);
-            return el;
+            els.ui.ballsLayer.appendChild(el); return el;
         }
 
-        function generateRound() {
-            isWaitingForNextRound = false;
-            els.feedbackMsg.classList.remove('show');
-            els.aimHint.style.display = 'block';
+        function clearTable() { els.ui.ballsLayer.innerHTML = ''; balls = []; }
+
+        function addCueBall() {
+            balls.push({ id: 'cue', isWhite: true, radius: BALL_RADIUS, x: tableBounds.width * 0.25, y: tableBounds.height * 0.5, vx: 0, vy: 0, el: createDOMBall(0, true) });
+        }
+
+        function generatePracticeRound() {
+            clearTable(); addCueBall(); state.isBallInHand = false;
             
-            // Clear old balls from DOM
-            balls.forEach(b => { if(b.el && b.el.parentNode) b.el.parentNode.removeChild(b.el); });
-            balls = [];
-
-            // Add Cue Ball (White)
-            balls.push({
-                id: 'cue', isWhite: true, radius: BALL_RADIUS,
-                x: tableBounds.width * 0.2, y: tableBounds.height * 0.5,
-                vx: 0, vy: 0, el: createDOMBall({}, true)
-            });
-
-            // Target Balls
             const numBalls = Math.floor(Math.random() * 3) + 3;
-            let availableNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].sort(() => Math.random() - 0.5);
-            let availableColors = [...ballColors].sort(() => Math.random() - 0.5);
-            
-            let generatedData = [];
-            for (let i = 0; i < numBalls; i++) {
-                generatedData.push({ id: `target-${i}`, number: availableNumbers[i], colorData: availableColors[i] });
-            }
+            let availableNumbers = [1,2,3,4,5,6,7].sort(() => Math.random() - 0.5); 
+            let targetData = []; for (let i = 0; i < numBalls; i++) targetData.push({ num: availableNumbers[i], style: getBallStyle(availableNumbers[i]) });
 
-            // Determine Question
             const qType = Math.floor(Math.random() * 4);
-            if (qType === 0) { currentCorrectAnswer = generatedData[Math.floor(Math.random() * numBalls)]; els.questionText.textContent = `Hit ball number ${currentCorrectAnswer.number} in!`; }
-            else if (qType === 1) { currentCorrectAnswer = generatedData[Math.floor(Math.random() * numBalls)]; els.questionText.textContent = `Hit the ${currentCorrectAnswer.colorData.name} ball in!`; }
-            else if (qType === 2) { const maxNum = Math.max(...generatedData.map(d=>d.number)); currentCorrectAnswer = generatedData.find(d=>d.number === maxNum); els.questionText.textContent = `Hit the biggest number in!`; }
-            else { const minNum = Math.min(...generatedData.map(d=>d.number)); currentCorrectAnswer = generatedData.find(d=>d.number === minNum); els.questionText.textContent = `Hit the smallest number in!`; }
+            let target;
+            if (qType === 0) { target = targetData[Math.floor(Math.random() * numBalls)]; els.ui.ruleSub.textContent = `Hit ball number ${target.num}!`; }
+            else if (qType === 1) { target = targetData[Math.floor(Math.random() * numBalls)]; els.ui.ruleSub.textContent = `Hit the ${target.style.name} ball!`; }
+            else if (qType === 2) { const maxNum = Math.max(...targetData.map(d=>d.num)); target = targetData.find(d=>d.num === maxNum); els.ui.ruleSub.textContent = `Hit the biggest number!`; }
+            else { const minNum = Math.min(...targetData.map(d=>d.num)); target = targetData.find(d=>d.num === minNum); els.ui.ruleSub.textContent = `Hit the smallest number!`; }
+            state.practiceTarget = target.num;
 
-            // Place target balls safely
-            generatedData.forEach((data) => {
-                let safe = false; let x, y;
-                while(!safe) {
-                    x = tableBounds.width * 0.5 + Math.random() * (tableBounds.width * 0.4);
-                    y = BALL_RADIUS * 2 + Math.random() * (tableBounds.height - BALL_RADIUS * 4);
-                    safe = true;
-                    for(let b of balls) {
-                        const dist = Math.hypot(b.x - x, b.y - y);
-                        if (dist < BALL_RADIUS * 2.5) { safe = false; break; }
-                    }
+            targetData.forEach(d => {
+                let safe = false, x, y, attempts = 0;
+                while(!safe && attempts < 100) {
+                    attempts++; x = tableBounds.width * 0.4 + Math.random() * (tableBounds.width * 0.5); y = BALL_RADIUS * 2 + Math.random() * (tableBounds.height - BALL_RADIUS * 4);
+                    safe = true; for(let b of balls) { if (Math.hypot(b.x - x, b.y - y) < BALL_RADIUS * 2.5) { safe = false; break; } }
                 }
-                balls.push({ ...data, isWhite: false, radius: BALL_RADIUS, x, y, vx: 0, vy: 0, el: createDOMBall(data, false) });
+                balls.push({ id: `target-${d.num}`, isWhite: false, num: d.num, radius: BALL_RADIUS, x, y, vx: 0, vy: 0, el: createDOMBall(d.num, false) });
             });
+            state.turnPhase = 'idle'; els.ui.gameHint.textContent = "Drag anywhere to aim!";
         }
 
-        // --- Physics Engine ---
+        function generateTournamentRack() {
+            clearTable(); addCueBall(); state.isBallInHand = true;
+            let startX = tableBounds.width * 0.65; let startY = tableBounds.height * 0.5;
+            let gap = 0.5; 
+            let rS = BALL_RADIUS * Math.sqrt(3) + gap; let cS = BALL_RADIUS * 2 + gap;
+            
+            let positions = []; let rackNums = [];
+            if (config.rules === '9ball') {
+                positions = [{r:0,c:0}, {r:1,c:-0.5}, {r:1,c:0.5}, {r:2,c:-1}, {r:2,c:0}, {r:2,c:1}, {r:3,c:-0.5}, {r:3,c:0.5}, {r:4,c:0}];
+                let n = [2,3,4,5,6,7,8].sort(()=>Math.random()-0.5);
+                rackNums = [1, n[0], n[1], n[2], 9, n[3], n[4], n[5], n[6]]; 
+            } else {
+                for(let row=0; row<5; row++) { for(let col=0; col<=row; col++) positions.push({r: row, c: col - row/2}); }
+                let solids = [1,2,3,4,5,6,7].sort(()=>Math.random()-0.5); let stripes = [9,10,11,12,13,14,15].sort(()=>Math.random()-0.5);
+                rackNums = [solids[0], stripes[0], solids[1], solids[2], 8, stripes[1], stripes[2], solids[3], stripes[3], solids[4], stripes[4], solids[5], stripes[5], solids[6], stripes[6]];
+            }
+            
+            positions.forEach((pos, i) => {
+                let bx = startX + pos.r * rS; let by = startY + pos.c * cS;
+                balls.push({ id: `target-${rackNums[i]}`, isWhite: false, num: rackNums[i], radius: BALL_RADIUS, x: bx, y: by, vx: 0, vy: 0, el: createDOMBall(rackNums[i], false) });
+            });
+            state.turnPhase = 'idle';
+        }
+
+        // --- PHYSICS ENGINE ---
         function startPhysicsLoop() {
             if (physicsLoopId) cancelAnimationFrame(physicsLoopId);
-            function loop() {
-                updatePhysics();
-                drawPhysics();
-                physicsLoopId = requestAnimationFrame(loop);
-            }
+            function loop() { if (!state.gameOver) { updatePhysics(); drawPhysics(); checkTurnStatus(); } physicsLoopId = requestAnimationFrame(loop); }
             loop();
         }
 
         function updatePhysics() {
-            if (isWaitingForNextRound) return;
-
-            // 1. Move & Friction
             balls.forEach(b => {
-                b.x += b.vx; b.y += b.vy;
-                b.vx *= FRICTION; b.vy *= FRICTION;
-                if (Math.abs(b.vx) < MIN_VELOCITY) b.vx = 0;
-                if (Math.abs(b.vy) < MIN_VELOCITY) b.vy = 0;
+                b.x += b.vx; b.y += b.vy; b.vx *= FRICTION; b.vy *= FRICTION;
+                if (Math.abs(b.vx) < MIN_VELOCITY) b.vx = 0; if (Math.abs(b.vy) < MIN_VELOCITY) b.vy = 0;
             });
 
-            // 2. Wall Collisions
             balls.forEach(b => {
-                if (b.x < b.radius) { b.x = b.radius; b.vx *= -1; }
-                else if (b.x > tableBounds.width - b.radius) { b.x = tableBounds.width - b.radius; b.vx *= -1; }
-                if (b.y < b.radius) { b.y = b.radius; b.vy *= -1; }
-                else if (b.y > tableBounds.height - b.radius) { b.y = tableBounds.height - b.radius; b.vy *= -1; }
+                let hitWall = false;
+                if (b.x < b.radius) { b.x = b.radius; b.vx *= -1; hitWall = true; } 
+                else if (b.x > tableBounds.width - b.radius) { b.x = tableBounds.width - b.radius; b.vx *= -1; hitWall = true; }
+                if (b.y < b.radius) { b.y = b.radius; b.vy *= -1; hitWall = true; } 
+                else if (b.y > tableBounds.height - b.radius) { b.y = tableBounds.height - b.radius; b.vy *= -1; hitWall = true; }
+                
+                if (hitWall && state.contactOccurred) state.railHitAfterContact = true;
             });
 
-            // 3. Ball-Ball Collisions
             for (let i = 0; i < balls.length; i++) {
                 for (let j = i + 1; j < balls.length; j++) {
                     let b1 = balls[i]; let b2 = balls[j];
                     let dx = b2.x - b1.x; let dy = b2.y - b1.y;
-                    let dist = Math.hypot(dx, dy);
-                    let minDist = b1.radius + b2.radius;
+                    let distSq = dx*dx + dy*dy; let minDist = b1.radius + b2.radius;
 
-                    if (dist < minDist) {
-                        // Resolve overlap
-                        let overlap = minDist - dist;
-                        let nx = dx / dist; let ny = dy / dist;
-                        b1.x -= nx * overlap / 2; b1.y -= ny * overlap / 2;
-                        b2.x += nx * overlap / 2; b2.y += ny * overlap / 2;
+                    if (distSq < minDist*minDist) {
+                        let dist = Math.sqrt(distSq); if (dist === 0) { dx = 0.1; dy = 0.1; dist = 0.14; }
+                        let overlap = minDist - dist; let nx = dx / dist; let ny = dy / dist;
+                        
+                        b1.x -= nx * (overlap / 2 + 0.05); b1.y -= ny * (overlap / 2 + 0.05);
+                        b2.x += nx * (overlap / 2 + 0.05); b2.y += ny * (overlap / 2 + 0.05);
 
-                        // Momentum swap (elastic 1D along normal)
                         let tx = -ny; let ty = nx;
                         let dpTan1 = b1.vx * tx + b1.vy * ty; let dpTan2 = b2.vx * tx + b2.vy * ty;
                         let dpNorm1 = b1.vx * nx + b1.vy * ny; let dpNorm2 = b2.vx * nx + b2.vy * ny;
 
-                        // Mass is 1 for all
-                        let m1v1 = dpNorm2; let m2v2 = dpNorm1; 
+                        const restitution = 0.95;
+                        b1.vx = tx * dpTan1 + nx * dpNorm2 * restitution; b1.vy = ty * dpTan1 + ny * dpNorm2 * restitution;
+                        b2.vx = tx * dpTan2 + nx * dpNorm1 * restitution; b2.vy = ty * dpTan2 + ny * dpNorm1 * restitution;
 
-                        b1.vx = tx * dpTan1 + nx * m1v1; b1.vy = ty * dpTan1 + ny * m1v1;
-                        b2.vx = tx * dpTan2 + nx * m2v2; b2.vy = ty * dpTan2 + ny * m2v2;
+                        if (!state.firstBallHit) {
+                            if (b1.isWhite && !b2.isWhite) { state.firstBallHit = b2; state.contactOccurred = true; }
+                            else if (b2.isWhite && !b1.isWhite) { state.firstBallHit = b1; state.contactOccurred = true; }
+                        }
 
-                        if (Math.abs(b1.vx) + Math.abs(b1.vy) > 1 || Math.abs(b2.vx) + Math.abs(b2.vy) > 1) {
-                            sounds.clack();
+                        if (Math.abs(b1.vx) + Math.abs(b1.vy) > 0.5) {
+                            let now = Date.now(); if (now - lastClackTime > 30) { sounds.clack(); lastClackTime = now; }
                         }
                     }
                 }
             }
 
-            // 4. Pocket Detection
             for (let i = balls.length - 1; i >= 0; i--) {
                 let b = balls[i];
-                let inPocket = pocketsData.some(p => Math.hypot(b.x - p.x, b.y - p.y) < p.r + b.radius/2);
-                
+                let inPocket = pocketsData.some(p => Math.hypot(b.x - p.x, b.y - p.y) < p.r + b.radius*0.5);
                 if (inPocket) {
-                    sounds.pocket();
-                    b.el.style.display = 'none';
-                    if (b.isWhite) {
-                        // Scratch! Reset white ball
-                        b.vx = 0; b.vy = 0;
-                        b.x = tableBounds.width * 0.2; b.y = tableBounds.height * 0.5;
-                        setTimeout(() => { b.el.style.display = 'flex'; }, 500);
-                        showFeedback(false, "Oops! The white ball fell in!");
+                    sounds.pocket(); b.el.style.display = 'none';
+                    if (b.isWhite) { state.foulOccurred = true; state.foulReason = "Scratch!"; b.vx = 0; b.vy = 0; b.x = -1000; } 
+                    else { state.pocketedThisTurn.push(b); balls.splice(i, 1); }
+                }
+            }
+        }
+        function drawPhysics() { balls.forEach(b => { if(b.el) b.el.style.transform = `translate(calc(-50% + ${b.x}px), calc(-50% + ${b.y}px))`; }); }
+
+        function isBallsMoving() { return balls.some(b => Math.abs(b.vx) > 0.1 || Math.abs(b.vy) > 0.1); }
+
+        function getLowestBall() {
+            let nums = balls.filter(b => !b.isWhite).map(b => b.num);
+            return nums.length > 0 ? Math.min(...nums) : 0;
+        }
+
+        function hasClearedGroup(player) {
+            let myGroup = player === 1 ? state.p1Group : state.p2Group;
+            if(!myGroup) return false;
+            let groupBallsRemaining = balls.filter(b => !b.isWhite && (myGroup === 'solids' ? (b.num >= 1 && b.num <= 7) : (b.num >= 9 && b.num <= 15)));
+            return groupBallsRemaining.length === 0;
+        }
+
+        // --- INPUT & BALL IN HAND ---
+        function getPointerPos(e) {
+            const rect = els.ui.table.getBoundingClientRect();
+            const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: cx - rect.left, y: cy - rect.top };
+        }
+
+        function handlePointerDown(e) {
+            if (state.gameOver || isBallsMoving() || state.turnPhase !== 'idle') return;
+            if (config.mode === 'tournament' && config.opponent === 'cpu' && state.currentPlayer === 2) return;
+
+            initAudio(); 
+            let cueBall = balls.find(b => b.isWhite); if(!cueBall) return;
+            let pos = getPointerPos(e);
+
+            if (state.isBallInHand) {
+                if (Math.hypot(pos.x - cueBall.x, pos.y - cueBall.y) < BALL_RADIUS * 3) { isDraggingCue = true; return; }
+                else { state.isBallInHand = false; updateHelperUI(); } 
+            }
+
+            // V10 BUG FIX: Set both start and current to avoid false distance on simple clicks
+            isAiming = true; aimStartPos = pos; aimCurrentPos = pos;
+            els.ui.cue.style.display = 'block'; els.ui.aimLine.style.display = 'block'; els.ui.gameHint.style.display = 'none';
+            updateCueVisuals(aimStartPos);
+        }
+
+        function handlePointerMove(e) {
+            let pos = getPointerPos(e);
+            if (isDraggingCue && state.isBallInHand) {
+                let cueBall = balls.find(b => b.isWhite);
+                cueBall.x = Math.max(BALL_RADIUS, Math.min(tableBounds.width - BALL_RADIUS, pos.x));
+                cueBall.y = Math.max(BALL_RADIUS, Math.min(tableBounds.height - BALL_RADIUS, pos.y));
+            } else if (isAiming) {
+                aimCurrentPos = pos; updateCueVisuals(aimCurrentPos);
+            }
+        }
+
+        function handlePointerUp() {
+            if (isDraggingCue) { isDraggingCue = false; return; }
+            if (!isAiming) return;
+            isAiming = false; els.ui.cue.style.display = 'none'; els.ui.aimLine.style.display = 'none';
+            
+            let dx = aimStartPos.x - aimCurrentPos.x; let dy = aimStartPos.y - aimCurrentPos.y;
+            let distance = Math.hypot(dx, dy);
+            
+            // V10 BUG FIX: Require actual drag distance to shoot
+            if (distance > 10) {
+                let power = Math.min(distance * 0.15, 25); 
+                let angle = Math.atan2(dy, dx); let cueBall = balls.find(b => b.isWhite);
+                if (cueBall) { 
+                    cueBall.vx = Math.cos(angle) * power; cueBall.vy = Math.sin(angle) * power; 
+                    sounds.hit(); startTurnTracking(); 
+                }
+            } else {
+                if(!state.isBallInHand) els.ui.gameHint.style.display = 'block';
+            }
+        }
+
+        function updateCueVisuals(currentPos) {
+            let cueBall = balls.find(b => b.isWhite); if (!cueBall) return;
+            let dx = aimStartPos.x - currentPos.x; let dy = aimStartPos.y - currentPos.y;
+            let angle = Math.atan2(dy, dx) * 180 / Math.PI; let distance = Math.min(Math.hypot(dx, dy), 100);
+
+            els.ui.cue.style.transform = `translate(${cueBall.x}px, ${cueBall.y - 3}px) rotate(${angle + 180}deg) translateX(${distance + BALL_RADIUS}px)`;
+            els.ui.aimLine.style.transform = `translate(${cueBall.x}px, ${cueBall.y - 1}px) rotate(${angle}deg)`;
+            els.ui.aimLine.style.width = `${Math.min(distance * 4, tableBounds.width)}px`;
+        }
+
+        els.ui.table.addEventListener('mousedown', handlePointerDown); document.addEventListener('mousemove', handlePointerMove); document.addEventListener('mouseup', handlePointerUp);
+        els.ui.table.addEventListener('touchstart', handlePointerDown, {passive: false}); document.addEventListener('touchmove', handlePointerMove, {passive: false}); document.addEventListener('touchend', handlePointerUp);
+
+        // --- RULE EVALUATION ---
+        function startTurnTracking() {
+            state.pocketedThisTurn = []; state.foulOccurred = false; state.foulReason = "";
+            state.firstBallHit = null; state.contactOccurred = false; state.railHitAfterContact = false;
+            state.turnPhase = 'moving';
+            
+            state.lowestBallAtStart = getLowestBall();
+            state.p1ClearedAtStart = hasClearedGroup(1);
+            state.p2ClearedAtStart = hasClearedGroup(2);
+        }
+
+        function checkTurnStatus() {
+            if (state.turnPhase === 'moving' && !isBallsMoving()) {
+                state.turnPhase = 'evaluating'; evaluateTurn();
+            } else if (state.turnPhase === 'idle' && config.mode === 'tournament' && state.currentPlayer === 2 && config.opponent === 'cpu') {
+                // V10 BUG FIX: CPU takes turn even if ball is in hand
+                state.turnPhase = 'cpu_thinking'; setTimeout(runCPUTurn, 1500);
+            }
+        }
+
+        function showFeedback(isCorrect, textMsg) {
+            els.ui.feedbackMsg.className = 'feedback show ' + (isCorrect ? 'correct' : 'wrong');
+            els.ui.feedbackIcon.textContent = isCorrect ? '🌟' : (isCorrect===false ? '❌' : '💡'); 
+            els.ui.feedbackText.textContent = textMsg;
+            setTimeout(() => { els.ui.feedbackMsg.classList.remove('show'); }, 3000);
+        }
+
+        function evaluateTurn() {
+            let cueBall = balls.find(b => b.isWhite);
+
+            if (config.mode === 'practice') {
+                if (state.foulOccurred) { 
+                    // V10 BUG FIX: Replay round on practice scratch
+                    sounds.wrong(); showFeedback(false, "Scratch! Try again.");
+                    state.turnPhase = 'idle';
+                    setTimeout(() => { generatePracticeRound(); updateHelperUI(); }, 1500);
+                    return;
+                } else if (state.pocketedThisTurn.some(b => b.num === state.practiceTarget)) {
+                    sounds.correct(); state.score++; updateHelperUI(); showFeedback(true, "Great job!");
+                    setTimeout(() => { if (state.currentRound < TOTAL_PRACTICE_ROUNDS) { state.currentRound++; generatePracticeRound(); updateHelperUI(); } else { endGame(true, "You completed practice!"); } }, 2000);
+                    return;
+                } else if (state.pocketedThisTurn.length > 0) { sounds.wrong(); showFeedback(false, "Wrong ball!"); }
+                state.turnPhase = 'idle'; updateHelperUI(); return;
+            }
+
+            // --- TOURNAMENT RULES ---
+            let foul = state.foulOccurred; let fMsg = state.foulReason;
+            let keepTurn = false; let win = false; let lose = false; let loseMsg = "";
+
+            if (!foul && !state.firstBallHit) { foul = true; fMsg = "Missed all balls!"; }
+            if (!foul && state.pocketedThisTurn.length === 0 && !state.railHitAfterContact) { foul = true; fMsg = "No rail hit after contact!"; }
+
+            if (!foul) {
+                if (config.rules === '9ball') {
+                    if (state.firstBallHit.num !== state.lowestBallAtStart) { foul = true; fMsg = `Must hit ball ${state.lowestBallAtStart} first!`; }
+                } else { // 15-ball
+                    let myGroup = state.currentPlayer === 1 ? state.p1Group : state.p2Group;
+                    let clearedAtStart = state.currentPlayer === 1 ? state.p1ClearedAtStart : state.p2ClearedAtStart;
+                    if (!myGroup) {
+                        if (state.firstBallHit.num === 8) { foul = true; fMsg = "Cannot hit 8-ball first on open table!"; }
                     } else {
-                        // Colored ball fell in
-                        balls.splice(i, 1);
-                        checkGameCondition(b);
+                        if (myGroup === 'solids' && state.firstBallHit.num > 7 && state.firstBallHit.num !== 8) { foul = true; fMsg = "Must hit Solids first!"; }
+                        if (myGroup === 'stripes' && state.firstBallHit.num < 9 && state.firstBallHit.num !== 8) { foul = true; fMsg = "Must hit Stripes first!"; }
+                        if (state.firstBallHit.num === 8 && !clearedAtStart) { foul = true; fMsg = "Clear your group before hitting 8-ball!"; }
+                    }
+                }
+            }
+
+            let pocketedNums = state.pocketedThisTurn.map(b => b.num);
+            
+            if (config.rules === '9ball') {
+                if (pocketedNums.includes(9)) {
+                    if (foul) { lose = true; loseMsg = "Pocketed 9-ball on a foul!"; } else { win = true; }
+                } else if (!foul && pocketedNums.length > 0) { keepTurn = true; }
+            } else { // 15-ball
+                let clearedAtStart = state.currentPlayer === 1 ? state.p1ClearedAtStart : state.p2ClearedAtStart;
+                if (pocketedNums.includes(8)) {
+                    if (foul) { lose = true; loseMsg = "Pocketed 8-ball on a foul!"; }
+                    else if (!clearedAtStart) { lose = true; loseMsg = "Pocketed 8-ball too early!"; }
+                    else { win = true; }
+                } else if (!foul && pocketedNums.length > 0) {
+                    let myGroup = state.currentPlayer === 1 ? state.p1Group : state.p2Group;
+                    if (!myGroup) {
+                        let firstPocketed = state.pocketedThisTurn[0];
+                        if (firstPocketed.num < 8) {
+                            if(state.currentPlayer===1) { state.p1Group = 'solids'; state.p2Group = 'stripes'; } else { state.p2Group = 'solids'; state.p1Group = 'stripes'; }
+                            keepTurn = true; showFeedback(true, `You are Solids!`);
+                        } else if (firstPocketed.num > 8) {
+                            if(state.currentPlayer===1) { state.p1Group = 'stripes'; state.p2Group = 'solids'; } else { state.p2Group = 'stripes'; state.p1Group = 'solids'; }
+                            keepTurn = true; showFeedback(true, `You are Stripes!`);
+                        }
+                    } else {
+                        let pocketedOwn = pocketedNums.some(num => myGroup === 'solids' ? (num >= 1 && num <= 7) : (num >= 9 && num <= 15));
+                        if (pocketedOwn) keepTurn = true;
+                    }
+                }
+            }
+
+            if (win) { endGame(true, `Player ${state.currentPlayer} Wins!`); return; }
+            if (lose) { endGame(false, `Player ${state.currentPlayer} Loses: ${loseMsg}`); return; }
+
+            if (foul) {
+                sounds.wrong(); showFeedback(false, `Foul! ${fMsg} Ball in hand.`);
+                state.isBallInHand = true; resetCueBall(cueBall); switchTurn();
+            } else {
+                if (keepTurn) { sounds.correct(); if(state.pocketedThisTurn.length>0 && !state.p1Group) showFeedback(true, "Nice Shot! Keep going."); } 
+                else { switchTurn(); }
+            }
+            state.turnPhase = 'idle'; updateHelperUI();
+        }
+
+        function resetCueBall(cueBall) {
+            if(!cueBall) addCueBall(); else { cueBall.el.style.display = 'flex'; cueBall.vx = 0; cueBall.vy = 0; cueBall.x = tableBounds.width * 0.25; cueBall.y = tableBounds.height * 0.5; }
+        }
+
+        function switchTurn() { state.currentPlayer = state.currentPlayer === 1 ? 2 : 1; }
+
+        function updateHelperUI() {
+            if (config.mode === 'practice') {
+                els.ui.ruleMain.textContent = `Round ${state.currentRound}/${TOTAL_PRACTICE_ROUNDS} | Score: ${state.score}`;
+                els.ui.ruleMain.style.color = 'var(--text-main)'; els.ui.ruleHelper.style.borderColor = '#e5e5e5';
+            } else {
+                let name = state.currentPlayer === 1 ? "Player 1" : (config.opponent === 'cpu' ? "Computer" : "Player 2");
+                els.ui.ruleMain.textContent = `${name}'s Turn`;
+                els.ui.ruleHelper.className = `rule-helper ${state.currentPlayer === 1 ? 'p1' : 'p2'}`;
+                
+                if (state.isBallInHand) { els.ui.ruleSub.textContent = "Ball in Hand! Drag white ball to place."; els.ui.gameHint.textContent = "Place white ball!"; els.ui.gameHint.style.display = 'block'; }
+                else {
+                    els.ui.gameHint.style.display = 'none';
+                    if (config.rules === '9ball') { els.ui.ruleSub.textContent = `Target: Hit Ball ${getLowestBall()} first`; }
+                    else {
+                        let myGroup = state.currentPlayer === 1 ? state.p1Group : state.p2Group;
+                        if (!myGroup) els.ui.ruleSub.textContent = "Open Table. Pocket a ball to choose group.";
+                        else if (hasClearedGroup(state.currentPlayer)) els.ui.ruleSub.textContent = `Target: Hit the 8-Ball to Win!`;
+                        else els.ui.ruleSub.textContent = `Target: Hit ${myGroup === 'solids' ? 'Solids (1-7)' : 'Stripes (9-15)'} first`;
                     }
                 }
             }
         }
 
-        function drawPhysics() {
-            balls.forEach(b => {
-                if(b.el) b.el.style.transform = `translate(calc(-50% + ${b.x}px), calc(-50% + ${b.y}px))`;
-            });
-        }
-
-        // --- Interaction & Aiming ---
-        function getPointerPos(e) {
-            const rect = els.tableSurface.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return { x: clientX - rect.left, y: clientY - rect.top };
-        }
-
-        function isBallsMoving() {
-            return balls.some(b => Math.abs(b.vx) > 0.2 || Math.abs(b.vy) > 0.2);
-        }
-
-        function handlePointerDown(e) {
-            if (isWaitingForNextRound || isBallsMoving()) return;
-            initAudio(); // Required for iOS
-            isAiming = true;
-            aimStartPos = getPointerPos(e);
-            els.cueStick.style.display = 'block';
-            els.aimHint.style.display = 'none'; // hide hint forever once they click
-            updateCueVisuals(aimStartPos);
-        }
-
-        function handlePointerMove(e) {
-            if (!isAiming) return;
-            aimCurrentPos = getPointerPos(e);
-            updateCueVisuals(aimCurrentPos);
-        }
-
-        function handlePointerUp() {
-            if (!isAiming) return;
-            isAiming = false;
-            els.cueStick.style.display = 'none';
-
-            let dx = aimStartPos.x - aimCurrentPos.x;
-            let dy = aimStartPos.y - aimCurrentPos.y;
+        function runCPUTurn() {
+            state.isBallInHand = false; updateHelperUI();
             
-            // Apply velocity (capped)
-            let power = Math.min(Math.hypot(dx, dy) * 0.1, 20); 
-            if (power > 1) {
-                let angle = Math.atan2(dy, dx);
-                let cueBall = balls.find(b => b.isWhite);
-                if (cueBall) {
-                    cueBall.vx = Math.cos(angle) * power;
-                    cueBall.vy = Math.sin(angle) * power;
-                    sounds.hit();
-                }
+            let cueBall = balls.find(b => b.isWhite); if(!cueBall) return;
+            let validTargets = [];
+            
+            if (config.rules === '9ball') { let lowest = getLowestBall(); validTargets = [balls.find(b => b.num === lowest)]; } 
+            else {
+                let myGroup = state.p2Group;
+                if (!myGroup) validTargets = balls.filter(b => !b.isWhite && b.num !== 8);
+                else if (hasClearedGroup(2)) validTargets = [balls.find(b => b.num === 8)];
+                else validTargets = balls.filter(b => !b.isWhite && (myGroup === 'solids' ? (b.num >= 1 && b.num <= 7) : (b.num >= 9 && b.num <= 15)));
             }
+            
+            if (validTargets.length === 0 || !validTargets[0]) { state.turnPhase = 'idle'; switchTurn(); updateHelperUI(); return; }
+            
+            let target = validTargets[Math.floor(Math.random() * validTargets.length)];
+            let angle = Math.atan2(target.y - cueBall.y, target.x - cueBall.x) + (Math.random() - 0.5) * 0.1; 
+            let power = 10 + Math.random() * 6;
+            
+            els.ui.cue.style.display = 'block'; els.ui.aimLine.style.display = 'block';
+            els.ui.cue.style.transform = `translate(${cueBall.x}px, ${cueBall.y - 3}px) rotate(${angle * 180 / Math.PI + 180}deg) translateX(${BALL_RADIUS + 20}px)`;
+            els.ui.aimLine.style.transform = `translate(${cueBall.x}px, ${cueBall.y - 1}px) rotate(${angle * 180 / Math.PI}deg)`;
+            els.ui.aimLine.style.width = `150px`;
+            
+            setTimeout(() => {
+                els.ui.cue.style.display = 'none'; els.ui.aimLine.style.display = 'none';
+                cueBall.vx = Math.cos(angle) * power; cueBall.vy = Math.sin(angle) * power;
+                sounds.hit(); startTurnTracking();
+            }, 1000);
         }
 
-        function updateCueVisuals(currentPos) {
-            let cueBall = balls.find(b => b.isWhite);
-            if (!cueBall) return;
-
-            let dx = aimStartPos.x - currentPos.x;
-            let dy = aimStartPos.y - currentPos.y;
-            let angle = Math.atan2(dy, dx) * 180 / Math.PI;
-            let distance = Math.min(Math.hypot(dx, dy), 100);
-
-            els.cueStick.style.transform = `translate(${cueBall.x}px, ${cueBall.y - 4}px) rotate(${angle + 180}deg) translateX(${distance + BALL_RADIUS}px)`;
+        function endGame(isWin, message) {
+            state.gameOver = true;
+            if (isWin) { sounds.celebrate(); startConfetti(); document.getElementById('end-title').textContent = "Winner!"; document.getElementById('end-emoji').textContent = "🏆"; } 
+            else { sounds.wrong(); document.getElementById('end-title').textContent = "Game Over"; document.getElementById('end-emoji').textContent = "😢"; }
+            
+            document.getElementById('end-subtitle').textContent = message;
+            document.getElementById('end-score-box').style.display = config.mode === 'practice' ? 'block' : 'none';
+            if (config.mode === 'practice') document.getElementById('final-score').textContent = `${state.score}/10`;
+            switchScreen('end');
         }
 
-        els.tableSurface.addEventListener('mousedown', handlePointerDown);
-        document.addEventListener('mousemove', handlePointerMove);
-        document.addEventListener('mouseup', handlePointerUp);
-        
-        els.tableSurface.addEventListener('touchstart', handlePointerDown, {passive: false});
-        document.addEventListener('touchmove', handlePointerMove, {passive: false});
-        document.addEventListener('touchend', handlePointerUp);
-
-        // --- Game Logic Handling ---
-        function checkGameCondition(pocketedBall) {
-            if (pocketedBall.id === currentCorrectAnswer.id) {
-                isWaitingForNextRound = true;
-                sounds.correct();
-                score++; updateStatsUI();
-                showFeedback(true, "Great job!");
-                setTimeout(() => {
-                    if (currentRound < TOTAL_ROUNDS) { currentRound++; updateStatsUI(); generateRound(); }
-                    else { endGame(); }
-                }, 2000);
-            } else {
-                sounds.wrong();
-                showFeedback(false, "Try again!");
-                // Let them keep shooting remaining balls
-            }
-        }
-
-        function showFeedback(isCorrect, textMsg) {
-            els.feedbackMsg.className = 'feedback show ' + (isCorrect ? 'correct' : 'wrong');
-            els.feedbackIcon.textContent = isCorrect ? '🌟' : '💡';
-            els.feedbackText.textContent = textMsg;
-            if (!isCorrect) setTimeout(() => { els.feedbackMsg.classList.remove('show'); }, 2000);
-        }
-
-        function updateStatsUI() {
-            els.roundDisplay.textContent = `${currentRound}/${TOTAL_ROUNDS}`;
-            els.scoreDisplay.textContent = score;
-            els.progressBar.style.width = `${(currentRound / TOTAL_ROUNDS) * 100}%`;
-        }
-
-        function endGame() {
-            sounds.celebrate(); els.finalScore.textContent = score;
-            switchScreen('end'); startConfetti();
-        }
-
-        // --- Confetti System ---
-        const canvas = els.confettiCanvas; const ctx = canvas.getContext('2d');
+        // --- CONFETTI ---
+        const canvas = document.getElementById('confetti-canvas'); const ctx = canvas.getContext('2d');
         let particles = []; let confettiId = null;
         function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
         window.addEventListener('resize', resizeCanvas); resizeCanvas();
@@ -847,33 +896,38 @@
         class Particle {
             constructor() {
                 this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height - canvas.height;
-                this.size = Math.random() * 10 + 5;
-                this.color = ['#ff4b4b', '#1cb0f6', '#ffc800', '#58cc02', '#ce82ff'][Math.floor(Math.random() * 5)];
+                this.size = Math.random() * 10 + 5; this.color = ['#ff4b4b', '#1cb0f6', '#ffc800', '#58cc02', '#ce82ff'][Math.floor(Math.random() * 5)];
                 this.speedY = Math.random() * 3 + 2; this.speedX = Math.random() * 2 - 1;
                 this.rotation = Math.random() * 360; this.rotationSpeed = Math.random() * 10 - 5;
             }
-            update() {
-                this.y += this.speedY; this.x += this.speedX; this.rotation += this.rotationSpeed;
-                if (this.y > canvas.height) { this.y = -10; this.x = Math.random() * canvas.width; }
-            }
-            draw() {
-                ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.rotation * Math.PI / 180);
-                ctx.fillStyle = this.color; ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size); ctx.restore();
-            }
+            update() { this.y += this.speedY; this.x += this.speedX; this.rotation += this.rotationSpeed; if (this.y > canvas.height) { this.y = -10; this.x = Math.random() * canvas.width; } }
+            draw() { ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.rotation * Math.PI / 180); ctx.fillStyle = this.color; ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size); ctx.restore(); }
         }
         function startConfetti() { particles = Array.from({length: 150}, () => new Particle()); if (!confettiId) animateConfetti(); }
-        function animateConfetti() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => { p.update(); p.draw(); });
-            confettiId = requestAnimationFrame(animateConfetti);
-        }
+        function animateConfetti() { ctx.clearRect(0, 0, canvas.width, canvas.height); particles.forEach(p => { p.update(); p.draw(); }); confettiId = requestAnimationFrame(animateConfetti); }
         function stopConfetti() { if (confettiId) cancelAnimationFrame(confettiId); confettiId = null; ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
-        // --- Listeners ---
-        els.btnStart.addEventListener('click', startGame);
-        els.btnRestart.addEventListener('click', startGame);
-        els.btnSound.addEventListener('click', toggleSound);
+        // --- EVENT LISTENERS ---
+        document.getElementById('btn-start').addEventListener('click', startGame);
+        document.getElementById('btn-play-again').addEventListener('click', startGame);
+        document.getElementById('btn-restart').addEventListener('click', startGame);
+        
+        const goMenu = () => { stopConfetti(); switchScreen('start'); };
+        document.getElementById('btn-menu').addEventListener('click', goMenu);
+        document.getElementById('btn-end-menu').addEventListener('click', goMenu);
 
+        document.getElementById('btn-info').addEventListener('click', () => {
+            sounds.click();
+            showModal("Game Modes", "<b>Practice:</b> Tap to aim and hit the correct ball.<br><br><b>9-Ball:</b> Hit the lowest numbered ball first. Pocket 9 to win.<br><br><b>15-Ball:</b> Hit your group (Solids/Stripes). Clear your group, then pocket the 8-ball to win.");
+        });
+        document.getElementById('btn-close-modal').addEventListener('click', () => { sounds.click(); els.ui.modal.classList.remove('active'); });
+
+        document.getElementById('sound-toggle').addEventListener('click', () => {
+            state.soundEnabled = !state.soundEnabled;
+            document.getElementById('icon-sound-on').style.display = state.soundEnabled ? 'block' : 'none';
+            document.getElementById('icon-sound-off').style.display = state.soundEnabled ? 'none' : 'block';
+            if(state.soundEnabled){ initAudio(); sounds.click(); }
+        });
     </script>
 </body>
 </html>
