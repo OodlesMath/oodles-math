@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Flappy Bird Adventure</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #1CB0F6; 
+            --primary-shadow: #1899D6;
+            --success: #58CC02; 
+            --success-shadow: #58A700;
+            --warning: #FFC800;
+            --warning-shadow: #E5B400;
+            --text-dark: #4B4B4B;
+            --white: #FFFFFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: linear-gradient(180deg, #1fa2ff 0%, #7ee8fa 50%, #dff7ff 100%);
+            background-attachment: fixed;
+            touch-action: none; /* Prevent pinch zoom and scrolling on mobile */
+        }
+
+        /* Dừng chuyển động của toàn bộ mây và mặt trời khi Game Over */
+        body.game-over .cloud, 
+        body.game-over .sun {
+            animation-play-state: paused !important;
+        }
+
+        /* --- BACKGROUND CSS (Duolingo Style) --- */
+        .sun {
+            position: fixed; top: 2%; left: 2%; width: 77px; height: 77px;
+            background: radial-gradient(circle, #fffca8 10%, #ffd700 80%, #ffaa00);
+            border-radius: 50%;
+            box-shadow: 0 0 0 10px rgba(255, 215, 0, 0.2), 0 0 0 20px rgba(255, 215, 0, 0.1), 0 0 50px rgba(255, 215, 0, 0.8);
+            z-index: 0; animation: pulseSun 4s infinite alternate ease-in-out;
+        }
+
+        @keyframes pulseSun {
+            0% { transform: scale(1); box-shadow: 0 0 0 10px rgba(255, 215, 0, 0.2), 0 0 0 20px rgba(255, 215, 0, 0.1), 0 0 40px rgba(255, 215, 0, 0.6); }
+            100% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(255, 215, 0, 0.25), 0 0 0 30px rgba(255, 215, 0, 0.15), 0 0 60px rgba(255, 215, 0, 0.9); }
+        }
+
+        .rainbow-container {
+            position: fixed; bottom: 20vh; left: 50%; transform: translateX(-50%);
+            height: 84vh; width: 168vh; overflow: hidden; z-index: 1; pointer-events: none; opacity: 0.9;
+        }
+
+        .rainbow {
+            position: absolute; top: 0; left: 0; width: 100%; height: 200%; border-radius: 50%;
+            background: radial-gradient(circle closest-side at 50% 50%,
+                transparent 77%, #c07bf2 77%, #c07bf2 80%, #6b84ff 80%, #6b84ff 83%,
+                #43c0f6 83%, #43c0f6 86%, #7ed321 86%, #7ed321 89%, #ffdc46 89%, #ffdc46 92%,
+                #ff9d3a 92%, #ff9d3a 95%, #ff4d4d 95%, #ff4d4d 98%, transparent 98%
+            );
+        }
+
+        .cloud {
+            position: fixed; background: #ffffff; border-radius: 40px; z-index: 3;
+            opacity: 0.95; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .cloud::before, .cloud::after {
+            content: ''; position: absolute; background: #ffffff; border-radius: 50%;
+        }
+        .cloud::before { width: 48px; height: 48px; top: -20px; left: 12px; }
+        .cloud::after { width: 64px; height: 64px; top: -28px; right: 16px; }
+
+        .cloud1 { width: 120px; height: 40px; top: 12%; animation: floatCloud 60s linear infinite; }
+        .cloud2 { width: 160px; height: 48px; top: 25%; animation: floatCloud 80s linear infinite; animation-delay: -30s; transform: scale(0.8); }
+        .cloud3 { width: 96px; height: 36px; top: 40%; left: 60%; animation: floatCloud 50s linear infinite; animation-delay: -15s; transform: scale(1.2); }
+        .cloud4 { width: 144px; height: 44px; top: 18%; animation: floatCloud 70s linear infinite; animation-delay: -50s; transform: scale(0.6); }
+
+        @keyframes floatCloud { 0% { left: -20%; } 100% { left: 120%; } }
+
+        /* PARALLAX SCROLL WRAPPERS */
+        .scroll-wrapper {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none;
+            will-change: transform;
+        }
+
+        .mountains, .ground {
+            position: absolute; width: 100vw;
+        }
+        
+        .panel-a { left: 0; }
+        .panel-b { left: 100vw; } /* Panel b nối tiếp liền mạch ngay sau panel a */
+
+        /* Mountains Layer */
+        .mountains { bottom: 20vh; height: 60vh; }
+        .mountain { position: absolute; bottom: 0; clip-path: polygon(50% 0%, 100% 100%, 0% 100%); }
+        .snow-cap {
+            position: absolute; top: 0; left: 0; width: 100%; height: 45%; background: #ffffff;
+            clip-path: polygon(50% 0%, 100% 100%, 85% 85%, 70% 100%, 50% 80%, 30% 100%, 15% 85%, 0% 100%);
+        }
+        .mountain-bg-1 { width: 70%; height: 85%; left: -20%; background: linear-gradient(to bottom, #6b9bd2, #9bc2e6); z-index: 1; }
+        .mountain-bg-2 { width: 65%; height: 95%; right: -15%; background: linear-gradient(to bottom, #598bc4, #8eb7de); z-index: 1; }
+        .mountain-fg-1 { width: 80%; height: 100%; left: 5%; background: linear-gradient(to bottom, #83b4e6, #b0d4f2); z-index: 2; }
+        .mountain-fg-2 { width: 75%; height: 90%; right: 0%; background: linear-gradient(to bottom, #74a8df, #a5cbf0); z-index: 2; }
+        .mountain-fg-3 { width: 55%; height: 75%; right: -25%; background: linear-gradient(to bottom, #6b9bd2, #9bc2e6); z-index: 3; }
+
+        /* Ground Layer */
+        .ground { bottom: 0; height: 26.5vh; }
+        .hill-back { position: absolute; bottom: 10vh; left: -5%; width: 110%; height: 20vh; background: #6cc32a; border-radius: 50% 50% 0 0 / 100% 100% 0 0; z-index: 2; }
+        .hill-mid-left { position: absolute; bottom: 4vh; left: -20%; width: 70%; height: 22vh; background: #78d134; border-radius: 50% 50% 0 0 / 100% 100% 0 0; z-index: 3; }
+        .hill-mid-right { position: absolute; bottom: 6vh; right: -20%; width: 80%; height: 20vh; background: #65bf25; border-radius: 50% 50% 0 0 / 100% 100% 0 0; z-index: 3; }
+        .grass-front { position: absolute; bottom: 0; left: 0; width: 100%; height: 10vh; background: linear-gradient(to bottom, #72cb2e, #57a81b); z-index: 4; }
+
+        /* Decoration Trees and Flowers */
+        .bg-tree { position: absolute; z-index: 6; }
+        .bg-tree-trunk { position: absolute; bottom: 0; left: -10px; width: 20px; height: 40px; background: #795548; border-radius: 2px; box-shadow: inset 4px 0 0 rgba(0,0,0,0.1); }
+        .bg-tree-crown {
+            position: absolute; bottom: 30px; left: -30px; width: 60px; height: 60px; background: #689f38; border-radius: 50%;
+            box-shadow: -20px 12px 0 -8px #558b2f, 20px 12px 0 -8px #558b2f, 0 -20px 0 0 #7cb342, -16px -12px 0 0 #7cb342, 16px -12px 0 0 #7cb342;
+        }
+        .tree-1 { bottom: 16vh; left: 15%; transform: scale(1.4); }
+        .tree-2 { bottom: 20vh; right: 28%; transform: scale(0.9); }
+        .tree-3 { bottom: 14vh; right: 10%; transform: scale(1.6); }
+        .tree-4 { bottom: 6vh; left: 5%; transform: scale(1.2); }
+        .tree-5 { bottom: 4vh; right: 45%; transform: scale(1.1); }
+
+        .css-flower { position: absolute; width: 12px; height: 12px; border-radius: 50%; z-index: 6; }
+        .css-flower::after { content: ''; position: absolute; top: 12px; left: 5px; width: 2px; height: 15px; background: #4caf50; z-index: -1; }
+        .f-pink { background: #ffeb3b; box-shadow: 0 -10px 0 -2px #f06292, 0 10px 0 -2px #f06292, -10px 0 0 -2px #f06292, 10px 0 0 -2px #f06292, -7px -7px 0 -2px #f06292, 7px -7px 0 -2px #f06292, -7px 7px 0 -2px #f06292, 7px 7px 0 -2px #f06292; }
+        .f-white { background: #ffeb3b; box-shadow: 0 -10px 0 -2px #fff, 0 10px 0 -2px #fff, -10px 0 0 -2px #fff, 10px 0 0 -2px #fff, -7px -7px 0 -2px #fff, 7px -7px 0 -2px #fff, -7px 7px 0 -2px #fff, 7px 7px 0 -2px #fff; }
+        .f-yellow { background: #ff9800; box-shadow: 0 -10px 0 -2px #ffeb3b, 0 10px 0 -2px #ffeb3b, -10px 0 0 -2px #ffeb3b, 10px 0 0 -2px #ffeb3b, -7px -7px 0 -2px #ffeb3b, 7px -7px 0 -2px #ffeb3b, -7px 7px 0 -2px #ffeb3b, 7px 7px 0 -2px #ffeb3b; }
+
+        @media (max-aspect-ratio: 1/1) {
+            .mountain-bg-1 { width: 140%; left: -30%; } .mountain-bg-2 { width: 130%; right: -20%; }
+            .mountain-fg-1 { width: 160%; left: -20%; } .mountain-fg-2 { width: 150%; right: -25%; }
+            .mountain-fg-3 { width: 110%; right: -30%; }
+            .tree-1 { transform: scale(1.1); left: 10%; } .tree-2 { transform: scale(0.7); right: 20%; }
+            .tree-3 { transform: scale(1.2); right: 5%; } .tree-4 { transform: scale(0.9); left: 2%; }
+            .tree-5 { transform: scale(0.8); right: 35%; }
+            .sun { width: 56px; height: 56px; }
+        }
+
+        /* --- GAME & UI CANVASES --- */
+        #game-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 10; pointer-events: none; /* Let events pass to document */
+        }
+        #confetti-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1000; pointer-events: none; 
+        }
+
+        /* UI Overlays */
+        #ui-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 100; pointer-events: none; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+
+        /* Reusable UI Panels (Duolingo Style) */
+        .panel {
+            background: var(--white); border-radius: 28px; padding: 35px;
+            text-align: center; box-shadow: 0 10px 0 #D3D3D3, 0 15px 40px rgba(0,0,0,0.15);
+            pointer-events: auto; border: 3px solid #F0F0F0; width: 90%; max-width: 450px;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        .hidden { display: none !important; }
+
+        h1 { font-size: 34px; color: var(--primary); margin-bottom: 5px; text-shadow: 0 3px 0 var(--primary-shadow); line-height: 1.2; }
+        .subtitle { font-size: 18px; color: #777; margin-bottom: 20px; font-weight: 600; }
+
+        .instruction-box { background: #F0F9FF; border-radius: 20px; padding: 15px; margin-bottom: 25px; border: 2px solid #DDF0FF; }
+        .instruction-box p { margin: 8px 0; font-size: 16px; color: var(--primary-shadow); font-weight: 700; }
+
+        .btn {
+            background-color: var(--success); color: var(--white); font-weight: 900; font-size: 24px; padding: 18px 40px;
+            border: none; border-radius: 18px; border-bottom: 8px solid var(--success-shadow); cursor: pointer; transition: all 0.1s ease;
+            width: 100%; text-transform: uppercase; letter-spacing: 1px; pointer-events: auto;
+        }
+        .btn:active { transform: translateY(8px); border-bottom-width: 0px; margin-bottom: 8px; }
+        .btn-secondary { background-color: var(--warning); border-bottom: 8px solid var(--warning-shadow); margin-top: 15px; font-size: 20px; }
+
+        /* HUD */
+        #hud {
+            position: absolute; top: 30px; left: 0; width: 100%; padding: 0 40px;
+            display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; z-index: 50;
+        }
+        #score-display {
+            font-size: 64px; font-weight: 900; color: var(--white);
+            text-shadow: -4px -4px 0 var(--primary-shadow), 4px -4px 0 var(--primary-shadow), -4px 4px 0 var(--primary-shadow), 4px 4px 0 var(--primary-shadow), 0 8px 0 var(--primary-shadow);
+            transition: transform 0.1s;
+        }
+        #sound-toggle {
+            pointer-events: auto; background: var(--white); border: 2px solid #E5E5E5; border-radius: 50%;
+            width: 60px; height: 60px; font-size: 30px; cursor: pointer; box-shadow: 0 6px 0 #D3D3D3;
+            display: flex; justify-content: center; align-items: center; transition: all 0.1s;
+        }
+        #sound-toggle:active { transform: translateY(6px); box-shadow: 0 0 0 #D3D3D3; }
+
+        /* End Screen Specifics */
+        .score-row {
+            display: flex; justify-content: space-between; align-items: center; margin: 15px 0; padding: 18px;
+            background: #FFF9E6; border-radius: 16px; border: 2px solid #FFE499; font-size: 22px; font-weight: 800; color: var(--text-dark);
+        }
+        .score-value { color: var(--primary); font-size: 32px; text-shadow: 0 2px 0 #E5E5E5; }
+        #end-message { color: var(--success); font-size: 26px; margin-bottom: 25px; font-weight: 900; }
+
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-12px); } }
+        .cute-bird-icon { width: 100px; height: 100px; margin: 0 auto 15px auto; animation: float 2s ease-in-out infinite; }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 28px; }
+            .btn { font-size: 22px; padding: 15px 20px; }
+            .panel { padding: 25px; width: 92%; }
+            #score-display { font-size: 48px; }
+            #hud { padding: 0 20px; top: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- Static Background Elements -->
+    <div class="sun"></div>
+    <div class="rainbow-container"><div class="rainbow"></div></div>
+    <div class="cloud cloud1"></div>
+    <div class="cloud cloud2"></div>
+    <div class="cloud cloud3"></div>
+    <div class="cloud cloud4"></div>
+    
+    <!-- Parallax Scrolling Mountains -->
+    <div id="mountains-wrapper" class="scroll-wrapper" style="z-index: 2;">
+        <!-- Bản gốc -->
+        <div class="mountains panel-a">
+            <div class="mountain mountain-bg-1"><div class="snow-cap"></div></div>
+            <div class="mountain mountain-bg-2"><div class="snow-cap"></div></div>
+            <div class="mountain mountain-fg-1"><div class="snow-cap"></div></div>
+            <div class="mountain mountain-fg-2"><div class="snow-cap"></div></div>
+            <div class="mountain mountain-fg-3"><div class="snow-cap"></div></div>
+        </div>
+        <!-- Bản sao chép để lặp lại liên tục -->
+        <div class="mountains panel-b">
+            <div class="mountain mountain-bg-1"><div class="snow-cap"></div></div>
+            <div class="mountain mountain-bg-2"><div class="snow-cap"></div></div>
+            <div class="mountain mountain-fg-1"><div class="snow-cap"></div></div>
+            <div class="mountain mountain-fg-2"><div class="snow-cap"></div></div>
+            <div class="mountain mountain-fg-3"><div class="snow-cap"></div></div>
+        </div>
+    </div>
+    
+    <!-- Parallax Scrolling Ground & Details -->
+    <div id="ground-wrapper" class="scroll-wrapper" style="z-index: 4;">
+        <!-- Bản gốc -->
+        <div class="ground panel-a">
+            <div class="hill-back"></div><div class="hill-mid-left"></div><div class="hill-mid-right"></div><div class="grass-front"></div>
+            <div class="bg-tree tree-1"><div class="bg-tree-trunk"></div><div class="bg-tree-crown"></div></div>
+            <div class="bg-tree tree-2"><div class="bg-tree-trunk"></div><div class="bg-tree-crown"></div></div>
+            <div class="bg-tree tree-3"><div class="bg-tree-trunk"></div><div class="bg-tree-crown"></div></div>
+            <div class="bg-tree tree-4"><div class="bg-tree-trunk"></div><div class="bg-tree-crown"></div></div>
+            <div class="bg-tree tree-5"><div class="bg-tree-trunk"></div><div class="bg-tree-crown"></div></div>
+            <div class="css-flower f-pink" style="bottom: 9vh; left: 20%;"></div><div class="css-flower f-white" style="bottom: 7vh; left: 35%; transform: scale(0.8);"></div>
+            <div class="css-flower f-yellow" style="bottom: 6vh; left: 15%; transform: scale(1.1);"></div><div class="css-flower f-yellow" style="bottom: 14vh; right: 30%;"></div>
+            <div class="css-flower f-pink" style="bottom: 7vh; right: 20%; transform: scale(0.9);"></div><div class="css-flower f-white" style="bottom: 4vh; right: 10%; transform: scale(1.2);"></div>
+            <div class="css-flower f-pink" style="bottom: 3vh; left: 45%; transform: scale(1.3);"></div><div class="css-flower f-yellow" style="bottom: 4vh; right: 50%; transform: scale(0.7);"></div>
+            <div class="css-flower f-white" style="bottom: 1vh; left: 28%; transform: scale(1);"></div>
+        </div>
+        <!-- Bản sao chép để lặp lại liên tục -->
+        <div class="ground panel-b">
+            <div class="hill-back"></div><div class="hill-mid-left"></div><div class="hill-mid-right"></div><div class="grass-front"></div>
+            <div class="bg-tree tree-1"><div class="bg-tree-trunk"></div><div class="bg-tree-crown"></div></div>
+            <div class="bg-tree tree-2"><div class="bg-tree-trunk"></div><div class="bg-tree-crown"></div></div>
+            <div class="bg-tree tree-3"><div class="bg-tree-trunk"></div><div class="bg-tree-crown"></div></div>
+            <div class="bg-tree tree-4"><div class="bg-tree-trunk"></div><div class="bg-tree-crown"></div></div>
+            <div class="bg-tree tree-5"><div class="bg-tree-trunk"></div><div class="bg-tree-crown"></div></div>
+            <div class="css-flower f-pink" style="bottom: 9vh; left: 20%;"></div><div class="css-flower f-white" style="bottom: 7vh; left: 35%; transform: scale(0.8);"></div>
+            <div class="css-flower f-yellow" style="bottom: 6vh; left: 15%; transform: scale(1.1);"></div><div class="css-flower f-yellow" style="bottom: 14vh; right: 30%;"></div>
+            <div class="css-flower f-pink" style="bottom: 7vh; right: 20%; transform: scale(0.9);"></div><div class="css-flower f-white" style="bottom: 4vh; right: 10%; transform: scale(1.2);"></div>
+            <div class="css-flower f-pink" style="bottom: 3vh; left: 45%; transform: scale(1.3);"></div><div class="css-flower f-yellow" style="bottom: 4vh; right: 50%; transform: scale(0.7);"></div>
+            <div class="css-flower f-white" style="bottom: 1vh; left: 28%; transform: scale(1);"></div>
+        </div>
+    </div>
+
+    <!-- Game Canvas -->
+    <canvas id="game-canvas"></canvas>
+    
+    <!-- UI Layer -->
+    <div id="ui-layer">
+        <div id="hud" class="hidden">
+            <div id="score-display">0</div>
+            <button id="sound-toggle" title="Toggle Sound">🔊</button>
+        </div>
+
+        <div id="start-screen" class="panel">
+            <svg class="cute-bird-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <radialGradient id="birdGrad" cx="30%" cy="30%" r="70%">
+                        <stop offset="0%" stop-color="#FFEB3B" />
+                        <stop offset="100%" stop-color="#FF9800" />
+                    </radialGradient>
+                </defs>
+                <!-- Tail -->
+                <ellipse cx="15" cy="50" rx="15" ry="8" transform="rotate(20 15 50)" fill="#FF9800"/>
+                <ellipse cx="18" cy="40" rx="12" ry="6" transform="rotate(40 18 40)" fill="#FFB74D"/>
+                <!-- Body -->
+                <circle cx="50" cy="50" r="40" fill="url(#birdGrad)" />
+                <!-- Cheek -->
+                <circle cx="65" cy="60" r="10" fill="#FF5252" opacity="0.6"/>
+                <!-- Eye Base -->
+                <circle cx="65" cy="40" r="16" fill="white" />
+                <circle cx="70" cy="40" r="9" fill="#212121" />
+                <circle cx="73" cy="37" r="3" fill="white" />
+                <!-- Beak -->
+                <path d="M 78 48 Q 100 50 95 60 Q 85 65 74 58 Z" fill="#FF3D00" />
+                <!-- Wing -->
+                <path d="M 25 55 C 10 40, 50 30, 45 60 C 42 70, 28 65, 25 55 Z" fill="#FFF59D" stroke="#FBC02D" stroke-width="2"/>
+            </svg>
+            <h1>Flappy Bird<br>Adventure</h1>
+            <div class="subtitle">Beautiful world awaits!</div>
+            
+            <div class="instruction-box">
+                <p>👆 Tap the screen to fly up</p>
+                <p>🌳 Jump over the beautiful trees</p>
+                <p>✨ Do not touch the trees or the sky!</p>
+            </div>
+
+            <button id="btn-start" class="btn">Play Now</button>
+        </div>
+
+        <div id="game-over-screen" class="panel hidden">
+            <h1>Game Over</h1>
+            <div id="end-message">Good try!</div>
+            
+            <div class="score-row">
+                <span>Your Score</span>
+                <span id="final-score" class="score-value">0</span>
+            </div>
+            <div class="score-row">
+                <span>Best Score</span>
+                <span id="best-score" class="score-value">0</span>
+            </div>
+
+            <button id="btn-restart" class="btn">Play Again</button>
+            <button id="btn-home" class="btn btn-secondary">Home</button>
+        </div>
+    </div>
+
+    <!-- Confetti layer (Always on top) -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <script>
+        /** --- GLOBAL VARIABLES & RESPONSIVE SETUP --- */
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const confettiCanvas = document.getElementById('confetti-canvas');
+        const confettiCtx = confettiCanvas.getContext('2d');
+
+        // UI Elements
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const hud = document.getElementById('hud');
+        const scoreDisplay = document.getElementById('score-display');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const bestScoreDisplay = document.getElementById('best-score');
+        const endMessageDisplay = document.getElementById('end-message');
+        const soundToggleBtn = document.getElementById('sound-toggle');
+        const btnStart = document.getElementById('btn-start');
+        const btnRestart = document.getElementById('btn-restart');
+        const btnHome = document.getElementById('btn-home');
+
+        // Parallax DOM Elements
+        const mountainsWrapper = document.getElementById('mountains-wrapper');
+        const groundWrapper = document.getElementById('ground-wrapper');
+        let bgScrollX = 0;
+        let fgScrollX = 0;
+
+        const STATE = { START: 0, PLAYING: 1, GAMEOVER: 2 };
+        let currentState = STATE.START;
+        let score = 0, bestScore = 0, frames = 0, animationId;
+
+        // Logical Resolution Setup for 100% Responsiveness
+        const GH = 1000; 
+        let GW = 1000; 
+        let scaleRatio = 1;
+        let groundY = GH * (1 - 0.265); // 26.5vh is the ground in CSS
+
+        function resizeCanvases() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            scaleRatio = window.innerHeight / GH;
+            GW = window.innerWidth / scaleRatio;
+            
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.scale(scaleRatio, scaleRatio);
+
+            confettiCanvas.width = window.innerWidth;
+            confettiCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvases);
+        resizeCanvases(); // Initial call
+
+        /** --- AUDIO SYSTEM --- */
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+        let isMuted = false;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playTone(freq1, freq2, type, duration, vol=0.1, isSlide=false) {
+            if (isMuted || !audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq1, audioCtx.currentTime);
+                if (isSlide) osc.frequency.exponentialRampToValueAtTime(freq2, audioCtx.currentTime + duration);
+                
+                gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) {}
+        }
+
+        const SFX = {
+            flap: () => playTone(300, 500, 'sine', 0.15, 0.15, true),
+            score: () => {
+                if (isMuted) return;
+                playTone(600, 600, 'sine', 0.1, 0.1);
+                setTimeout(() => playTone(800, 800, 'sine', 0.2, 0.1), 100);
+            },
+            oops: () => playTone(300, 150, 'triangle', 0.5, 0.2, true),
+            yay: () => {
+                if (isMuted) return;
+                const notes = [440, 554, 659, 880];
+                notes.forEach((freq, i) => {
+                    setTimeout(() => playTone(freq, freq, 'sine', 0.2, 0.15), i * 100);
+                });
+            }
+        };
+
+        soundToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            isMuted = !isMuted;
+            soundToggleBtn.textContent = isMuted ? '🔇' : '🔊';
+            if(!isMuted) initAudio();
+        });
+
+
+        /** --- GAME ENTITIES --- */
+
+        // 1. The Cute Bird
+        const bird = {
+            x: GW * 0.3,
+            y: GH * 0.4,
+            radius: 35,
+            velocity: 0,
+            gravity: 0.35, 
+            jump: -9.5,    
+            rotation: 0,
+            flapAngle: 0,
+            flapDir: 1,
+
+            init: function() {
+                this.x = GW * 0.3; // Responsive start pos
+                this.y = GH * 0.4;
+                this.velocity = 0;
+                this.rotation = 0;
+            },
+            flap: function() {
+                this.velocity = this.jump;
+                SFX.flap();
+            },
+            update: function() {
+                this.velocity += this.gravity;
+                this.y += this.velocity;
+                
+                if(this.velocity < 0) this.rotation = Math.max(-Math.PI/6, this.rotation - 0.1);
+                else this.rotation = Math.min(Math.PI/4, this.rotation + 0.05);
+
+                this.flapAngle += 0.3 * this.flapDir;
+                if(this.flapAngle > Math.PI/4 || this.flapAngle < -Math.PI/4) this.flapDir *= -1;
+            },
+            draw: function() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+
+                // Tail feathers
+                ctx.fillStyle = '#FF9800';
+                ctx.beginPath(); ctx.ellipse(-this.radius*0.9, 0, this.radius*0.4, this.radius*0.2, -Math.PI/6, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.ellipse(-this.radius*0.8, -this.radius*0.3, this.radius*0.35, this.radius*0.15, -Math.PI/4, 0, Math.PI*2); ctx.fill();
+
+                // Body Gradient
+                let grad = ctx.createRadialGradient(-this.radius*0.2, -this.radius*0.2, this.radius*0.2, 0, 0, this.radius);
+                grad.addColorStop(0, '#FFF59D');
+                grad.addColorStop(0.3, '#FFEB3B');
+                grad.addColorStop(1, '#FF9800');
+                
+                ctx.fillStyle = grad;
+                ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI*2); ctx.fill();
+
+                // Blushing Cheek
+                ctx.fillStyle = '#FF5252';
+                ctx.globalAlpha = 0.5;
+                ctx.beginPath(); ctx.arc(this.radius*0.4, this.radius*0.35, this.radius*0.25, 0, Math.PI*2); ctx.fill();
+                ctx.globalAlpha = 1.0;
+
+                // Cute Big Eye
+                ctx.fillStyle = '#FFFFFF';
+                ctx.beginPath(); ctx.arc(this.radius*0.35, -this.radius*0.15, this.radius*0.35, 0, Math.PI*2); ctx.fill();
+                
+                ctx.fillStyle = '#212121'; // Pupil
+                ctx.beginPath(); ctx.arc(this.radius*0.45, -this.radius*0.15, this.radius*0.2, 0, Math.PI*2); ctx.fill();
+                
+                ctx.fillStyle = '#FFFFFF'; // Glint
+                ctx.beginPath(); ctx.arc(this.radius*0.5, -this.radius*0.22, this.radius*0.06, 0, Math.PI*2); ctx.fill();
+
+                // Beak
+                ctx.fillStyle = '#FF3D00';
+                ctx.beginPath();
+                ctx.moveTo(this.radius*0.7, this.radius*0.05);
+                ctx.lineTo(this.radius*1.2, this.radius*0.25);
+                ctx.lineTo(this.radius*0.65, this.radius*0.45);
+                ctx.closePath();
+                ctx.fill();
+
+                // Wing
+                ctx.save();
+                ctx.translate(-this.radius*0.2, this.radius*0.15);
+                ctx.rotate(this.flapAngle);
+                ctx.fillStyle = '#FFF59D';
+                ctx.beginPath(); ctx.ellipse(0, 0, this.radius*0.5, this.radius*0.3, 0, 0, Math.PI*2); ctx.fill();
+                ctx.strokeStyle = '#FBC02D'; ctx.lineWidth = 3; ctx.stroke();
+                ctx.restore();
+
+                ctx.restore();
+            }
+        };
+
+        // 2. Tree Obstacles (Bottom Only)
+        const trees = {
+            list: [],
+            width: 130, // Wide and friendly
+            speed: 4.5, // Gentle speed
+            spawnTimer: 0,
+            
+            init: function() {
+                this.list = [];
+                this.spawnTimer = 0;
+                this.speed = 4.5;
+            },
+            update: function() {
+                if (frames % 600 === 0 && this.speed < 7) this.speed += 0.3;
+
+                this.spawnTimer++;
+                // Khoảng cách an toàn giữa các cây dựa vào tốc độ
+                if (this.spawnTimer > (GW * 0.7) / this.speed) {
+                    const minH = 200;
+                    const maxH = 500;
+                    const h = Math.floor(Math.random() * (maxH - minH + 1) + minH);
+                    
+                    this.list.push({
+                        x: GW + this.width,
+                        y: groundY - h, 
+                        passed: false
+                    });
+                    this.spawnTimer = 0;
+                }
+
+                for(let i = this.list.length - 1; i >= 0; i--) {
+                    let tree = this.list[i];
+                    tree.x -= this.speed;
+
+                    // Score point
+                    if(!tree.passed && bird.x > tree.x + this.width) {
+                        score++;
+                        scoreDisplay.innerText = score;
+                        tree.passed = true;
+                        SFX.score();
+                        
+                        scoreDisplay.style.transform = 'scale(1.5)';
+                        setTimeout(() => scoreDisplay.style.transform = 'scale(1)', 150);
+                        particles.spawnSparkles(bird.x, bird.y);
+                    }
+
+                    if(tree.x + this.width * 2 < 0) {
+                        this.list.splice(i, 1);
+                    }
+                }
+            },
+            draw: function() {
+                this.list.forEach(tree => {
+                    let x = tree.x;
+                    let y = tree.y;
+                    let w = this.width;
+
+                    // Draw trunk hiding behind CSS ground
+                    ctx.fillStyle = '#795548';
+                    ctx.fillRect(x + w*0.35, y, w*0.3, GH - y + 100); 
+                    
+                    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+                    ctx.fillRect(x + w*0.35, y, w*0.08, GH - y + 100); 
+
+                    // Crown (Clover shape)
+                    ctx.fillStyle = '#689f38';
+                    ctx.beginPath(); ctx.arc(x + w*0.25, y + w*0.2, w*0.35, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(x + w*0.75, y + w*0.2, w*0.35, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(x + w*0.5, y, w*0.4, 0, Math.PI*2); ctx.fill();
+
+                    // Highlights
+                    ctx.fillStyle = '#7cb342';
+                    ctx.beginPath(); ctx.arc(x + w*0.25, y + w*0.12, w*0.25, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(x + w*0.75, y + w*0.12, w*0.25, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(x + w*0.5, y - w*0.08, w*0.3, 0, Math.PI*2); ctx.fill();
+                });
+            }
+        };
+
+        // 3. Particles
+        const particles = {
+            sparkles: [], confetti: [],
+            
+            init: function() {
+                this.sparkles = []; this.confetti = [];
+                confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            },
+            spawnSparkles: function(x, y) {
+                for(let i=0; i<12; i++) {
+                    this.sparkles.push({
+                        x: x, y: y,
+                        vx: (Math.random() - 0.5) * 8, vy: (Math.random() - 0.5) * 8,
+                        life: 1.0
+                    });
+                }
+            },
+            spawnConfetti: function() {
+                for(let i=0; i<150; i++) {
+                    this.confetti.push({
+                        x: confettiCanvas.width / 2, y: confettiCanvas.height / 2,
+                        vx: (Math.random() - 0.5) * 30, vy: (Math.random() - 1) * 30,
+                        color: ['#FFC107', '#E91E63', '#00BCD4', '#8BC34A', '#9C27B0', '#FF5722'][Math.floor(Math.random()*6)],
+                        size: 10 + Math.random() * 10,
+                        rot: Math.random() * Math.PI, rotSpeed: (Math.random() - 0.5) * 0.5
+                    });
+                }
+            },
+            updateAndDrawSparkles: function() {
+                for(let i = this.sparkles.length-1; i>=0; i--) {
+                    let p = this.sparkles[i];
+                    p.x += p.vx; p.y += p.vy; p.life -= 0.04;
+                    if(p.life <= 0) { this.sparkles.splice(i, 1); continue; }
+                    
+                    ctx.save(); ctx.globalAlpha = p.life; ctx.fillStyle = '#FFF59D'; ctx.translate(p.x, p.y);
+                    ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI*2); ctx.fill(); ctx.restore();
+                }
+            },
+            updateAndDrawConfetti: function() {
+                confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+                for(let i = this.confetti.length-1; i>=0; i--) {
+                    let p = this.confetti[i];
+                    p.x += p.vx; p.y += p.vy; p.vy += 0.6; p.rot += p.rotSpeed;
+                    
+                    if(p.y > confettiCanvas.height + 50) { this.confetti.splice(i, 1); continue; }
+                    
+                    confettiCtx.save(); confettiCtx.translate(p.x, p.y); confettiCtx.rotate(p.rot);
+                    confettiCtx.fillStyle = p.color; confettiCtx.fillRect(-p.size/2, -p.size/2, p.size, p.size); confettiCtx.restore();
+                }
+            }
+        };
+
+
+        /** --- GAME LOGIC --- */
+
+        function checkCollisions() {
+            if (bird.y + bird.radius > groundY) {
+                bird.y = groundY - bird.radius;
+                return true; 
+            }
+            if (bird.y - bird.radius < 0) {
+                bird.y = bird.radius; 
+                return true; 
+            }
+
+            let hitbox = bird.radius * 0.6; // Forgiving hitbox cho bé
+            for(let tree of trees.list) {
+                if (bird.x + hitbox > tree.x && bird.x - hitbox < tree.x + trees.width) {
+                    let collisionTop = tree.y - trees.width*0.2; 
+                    if (bird.y + hitbox > collisionTop) {
+                        return true; 
+                    }
+                }
+            }
+            return false;
+        }
+
+        function gameOver() {
+            currentState = STATE.GAMEOVER;
+            document.body.classList.add('game-over'); // Freeze clouds and sun
+            SFX.oops();
+            
+            if (score > bestScore) bestScore = score;
+            
+            finalScoreDisplay.innerText = score;
+            bestScoreDisplay.innerText = bestScore;
+            
+            if(score <= 3) endMessageDisplay.innerText = "Good try! Let's fly again!";
+            else if(score <= 8) endMessageDisplay.innerText = "Nice flying!";
+            else endMessageDisplay.innerText = "Amazing bird pilot!";
+
+            setTimeout(() => {
+                hud.classList.add('hidden');
+                gameOverScreen.classList.remove('hidden');
+                SFX.yay();
+                particles.spawnConfetti();
+            }, 600);
+        }
+
+        function startGame() {
+            initAudio();
+            document.body.classList.remove('game-over'); // Resume clouds and sun
+            
+            score = 0; frames = 0;
+            scoreDisplay.innerText = score; scoreDisplay.style.transform = 'scale(1)';
+            
+            // Reset Parallax Scroll
+            bgScrollX = 0; fgScrollX = 0;
+            mountainsWrapper.style.transform = `translateX(0px)`;
+            groundWrapper.style.transform = `translateX(0px)`;
+
+            bird.init(); trees.init(); particles.init();
+            
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            hud.classList.remove('hidden');
+            
+            currentState = STATE.PLAYING;
+            bird.flap(); 
+        }
+
+        function returnToHome() {
+            currentState = STATE.START;
+            gameOverScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+            hud.classList.add('hidden');
+            particles.init(); 
+            ctx.clearRect(0, 0, GW, GH);
+            document.body.classList.remove('game-over'); 
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, GW, GH);
+
+            if (currentState === STATE.PLAYING) {
+                frames++;
+                bird.update();
+                trees.update();
+                
+                // --- PARALLAX SCROLL LOGIC ---
+                let pixelSpeed = trees.speed * scaleRatio; // Tốc độ di chuyển trên màn hình thực tế
+                
+                bgScrollX -= pixelSpeed * 0.2; // Núi cuộn chậm
+                fgScrollX -= pixelSpeed;       // Mặt đất cuộn nhanh bằng cây
+                
+                let screenWidth = window.innerWidth;
+                
+                // Loop seamless background
+                if (bgScrollX <= -screenWidth) bgScrollX %= screenWidth;
+                if (fgScrollX <= -screenWidth) fgScrollX %= screenWidth;
+                
+                mountainsWrapper.style.transform = `translateX(${bgScrollX}px)`;
+                groundWrapper.style.transform = `translateX(${fgScrollX}px)`;
+
+                // -----------------------------
+                if (checkCollisions()) gameOver();
+                
+            } else if (currentState === STATE.GAMEOVER) {
+                if (bird.y + bird.radius < groundY) {
+                    bird.velocity += bird.gravity;
+                    bird.y += bird.velocity;
+                    bird.rotation = Math.min(Math.PI/2, bird.rotation + 0.1);
+                }
+            }
+
+            if (currentState === STATE.PLAYING || currentState === STATE.GAMEOVER) {
+                trees.draw();
+                particles.updateAndDrawSparkles();
+                bird.draw();
+            }
+
+            if (currentState === STATE.GAMEOVER) {
+                particles.updateAndDrawConfetti();
+            }
+
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        /** --- INPUT --- */
+        function handleInput(e) {
+            if (e.type === 'keydown' && e.code === 'Space') e.preventDefault(); 
+            if (e.target.tagName.toLowerCase() === 'button') return;
+
+            initAudio(); 
+
+            if (currentState === STATE.START) startGame();
+            else if (currentState === STATE.PLAYING) bird.flap();
+        }
+
+        document.addEventListener('keydown', (e) => { if (e.code === 'Space') handleInput(e); }, {passive: false});
+        document.addEventListener('mousedown', (e) => { if(e.button === 0) handleInput(e); });
+        document.addEventListener('touchstart', (e) => { handleInput(e); }, {passive: true});
+
+        btnStart.addEventListener('click', (e) => { e.stopPropagation(); startGame(); });
+        btnRestart.addEventListener('click', (e) => { e.stopPropagation(); startGame(); });
+        btnHome.addEventListener('click', (e) => { e.stopPropagation(); returnToHome(); });
+
+        document.querySelectorAll('button').forEach(btn => btn.addEventListener('focus', function() { this.blur(); }));
+
+        animationId = requestAnimationFrame(gameLoop);
+
+    </script>
+</body>
+</html>
