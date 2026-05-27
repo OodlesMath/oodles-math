@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Little Racer: Dodge the Cars! v2</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&display=swap');
+
+        :root {
+            --primary: #58cc02;
+            --primary-shadow: #58a700;
+            --secondary: #1cb0f6;
+            --secondary-shadow: #1899d6;
+            --danger: #ff4b4b;
+            --danger-shadow: #ea2b2b;
+            --warning: #ffc800;
+            --warning-shadow: #c69b00;
+            --text-color: #4b4b4b;
+            --bg-color: #87CEEB; /* Sky blue */
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            font-family: 'Poppins', sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* UI Overlays */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(135, 206, 235, 0.9);
+            pointer-events: auto;
+            backdrop-filter: blur(5px);
+            z-index: 20;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* Typography & Layout */
+        h1 {
+            color: white;
+            text-shadow: 0 4px 0 rgba(0,0,0,0.2), 0 0 10px rgba(0,0,0,0.1);
+            font-size: clamp(32px, 6vw, 48px);
+            text-align: center;
+            margin: 10px 20px;
+            line-height: 1.2;
+            letter-spacing: 1px;
+        }
+
+        h2 {
+            color: var(--text-color);
+            font-size: 32px;
+            margin: 10px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        p {
+            color: var(--text-color);
+            font-size: 22px;
+            text-align: center;
+            margin: 8px 20px;
+            font-weight: 600;
+        }
+
+        .hero-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 8px 0 rgba(0,0,0,0.1));
+            animation: float 2s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        /* Buttons */
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-bottom: 6px solid var(--primary-shadow);
+            border-radius: 16px;
+            padding: 15px 32px;
+            font-size: 24px;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin: 10px;
+            min-width: 240px;
+            text-align: center;
+            pointer-events: auto;
+        }
+
+        .btn:active {
+            transform: translateY(6px);
+            border-bottom-width: 0px;
+            margin-bottom: 16px;
+        }
+
+        .btn-blue {
+            background-color: var(--secondary);
+            border-bottom-color: var(--secondary-shadow);
+        }
+
+        .btn-yellow {
+            background-color: var(--warning);
+            border-bottom-color: var(--warning-shadow);
+            color: #b57a00;
+        }
+
+        /* HUD (Score & Lives) */
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hud-left {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .hud-panel {
+            background: white;
+            border: 4px solid #e5e5e5;
+            border-radius: 16px;
+            padding: 10px 20px;
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 0 #e5e5e5;
+        }
+
+        .heart-icon { color: var(--danger); font-size: 24px; }
+        .star-icon { color: var(--warning); text-shadow: 0 2px 0 var(--warning-shadow); }
+
+        .top-right-controls {
+            display: flex;
+            gap: 10px;
+            pointer-events: auto;
+        }
+
+        .icon-btn {
+            width: 55px;
+            height: 55px;
+            border-radius: 16px;
+            background: white;
+            border: 4px solid #e5e5e5;
+            border-bottom: 8px solid #e5e5e5;
+            font-size: 26px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        .icon-btn:active {
+            transform: translateY(4px);
+            border-bottom-width: 4px;
+        }
+
+        /* Touch Controls */
+        #touch-controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 500px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .touch-btn {
+            background-color: rgba(255, 255, 255, 0.95);
+            color: var(--secondary-shadow);
+            border: 4px solid var(--secondary);
+            border-bottom: 8px solid var(--secondary);
+            border-radius: 20px;
+            width: 45%;
+            height: 90px;
+            font-size: 28px;
+            font-weight: 800;
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            user-select: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            transition: transform 0.05s, border-width 0.05s;
+        }
+
+        .touch-btn:active, .touch-btn.pressed {
+            transform: translateY(4px);
+            border-bottom-width: 4px;
+            background-color: var(--secondary);
+            color: white;
+        }
+
+        /* Confetti - Must be on top of everything */
+        .confetti-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 9999;
+            display: none;
+        }
+
+        @media (min-width: 768px) {
+            #touch-controls { display: none; }
+        }
+        @media (pointer: coarse) {
+            #touch-controls { display: flex; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="ui-layer">
+        
+        <!-- HUD -->
+        <div id="hud" style="display: none;">
+            <div class="hud-left">
+                <div class="hud-panel">
+                    <span class="star-icon">⭐</span> <span id="score-display">0</span>
+                </div>
+                <div class="hud-panel">
+                    <span class="heart-icon">❤️</span> <span id="lives-display">1</span>
+                </div>
+            </div>
+            <div class="top-right-controls">
+                <button class="icon-btn" id="btn-mute">🔊</button>
+                <button class="icon-btn" id="btn-pause">⏸️</button>
+            </div>
+        </div>
+
+        <!-- Touch Controls -->
+        <div id="touch-controls" style="display: none;">
+            <button class="touch-btn" id="btn-left">← Left</button>
+            <button class="touch-btn" id="btn-right">Right →</button>
+        </div>
+
+        <!-- Main Menu -->
+        <div id="menu-screen" class="screen active">
+            <div class="hero-icon">🚗</div>
+            <h1>Little Racer:<br>Dodge the Cars!</h1>
+            <button class="btn" id="btn-start">Start Game</button>
+            <button class="btn btn-blue" id="btn-how-to-play">How to Play</button>
+            <button class="icon-btn" id="btn-mute-menu" style="margin-top: 20px;">🔊</button>
+        </div>
+
+        <!-- How to Play -->
+        <div id="instructions-screen" class="screen">
+            <h2>How to Play</h2>
+            <p>⬅️ Move left and right ➡️</p>
+            <p>🚙 Dodge cars, rocks & cones 🚧</p>
+            <p>⭐ Collect 3 stars = 1 Extra Heart ❤️</p>
+            <p>Have fun! 😊</p>
+            <br>
+            <button class="btn" id="btn-back-menu">Got it!</button>
+        </div>
+
+        <!-- Pause Screen -->
+        <div id="pause-screen" class="screen">
+            <h2>Game Paused</h2>
+            <button class="btn" id="btn-resume">Resume</button>
+            <button class="btn btn-blue" id="btn-quit">Quit to Menu</button>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="screen">
+            <h1 id="go-title">Oops! Crash!</h1>
+            <div class="hud-panel" style="margin-bottom: 10px; font-size: 26px;">
+                Score: <span class="star-icon" id="go-score" style="margin-left: 8px;">0</span>
+            </div>
+            <div class="hud-panel" style="margin-bottom: 30px; font-size: 20px;">
+                Best: <span id="go-best" style="margin-left: 8px;">0</span>
+            </div>
+            <button class="btn" id="btn-restart">Try Again</button>
+            <button class="btn btn-blue" id="btn-menu-from-go">Menu</button>
+        </div>
+
+    </div>
+    
+    <!-- Confetti wrapper outside screens for top-most visibility -->
+    <div class="confetti-container" id="confetti"></div>
+</div>
+
+<script>
+    /* ==========================================================================
+       Audio Synthesizer
+       ========================================================================== */
+    class AudioEngine {
+        constructor() {
+            this.ctx = null;
+            this.muted = false;
+        }
+
+        init() {
+            if (!this.ctx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioContext();
+            }
+            if (this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+        }
+
+        toggleMute() {
+            this.muted = !this.muted;
+            return this.muted;
+        }
+
+        playTone(type, freq, duration, vol, slideFreq = null) {
+            if (this.muted || !this.ctx) return;
+            
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+            
+            if (slideFreq) {
+                osc.frequency.exponentialRampToValueAtTime(slideFreq, this.ctx.currentTime + duration);
+            }
+            
+            gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+            
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            
+            osc.start();
+            osc.stop(this.ctx.currentTime + duration);
+        }
+
+        playStart() {
+            if(this.muted || !this.ctx) return;
+            this.playTone('sine', 440, 0.1, 0.2);
+            setTimeout(() => this.playTone('sine', 554, 0.1, 0.2), 100);
+            setTimeout(() => this.playTone('sine', 659, 0.2, 0.2), 200);
+            setTimeout(() => this.playTone('sine', 880, 0.4, 0.2), 300);
+        }
+
+        playMove() {
+            this.playTone('sine', 300, 0.1, 0.1, 500);
+        }
+
+        playCollect() {
+            this.playTone('square', 800, 0.1, 0.1);
+            setTimeout(() => this.playTone('square', 1200, 0.2, 0.1), 100);
+        }
+        
+        play1Up() { // Extra life sound
+            if(this.muted || !this.ctx) return;
+            this.playTone('square', 523, 0.1, 0.2); // C5
+            setTimeout(() => this.playTone('square', 659, 0.1, 0.2), 100); // E5
+            setTimeout(() => this.playTone('square', 783, 0.1, 0.2), 200); // G5
+            setTimeout(() => this.playTone('square', 1046, 0.3, 0.2), 300); // C6
+        }
+
+        playCrash(mild = false) {
+            if (mild) {
+                this.playTone('sawtooth', 200, 0.2, 0.2, 100);
+            } else {
+                this.playTone('sawtooth', 150, 0.4, 0.3, 50);
+            }
+        }
+
+        playGameOver() {
+            if(this.muted || !this.ctx) return;
+            this.playTone('triangle', 300, 0.3, 0.3);
+            setTimeout(() => this.playTone('triangle', 250, 0.3, 0.3), 300);
+            setTimeout(() => this.playTone('triangle', 200, 0.5, 0.3), 600);
+        }
+
+        playHighScore() {
+            if(this.muted || !this.ctx) return;
+            this.playTone('square', 400, 0.15, 0.2);
+            setTimeout(() => this.playTone('square', 500, 0.15, 0.2), 150);
+            setTimeout(() => this.playTone('square', 600, 0.15, 0.2), 300);
+            setTimeout(() => this.playTone('square', 800, 0.4, 0.2), 450);
+        }
+    }
+
+    const audio = new AudioEngine();
+
+    /* ==========================================================================
+       Game Variables & Setup
+       ========================================================================== */
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d', { alpha: false });
+
+    let GAME_STATE = 'MENU';
+    let animationId;
+    let frames = 0;
+    
+    // Sizing
+    let roadWidth, laneWidth, roadX;
+    const NUM_LANES = 3;
+
+    // Player
+    const player = {
+        lane: 1,
+        x: 0,
+        y: 0,
+        w: 60,
+        h: 100,
+        color: '#FF4B4B',
+        targetX: 0
+    };
+
+    const inputState = { left: false, right: false };
+
+    // Entities
+    let obstacles = [];
+    let particles = [];
+    let floatingTexts = [];
+
+    // Stats
+    let score = 0;
+    let bestScore = localStorage.getItem('littleRacerBest') || 0;
+    
+    // New mechanics: Hearts & Stars count
+    let lives = 1;
+    let starsForLife = 0;
+    let invulnerable = 0; // Frames of invincibility after taking damage
+    
+    // Adjusted speeds (Start slow, increase after 20s)
+    let speed = 2.5;
+    let baseSpeed = 2.5;
+    let spawnTimer = 0;
+    let spawnInterval = 120; // Slower spawn at start
+
+    // Scenery
+    let clouds = [];
+    let roadYOffset = 0;
+    let screenShake = 0;
+
+    const praiseWords = ["Great!", "Nice move!", "Keep going!", "Super driver!", "Wow!"];
+
+    /* ==========================================================================
+       Initialization & Resizing
+       ========================================================================== */
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        roadWidth = Math.min(500, canvas.width * 0.85);
+        laneWidth = roadWidth / NUM_LANES;
+        roadX = (canvas.width - roadWidth) / 2;
+
+        player.w = laneWidth * 0.6;
+        player.h = player.w * 1.6;
+        player.y = canvas.height - player.h - (window.innerHeight > 600 ? 120 : 20);
+        player.targetX = roadX + (player.lane * laneWidth) + (laneWidth - player.w) / 2;
+        player.x = player.targetX;
+
+        if (clouds.length === 0) {
+            for(let i=0; i<5; i++) {
+                clouds.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * (canvas.height/2),
+                    s: 0.5 + Math.random(),
+                    speed: 0.2 + Math.random() * 0.5
+                });
+            }
+        }
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    /* ==========================================================================
+       Input Handling
+       ========================================================================== */
+    function movePlayerLeft() {
+        if (GAME_STATE !== 'PLAYING') return;
+        if (player.lane > 0) {
+            player.lane--;
+            audio.playMove();
+        }
+    }
+
+    function movePlayerRight() {
+        if (GAME_STATE !== 'PLAYING') return;
+        if (player.lane < NUM_LANES - 1) {
+            player.lane++;
+            audio.playMove();
+        }
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (GAME_STATE !== 'PLAYING') return;
+        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+            if (!inputState.left) movePlayerLeft();
+            inputState.left = true;
+        } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+            if (!inputState.right) movePlayerRight();
+            inputState.right = true;
+        }
+    });
+
+    window.addEventListener('keyup', (e) => {
+        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') inputState.left = false;
+        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') inputState.right = false;
+    });
+
+    // Touch setup
+    const btnLeft = document.getElementById('btn-left');
+    const btnRight = document.getElementById('btn-right');
+
+    function setupTouch(btn, isLeft) {
+        let moveInterval;
+        const startAction = (e) => {
+            e.preventDefault();
+            btn.classList.add('pressed');
+            isLeft ? movePlayerLeft() : movePlayerRight();
+            clearInterval(moveInterval);
+            moveInterval = setInterval(() => {
+                isLeft ? movePlayerLeft() : movePlayerRight();
+            }, 300);
+        };
+        const stopAction = (e) => {
+            e.preventDefault();
+            btn.classList.remove('pressed');
+            clearInterval(moveInterval);
+        };
+        btn.addEventListener('touchstart', startAction, {passive: false});
+        btn.addEventListener('touchend', stopAction);
+        btn.addEventListener('touchcancel', stopAction);
+        btn.addEventListener('mousedown', startAction);
+        btn.addEventListener('mouseup', stopAction);
+        btn.addEventListener('mouseleave', stopAction);
+    }
+    setupTouch(btnLeft, true);
+    setupTouch(btnRight, false);
+
+    /* ==========================================================================
+       Game Logic
+       ========================================================================== */
+    function resetGame() {
+        score = 0;
+        frames = 0;
+        speed = 2.5; // Start slow
+        baseSpeed = 2.5;
+        spawnInterval = 120; // Slower spawn
+        
+        lives = 1;
+        starsForLife = 0;
+        invulnerable = 0;
+
+        obstacles = [];
+        particles = [];
+        floatingTexts = [];
+        
+        player.lane = 1;
+        player.targetX = roadX + (player.lane * laneWidth) + (laneWidth - player.w) / 2;
+        player.x = player.targetX;
+        screenShake = 0;
+        
+        updateScoreDisplay();
+        updateLivesDisplay();
+    }
+
+    function updateScoreDisplay() { document.getElementById('score-display').innerText = score; }
+    function updateLivesDisplay() { document.getElementById('lives-display').innerText = lives; }
+
+    function spawnObstacle() {
+        const rand = Math.random();
+        
+        if (rand < 0.25) {
+            // Just a star
+            const lane = Math.floor(Math.random() * 3);
+            createEntity(lane, 'star');
+        } else if (rand < 0.65) {
+            // 1 obstacle
+            const lane = Math.floor(Math.random() * 3);
+            createEntity(lane, getRandomObstacleType());
+            if (Math.random() < 0.5) {
+                let starLane = (lane + 1 + Math.floor(Math.random() * 2)) % 3;
+                createEntity(starLane, 'star');
+            }
+        } else {
+            // 2 obstacles
+            const safeLane = Math.floor(Math.random() * 3);
+            for (let i = 0; i < 3; i++) {
+                if (i !== safeLane) {
+                    createEntity(i, getRandomObstacleType());
+                }
+            }
+            // Put star in safe lane sometimes
+            if (Math.random() < 0.5) {
+                createEntity(safeLane, 'star');
+            }
+        }
+    }
+
+    function getRandomObstacleType() {
+        const types = ['enemy', 'cone', 'rock'];
+        return types[Math.floor(Math.random() * types.length)];
+    }
+
+    function createEntity(lane, type) {
+        let w = laneWidth * 0.6;
+        let h = (type === 'enemy') ? w * 1.6 : w;
+        
+        const enemyColors = ['#1CB0F6', '#9B51E0', '#FF9800'];
+        
+        obstacles.push({
+            lane: lane,
+            x: roadX + (lane * laneWidth) + (laneWidth - w) / 2,
+            y: -150,
+            w: w,
+            h: h,
+            type: type,
+            color: type === 'enemy' ? enemyColors[Math.floor(Math.random() * enemyColors.length)] : null,
+            passed: false
+        });
+    }
+
+    function spawnParticles(x, y, color) {
+        for(let i=0; i<15; i++) {
+            particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 12,
+                vy: (Math.random() - 0.5) * 12,
+                life: 1,
+                color: color
+            });
+        }
+    }
+
+    function addFloatingText(text, x, y, color) {
+        floatingTexts.push({ text: text, x: x, y: y, life: 1, color: color });
+    }
+
+    function gameOver() {
+        GAME_STATE = 'GAMEOVER';
+        audio.playCrash();
+        screenShake = 15;
+        
+        setTimeout(() => {
+            document.getElementById('go-score').innerText = score;
+            const isHighScore = score > bestScore && score > 0;
+            if (isHighScore) {
+                bestScore = score;
+                localStorage.setItem('littleRacerBest', bestScore);
+                audio.playHighScore();
+                document.getElementById('go-title').innerText = "New Best Score! 🎉";
+                triggerConfetti();
+            } else {
+                audio.playGameOver();
+                document.getElementById('go-title').innerText = "Oops! Crash! 💥";
+                clearConfetti();
+            }
+            
+            document.getElementById('go-best').innerText = bestScore;
+            showScreen('game-over-screen');
+            document.getElementById('hud').style.display = 'none';
+            document.getElementById('touch-controls').style.display = 'none';
+        }, 500);
+    }
+
+    function update() {
+        if (GAME_STATE !== 'PLAYING') return;
+        frames++;
+
+        // SPEED PROGRESSION: Increase slowly after 20 seconds (approx 1200 frames)
+        if (frames > 1200) {
+            if (frames % 300 === 0) { // Every 5 seconds after 20s
+                baseSpeed = Math.min(baseSpeed + 0.5, 8); // Max speed cap
+                spawnInterval = Math.max(spawnInterval - 5, 40); // Min interval
+            }
+        }
+        speed = baseSpeed;
+
+        if (invulnerable > 0) invulnerable--;
+
+        roadYOffset = (roadYOffset + speed) % 100;
+        if (screenShake > 0) screenShake *= 0.9;
+        if (screenShake < 0.5) screenShake = 0;
+
+        player.targetX = roadX + (player.lane * laneWidth) + (laneWidth - player.w) / 2;
+        player.x += (player.targetX - player.x) * 0.2;
+
+        spawnTimer++;
+        if (spawnTimer >= spawnInterval) {
+            spawnObstacle();
+            spawnTimer = 0;
+        }
+
+        // Obstacles & Collision
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            let obs = obstacles[i];
+            obs.y += speed;
+
+            let hitW = obs.w * 0.6;
+            let hitH = obs.h * 0.6;
+            let hitX = obs.x + (obs.w - hitW)/2;
+            let hitY = obs.y + (obs.h - hitH)/2;
+            
+            let pW = player.w * 0.5; // Slightly forgiving hitbox for player
+            let pH = player.h * 0.5;
+            let pX = player.x + (player.w - pW)/2;
+            let pY = player.y + (player.h - pH)/2;
+
+            if (pX < hitX + hitW && pX + pW > hitX && pY < hitY + hitH && pY + pH > hitY) {
+                if (obs.type === 'star') {
+                    score += 5;
+                    starsForLife++;
+                    
+                    spawnParticles(obs.x + obs.w/2, obs.y + obs.h/2, '#FFC800');
+                    
+                    if (starsForLife >= 3) {
+                        lives++;
+                        starsForLife = 0;
+                        audio.play1Up();
+                        addFloatingText("+1 ❤️", obs.x, obs.y - 30, '#FF4B4B');
+                        updateLivesDisplay();
+                    } else {
+                        audio.playCollect();
+                        addFloatingText("+5", obs.x, obs.y, '#FFC800');
+                    }
+                    
+                    if (score % 20 === 0) {
+                        addFloatingText(praiseWords[Math.floor(Math.random() * praiseWords.length)], canvas.width/2 - 40, player.y - 50, '#58CC02');
+                    }
+                    updateScoreDisplay();
+                    obstacles.splice(i, 1);
+                    continue;
+                } else {
+                    // Crash into Enemy/Obstacle
+                    if (invulnerable <= 0) {
+                        lives--;
+                        updateLivesDisplay();
+                        if (lives <= 0) {
+                            gameOver();
+                            return;
+                        } else {
+                            // Survived due to extra life
+                            invulnerable = 90; // 1.5 seconds of invincibility
+                            audio.playCrash(true); // Mild crash
+                            screenShake = 8;
+                            spawnParticles(obs.x + obs.w/2, obs.y + obs.h/2, '#888');
+                            obstacles.splice(i, 1); // Destroy the obstacle
+                            continue;
+                        }
+                    }
+                }
+            }
+
+            if (!obs.passed && obs.y > player.y + player.h) {
+                obs.passed = true;
+                if (obs.type !== 'star') {
+                    score += 1;
+                    updateScoreDisplay();
+                }
+            }
+            if (obs.y > canvas.height) {
+                obstacles.splice(i, 1);
+            }
+        }
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+            let p = particles[i];
+            p.x += p.vx; p.y += p.vy;
+            p.life -= 0.05;
+            if (p.life <= 0) particles.splice(i, 1);
+        }
+
+        for (let i = floatingTexts.length - 1; i >= 0; i--) {
+            let t = floatingTexts[i];
+            t.y -= 2.5;
+            t.life -= 0.02;
+            if (t.life <= 0) floatingTexts.splice(i, 1);
+        }
+
+        clouds.forEach(c => {
+            c.y += c.speed * (speed/3);
+            if (c.y > canvas.height + 50) {
+                c.y = -50;
+                c.x = Math.random() * canvas.width;
+            }
+        });
+    }
+
+    /* ==========================================================================
+       Drawing Custom Graphics (More Realistic/Better Shapes)
+       ========================================================================== */
+    function drawStar(ctx, x, y, size) {
+        ctx.save();
+        ctx.translate(x + size/2, y + size/2);
+        
+        // Gentle float and spin
+        let floatY = Math.sin(frames * 0.1) * 4;
+        ctx.translate(0, floatY);
+        
+        ctx.beginPath();
+        for (let i = 0; i < 5; i++) {
+            ctx.lineTo(Math.cos((18 + i * 72) / 180 * Math.PI) * (size/2),
+                       -Math.sin((18 + i * 72) / 180 * Math.PI) * (size/2));
+            ctx.lineTo(Math.cos((54 + i * 72) / 180 * Math.PI) * (size/4),
+                       -Math.sin((54 + i * 72) / 180 * Math.PI) * (size/4));
+        }
+        ctx.closePath();
+        
+        ctx.fillStyle = '#FFD700'; // Gold
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#D2691E'; // Dark orange outline
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    function drawCone(ctx, x, y, w, h) {
+        // Base Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+        ctx.beginPath(); ctx.ellipse(x + w/2 + 3, y + h - 5 + 3, w*0.4, h*0.15, 0, 0, Math.PI*2); ctx.fill();
+
+        // Dark base
+        ctx.fillStyle = '#BF360C';
+        ctx.beginPath(); ctx.roundRect(x + w*0.1, y + h*0.8, w*0.8, h*0.15, 4); ctx.fill();
+
+        // Orange body
+        ctx.fillStyle = '#FF5722';
+        ctx.beginPath();
+        ctx.moveTo(x + w*0.25, y + h*0.8);
+        ctx.lineTo(x + w*0.75, y + h*0.8);
+        ctx.lineTo(x + w*0.55, y + h*0.1);
+        ctx.lineTo(x + w*0.45, y + h*0.1);
+        ctx.fill();
+
+        // White reflective stripes
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.moveTo(x + w*0.32, y + h*0.55);
+        ctx.lineTo(x + w*0.68, y + h*0.55);
+        ctx.lineTo(x + w*0.62, y + h*0.35);
+        ctx.lineTo(x + w*0.38, y + h*0.35);
+        ctx.fill();
+    }
+
+    function drawRock(ctx, x, y, w, h) {
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+        ctx.beginPath(); ctx.ellipse(x + w/2 + 4, y + h/2 + 4, w*0.45, h*0.4, 0, 0, Math.PI*2); ctx.fill();
+
+        // Main rock shape - dark slate
+        ctx.fillStyle = '#455A64';
+        ctx.beginPath();
+        ctx.moveTo(x + w*0.2, y + h*0.9);
+        ctx.lineTo(x + w*0.8, y + h*0.9);
+        ctx.lineTo(x + w*0.95, y + h*0.5);
+        ctx.lineTo(x + w*0.7, y + h*0.1);
+        ctx.lineTo(x + w*0.3, y + h*0.15);
+        ctx.lineTo(x + w*0.05, y + h*0.6);
+        ctx.fill();
+
+        // Highlight/texture - lighter gray-blue
+        ctx.fillStyle = '#607D8B';
+        ctx.beginPath();
+        ctx.moveTo(x + w*0.3, y + h*0.2);
+        ctx.lineTo(x + w*0.7, y + h*0.15);
+        ctx.lineTo(x + w*0.6, y + h*0.5);
+        ctx.lineTo(x + w*0.4, y + h*0.45);
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.moveTo(x + w*0.15, y + h*0.6);
+        ctx.lineTo(x + w*0.35, y + h*0.5);
+        ctx.lineTo(x + w*0.25, y + h*0.8);
+        ctx.fill();
+    }
+
+    function drawCar(ctx, x, y, w, h, color, isPlayer = false) {
+        // Blink effect for invulnerability
+        if (isPlayer && invulnerable > 0) {
+            if (Math.floor(frames / 6) % 2 === 0) return; // Skip drawing to blink
+        }
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+        ctx.beginPath(); ctx.roundRect(x + 4, y + 4, w, h, 12); ctx.fill();
+
+        // Wheels
+        ctx.fillStyle = '#222';
+        const wheelW = w * 0.15;
+        const wheelH = h * 0.25;
+        ctx.fillRect(x - wheelW/2, y + h*0.15, wheelW, wheelH);
+        ctx.fillRect(x + w - wheelW/2, y + h*0.15, wheelW, wheelH);
+        ctx.fillRect(x - wheelW/2, y + h*0.6, wheelW, wheelH);
+        ctx.fillRect(x + w - wheelW/2, y + h*0.6, wheelW, wheelH);
+
+        // Body
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.roundRect(x, y, w, h, 14); ctx.fill();
+
+        // Roof details
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
+        ctx.beginPath(); ctx.roundRect(x + w*0.1, y + h*0.05, w*0.8, h*0.9, 10); ctx.fill();
+
+        // Windshield
+        ctx.fillStyle = '#E5F5FA';
+        ctx.beginPath(); ctx.roundRect(x + w*0.12, y + h*0.2, w*0.76, h*0.25, 6); ctx.fill();
+        
+        // Rear window
+        ctx.fillStyle = '#E5F5FA';
+        ctx.beginPath(); ctx.roundRect(x + w*0.18, y + h*0.75, w*0.64, h*0.15, 4); ctx.fill();
+
+        // Cute Face for Player
+        if (isPlayer) {
+            ctx.fillStyle = '#333';
+            ctx.beginPath(); ctx.arc(x + w*0.35, y + h*0.3, 4, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x + w*0.65, y + h*0.3, 4, 0, Math.PI*2); ctx.fill();
+            // Blushes
+            ctx.fillStyle = 'rgba(255, 100, 100, 0.7)';
+            ctx.beginPath(); ctx.arc(x + w*0.22, y + h*0.35, 3.5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x + w*0.78, y + h*0.35, 3.5, 0, Math.PI*2); ctx.fill();
+        } else {
+            // Headlights for enemies
+            ctx.fillStyle = '#FFC800';
+            ctx.beginPath(); ctx.arc(x + w*0.2, y + h*0.9, 5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x + w*0.8, y + h*0.9, 5, 0, Math.PI*2); ctx.fill();
+        }
+    }
+
+    function draw() {
+        ctx.fillStyle = '#78C800';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.save();
+        if (screenShake > 0) {
+            let dx = (Math.random() - 0.5) * screenShake;
+            let dy = (Math.random() - 0.5) * screenShake;
+            ctx.translate(dx, dy);
+        }
+
+        // Clouds
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        clouds.forEach(c => {
+            ctx.beginPath();
+            ctx.arc(c.x, c.y, 40 * c.s, 0, Math.PI*2);
+            ctx.arc(c.x + 30*c.s, c.y + 10*c.s, 30 * c.s, 0, Math.PI*2);
+            ctx.arc(c.x - 30*c.s, c.y + 10*c.s, 30 * c.s, 0, Math.PI*2);
+            ctx.fill();
+        });
+
+        // Road
+        ctx.fillStyle = '#95A5A6';
+        ctx.fillRect(roadX, 0, roadWidth, canvas.height);
+        
+        ctx.fillStyle = '#7F8C8D';
+        ctx.fillRect(roadX - 12, 0, 12, canvas.height);
+        ctx.fillRect(roadX + roadWidth, 0, 12, canvas.height);
+
+        // Lane Lines
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 8;
+        ctx.setLineDash([40, 40]);
+        ctx.lineDashOffset = -roadYOffset;
+        
+        ctx.beginPath();
+        for (let i = 1; i < NUM_LANES; i++) {
+            let lineX = roadX + (i * laneWidth);
+            ctx.moveTo(lineX, 0);
+            ctx.lineTo(lineX, canvas.height);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]); 
+
+        // Obstacles
+        obstacles.forEach(obs => {
+            if (obs.type === 'enemy') {
+                drawCar(ctx, obs.x, obs.y, obs.w, obs.h, obs.color, false);
+            } else if (obs.type === 'cone') {
+                drawCone(ctx, obs.x, obs.y, obs.w, obs.h);
+            } else if (obs.type === 'rock') {
+                drawRock(ctx, obs.x, obs.y, obs.w, obs.h);
+            } else if (obs.type === 'star') {
+                drawStar(ctx, obs.x, obs.y, obs.w);
+            }
+        });
+
+        // Player
+        if (GAME_STATE === 'PLAYING' || GAME_STATE === 'GAMEOVER') {
+            drawCar(ctx, player.x, player.y, player.w, player.h, player.color, true);
+        }
+
+        // Particles
+        particles.forEach(p => {
+            ctx.globalAlpha = p.life;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 6 * p.life, 0, Math.PI*2);
+            ctx.fill();
+        });
+        ctx.globalAlpha = 1.0;
+
+        // Floating Texts
+        ctx.font = '900 28px Poppins';
+        ctx.textAlign = 'center';
+        floatingTexts.forEach(t => {
+            ctx.globalAlpha = t.life;
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = '#fff'; // White border
+            ctx.strokeText(t.text, t.x, t.y);
+            ctx.fillStyle = t.color; // Color fill
+            ctx.fillText(t.text, t.x, t.y);
+        });
+        ctx.globalAlpha = 1.0;
+
+        ctx.restore();
+    }
+
+    /* ==========================================================================
+       Main Loop & UI
+       ========================================================================== */
+    function loop() {
+        if (GAME_STATE === 'PLAYING' || GAME_STATE === 'GAMEOVER') {
+            update();
+            draw();
+        }
+        animationId = requestAnimationFrame(loop);
+    }
+
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        if (id) document.getElementById(id).classList.add('active');
+    }
+
+    document.getElementById('btn-start').addEventListener('click', () => {
+        audio.init(); audio.playStart();
+        resetGame(); GAME_STATE = 'PLAYING';
+        showScreen(null);
+        document.getElementById('hud').style.display = 'flex';
+        if (window.matchMedia("(pointer: coarse)").matches) {
+            document.getElementById('touch-controls').style.display = 'flex';
+        }
+    });
+
+    document.getElementById('btn-how-to-play').addEventListener('click', () => {
+        audio.init(); showScreen('instructions-screen');
+    });
+    document.getElementById('btn-back-menu').addEventListener('click', () => { showScreen('menu-screen'); });
+    document.getElementById('btn-pause').addEventListener('click', () => {
+        if (GAME_STATE === 'PLAYING') { GAME_STATE = 'PAUSED'; showScreen('pause-screen'); }
+    });
+    document.getElementById('btn-resume').addEventListener('click', () => { GAME_STATE = 'PLAYING'; showScreen(null); });
+    document.getElementById('btn-quit').addEventListener('click', () => {
+        GAME_STATE = 'MENU'; showScreen('menu-screen');
+        document.getElementById('hud').style.display = 'none';
+        document.getElementById('touch-controls').style.display = 'none';
+    });
+    document.getElementById('btn-restart').addEventListener('click', () => {
+        audio.playStart(); resetGame(); GAME_STATE = 'PLAYING'; showScreen(null); clearConfetti();
+        document.getElementById('hud').style.display = 'flex';
+        if (window.matchMedia("(pointer: coarse)").matches) { document.getElementById('touch-controls').style.display = 'flex'; }
+    });
+    document.getElementById('btn-menu-from-go').addEventListener('click', () => {
+        GAME_STATE = 'MENU'; showScreen('menu-screen'); clearConfetti();
+    });
+
+    const muteBtns = [document.getElementById('btn-mute'), document.getElementById('btn-mute-menu')];
+    muteBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const isMuted = audio.toggleMute();
+            const icon = isMuted ? '🔇' : '🔊';
+            muteBtns.forEach(b => b.innerText = icon);
+        });
+    });
+
+    // Confetti
+    function triggerConfetti() {
+        const container = document.getElementById('confetti');
+        container.style.display = 'block';
+        container.innerHTML = '';
+        const colors = ['#FF4B4B', '#1CB0F6', '#FFC800', '#58cc02', '#9B51E0'];
+        
+        for (let i = 0; i < 70; i++) {
+            let conf = document.createElement('div');
+            conf.style.position = 'absolute';
+            conf.style.width = '12px';
+            conf.style.height = '12px';
+            conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            conf.style.left = Math.random() * 100 + '%';
+            conf.style.top = '-20px';
+            conf.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+            
+            let speed = 3 + Math.random() * 4;
+            let angle = Math.random() * 360;
+            let rotSpeed = (Math.random() - 0.5) * 15;
+            let y = -20;
+            
+            function fall() {
+                if(GAME_STATE !== 'GAMEOVER') return;
+                y += speed;
+                angle += rotSpeed;
+                conf.style.top = y + 'px';
+                conf.style.transform = `rotate(${angle}deg)`;
+                if (y < window.innerHeight) {
+                    requestAnimationFrame(fall);
+                } else {
+                    conf.remove();
+                }
+            }
+            requestAnimationFrame(fall);
+            container.appendChild(conf);
+        }
+    }
+
+    function clearConfetti() {
+        document.getElementById('confetti').innerHTML = '';
+        document.getElementById('confetti').style.display = 'none';
+    }
+
+    draw();
+    requestAnimationFrame(loop);
+
+</script>
+</body>
+</html>
