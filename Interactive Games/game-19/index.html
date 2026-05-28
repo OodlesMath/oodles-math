@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Matching Pairs - Kids Game V4</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        poppins: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        duo: {
+                            green: '#58cc02',
+                            greenDark: '#58a700',
+                            blue: '#1cb0f6',
+                            blueDark: '#1899d6',
+                            yellow: '#ffc800',
+                            yellowDark: '#e5b400',
+                            red: '#ff4b4b',
+                            redDark: '#ea2b2b',
+                            bg: '#ddf4ff',
+                            text: '#4b4b4b',
+                            gray: '#e5e5e5',
+                            grayDark: '#cecece'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #ddf4ff;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(255,255,255,0.4) 10%, transparent 20%),
+                radial-gradient(circle at 85% 30%, rgba(255,255,255,0.5) 15%, transparent 25%);
+            touch-action: manipulation;
+        }
+
+        .btn-3d { transition: all 0.1s; }
+        .btn-3d:active {
+            transform: translateY(4px);
+            box-shadow: 0 0px 0 transparent !important;
+        }
+
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        
+        .card-inner { transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); }
+        .card.flipped .card-inner { transform: rotateY(180deg); }
+
+        /* Vanish Animation for Matched Cards */
+        @keyframes vanishAndReveal {
+            0% { transform: scale(1); opacity: 1; }
+            30% { transform: scale(1.15) rotate(5deg); opacity: 1; }
+            100% { transform: scale(0) rotate(-15deg); opacity: 0; visibility: hidden; }
+        }
+        .card.matched {
+            animation: vanishAndReveal 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            pointer-events: none;
+        }
+        
+        .card.matched::after {
+            content: '✨';
+            position: absolute;
+            font-size: 3rem;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            pointer-events: none;
+            animation: pop 0.4s ease-out forwards;
+        }
+        @keyframes pop {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+        }
+
+        /* Dynamic Grid Layout */
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(var(--cols), 1fr);
+            grid-template-rows: repeat(var(--rows), 1fr);
+            gap: 12px;
+            width: 100%;
+            height: 100%;
+        }
+        
+        @media (max-width: 600px) {
+            .game-grid { gap: 8px; }
+        }
+
+        .progress-striped {
+            background-image: linear-gradient(
+                45deg,
+                rgba(255, 255, 255, 0.2) 25%, transparent 25%,
+                transparent 50%, rgba(255, 255, 255, 0.2) 50%,
+                rgba(255, 255, 255, 0.2) 75%, transparent 75%, transparent
+            );
+            background-size: 1rem 1rem;
+        }
+    </style>
+</head>
+<body class="font-poppins text-duo-text h-screen w-screen overflow-hidden flex flex-col items-center">
+
+    <!-- Top Navigation Bar -->
+    <div class="w-full max-w-3xl mx-auto px-4 py-4 flex flex-col gap-3 z-10 relative">
+        <div class="flex justify-between items-center w-full">
+            <div>
+                <h1 id="levelDisplay" class="text-2xl font-black text-duo-green tracking-wide">LEVEL 1/10</h1>
+                <p id="themeDisplay" class="text-sm font-bold text-duo-blue uppercase tracking-widest -mt-1">Theme</p>
+            </div>
+            
+            <div class="flex gap-2">
+                <button onclick="toggleSound()" id="soundBtn" class="btn-3d w-10 h-10 bg-white rounded-xl flex justify-center items-center text-duo-grayDark border-2 border-duo-gray shadow-[0_4px_0_#cecece]">
+                    <i data-lucide="volume-2" id="soundIcon"></i>
+                </button>
+                <button onclick="useHint()" id="hintBtn" class="btn-3d w-10 h-10 bg-duo-yellow rounded-xl flex justify-center items-center text-white shadow-[0_4px_0_#e5b400]">
+                    <i data-lucide="search"></i>
+                </button>
+                <button onclick="restartGameFull()" class="btn-3d w-10 h-10 bg-duo-red rounded-xl flex justify-center items-center text-white shadow-[0_4px_0_#ea2b2b]" title="Restart Game">
+                    <i data-lucide="rotate-ccw"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 w-full bg-white p-3 rounded-2xl shadow-sm border-2 border-duo-gray">
+            <div class="w-full h-4 bg-duo-gray rounded-full overflow-hidden relative">
+                <div id="progressBar" class="h-full bg-duo-green progress-striped rounded-full transition-all duration-300 ease-out" style="width: 0%"></div>
+            </div>
+            <div class="font-bold text-duo-yellowDark whitespace-nowrap flex flex-col items-end leading-none">
+                <div class="flex items-center gap-1 text-lg">
+                    <i data-lucide="star" class="fill-current w-5 h-5"></i>
+                    <span id="scoreDisplay">0</span>
+                </div>
+                <span class="text-[10px] text-duo-grayDark font-bold uppercase">Total Score</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Game Board Container -->
+    <div class="flex-1 w-full flex justify-center items-center p-4 z-10 relative">
+        
+        <!-- Wrapper for Game and Hidden Reward -->
+        <div class="relative w-full max-w-[500px] aspect-square mx-auto rounded-3xl overflow-hidden shadow-[0_8px_0_#cecece] border-4 border-white bg-white">
+            
+            <!-- NEW: The Hidden Reward (Gradient + Big Emoji instead of image) -->
+            <div id="hiddenPicture" class="absolute inset-0 w-full h-full z-0 transition-opacity duration-1000 flex items-center justify-center bg-gradient-to-br">
+                <span id="hiddenIcon" class="text-[6rem] sm:text-[8rem] filter drop-shadow-2xl"></span>
+            </div>
+            
+            <!-- Semi-transparent overlay to make cards stand out before they vanish -->
+            <div class="absolute inset-0 bg-white/40 z-0 backdrop-blur-[1px]"></div>
+
+            <!-- Game Grid -->
+            <div id="gameBoard" class="game-grid absolute inset-0 z-10 p-2 sm:p-3" style="--cols: 4; --rows: 2;">
+                <!-- Cards will be injected here via JS -->
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Victory Modal -->
+    <div id="victoryModal" class="fixed inset-0 bg-black/60 backdrop-blur-md hidden justify-center items-center z-[50000]">
+        <div class="bg-white rounded-3xl p-8 max-w-md w-[90%] text-center border-4 border-duo-green shadow-[0_8px_0_#58a700] transform scale-90 transition-transform duration-300" id="victoryContent">
+            <div class="text-6xl mb-4 animate-bounce" id="modalEmoji">🎉</div>
+            <h2 id="modalTitle" class="text-3xl font-black text-duo-green mb-2 uppercase">Level Complete!</h2>
+            <p id="modalSubtitle" class="text-duo-text font-bold mb-6 text-lg">Great job matching!</p>
+            
+            <div class="bg-duo-bg rounded-2xl p-4 mb-8 flex justify-around border-2 border-duo-blue/20">
+                <div class="flex flex-col items-center">
+                    <span class="text-sm font-semibold text-duo-text/70 uppercase">Total Score</span>
+                    <span class="text-2xl font-black text-duo-yellowDark flex items-center gap-1">
+                        <i data-lucide="star" class="fill-current w-5 h-5"></i>
+                        <span id="finalScore">0</span>
+                    </span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-sm font-semibold text-duo-text/70 uppercase">Time</span>
+                    <span class="text-2xl font-black text-duo-blueDark flex items-center gap-1">
+                        <i data-lucide="clock" class="w-5 h-5"></i>
+                        <span id="finalTime">00:00</span>
+                    </span>
+                </div>
+            </div>
+
+            <button id="nextActionBtn" onclick="nextAction()" class="btn-3d w-full py-4 bg-duo-green text-white rounded-2xl font-bold text-xl uppercase tracking-wider shadow-[0_4px_0_#58a700]">
+                Next Level
+            </button>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // 10 Levels Data with Cartoon Emojis and Pastel Colors
+        const pastelColors = ['#fef08a', '#fed7aa', '#bbf7d0', '#bae6fd', '#fbcfe8', '#e2e8f0', '#a7f3d0', '#f5d0fe', '#ddd6fe', '#ffedd5', '#d9f99d', '#fecaca'];
+
+        const gameLevels = [
+            {
+                theme: "Pets", cols: 4, rows: 2, // 8 cards
+                hiddenBg: "from-yellow-200 to-orange-200", hiddenIcon: "🐕",
+                items: [
+                    { icon: '🐶', color: pastelColors[0] }, { icon: '🐱', color: pastelColors[1] },
+                    { icon: '🐰', color: pastelColors[2] }, { icon: '🐹', color: pastelColors[3] }
+                ]
+            },
+            {
+                theme: "Fruits", cols: 4, rows: 3, // 12 cards
+                hiddenBg: "from-red-200 to-pink-200", hiddenIcon: "🍓",
+                items: [
+                    { icon: '🍎', color: pastelColors[0] }, { icon: '🍌', color: pastelColors[1] },
+                    { icon: '🍇', color: pastelColors[2] }, { icon: '🍉', color: pastelColors[3] },
+                    { icon: '🍓', color: pastelColors[4] }, { icon: '🍊', color: pastelColors[5] }
+                ]
+            },
+            {
+                theme: "Farm Animals", cols: 4, rows: 3, // 12 cards
+                hiddenBg: "from-green-200 to-emerald-200", hiddenIcon: "🐄",
+                items: [
+                    { icon: '🐷', color: pastelColors[6] }, { icon: '🐮', color: pastelColors[7] },
+                    { icon: '🐔', color: pastelColors[8] }, { icon: '🐴', color: pastelColors[9] },
+                    { icon: '🐑', color: pastelColors[10] }, { icon: '🦆', color: pastelColors[11] }
+                ]
+            },
+            {
+                theme: "Wild Animals", cols: 4, rows: 4, // 16 cards
+                hiddenBg: "from-yellow-300 to-amber-300", hiddenIcon: "🦁",
+                items: [
+                    { icon: '🦁', color: pastelColors[0] }, { icon: '🐯', color: pastelColors[1] },
+                    { icon: '🐘', color: pastelColors[2] }, { icon: '🐒', color: pastelColors[3] },
+                    { icon: '🐼', color: pastelColors[4] }, { icon: '🦒', color: pastelColors[5] },
+                    { icon: '🦓', color: pastelColors[6] }, { icon: '🦛', color: pastelColors[7] }
+                ]
+            },
+            {
+                theme: "Flowers", cols: 4, rows: 4, // 16 cards
+                hiddenBg: "from-pink-200 to-rose-200", hiddenIcon: "🌻",
+                items: [
+                    { icon: '🌻', color: pastelColors[8] }, { icon: '🌹', color: pastelColors[9] },
+                    { icon: '🌷', color: pastelColors[10] }, { icon: '🌼', color: pastelColors[11] },
+                    { icon: '🌸', color: pastelColors[0] }, { icon: '🌺', color: pastelColors[1] },
+                    { icon: '🌵', color: pastelColors[2] }, { icon: '🍀', color: pastelColors[3] }
+                ]
+            },
+            {
+                theme: "School", cols: 4, rows: 4, // 16 cards
+                hiddenBg: "from-blue-200 to-indigo-200", hiddenIcon: "🎒",
+                items: [
+                    { icon: '✏️', color: pastelColors[4] }, { icon: '🎒', color: pastelColors[5] },
+                    { icon: '📚', color: pastelColors[6] }, { icon: '✂️', color: pastelColors[7] },
+                    { icon: '🖍️', color: pastelColors[8] }, { icon: '📏', color: pastelColors[9] },
+                    { icon: '🎨', color: pastelColors[10] }, { icon: '🚌', color: pastelColors[11] }
+                ]
+            },
+            {
+                theme: "Vehicles", cols: 4, rows: 5, // 20 cards
+                hiddenBg: "from-slate-200 to-gray-300", hiddenIcon: "🚒",
+                items: [
+                    { icon: '🚗', color: pastelColors[0] }, { icon: '🚕', color: pastelColors[1] },
+                    { icon: '🚓', color: pastelColors[2] }, { icon: '🚒', color: pastelColors[3] },
+                    { icon: '🚑', color: pastelColors[4] }, { icon: '🚜', color: pastelColors[5] },
+                    { icon: '🚲', color: pastelColors[6] }, { icon: '🚂', color: pastelColors[7] },
+                    { icon: '🚁', color: pastelColors[8] }, { icon: '✈️', color: pastelColors[9] }
+                ]
+            },
+            {
+                theme: "Food", cols: 4, rows: 5, // 20 cards
+                hiddenBg: "from-orange-200 to-red-200", hiddenIcon: "🍕",
+                items: [
+                    { icon: '🍔', color: pastelColors[10] }, { icon: '🍕', color: pastelColors[11] },
+                    { icon: '🍟', color: pastelColors[0] }, { icon: '🌭', color: pastelColors[1] },
+                    { icon: '🍿', color: pastelColors[2] }, { icon: '🍩', color: pastelColors[3] },
+                    { icon: '🍦', color: pastelColors[4] }, { icon: '🍪', color: pastelColors[5] },
+                    { icon: '🍬', color: pastelColors[6] }, { icon: '🍫', color: pastelColors[7] }
+                ]
+            },
+            {
+                theme: "Sea Creatures", cols: 4, rows: 6, // 24 cards
+                hiddenBg: "from-cyan-200 to-blue-300", hiddenIcon: "🐳",
+                items: [
+                    { icon: '🐟', color: pastelColors[8] }, { icon: '🐬', color: pastelColors[9] },
+                    { icon: '🐳', color: pastelColors[10] }, { icon: '🐙', color: pastelColors[11] },
+                    { icon: '🦀', color: pastelColors[0] }, { icon: '🦞', color: pastelColors[1] },
+                    { icon: '🦑', color: pastelColors[2] }, { icon: '🐢', color: pastelColors[3] },
+                    { icon: '🐡', color: pastelColors[4] }, { icon: '🦈', color: pastelColors[5] },
+                    { icon: '🦭', color: pastelColors[6] }, { icon: '🐚', color: pastelColors[7] }
+                ]
+            },
+            {
+                theme: "Space", cols: 4, rows: 6, // 24 cards
+                hiddenBg: "from-indigo-300 to-purple-400", hiddenIcon: "🚀",
+                items: [
+                    { icon: '☀️', color: pastelColors[8] }, { icon: '🌙', color: pastelColors[9] },
+                    { icon: '⭐', color: pastelColors[10] }, { icon: '☁️', color: pastelColors[11] },
+                    { icon: '⚡', color: pastelColors[0] }, { icon: '🚀', color: pastelColors[1] },
+                    { icon: '🛸', color: pastelColors[2] }, { icon: '🌍', color: pastelColors[3] },
+                    { icon: '🪐', color: pastelColors[4] }, { icon: '☄️', color: pastelColors[5] },
+                    { icon: '👨‍🚀', color: pastelColors[6] }, { icon: '👽', color: pastelColors[7] }
+                ]
+            }
+        ];
+
+        let currentLevel = 0;
+        let totalScore = 0;
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let isLocked = false;
+        let timer = 0;
+        let timerInterval = null;
+        let soundEnabled = true;
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            if (!soundEnabled || audioCtx.state === 'suspended') return;
+            
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+            
+            if (type === 'flip') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(500, now + 0.1);
+                gainNode.gain.setValueAtTime(0.3, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'match') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.setValueAtTime(600, now + 0.1);
+                osc.frequency.setValueAtTime(800, now + 0.2);
+                gainNode.gain.setValueAtTime(0.3, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'mismatch') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'win') {
+                [440, 554.37, 659.25, 880].forEach((freq, i) => {
+                    setTimeout(() => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.type = 'sine';
+                        o.frequency.value = freq;
+                        o.connect(g);
+                        g.connect(audioCtx.destination);
+                        g.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
+                        o.start();
+                        o.stop(audioCtx.currentTime + 1);
+                    }, i * 120);
+                });
+            }
+        }
+
+        document.body.addEventListener('click', () => {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }, { once: true });
+
+        function initLevel() {
+            const levelData = gameLevels[currentLevel];
+            const board = document.getElementById('gameBoard');
+            
+            // Update UI Texts
+            document.getElementById('levelDisplay').innerText = `LEVEL ${currentLevel + 1}/${gameLevels.length}`;
+            document.getElementById('themeDisplay').innerText = `Theme: ${levelData.theme}`;
+            
+            // Update Hidden Reward (Gradient + Emoji)
+            const hiddenPic = document.getElementById('hiddenPicture');
+            hiddenPic.className = `absolute inset-0 w-full h-full z-0 transition-opacity duration-1000 flex items-center justify-center bg-gradient-to-br ${levelData.hiddenBg}`;
+            document.getElementById('hiddenIcon').innerText = levelData.hiddenIcon;
+            
+            // Set dynamic CSS Grid variables
+            board.style.setProperty('--cols', levelData.cols);
+            board.style.setProperty('--rows', levelData.rows);
+            
+            board.innerHTML = '';
+            
+            // Generate cards for current level
+            cards = [...levelData.items, ...levelData.items];
+            cards.sort(() => Math.random() - 0.5);
+            
+            matchedPairs = 0;
+            isLocked = false;
+            flippedCards = [];
+            updateUI();
+            
+            // Reset Timer
+            timer = 0;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => { timer++; }, 1000);
+
+            cards.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'card perspective-1000 w-full h-full cursor-pointer relative';
+                card.dataset.value = item.icon; // Using emoji as identifier
+                
+                // Card size classes based on rows to ensure they fit well
+                let iconSizeClass = "text-4xl sm:text-5xl md:text-6xl";
+                if(levelData.rows >= 5) iconSizeClass = "text-3xl sm:text-4xl md:text-5xl"; // Smaller for dense grids
+
+                card.innerHTML = `
+                    <div class="card-inner w-full h-full relative transform-style-3d shadow-md rounded-xl md:rounded-2xl">
+                        <!-- Card Back -->
+                        <div class="card-back absolute w-full h-full backface-hidden bg-duo-green rounded-xl md:rounded-2xl flex items-center justify-center border-b-4 border-duo-greenDark">
+                            <span class="text-3xl md:text-4xl filter drop-shadow-md">🦉</span>
+                        </div>
+                        <!-- Card Front (Emoji Cartoon) -->
+                        <div class="card-front absolute w-full h-full backface-hidden rotate-y-180 rounded-xl md:rounded-2xl border-4 border-white overflow-hidden shadow-sm flex items-center justify-center" style="background-color: ${item.color}">
+                            <span class="${iconSizeClass} drop-shadow-lg filter">${item.icon}</span>
+                        </div>
+                    </div>
+                `;
+                
+                card.addEventListener('click', flipCard);
+                board.appendChild(card);
+            });
+            
+            document.getElementById('victoryModal').classList.remove('flex');
+            document.getElementById('victoryModal').classList.add('hidden');
+        }
+
+        function flipCard() {
+            if (isLocked) return;
+            if (this.classList.contains('flipped') || this.classList.contains('matched')) return;
+
+            playSound('flip');
+            this.classList.add('flipped');
+            flippedCards.push(this);
+
+            if (flippedCards.length === 2) {
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            isLocked = true;
+            const [card1, card2] = flippedCards;
+            const isMatch = card1.dataset.value === card2.dataset.value;
+
+            if (isMatch) {
+                setTimeout(() => {
+                    playSound('match');
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    
+                    matchedPairs++;
+                    totalScore += 20;
+                    updateUI();
+                    resetBoard();
+                    checkWin();
+                }, 400); 
+            } else {
+                setTimeout(() => {
+                    playSound('mismatch');
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                    if(totalScore > 0) totalScore -= 2;
+                    updateUI();
+                    resetBoard();
+                }, 1200);
+            }
+        }
+
+        function resetBoard() {
+            flippedCards = [];
+            isLocked = false;
+        }
+
+        function updateUI() {
+            document.getElementById('scoreDisplay').innerText = totalScore;
+            const progress = (matchedPairs / (cards.length / 2)) * 100;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+        }
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        function checkWin() {
+            if (matchedPairs === cards.length / 2) {
+                clearInterval(timerInterval);
+                setTimeout(() => {
+                    playSound('win');
+                    showVictory();
+                    fireConfetti();
+                }, 1000); 
+            }
+        }
+
+        function showVictory() {
+            document.getElementById('finalScore').innerText = totalScore;
+            document.getElementById('finalTime').innerText = formatTime(timer);
+            
+            const modal = document.getElementById('victoryModal');
+            const content = document.getElementById('victoryContent');
+            const btn = document.getElementById('nextActionBtn');
+            const title = document.getElementById('modalTitle');
+            const subtitle = document.getElementById('modalSubtitle');
+            const emoji = document.getElementById('modalEmoji');
+            
+            if (currentLevel < gameLevels.length - 1) {
+                title.innerText = "Level Complete!";
+                subtitle.innerText = "Reward Revealed!";
+                btn.innerText = "Next Level";
+                btn.className = "btn-3d w-full py-4 bg-duo-green text-white rounded-2xl font-bold text-xl uppercase tracking-wider shadow-[0_4px_0_#58a700]";
+                emoji.innerText = "🏆";
+            } else {
+                title.innerText = "You Win!";
+                subtitle.innerText = "You beat all 10 levels!";
+                btn.innerText = "Play Again";
+                btn.className = "btn-3d w-full py-4 bg-duo-blue text-white rounded-2xl font-bold text-xl uppercase tracking-wider shadow-[0_4px_0_#1899d6]";
+                emoji.innerText = "🌟";
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            setTimeout(() => {
+                content.classList.remove('scale-90');
+                content.classList.add('scale-100');
+            }, 50);
+        }
+
+        function nextAction() {
+            const content = document.getElementById('victoryContent');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-90');
+            
+            setTimeout(() => {
+                if (currentLevel < gameLevels.length - 1) {
+                    currentLevel++;
+                    initLevel();
+                } else {
+                    restartGameFull();
+                }
+            }, 300);
+        }
+
+        function restartGameFull() {
+            const content = document.getElementById('victoryContent');
+            if(content) {
+                content.classList.remove('scale-100');
+                content.classList.add('scale-90');
+            }
+            setTimeout(() => {
+                currentLevel = 0;
+                totalScore = 0;
+                initLevel();
+            }, 300);
+        }
+
+        function fireConfetti() {
+            const count = 250;
+            const defaults = {
+                origin: { y: -0.1 }, 
+                zIndex: 99999,
+                colors: ['#58cc02', '#1cb0f6', '#ffc800', '#ff4b4b', '#ffffff']
+            };
+
+            function fire(particleRatio, opts) {
+                confetti(Object.assign({}, defaults, opts, {
+                    particleCount: Math.floor(count * particleRatio)
+                }));
+            }
+
+            fire(0.25, { spread: 26, startVelocity: 55 });
+            fire(0.2, { spread: 60 });
+            fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+            fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+            fire(0.1, { spread: 120, startVelocity: 45 });
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('soundIcon');
+            const btn = document.getElementById('soundBtn');
+            
+            if (soundEnabled) {
+                icon.setAttribute('data-lucide', 'volume-2');
+                btn.classList.remove('text-duo-grayDark');
+                btn.classList.add('text-duo-blue');
+            } else {
+                icon.setAttribute('data-lucide', 'volume-x');
+                btn.classList.remove('text-duo-blue');
+                btn.classList.add('text-duo-grayDark');
+            }
+            lucide.createIcons();
+        }
+
+        function useHint() {
+            if (isLocked) return;
+            const btn = document.getElementById('hintBtn');
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+            
+            const unFlippedCards = document.querySelectorAll('.card:not(.flipped):not(.matched)');
+            unFlippedCards.forEach(card => card.classList.add('flipped'));
+            
+            setTimeout(() => {
+                unFlippedCards.forEach(card => {
+                    if (!card.classList.contains('matched')) {
+                        card.classList.remove('flipped');
+                    }
+                });
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
+            }, 1000);
+        }
+
+        window.onload = initLevel;
+    </script>
+</body>
+</html>
