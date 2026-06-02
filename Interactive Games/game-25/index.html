@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Color Ball Sort Adventure</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-top: #85E3FF;
+            --bg-bottom: #D9A7C7;
+            --panel-bg: rgba(255, 255, 255, 0.95);
+            --text-main: #4A4A4A;
+            --text-light: #888888;
+            --btn-green: #58CC02;
+            --btn-green-shadow: #58A700;
+            --btn-blue: #1CB0F6;
+            --btn-blue-shadow: #1899D6;
+            --btn-red: #FF4B4B;
+            --btn-red-shadow: #EA2B2B;
+            --btn-yellow: #FFC800;
+            --btn-yellow-shadow: #E5B400;
+            --btn-gray: #E5E5E5;
+            --btn-gray-shadow: #CCCCCC;
+            --tube-border: rgba(255, 255, 255, 0.8);
+            --tube-bg: rgba(255, 255, 255, 0.2);
+            --tube-shadow: rgba(0, 0, 0, 0.1);
+            
+            --ball-size: 45px;
+            --tube-width: 55px;
+            --tube-padding: 5px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--bg-top), var(--bg-bottom));
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Background Decor */
+        .bg-shapes {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .cloud {
+            position: absolute;
+            background: rgba(255,255,255,0.4);
+            border-radius: 100px;
+        }
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background: rgba(255,255,255,0.4);
+            border-radius: 50%;
+        }
+
+        /* Screens */
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 10;
+        }
+        .screen.active {
+            display: flex;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* UI Elements */
+        .card {
+            background: var(--panel-bg);
+            border-radius: 30px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+            max-width: 90%;
+            width: 400px;
+            position: relative;
+        }
+
+        h1 {
+            color: var(--text-main);
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            line-height: 1.2;
+        }
+        
+        .title-color {
+            background: linear-gradient(90deg, #FF4B4B, #FFC800, #58CC02, #1CB0F6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p {
+            color: var(--text-light);
+            font-size: 18px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .btn {
+            display: inline-block;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 800;
+            font-size: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 15px 30px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            position: relative;
+            outline: none;
+            text-align: center;
+            text-decoration: none;
+            margin: 10px 5px;
+            width: calc(100% - 10px);
+        }
+        
+        .btn-icon {
+            width: 50px;
+            height: 50px;
+            padding: 0;
+            border-radius: 15px;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }
+
+        .btn-green { background: var(--btn-green); color: white; box-shadow: 0 6px 0 var(--btn-green-shadow); }
+        .btn-green:active { transform: translateY(6px); box-shadow: 0 0 0 var(--btn-green-shadow); }
+
+        .btn-blue { background: var(--btn-blue); color: white; box-shadow: 0 6px 0 var(--btn-blue-shadow); }
+        .btn-blue:active { transform: translateY(6px); box-shadow: 0 0 0 var(--btn-blue-shadow); }
+        
+        .btn-red { background: var(--btn-red); color: white; box-shadow: 0 6px 0 var(--btn-red-shadow); }
+        .btn-red:active { transform: translateY(6px); box-shadow: 0 0 0 var(--btn-red-shadow); }
+
+        .btn-gray { background: var(--btn-gray); color: var(--text-main); box-shadow: 0 6px 0 var(--btn-gray-shadow); }
+        .btn-gray:active { transform: translateY(6px); box-shadow: 0 0 0 var(--btn-gray-shadow); }
+
+        .instruction-box {
+            background: rgba(0,0,0,0.05);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            color: var(--text-main);
+            text-align: left;
+        }
+
+        /* Main Game Layout */
+        #game-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 10px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            background: var(--panel-bg);
+            padding: 15px 25px;
+            border-radius: 25px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+            z-index: 20;
+        }
+
+        .stats-group {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-light);
+            text-transform: uppercase;
+            font-weight: 800;
+        }
+
+        .stat-value {
+            font-size: 22px;
+            color: var(--btn-blue);
+            font-weight: 800;
+        }
+
+        .controls-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .feedback-text {
+            font-size: 28px;
+            font-weight: 800;
+            color: white;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            height: 40px;
+            margin-bottom: 20px;
+            text-align: center;
+            transition: all 0.3s;
+            opacity: 0;
+            transform: translateY(10px);
+            z-index: 20;
+        }
+        .feedback-text.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Puzzle Area */
+        #puzzle-wrapper {
+            position: relative;
+            flex-grow: 1;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #tubes-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 20px;
+            max-width: 100%;
+            position: relative;
+            padding-top: 60px; /* Space for selected ball */
+        }
+
+        .tube {
+            width: var(--tube-width);
+            height: calc((var(--ball-size) * 4) + (var(--tube-padding) * 5));
+            border: 4px solid var(--tube-border);
+            border-top: none;
+            border-radius: 0 0 30px 30px;
+            background: var(--tube-bg);
+            box-shadow: 
+                inset 0 0 15px rgba(255,255,255,0.8),
+                0 10px 15px var(--tube-shadow);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: var(--tube-padding);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        /* Tube Glass Reflection */
+        .tube::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 5px;
+            width: 10px; height: 90%;
+            background: linear-gradient(to right, rgba(255,255,255,0.6), transparent);
+            border-radius: 10px;
+            pointer-events: none;
+        }
+
+        .tube.completed {
+            border-color: #FFD700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), inset 0 0 15px rgba(255,255,255,0.8);
+            animation: pulseGlow 1.5s infinite;
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.4), inset 0 0 15px rgba(255,255,255,0.8); }
+            50% { box-shadow: 0 0 25px rgba(255, 215, 0, 0.8), inset 0 0 15px rgba(255,255,255,0.8); }
+            100% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.4), inset 0 0 15px rgba(255,255,255,0.8); }
+        }
+
+        .tube.shake {
+            animation: shakeError 0.4s ease-in-out;
+        }
+
+        @keyframes shakeError {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        .slot {
+            width: var(--ball-size);
+            height: var(--ball-size);
+            margin-top: var(--tube-padding);
+            visibility: hidden; /* Only used for position calculation */
+        }
+
+        /* Balls Layer */
+        #balls-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 15;
+        }
+
+        .ball {
+            position: absolute;
+            width: var(--ball-size);
+            height: var(--ball-size);
+            border-radius: 50%;
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+            /* Gradient applied via JS based on color */
+        }
+
+        .ball.no-transition {
+            transition: none !important;
+        }
+
+        /* Ball Shine Detail */
+        .ball::after {
+            content: '';
+            position: absolute;
+            top: 10%; left: 20%;
+            width: 30%; height: 30%;
+            background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+            transform: rotate(-45deg);
+        }
+
+        /* Particles / Sparkles */
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            background: white;
+            border-radius: 50%;
+            z-index: 25;
+            animation: sparkle 0.6s ease-out forwards;
+        }
+
+        @keyframes sparkle {
+            0% { transform: scale(0) translateY(0); opacity: 1; }
+            50% { opacity: 1; }
+            100% { transform: scale(1.5) translateY(-30px); opacity: 0; }
+        }
+
+        /* Confetti Canvas */
+        #confetti-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 99999;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .header {
+                padding: 10px 15px;
+                border-radius: 15px;
+            }
+            .stat-value { font-size: 18px; }
+            .btn-icon { width: 40px; height: 40px; font-size: 20px; }
+            :root {
+                --ball-size: 38px;
+                --tube-width: 48px;
+                --tube-padding: 4px;
+            }
+            #tubes-container { gap: 10px; }
+            .card { padding: 20px; width: 95%; }
+            h1 { font-size: 26px; }
+            .btn { font-size: 18px; padding: 12px 20px; }
+        }
+        
+        @media (max-height: 600px) {
+            .header { margin-bottom: 5px; }
+            #tubes-container { padding-top: 40px; }
+        }
+
+        /* Overlay */
+        .overlay {
+            position: absolute;
+            top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(3px);
+            z-index: 25;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .overlay.active { display: flex; }
+
+    </style>
+</head>
+<body>
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- Background Decor -->
+    <div class="bg-shapes" id="bg-shapes">
+        <!-- Generated by JS -->
+    </div>
+
+    <!-- Screen 1: Start -->
+    <div id="start-screen" class="screen active">
+        <div class="card">
+            <h1 class="title-color">Color Ball<br>Sort Adventure</h1>
+            <p>Sort the balls by color!</p>
+            
+            <div style="display:flex; justify-content:center; gap:10px; margin: 20px 0;">
+                <div style="width:30px; height:30px; border-radius:50%; background: radial-gradient(circle at 30% 30%, #fff, #FF4B4B 60%, #cc0000 100%);"></div>
+                <div style="width:30px; height:30px; border-radius:50%; background: radial-gradient(circle at 30% 30%, #fff, #1CB0F6 60%, #0055cc 100%);"></div>
+                <div style="width:30px; height:30px; border-radius:50%; background: radial-gradient(circle at 30% 30%, #fff, #FFC800 60%, #cc9900 100%);"></div>
+            </div>
+
+            <div class="instruction-box">
+                👉 Tap a tube.<br>
+                👆 Move the top ball.<br>
+                🎨 Match the same colors!
+            </div>
+            
+            <button class="btn btn-green" onclick="startGame()">Start Game</button>
+        </div>
+    </div>
+
+    <!-- Screen 2: Main Game -->
+    <div id="game-screen" class="screen">
+        <div id="game-container">
+            <div class="header">
+                <div class="stats-group">
+                    <div class="stat">
+                        <span class="stat-label">Level</span>
+                        <span class="stat-value" id="ui-level">1</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Score</span>
+                        <span class="stat-value" id="ui-score">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Moves</span>
+                        <span class="stat-value" id="ui-moves">0</span>
+                    </div>
+                </div>
+                <div class="controls-group">
+                    <button class="btn btn-gray btn-icon" id="btn-sound" onclick="toggleSound()">🔊</button>
+                    <button class="btn btn-blue btn-icon" onclick="undoMove()">↩️</button>
+                    <button class="btn btn-red btn-icon" onclick="restartLevel()">🔄</button>
+                </div>
+            </div>
+
+            <div id="feedback-text" class="feedback-text">Nice move!</div>
+
+            <div id="puzzle-wrapper">
+                <div id="tubes-container">
+                    <!-- Tubes injected here -->
+                </div>
+                <div id="balls-layer">
+                    <!-- Balls injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screen 3: Level Complete Overlay -->
+    <div id="level-complete-overlay" class="overlay">
+        <div class="card">
+            <h1 style="color: var(--btn-green);">Level Complete!</h1>
+            <p>Great job sorting!</p>
+            <div class="instruction-box" style="text-align: center;">
+                Moves: <strong id="lc-moves">0</strong><br>
+                Bonus: <strong id="lc-bonus" style="color:var(--btn-yellow);">+50</strong>
+            </div>
+            <button class="btn btn-green" onclick="nextLevel()">Next Level</button>
+        </div>
+    </div>
+
+    <!-- Screen 4: Final Result Overlay -->
+    <div id="final-result-overlay" class="overlay">
+        <div class="card">
+            <h1 class="title-color">You Win!</h1>
+            <p>Amazing! You sorted all colors!</p>
+            <div class="instruction-box" style="text-align: center; font-size: 20px;">
+                Total Score: <strong id="fr-score" style="color:var(--btn-blue);">0</strong><br>
+                Best Score: <strong id="fr-best">0</strong>
+            </div>
+            <button class="btn btn-green" onclick="playAgain()">Play Again</button>
+            <button class="btn btn-gray" onclick="goHome()">Home</button>
+        </div>
+    </div>
+
+    <!-- Confetti layer -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <script>
+        // --- Game Configuration & Data ---
+        const COLORS = [
+            { id: 'red', light: '#FF6B6B', main: '#FF4B4B', dark: '#cc0000' },
+            { id: 'blue', light: '#74C2FF', main: '#1CB0F6', dark: '#007BB5' },
+            { id: 'yellow', light: '#FFDB4D', main: '#FFC800', dark: '#CC9A00' },
+            { id: 'green', light: '#8EEB4D', main: '#58CC02', dark: '#429901' },
+            { id: 'purple', light: '#C49FFF', main: '#A66CFF', dark: '#7A3ACC' },
+            { id: 'orange', light: '#FFB86B', main: '#FF9F43', dark: '#CC701A' },
+            { id: 'cyan', light: '#4DF0F0', main: '#00D2D3', dark: '#009E9F' }
+        ];
+
+        const LEVELS = [
+            { colors: 3, tubes: 5 }, // L1: Easy
+            { colors: 4, tubes: 6 }, // L2
+            { colors: 5, tubes: 7 }, // L3
+            { colors: 6, tubes: 8 }, // L4
+            { colors: 7, tubes: 9 }  // L5: Hard
+        ];
+
+        const TUBE_CAPACITY = 4;
+
+        // --- State Variables ---
+        let currentLevelIdx = 0;
+        let score = 0;
+        let bestScore = localStorage.getItem('ballSortBestScore') || 0;
+        let moves = 0;
+        
+        // tubes[tubeIndex] = [ballObj, ballObj...] where bottom is index 0
+        let tubesState = []; 
+        let ballsData = []; // Flat list of all ball DOM objects for easy reference
+        
+        let selectedTubeIdx = null;
+        let isAnimating = false;
+        let soundEnabled = true;
+        let history = []; // Stack of {tubesState, moves, score}
+
+        // --- DOM Elements ---
+        const screens = {
+            start: document.getElementById('start-screen'),
+            game: document.getElementById('game-screen')
+        };
+        const overlays = {
+            levelComplete: document.getElementById('level-complete-overlay'),
+            finalResult: document.getElementById('final-result-overlay')
+        };
+        const containers = {
+            tubes: document.getElementById('tubes-container'),
+            balls: document.getElementById('balls-layer'),
+            puzzleArea: document.getElementById('puzzle-wrapper')
+        };
+        const ui = {
+            level: document.getElementById('ui-level'),
+            score: document.getElementById('ui-score'),
+            moves: document.getElementById('ui-moves'),
+            feedback: document.getElementById('feedback-text')
+        };
+
+        // --- Audio System (Web Audio API) ---
+        let audioCtx = null;
+        
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if(audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playTone(freq, type, duration, vol = 0.5) {
+            if (!soundEnabled) return;
+            initAudio();
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                
+                gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) { console.warn("Audio error", e); }
+        }
+
+        const sfx = {
+            select: () => playTone(600, 'sine', 0.1, 0.3),
+            drop: () => playTone(400, 'sine', 0.1, 0.3),
+            error: () => playTone(150, 'sawtooth', 0.2, 0.2),
+            tubeComplete: () => {
+                setTimeout(() => playTone(523.25, 'sine', 0.15, 0.3), 0);   // C5
+                setTimeout(() => playTone(659.25, 'sine', 0.15, 0.3), 100); // E5
+                setTimeout(() => playTone(783.99, 'sine', 0.2, 0.3), 200);  // G5
+            },
+            levelComplete: () => {
+                setTimeout(() => playTone(440, 'triangle', 0.1, 0.3), 0);
+                setTimeout(() => playTone(554.37, 'triangle', 0.1, 0.3), 100);
+                setTimeout(() => playTone(659.25, 'triangle', 0.3, 0.3), 200);
+            }
+        };
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('btn-sound');
+            btn.innerText = soundEnabled ? '🔊' : '🔇';
+            if(soundEnabled) initAudio();
+        }
+
+        // --- Visual Setup ---
+        function createBackground() {
+            const bg = document.getElementById('bg-shapes');
+            for(let i=0; i<6; i++) {
+                const cloud = document.createElement('div');
+                cloud.className = 'cloud';
+                const size = 50 + Math.random() * 100;
+                cloud.style.width = size + 'px';
+                cloud.style.height = (size/2) + 'px';
+                cloud.style.top = (Math.random() * 80) + '%';
+                cloud.style.left = (Math.random() * 100) + '%';
+                cloud.style.opacity = 0.2 + Math.random() * 0.3;
+                
+                cloud.style.setProperty('--b1-w', (size*0.6)+'px');
+                cloud.style.setProperty('--b1-t', (-size*0.3)+'px');
+                cloud.style.setProperty('--b1-l', (size*0.1)+'px');
+                
+                cloud.innerHTML = `<style>
+                    .cloud:nth-child(${i+1})::before { width: var(--b1-w); height: var(--b1-w); top: var(--b1-t); left: var(--b1-l); }
+                    .cloud:nth-child(${i+1})::after { width: ${size*0.5}px; height: ${size*0.5}px; top: -${size*0.2}px; right: ${size*0.1}px; }
+                </style>`;
+                bg.appendChild(cloud);
+            }
+        }
+        createBackground();
+
+        function showScreen(screenName) {
+            Object.values(screens).forEach(s => s.classList.remove('active'));
+            screens[screenName].classList.add('active');
+        }
+
+        function showFeedback(text, type = 'good') {
+            ui.feedback.innerText = text;
+            ui.feedback.style.color = type === 'error' ? '#FF4B4B' : (type==='win' ? '#FFC800' : 'white');
+            ui.feedback.classList.add('show');
+            clearTimeout(ui.feedback.timeout);
+            ui.feedback.timeout = setTimeout(() => {
+                ui.feedback.classList.remove('show');
+            }, 1500);
+        }
+
+        // --- Level Generation Logic ---
+        function generateLevel(levelConfig) {
+            let initialTubes = Array.from({length: levelConfig.tubes}, () => []);
+            let activeColors = COLORS.slice(0, levelConfig.colors);
+            
+            // 1. Create solved state
+            for(let i=0; i<levelConfig.colors; i++) {
+                for(let j=0; j<TUBE_CAPACITY; j++) {
+                    initialTubes[i].push({
+                        colorId: activeColors[i].id,
+                        colorObj: activeColors[i],
+                        domId: `ball-${i}-${j}`
+                    });
+                }
+            }
+
+            // 2. Shuffle using valid reverse moves to ensure solvability
+            // Reverse move rule: Top ball can move to ANY non-full tube.
+            let shuffles = levelConfig.colors * 30; 
+            for(let i=0; i<shuffles; i++) {
+                // Find tubes that have at least one ball
+                let nonEmptyIdxs = [];
+                for(let t=0; t<initialTubes.length; t++) {
+                    if(initialTubes[t].length > 0) nonEmptyIdxs.push(t);
+                }
+                if(nonEmptyIdxs.length === 0) continue;
+                
+                let fromIdx = nonEmptyIdxs[Math.floor(Math.random() * nonEmptyIdxs.length)];
+                
+                // Find tubes that are not full AND are not the fromIdx
+                let notFullIdxs = [];
+                for(let t=0; t<initialTubes.length; t++) {
+                    if(initialTubes[t].length < TUBE_CAPACITY && t !== fromIdx) {
+                        notFullIdxs.push(t);
+                    }
+                }
+                if(notFullIdxs.length === 0) continue;
+
+                let toIdx = notFullIdxs[Math.floor(Math.random() * notFullIdxs.length)];
+
+                // Move ball
+                let ball = initialTubes[fromIdx].pop();
+                initialTubes[toIdx].push(ball);
+            }
+
+            // Verify it doesn't accidentally start solved (rare but possible)
+            let isSolved = checkWinCondition(initialTubes, levelConfig.colors);
+            if (isSolved) {
+                return generateLevel(levelConfig); // Recursively try again
+            }
+
+            return initialTubes;
+        }
+
+        function buildDOM(initialState) {
+            containers.tubes.innerHTML = '';
+            containers.balls.innerHTML = '';
+            ballsData = [];
+
+            initialState.forEach((tubeArr, tIdx) => {
+                // Create Tube Visuals
+                const tubeEl = document.createElement('div');
+                tubeEl.className = 'tube';
+                tubeEl.dataset.idx = tIdx;
+                
+                // Add slots (top to bottom in DOM layout inside flex-end container)
+                for(let s=TUBE_CAPACITY-1; s>=0; s--) {
+                    const slot = document.createElement('div');
+                    slot.className = 'slot';
+                    slot.dataset.slotIdx = s;
+                    tubeEl.appendChild(slot);
+                }
+
+                tubeEl.addEventListener('click', () => handleTubeClick(tIdx));
+                tubeEl.addEventListener('touchstart', (e) => { e.preventDefault(); handleTubeClick(tIdx); }, {passive: false});
+                
+                containers.tubes.appendChild(tubeEl);
+
+                // Create Ball Visuals inside absolute layer
+                tubeArr.forEach((ballObj, sIdx) => {
+                    const ballEl = document.createElement('div');
+                    ballEl.className = 'ball';
+                    ballEl.id = ballObj.domId;
+                    ballEl.style.background = `radial-gradient(circle at 30% 30%, #fff 0%, ${ballObj.colorObj.main} 40%, ${ballObj.colorObj.dark} 100%)`;
+                    containers.balls.appendChild(ballEl);
+                    
+                    ballsData.push({
+                        domId: ballObj.domId,
+                        el: ballEl
+                    });
+                });
+            });
+
+            // Force reflow before rendering positions
+            void containers.balls.offsetWidth;
+            renderBallsPositions(true); // true = snap without animation on first load
+        }
+
+        function renderBallsPositions(snap = false) {
+            const containerRect = containers.puzzleArea.getBoundingClientRect();
+            
+            tubesState.forEach((tubeArr, tIdx) => {
+                const tubeEl = containers.tubes.children[tIdx];
+                
+                tubeArr.forEach((ballObj, sIdx) => {
+                    const ballDomData = ballsData.find(b => b.domId === ballObj.domId);
+                    if(!ballDomData) return;
+                    
+                    const ballEl = ballDomData.el;
+                    // Find target slot (slots are ordered top to bottom in DOM, so index 0 is at DOM index 3 for capacity 4)
+                    const slotDOMIndex = (TUBE_CAPACITY - 1) - sIdx;
+                    const slotEl = tubeEl.children[slotDOMIndex];
+                    
+                    if(!slotEl) return;
+
+                    const slotRect = slotEl.getBoundingClientRect();
+                    // Calculate relative position to puzzle area
+                    const targetX = slotRect.left - containerRect.left;
+                    const targetY = slotRect.top - containerRect.top;
+
+                    if (snap) {
+                        ballEl.classList.add('no-transition');
+                    } else {
+                        ballEl.classList.remove('no-transition');
+                    }
+
+                    // Apply Transform
+                    let yOffset = 0;
+                    if (selectedTubeIdx === tIdx && sIdx === tubeArr.length - 1) {
+                        // This ball is selected, lift it up
+                        yOffset = -55; // Lift out of tube
+                        ballEl.style.zIndex = 100;
+                    } else {
+                        ballEl.style.zIndex = sIdx + 10;
+                    }
+
+                    ballEl.style.transform = `translate(${targetX}px, ${targetY + yOffset}px)`;
+                    
+                    if(snap) {
+                        // Force reflow to apply no-transition instantly
+                        void ballEl.offsetWidth; 
+                        ballEl.classList.remove('no-transition');
+                    }
+                });
+            });
+        }
+
+        // --- Core Gameplay Logic ---
+        function deepCopyState(state) {
+            return state.map(tube => [...tube]);
+        }
+
+        function saveHistory() {
+            history.push({
+                state: deepCopyState(tubesState),
+                moves: moves,
+                score: score
+            });
+        }
+
+        function handleTubeClick(clickedIdx) {
+            if (isAnimating) return;
+            initAudio(); // Required for iOS Safari first interaction
+
+            const clickedTube = tubesState[clickedIdx];
+            const clickedTubeEl = containers.tubes.children[clickedIdx];
+
+            // 1. Deselect if clicking the same tube
+            if (selectedTubeIdx === clickedIdx) {
+                selectedTubeIdx = null;
+                sfx.drop();
+                renderBallsPositions();
+                return;
+            }
+
+            // 2. Select a tube
+            if (selectedTubeIdx === null) {
+                if (clickedTube.length === 0) {
+                    // Clicking empty tube first does nothing
+                    return;
+                }
+                selectedTubeIdx = clickedIdx;
+                sfx.select();
+                renderBallsPositions();
+                return;
+            }
+
+            // 3. Try to move from selected to clicked
+            const fromIdx = selectedTubeIdx;
+            const toIdx = clickedIdx;
+            const fromTube = tubesState[fromIdx];
+            const toTube = tubesState[toIdx];
+
+            const ballToMove = fromTube[fromTube.length - 1];
+            const topBallAtTarget = toTube.length > 0 ? toTube[toTube.length - 1] : null;
+
+            // Validation Rules
+            const isFull = toTube.length >= TUBE_CAPACITY;
+            const isMatch = topBallAtTarget === null || topBallAtTarget.colorId === ballToMove.colorId;
+
+            if (isFull || !isMatch) {
+                // Invalid Move
+                sfx.error();
+                showFeedback("Try another tube!", "error");
+                clickedTubeEl.classList.add('shake');
+                setTimeout(() => clickedTubeEl.classList.remove('shake'), 400);
+                
+                // Keep selected or deselect? Deselecting is cleaner for kids.
+                selectedTubeIdx = null;
+                renderBallsPositions();
+                return;
+            }
+
+            // Valid Move
+            saveHistory();
+            
+            // Execute move in state
+            const movedBall = fromTube.pop();
+            toTube.push(movedBall);
+            
+            moves++;
+            score += 1;
+            selectedTubeIdx = null;
+            isAnimating = true;
+
+            updateUI();
+            sfx.drop();
+            renderBallsPositions();
+
+            // Check game conditions after animation completes
+            setTimeout(() => {
+                isAnimating = false;
+                checkTubeComplete(toIdx);
+                if(checkWinCondition(tubesState, LEVELS[currentLevelIdx].colors)) {
+                    handleLevelComplete();
+                }
+            }, 300); // match css transition time
+        }
+
+        function checkTubeComplete(tIdx) {
+            const tube = tubesState[tIdx];
+            if (tube.length === TUBE_CAPACITY) {
+                const firstColor = tube[0].colorId;
+                const isAllSame = tube.every(b => b.colorId === firstColor);
+                if (isAllSame) {
+                    score += 10;
+                    updateUI();
+                    sfx.tubeComplete();
+                    showFeedback("Great job!");
+                    
+                    const tubeEl = containers.tubes.children[tIdx];
+                    tubeEl.classList.add('completed');
+                    createSparkles(tubeEl);
+                }
+            }
+        }
+
+        function checkWinCondition(state, colorCount) {
+            let completedTubes = 0;
+            for(let tube of state) {
+                if(tube.length === TUBE_CAPACITY) {
+                    const isAllSame = tube.every(b => b.colorId === tube[0].colorId);
+                    if(isAllSame) completedTubes++;
+                } else if (tube.length > 0) {
+                    return false; // Found a partially filled tube
+                }
+            }
+            return completedTubes === colorCount;
+        }
+
+        function createSparkles(targetEl) {
+            const rect = targetEl.getBoundingClientRect();
+            for(let i=0; i<8; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                const size = 5 + Math.random() * 8;
+                p.style.width = size + 'px';
+                p.style.height = size + 'px';
+                p.style.left = (rect.left + (Math.random() * rect.width)) + 'px';
+                p.style.top = (rect.top + (Math.random() * rect.height)) + 'px';
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), 600);
+            }
+        }
+
+        // --- Game Flow Methods ---
+        function startGame() {
+            initAudio();
+            currentLevelIdx = 0;
+            score = 0;
+            startLevel(currentLevelIdx);
+            showScreen('game');
+        }
+
+        function startLevel(idx) {
+            const config = LEVELS[idx];
+            moves = 0;
+            history = [];
+            selectedTubeIdx = null;
+            isAnimating = false;
+            
+            tubesState = generateLevel(config);
+            buildDOM(tubesState);
+            updateUI();
+            overlays.levelComplete.classList.remove('active');
+            overlays.finalResult.classList.remove('active');
+            showFeedback("Sort the colors!");
+        }
+
+        function undoMove() {
+            if(isAnimating || history.length === 0) return;
+            const prevState = history.pop();
+            tubesState = prevState.state;
+            moves = prevState.moves;
+            score = prevState.score;
+            selectedTubeIdx = null;
+            
+            // Remove completed glow classes
+            Array.from(containers.tubes.children).forEach(t => t.classList.remove('completed'));
+            
+            updateUI();
+            renderBallsPositions();
+            sfx.drop();
+        }
+
+        function restartLevel() {
+            if(isAnimating) return;
+            if(history.length > 0) {
+                // Revert to first state in history (the initial state)
+                const initialState = history[0];
+                tubesState = deepCopyState(initialState.state);
+                moves = 0;
+                // Don't reset total score completely, just deduct what was earned this level.
+                // Simpler for kids: just reset score to what it was at start of level
+                score = initialState.score;
+                history = [];
+                selectedTubeIdx = null;
+                
+                Array.from(containers.tubes.children).forEach(t => t.classList.remove('completed'));
+                updateUI();
+                renderBallsPositions();
+                sfx.drop();
+            }
+        }
+
+        function updateUI() {
+            ui.level.innerText = currentLevelIdx + 1;
+            ui.moves.innerText = moves;
+            ui.score.innerText = score;
+        }
+
+        function handleLevelComplete() {
+            isAnimating = true;
+            sfx.levelComplete();
+            
+            score += 50; // Bonus
+            document.getElementById('lc-moves').innerText = moves;
+            
+            setTimeout(() => {
+                fireConfetti(100);
+                if (currentLevelIdx < LEVELS.length - 1) {
+                    overlays.levelComplete.classList.add('active');
+                } else {
+                    handleGameComplete();
+                }
+            }, 500);
+        }
+
+        function nextLevel() {
+            currentLevelIdx++;
+            startLevel(currentLevelIdx);
+        }
+
+        function handleGameComplete() {
+            sfx.levelComplete(); // Need a better win sound if possible, reuse for now
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('ballSortBestScore', bestScore);
+            }
+            
+            document.getElementById('fr-score').innerText = score;
+            document.getElementById('fr-best').innerText = bestScore;
+            
+            overlays.finalResult.classList.add('active');
+            fireConfetti(300, true);
+        }
+
+        function playAgain() {
+            startGame();
+        }
+
+        function goHome() {
+            overlays.finalResult.classList.remove('active');
+            showScreen('start');
+        }
+
+        // --- Responsive Handler ---
+        window.addEventListener('resize', () => {
+            if(screens.game.classList.contains('active')) {
+                // Use setTimeout to wait for DOM reflow after resize
+                setTimeout(() => renderBallsPositions(true), 50);
+            }
+            resizeCanvas();
+        });
+
+        // --- Confetti System ---
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let confettiActive = false;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+
+        function fireConfetti(amount, continuous = false) {
+            const colors = ['#FF4B4B', '#1CB0F6', '#FFC800', '#58CC02', '#A66CFF', '#ffffff'];
+            for(let i=0; i<amount; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height * 0.2 - canvas.height * 0.2, // Start above screen
+                    r: Math.random() * 6 + 4,
+                    dx: Math.random() * 4 - 2,
+                    dy: Math.random() * 3 + 2,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    tilt: Math.floor(Math.random() * 10) - 10,
+                    tiltAngleInc: (Math.random() * 0.07) + 0.05,
+                    tiltAngle: 0
+                });
+            }
+            if(!confettiActive) {
+                confettiActive = true;
+                drawConfetti();
+            }
+            
+            if(continuous) {
+                const interval = setInterval(() => {
+                    if(!overlays.finalResult.classList.contains('active')) {
+                        clearInterval(interval);
+                        return;
+                    }
+                    fireConfetti(10);
+                }, 200);
+            }
+        }
+
+        function drawConfetti() {
+            requestAnimationFrame(drawConfetti);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if(particles.length === 0) {
+                confettiActive = false;
+                return;
+            }
+
+            for(let i=0; i<particles.length; i++) {
+                let p = particles[i];
+                p.tiltAngle += p.tiltAngleInc;
+                p.y += (Math.cos(p.tiltAngle) + 1 + p.r / 2) / 2;
+                p.x += Math.sin(p.tiltAngle) * 2;
+
+                ctx.beginPath();
+                ctx.lineWidth = p.r;
+                ctx.strokeStyle = p.color;
+                ctx.moveTo(p.x + p.tilt + p.r, p.y);
+                ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r);
+                ctx.stroke();
+
+                // Remove particles that fall off screen
+                if(p.y > canvas.height) {
+                    particles.splice(i, 1);
+                    i--;
+                }
+            }
+        }
+
+        // Initialize UI checks
+        document.addEventListener('DOMContentLoaded', () => {
+             // Prevent bounce scrolling on iOS
+             document.body.addEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });
+        });
+
+    </script>
+</body>
+</html>
