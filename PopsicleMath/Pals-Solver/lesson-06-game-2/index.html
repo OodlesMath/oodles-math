@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ordinal Number Quest - Ver 3</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Duolingo-inspired Color Palette */
+            --primary: #1cb0f6; /* Blue */
+            --primary-shadow: #1899d6;
+            --secondary: #ffc800; /* Yellow */
+            --secondary-shadow: #e5b400;
+            --success: #58cc02; /* Green */
+            --success-shadow: #46a302;
+            --danger: #ff4b4b; /* Red */
+            --danger-shadow: #cc3c3c;
+            --text-main: #4b4b4b;
+            --text-light: #afafaf;
+            --bg-color: #ffffff;
+            --app-bg: #87CEEB; /* Sky Blue Background */
+            --card-border: #e5e5e5;
+            
+            /* Text Colors */
+            --text-blue: #1cb0f6;
+            --text-green: #58cc02;
+            --text-orange: #ff9600;
+            --text-purple: #ce82ff;
+            --text-pink: #ff4b4b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--app-bg);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            overscroll-behavior-y: none;
+            position: relative;
+        }
+
+        /* --- Beautiful Scenic Background Elements --- */
+        .scenery {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        /* Rolling Hills (Grass) */
+        .hills {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 30%;
+        }
+        .hills svg {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            preserveAspectRatio: none;
+        }
+
+        /* Sun */
+        .sun-svg {
+            position: absolute;
+            top: 5vh;
+            left: 5vw;
+            width: 120px;
+            height: 120px;
+            animation: pulseSun 4s infinite alternate;
+        }
+
+        @keyframes pulseSun {
+            0% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(255,215,0,0.6)); }
+            100% { transform: scale(1.05); filter: drop-shadow(0 0 25px rgba(255,215,0,0.9)); }
+        }
+
+        /* Clouds */
+        .cloud-svg {
+            position: absolute;
+            opacity: 0.9;
+        }
+        .c1 { width: 140px; top: 8vh; left: 25vw; animation: floatCloud 30s linear infinite; }
+        .c2 { width: 100px; top: 15vh; left: 70vw; animation: floatCloud 25s linear infinite reverse; }
+
+        @keyframes floatCloud {
+            0% { transform: translateX(-30px); }
+            50% { transform: translateX(30px); }
+            100% { transform: translateX(-30px); }
+        }
+
+        /* Rainbow */
+        .rainbow-container {
+            position: absolute;
+            top: 2vh;
+            right: 5vw;
+            width: 35vw;
+            max-width: 400px;
+            min-width: 200px;
+            opacity: 0.85;
+            transform-origin: bottom right;
+        }
+        
+        /* Trees */
+        .tree-container {
+            position: absolute;
+            bottom: 12%;
+            width: 120px;
+            height: 150px;
+        }
+        .tree1 { left: 8vw; width: 140px; height: 180px; }
+        .tree2 { right: 8vw; width: 100px; height: 130px;}
+
+        /* Flowers */
+        .flower-container {
+            position: absolute;
+            bottom: 5%;
+            width: 40px;
+            height: 60px;
+        }
+        .fl1 { left: 20vw; bottom: 8%; transform: scale(1.2); }
+        .fl2 { left: 35vw; bottom: 3%; transform: scale(0.9); }
+        .fl3 { right: 25vw; bottom: 6%; transform: scale(1.1); }
+        .fl4 { right: 40vw; bottom: 4%; transform: scale(0.8); }
+
+        /* --- Main App Container --- */
+        #app-container {
+            width: 95%;
+            max-width: 800px;
+            height: 90vh;
+            max-height: 900px;
+            background-color: rgba(255, 255, 255, 0.95);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+            border-radius: 30px;
+            border: 6px solid white;
+            z-index: 10;
+            backdrop-filter: blur(8px);
+        }
+
+        @media (min-width: 800px) {
+            #app-container {
+                height: 85vh;
+            }
+        }
+
+        /* --- Screens --- */
+        .screen {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            padding: 20px 25px;
+            overflow-y: auto;
+            /* hide scrollbar */
+            scrollbar-width: none; 
+            -ms-overflow-style: none;
+        }
+        .screen::-webkit-scrollbar { display: none; }
+        .screen.active { display: flex; }
+
+        /* --- UI Elements --- */
+        h1, h2, h3 { text-align: center; margin-bottom: 10px; }
+
+        .title {
+            font-size: 3rem;
+            font-weight: 900;
+            text-shadow: 3px 3px 0px rgba(0,0,0,0.1);
+            margin-bottom: 5px;
+            line-height: 1.2;
+            background: linear-gradient(45deg, var(--text-blue), var(--text-purple), var(--text-pink), var(--text-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-main);
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        /* Buttons */
+        .btn {
+            appearance: none;
+            border: none;
+            border-radius: 16px;
+            padding: 15px 30px;
+            font-family: inherit;
+            font-size: 1.2rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+            text-align: center;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .btn:active { transform: translateY(5px); }
+
+        .btn-primary { background-color: var(--primary); color: white; box-shadow: 0 6px 0 var(--primary-shadow); }
+        .btn-primary:active { box-shadow: 0 0px 0 var(--primary-shadow); }
+
+        /* Speaker */
+        .btn-icon {
+            background-color: white;
+            color: var(--primary);
+            border: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 70px;
+            height: 70px;
+            padding: 0;
+            box-shadow: 0 6px 0 var(--primary-shadow);
+            margin: 0 auto;
+            transition: all 0.2s;
+        }
+        .btn-icon:hover { background-color: #f0f9ff; transform: scale(1.05); }
+        .btn-icon:active { box-shadow: 0 0px 0 var(--primary-shadow); transform: translateY(5px) scale(1.05); }
+        .btn-icon svg { width: 35px; height: 35px; fill: var(--primary); }
+
+        /* --- Header & Progress --- */
+        .game-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .progress-container {
+            flex-grow: 1;
+            height: 22px;
+            background-color: #eee;
+            border-radius: 11px;
+            position: relative;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #58cc02, #78ff1c);
+            width: 0%;
+            border-radius: 11px;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 5px; left: 8px; right: 8px; height: 6px;
+            background: rgba(255,255,255,0.4);
+            border-radius: 4px;
+        }
+
+        .score-display {
+            font-weight: 900;
+            color: var(--secondary);
+            font-size: 1.6rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            text-shadow: 1px 1px 0px rgba(0,0,0,0.1);
+        }
+        .score-display svg { fill: var(--secondary); width: 32px; height: 32px; filter: drop-shadow(1px 1px 0px rgba(0,0,0,0.1));}
+
+        .round-title {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-purple);
+            margin-bottom: 15px;
+        }
+
+        /* --- Game Areas --- */
+        .game-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .instruction-box {
+            text-align: center;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .question-text {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--text-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            background: #f0f9ff;
+            padding: 10px 25px;
+            border-radius: 25px;
+            border: 3px dashed var(--primary);
+        }
+
+        /* --- Cards --- */
+        .cards-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .card {
+            background-color: white;
+            border: 3px solid var(--card-border);
+            border-bottom-width: 6px;
+            border-radius: 20px;
+            padding: 15px 10px;
+            font-size: 2.2rem;
+            font-weight: 900;
+            cursor: pointer;
+            min-width: 95px;
+            text-align: center;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .card:hover { transform: scale(1.05); z-index: 2; }
+        .card:active { transform: translateY(4px) scale(1.05); border-bottom-width: 2px; margin-top: 4px; }
+        .card.disabled { pointer-events: none; opacity: 0.8;}
+
+        /* Sequence */
+        .sequence-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 25px;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            border: 3px solid #e0e0e0;
+            box-shadow: inset 0 3px 10px rgba(0,0,0,0.05);
+        }
+
+        .seq-item {
+            font-size: 1.4rem;
+            font-weight: 800;
+            padding: 8px 12px;
+            background: #f7f7f7;
+            border-radius: 12px;
+            border: 2px solid #ddd;
+            color: var(--text-light);
+        }
+
+        .seq-item.missing {
+            color: var(--primary);
+            border-color: var(--primary);
+            background-color: #e5f6ff;
+            border-style: dashed;
+            min-width: 80px;
+            text-align: center;
+            animation: pulseMissing 1.5s infinite;
+        }
+        @keyframes pulseMissing {
+            0% { box-shadow: 0 0 0 0 rgba(28, 176, 246, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(28, 176, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(28, 176, 246, 0); }
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 100%;
+            max-width: 450px;
+            margin: 0 auto;
+        }
+        .option-btn { font-size: 2rem; padding: 20px; }
+
+        /* Spelling Task Area with Keyboard */
+        .spelling-area {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            background: white;
+            padding: 20px;
+            border-radius: 24px;
+            border: 3px solid var(--card-border);
+        }
+
+        .spelling-display-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .letter-slot {
+            width: 60px;
+            height: 70px;
+            font-size: 3rem;
+            font-weight: 900;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 4px dashed var(--primary);
+            border-radius: 16px;
+            color: var(--primary);
+            background: #f0f9ff;
+            text-transform: lowercase;
+            transition: all 0.2s;
+        }
+        .letter-slot.filled { border-style: solid; box-shadow: 0 4px 10px rgba(28, 176, 246, 0.2); }
+        
+        .spelling-suffix {
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: var(--text-main);
+            letter-spacing: 2px;
+            margin-left: 5px;
+        }
+
+        /* Custom Keyboard */
+        .keyboard {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            max-width: 100%;
+            width: 100%;
+            padding: 10px;
+            background: #f7f7f7;
+            border-radius: 20px;
+            border: 2px solid #eee;
+        }
+        
+        .key-btn {
+            width: 45px;
+            height: 55px;
+            border-radius: 12px;
+            border: 2px solid #ccc;
+            border-bottom-width: 4px;
+            background: white;
+            font-size: 1.8rem;
+            font-weight: 800;
+            font-family: inherit;
+            color: var(--text-main);
+            cursor: pointer;
+            text-transform: uppercase;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.1s;
+        }
+        .key-btn:active { transform: translateY(3px); border-bottom-width: 1px; margin-top: 3px; }
+        .key-btn.action-btn { width: auto; padding: 0 20px; background: #e5e5e5; color: #333; border-color: #bbb; }
+        .key-btn.action-btn svg { width: 24px; height: 24px; fill: #333; }
+
+        /* --- Animations --- */
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .anim-pop { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px) rotate(-5deg); }
+            40%, 80% { transform: translateX(10px) rotate(5deg); }
+        }
+        .anim-shake { animation: shake 0.5s; border-color: var(--danger) !important; color: var(--danger) !important; background-color: #ffdfe0 !important;}
+
+        @keyframes correctBounce {
+            0%, 100% { transform: translateY(0) scale(1); border-bottom-width: 6px; margin-top: 0;}
+            50% { transform: translateY(-15px) scale(1.1); background-color: var(--success); color: white; border-color: var(--success-shadow);}
+        }
+        .anim-correct { animation: correctBounce 0.6s forwards; background-color: var(--success) !important; color: white !important; border-color: var(--success-shadow) !important; border-bottom-width: 6px !important; margin-top: 0 !important;}
+
+        @keyframes sparkle {
+            0% { transform: scale(0) rotate(0deg); opacity: 1; }
+            50% { transform: scale(2) rotate(180deg); opacity: 1; }
+            100% { transform: scale(0) rotate(360deg); opacity: 0; }
+        }
+        .sparkle-element { position: absolute; width: 40px; height: 40px; pointer-events: none; z-index: 50; }
+
+        /* Confetti */
+        #confetti-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; }
+
+        /* Mascot / Start / End */
+        #start-screen, #end-screen { justify-content: center; align-items: center; text-align: center; }
+        
+        .mascot-container {
+            width: 180px; height: 180px; background: linear-gradient(135deg, #f0f9ff, #d7efff);
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            margin-bottom: 20px; border: 6px solid var(--primary); box-shadow: 0 10px 20px rgba(28, 176, 246, 0.3);
+        }
+        .mascot-svg { width: 120px; height: 120px; }
+
+        .final-score {
+            font-size: 5.5rem; font-weight: 900; color: var(--secondary); text-shadow: 4px 4px 0px var(--secondary-shadow);
+            margin: 20px 0; background: linear-gradient(to bottom, #FFD700, #FFA500); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+
+        /* Responsive tweaks */
+        @media (max-width: 650px) {
+            .cards-grid { gap: 10px; }
+            .card { min-width: 75px; font-size: 1.6rem; padding: 10px; }
+            .sequence-container { gap: 6px; padding: 12px; margin-bottom: 15px; }
+            .seq-item { font-size: 1.1rem; padding: 6px 8px; }
+            .title { font-size: 2.2rem; }
+            .question-text { font-size: 1.4rem; padding: 8px 15px;}
+            .option-btn { font-size: 1.6rem; padding: 15px; }
+            .letter-slot { width: 45px; height: 55px; font-size: 2.2rem; }
+            .spelling-suffix { font-size: 2.5rem; }
+            .key-btn { width: 35px; height: 45px; font-size: 1.4rem; border-bottom-width: 3px; border-radius: 8px;}
+            .sun-svg { width: 80px; height: 80px; top: 2vh;}
+            .rainbow-container { top: 5vh; width: 50vw; right: 2vw;}
+            .c1, .c2 { width: 80px; }
+        }
+    </style>
+</head>
+<body>
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- Beautiful Scenic Background -->
+    <div class="scenery">
+        <!-- Sun -->
+        <svg class="sun-svg" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="40" fill="#FFD700" />
+            <circle cx="50" cy="50" r="30" fill="#FFEA00" />
+        </svg>
+
+        <!-- Clouds -->
+        <svg class="cloud-svg c1" viewBox="0 0 100 50">
+            <path d="M 20 40 Q 10 40 10 30 Q 10 20 25 20 Q 30 10 45 10 Q 65 10 70 25 Q 85 25 85 35 Q 85 45 70 45 L 20 45 Z" fill="white"/>
+        </svg>
+        <svg class="cloud-svg c2" viewBox="0 0 100 50">
+            <path d="M 20 40 Q 10 40 10 30 Q 10 20 25 20 Q 30 10 45 10 Q 65 10 70 25 Q 85 25 85 35 Q 85 45 70 45 L 20 45 Z" fill="white"/>
+        </svg>
+
+        <!-- Rainbow -->
+        <div class="rainbow-container">
+            <svg viewBox="0 0 200 100" width="100%" height="100%">
+                <path d="M 10 100 A 90 90 0 0 1 190 100" fill="none" stroke="#FF4B4B" stroke-width="12"/>
+                <path d="M 22 100 A 78 78 0 0 1 178 100" fill="none" stroke="#FF9600" stroke-width="12"/>
+                <path d="M 34 100 A 66 66 0 0 1 166 100" fill="none" stroke="#FFC800" stroke-width="12"/>
+                <path d="M 46 100 A 54 54 0 0 1 154 100" fill="none" stroke="#58CC02" stroke-width="12"/>
+                <path d="M 58 100 A 42 42 0 0 1 142 100" fill="none" stroke="#1CB0F6" stroke-width="12"/>
+                <path d="M 70 100 A 30 30 0 0 1 130 100" fill="none" stroke="#CE82FF" stroke-width="12"/>
+            </svg>
+        </div>
+
+        <!-- Grass Hills -->
+        <div class="hills">
+            <svg viewBox="0 0 1000 200" preserveAspectRatio="none">
+                <path d="M0 200 L0 100 Q 250 0 500 80 T 1000 50 L 1000 200 Z" fill="#69d91a" opacity="0.8"/>
+                <path d="M0 200 L0 150 Q 200 50 600 120 T 1000 90 L 1000 200 Z" fill="#58cc02"/>
+            </svg>
+        </div>
+
+        <!-- Trees -->
+        <div class="tree-container tree1">
+            <svg viewBox="0 0 100 150">
+                <rect x="40" y="80" width="20" height="70" fill="#8B4513" rx="5"/>
+                <circle cx="50" cy="50" r="45" fill="#388E3C" />
+                <circle cx="30" cy="70" r="30" fill="#2E7D32" />
+                <circle cx="70" cy="70" r="30" fill="#43A047" />
+                <circle cx="50" cy="35" r="35" fill="#4CAF50" />
+            </svg>
+        </div>
+        <div class="tree-container tree2">
+            <svg viewBox="0 0 100 150">
+                <rect x="42" y="90" width="16" height="60" fill="#8B4513" rx="4"/>
+                <circle cx="50" cy="60" r="40" fill="#388E3C" />
+                <circle cx="25" cy="80" r="25" fill="#2E7D32" />
+                <circle cx="75" cy="80" r="25" fill="#43A047" />
+            </svg>
+        </div>
+
+        <!-- Flowers -->
+        <div class="flower-container fl1">
+            <svg viewBox="0 0 50 80">
+                <rect x="23" y="30" width="4" height="50" fill="#2E7D32" rx="2"/>
+                <circle cx="25" cy="25" r="15" fill="#FF4B4B" />
+                <circle cx="15" cy="15" r="10" fill="#FF4B4B" />
+                <circle cx="35" cy="15" r="10" fill="#FF4B4B" />
+                <circle cx="15" cy="35" r="10" fill="#FF4B4B" />
+                <circle cx="35" cy="35" r="10" fill="#FF4B4B" />
+                <circle cx="25" cy="25" r="8" fill="#FFD700" />
+            </svg>
+        </div>
+        <div class="flower-container fl2">
+            <svg viewBox="0 0 50 80">
+                <rect x="23" y="30" width="4" height="50" fill="#2E7D32" rx="2"/>
+                <circle cx="25" cy="25" r="15" fill="#CE82FF" />
+                <circle cx="12" cy="25" r="12" fill="#CE82FF" />
+                <circle cx="38" cy="25" r="12" fill="#CE82FF" />
+                <circle cx="25" cy="12" r="12" fill="#CE82FF" />
+                <circle cx="25" cy="38" r="12" fill="#CE82FF" />
+                <circle cx="25" cy="25" r="8" fill="#FFD700" />
+            </svg>
+        </div>
+        <div class="flower-container fl3">
+            <svg viewBox="0 0 50 80">
+                <rect x="23" y="30" width="4" height="50" fill="#2E7D32" rx="2"/>
+                <circle cx="25" cy="25" r="15" fill="#1CB0F6" />
+                <circle cx="15" cy="15" r="10" fill="#1CB0F6" />
+                <circle cx="35" cy="15" r="10" fill="#1CB0F6" />
+                <circle cx="15" cy="35" r="10" fill="#1CB0F6" />
+                <circle cx="35" cy="35" r="10" fill="#1CB0F6" />
+                <circle cx="25" cy="25" r="8" fill="#FFD700" />
+            </svg>
+        </div>
+        <div class="flower-container fl4">
+            <svg viewBox="0 0 50 80">
+                <rect x="23" y="30" width="4" height="50" fill="#2E7D32" rx="2"/>
+                <circle cx="25" cy="25" r="15" fill="#FF9600" />
+                <circle cx="12" cy="25" r="12" fill="#FF9600" />
+                <circle cx="38" cy="25" r="12" fill="#FF9600" />
+                <circle cx="25" cy="12" r="12" fill="#FF9600" />
+                <circle cx="25" cy="38" r="12" fill="#FF9600" />
+                <circle cx="25" cy="25" r="8" fill="#FFD700" />
+            </svg>
+        </div>
+    </div>
+
+    <!-- Confetti Canvas (Top Layer) -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <div id="app-container">
+        
+        <!-- Start Screen -->
+        <div id="start-screen" class="screen active">
+            <div class="mascot-container anim-pop">
+                <svg class="mascot-svg" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="45" fill="#ffc800" />
+                    <!-- Eyes -->
+                    <circle cx="35" cy="40" r="8" fill="white" />
+                    <circle cx="65" cy="40" r="8" fill="white" />
+                    <circle cx="35" cy="40" r="4" fill="#4b4b4b" />
+                    <circle cx="65" cy="40" r="4" fill="#4b4b4b" />
+                    <!-- Beak/Mouth -->
+                    <path d="M45,55 L55,55 L50,65 Z" fill="#ff9600" />
+                    <!-- Sparkles -->
+                    <path d="M20,20 L25,10 L30,20 L40,25 L30,30 L25,40 L20,30 L10,25 Z" fill="white" opacity="0.8" transform="scale(0.5) translate(10, 10)"/>
+                    <path d="M80,20 L85,10 L90,20 L100,25 L90,30 L85,40 L80,30 L70,25 Z" fill="white" opacity="0.8" transform="scale(0.4) translate(100, 40)"/>
+                </svg>
+            </div>
+            <h1 class="title anim-pop" style="animation-delay: 0.1s;">Ordinal Number<br>Quest</h1>
+            <p class="subtitle anim-pop" style="animation-delay: 0.2s;">Listen, choose, and spell ordinal numbers!</p>
+            <button class="btn btn-primary anim-pop" style="animation-delay: 0.3s; margin-top: 20px; font-size: 1.5rem; padding: 20px 40px;" onclick="startGame()">Start Game</button>
+        </div>
+
+        <!-- Main Game Screen -->
+        <div id="game-screen" class="screen">
+            <div class="game-header">
+                <div class="progress-container">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
+                <div class="score-display">
+                    <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    <span id="score-text">0</span>
+                </div>
+            </div>
+
+            <div class="round-title" id="round-title">Round 1: Listen and Click</div>
+
+            <div class="game-area" id="dynamic-game-area">
+                <!-- Dynamic Content Injected Here -->
+            </div>
+        </div>
+
+        <!-- End Screen -->
+        <div id="end-screen" class="screen">
+            <h1 class="title" style="color: var(--success); text-shadow: 2px 2px 0px var(--success-shadow); background: none; -webkit-text-fill-color: var(--success);">Game Complete!</h1>
+            <h2 class="subtitle" style="font-size: 2rem; color: var(--text-blue);">Amazing work!</h2>
+            <div class="final-score" id="final-score-text">12 / 12</div>
+            <button class="btn btn-primary" style="margin-top: 30px; font-size: 1.5rem; padding: 20px 40px;" onclick="startGame()">Play Again</button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Game Data ---
+        const ordinalData = [
+            { id: 1, text: "1st", word: "first", missingPrefix: "__rst", missingAns: "fi" },
+            { id: 2, text: "2nd", word: "second", missingPrefix: "__cond", missingAns: "se" },
+            { id: 3, text: "3rd", word: "third", missingPrefix: "__ird", missingAns: "th" },
+            { id: 4, text: "4th", word: "fourth", missingPrefix: "__urth", missingAns: "fo" },
+            { id: 5, text: "5th", word: "fifth", missingPrefix: "__fth", missingAns: "fi" },
+            { id: 6, text: "6th", word: "sixth", missingPrefix: "__xth", missingAns: "si" },
+            { id: 7, text: "7th", word: "seventh", missingPrefix: "__venth", missingAns: "se" },
+            { id: 8, text: "8th", word: "eighth", missingPrefix: "__ghth", missingAns: "ei" },
+            { id: 9, text: "9th", word: "ninth", missingPrefix: "__nth", missingAns: "ni" },
+            { id: 10, text: "10th", word: "tenth", missingPrefix: "__nth", missingAns: "te" },
+            { id: 11, text: "11th", word: "eleventh", missingPrefix: "__eventh", missingAns: "el" },
+            { id: 12, text: "12th", word: "twelfth", missingPrefix: "__elfth", missingAns: "tw" }
+        ];
+
+        const alphabet = "abcdefghijklmnopqrstuvwxyz".split("");
+
+        // --- State Variables ---
+        let score = 0;
+        let currentRound = 1;
+        let currentQuestionIndex = 0;
+        let round1Questions = [];
+        let round2Questions = [];
+        let isFirstTry = true;
+        let currentTarget = null;
+        let audioCtx = null;
+        let state = 'start'; // start, round1, round2, spelling, end
+        let typedLetters = [];
+        let isProcessing = false;
+
+        // --- Elements ---
+        const screens = {
+            start: document.getElementById('start-screen'),
+            game: document.getElementById('game-screen'),
+            end: document.getElementById('end-screen')
+        };
+        const gameArea = document.getElementById('dynamic-game-area');
+        const scoreText = document.getElementById('score-text');
+        const progressBar = document.getElementById('progress-bar');
+        const roundTitle = document.getElementById('round-title');
+
+        // Speaker SVG (Polished)
+        const speakerSVG = `<svg class="icon-speaker" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>`;
+
+        // Card Colors
+        const cardColors = ['#1cb0f6', '#58cc02', '#ff9600', '#ce82ff', '#ff4b4b'];
+
+        // --- Audio System (Web Audio API & Speech Synthesis) ---
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'pop') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(500, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+                gain.gain.setValueAtTime(0.5, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'correct') {
+                // Happy double chime
+                const osc2 = audioCtx.createOscillator();
+                osc2.type = 'triangle';
+                osc2.connect(gain);
+                
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.setValueAtTime(800, now + 0.15);
+                
+                osc2.frequency.setValueAtTime(800, now);
+                osc2.frequency.setValueAtTime(1200, now + 0.15);
+
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.4);
+                
+                osc.start(now);
+                osc2.start(now);
+                osc.stop(now + 0.4);
+                osc2.stop(now + 0.4);
+            } else if (type === 'wrong') {
+                // Gentle boop
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(200, now + 0.3);
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'win') {
+                // Happy arpeggio
+                const freqs = [523.25, 659.25, 783.99, 1046.50]; // C E G C
+                freqs.forEach((f, i) => {
+                    const t = now + (i * 0.15);
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.type = 'square';
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    o.frequency.setValueAtTime(f, t);
+                    g.gain.setValueAtTime(0.2, t);
+                    g.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+                    o.start(t);
+                    o.stop(t + 0.3);
+                });
+            }
+        }
+
+        function speak(text, callback) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.85; 
+            utterance.pitch = 1.1; 
+            
+            if (callback) {
+                utterance.onend = callback;
+                utterance.onerror = callback;
+            }
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // --- Utility ---
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        function switchScreen(screenName) {
+            Object.values(screens).forEach(s => s.classList.remove('active'));
+            screens[screenName].classList.add('active');
+        }
+
+        function updateProgress() {
+            let totalQuestions = 12; 
+            let questionsAnswered = (currentRound - 1) * 6 + currentQuestionIndex;
+            if (state === 'spelling') questionsAnswered++; 
+            
+            let percentage = (questionsAnswered / totalQuestions) * 100;
+            progressBar.style.width = percentage + '%';
+            scoreText.innerText = score;
+        }
+
+        function createSparkles(element) {
+            const rect = element.getBoundingClientRect();
+            for(let i=0; i<8; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.innerHTML = `<svg viewBox="0 0 24 24" fill="#ffc800"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`;
+                sparkle.className = 'sparkle-element';
+                sparkle.style.left = (rect.left + Math.random() * rect.width - 20) + 'px';
+                sparkle.style.top = (rect.top + Math.random() * rect.height - 20) + 'px';
+                sparkle.style.animation = `sparkle 0.8s forwards ${Math.random()*0.3}s`;
+                document.body.appendChild(sparkle);
+                setTimeout(() => sparkle.remove(), 1100);
+            }
+        }
+
+        // --- Game Logic ---
+
+        function startGame() {
+            initAudio();
+            playSound('pop');
+            score = 0;
+            currentRound = 1;
+            currentQuestionIndex = 0;
+            isProcessing = false;
+            
+            let shuffledList = shuffle([...ordinalData]);
+            round1Questions = shuffledList.slice(0, 6);
+            
+            shuffledList = shuffle([...ordinalData]);
+            round2Questions = shuffledList.slice(0, 6);
+
+            switchScreen('game');
+            startRound1();
+            
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // --- ROUND 1 ---
+        function startRound1() {
+            state = 'round1';
+            currentRound = 1;
+            roundTitle.innerText = `Round 1: Listen and Click (${currentQuestionIndex + 1}/6)`;
+            isFirstTry = true;
+            isProcessing = false;
+            currentTarget = round1Questions[currentQuestionIndex];
+            updateProgress();
+            renderRound1();
+            
+            setTimeout(() => playR1Audio(), 600);
+        }
+
+        function renderRound1() {
+            gameArea.innerHTML = '';
+            
+            const instruction = document.createElement('div');
+            instruction.className = 'instruction-box anim-pop';
+            
+            const btnAudio = document.createElement('button');
+            btnAudio.className = 'btn btn-icon';
+            btnAudio.innerHTML = speakerSVG;
+            btnAudio.onclick = () => { playSound('pop'); playR1Audio(); };
+            
+            instruction.appendChild(btnAudio);
+            gameArea.appendChild(instruction);
+
+            const grid = document.createElement('div');
+            grid.className = 'cards-grid anim-pop';
+            grid.style.animationDelay = '0.2s';
+            
+            ordinalData.forEach((data, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                const color = cardColors[data.id % cardColors.length];
+                card.style.color = color;
+                card.style.borderColor = color;
+                
+                card.innerText = data.text;
+                card.onclick = () => handleR1CardClick(data, card, color);
+                
+                card.onmouseover = () => { if(!card.classList.contains('disabled')) card.style.backgroundColor = color + '15'; };
+                card.onmouseout = () => { if(!card.classList.contains('disabled')) card.style.backgroundColor = 'white'; };
+
+                grid.appendChild(card);
+            });
+            
+            gameArea.appendChild(grid);
+        }
+
+        function playR1Audio() {
+            speak(currentTarget.word);
+        }
+
+        function handleR1CardClick(data, cardElement, originalColor) {
+            if(isProcessing) return;
+
+            if (data.id === currentTarget.id) {
+                isProcessing = true;
+                if (isFirstTry) score++;
+                cardElement.classList.add('anim-correct');
+                
+                // Disable all other cards
+                const allCards = document.querySelectorAll('.card');
+                allCards.forEach(c => c.classList.add('disabled'));
+
+                playSound('correct');
+                createSparkles(cardElement);
+                updateProgress();
+                
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    if (currentQuestionIndex < 6) {
+                        startRound1();
+                    } else {
+                        currentQuestionIndex = 0;
+                        startRound2();
+                    }
+                }, 1500); // Wait 1.5s then advance
+
+            } else {
+                isFirstTry = false;
+                cardElement.classList.add('anim-shake');
+                playSound('wrong');
+                setTimeout(() => {
+                    cardElement.classList.remove('anim-shake');
+                    cardElement.style.borderColor = originalColor;
+                }, 500);
+            }
+        }
+
+        // --- ROUND 2 ---
+        function startRound2() {
+            state = 'round2';
+            currentRound = 2;
+            roundTitle.innerText = `Round 2: Find the Missing Number (${currentQuestionIndex + 1}/6)`;
+            isFirstTry = true;
+            isProcessing = false;
+            currentTarget = round2Questions[currentQuestionIndex];
+            updateProgress();
+            renderRound2();
+        }
+
+        function renderRound2() {
+            gameArea.innerHTML = '';
+            
+            const instruction = document.createElement('div');
+            instruction.className = 'instruction-box anim-pop';
+            
+            const qText = document.createElement('div');
+            qText.className = 'question-text';
+            qText.innerHTML = `<span>Which ordinal number is missing?</span> 
+                <button class="btn btn-icon" style="width:50px; height:50px;" id="r2-speaker">
+                    ${speakerSVG}
+                </button>`;
+            instruction.appendChild(qText);
+            gameArea.appendChild(instruction);
+
+            setTimeout(() => {
+                const spk = document.getElementById('r2-speaker');
+                if(spk) spk.onclick = () => { playSound('pop'); speak("Which ordinal number is missing?"); };
+            }, 10);
+
+            // Render Sequence
+            const seqContainer = document.createElement('div');
+            seqContainer.className = 'sequence-container anim-pop';
+            seqContainer.style.animationDelay = '0.1s';
+            
+            ordinalData.forEach(data => {
+                const item = document.createElement('div');
+                item.className = 'seq-item';
+                if (data.id === currentTarget.id) {
+                    item.classList.add('missing');
+                    item.innerText = '____';
+                } else {
+                    item.innerText = data.text;
+                }
+                seqContainer.appendChild(item);
+            });
+            gameArea.appendChild(seqContainer);
+
+            // Generate Options
+            let options = [currentTarget];
+            let availableWrongs = ordinalData.filter(d => d.id !== currentTarget.id);
+            availableWrongs = shuffle(availableWrongs).slice(0, 3);
+            options = options.concat(availableWrongs);
+            options = shuffle(options);
+
+            const optionsGrid = document.createElement('div');
+            optionsGrid.className = 'options-grid anim-pop';
+            optionsGrid.style.animationDelay = '0.2s';
+
+            options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'btn card option-btn';
+                const color = cardColors[index % cardColors.length];
+                btn.style.color = color;
+                btn.style.borderColor = color;
+                
+                btn.innerText = opt.text;
+                btn.onclick = () => handleR2OptionClick(opt, btn, color);
+                
+                btn.onmouseover = () => { if(!btn.classList.contains('disabled')) btn.style.backgroundColor = color + '15'; };
+                btn.onmouseout = () => { if(!btn.classList.contains('disabled')) btn.style.backgroundColor = 'white'; };
+
+                optionsGrid.appendChild(btn);
+            });
+            gameArea.appendChild(optionsGrid);
+        }
+
+        function handleR2OptionClick(data, btnElement, originalColor) {
+             if(isProcessing) return;
+
+             if (data.id === currentTarget.id) {
+                 isProcessing = true;
+                 if(isFirstTry) score++;
+                 btnElement.classList.add('anim-correct');
+                 
+                 const allCards = document.querySelectorAll('.option-btn');
+                 allCards.forEach(c => c.classList.add('disabled'));
+
+                 playSound('correct');
+                 createSparkles(btnElement);
+                 updateProgress();
+                 
+                 setTimeout(() => {
+                     startSpellingTask();
+                 }, 1200);
+             } else {
+                 isFirstTry = false;
+                 btnElement.classList.add('anim-shake');
+                 playSound('wrong');
+                 setTimeout(() => {
+                     btnElement.classList.remove('anim-shake');
+                     btnElement.style.borderColor = originalColor;
+                 }, 500);
+             }
+        }
+
+        // --- SPELLING MINI TASK (KEYBOARD) ---
+        function startSpellingTask() {
+            state = 'spelling';
+            isProcessing = false;
+            typedLetters = [];
+            roundTitle.innerText = "Spell the Word!";
+            gameArea.innerHTML = '';
+            
+            const container = document.createElement('div');
+            container.className = 'spelling-area anim-pop';
+
+            const instr = document.createElement('div');
+            instr.className = 'subtitle';
+            instr.innerText = "Tap the missing letters.";
+            instr.style.color = 'var(--text-purple)';
+            container.appendChild(instr);
+
+            // Display Slots
+            const displayGroup = document.createElement('div');
+            displayGroup.className = 'spelling-display-group';
+            
+            const slot1 = document.createElement('div');
+            slot1.className = 'letter-slot';
+            slot1.id = 'slot-0';
+            
+            const slot2 = document.createElement('div');
+            slot2.className = 'letter-slot';
+            slot2.id = 'slot-1';
+
+            const suffixSpan = document.createElement('div');
+            suffixSpan.className = 'spelling-suffix';
+            suffixSpan.innerText = currentTarget.missingPrefix.replace('__', '');
+
+            displayGroup.appendChild(slot1);
+            displayGroup.appendChild(slot2);
+            displayGroup.appendChild(suffixSpan);
+            container.appendChild(displayGroup);
+
+            // Keyboard
+            const kbContainer = document.createElement('div');
+            kbContainer.className = 'keyboard';
+            
+            alphabet.forEach(letter => {
+                const keyBtn = document.createElement('button');
+                keyBtn.className = 'key-btn';
+                keyBtn.innerText = letter;
+                keyBtn.onclick = () => handleKeyboardClick(letter);
+                kbContainer.appendChild(keyBtn);
+            });
+
+            const delBtn = document.createElement('button');
+            delBtn.className = 'key-btn action-btn';
+            delBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-3 12.59L17.59 17 14 13.41 10.41 17 9 15.59 12.59 12 9 8.41 10.41 7 14 10.59 17.59 7 19 8.41 15.41 12 19 15.59z"/></svg>`;
+            delBtn.onclick = () => handleBackspace();
+            kbContainer.appendChild(delBtn);
+
+            container.appendChild(kbContainer);
+            gameArea.appendChild(container);
+
+            speak("Type the missing letters");
+        }
+
+        function renderSpellingSlots() {
+            for(let i=0; i<2; i++) {
+                const slot = document.getElementById(`slot-${i}`);
+                if (typedLetters[i]) {
+                    slot.innerText = typedLetters[i];
+                    slot.classList.add('filled');
+                } else {
+                    slot.innerText = '';
+                    slot.classList.remove('filled');
+                }
+            }
+        }
+
+        function handleKeyboardClick(letter) {
+            if (isProcessing) return;
+            playSound('pop');
+            if (typedLetters.length < 2) {
+                typedLetters.push(letter);
+                renderSpellingSlots();
+                
+                if (typedLetters.length === 2) {
+                    checkSpelling();
+                }
+            }
+        }
+
+        function handleBackspace() {
+            if (isProcessing) return;
+            playSound('pop');
+            if (typedLetters.length > 0) {
+                typedLetters.pop();
+                renderSpellingSlots();
+            }
+        }
+
+        function checkSpelling() {
+            isProcessing = true;
+            const inputVal = typedLetters.join('').toLowerCase();
+            const correctAns = currentTarget.missingAns.toLowerCase();
+
+            if (inputVal === correctAns) {
+                // Correct
+                const slot1 = document.getElementById('slot-0');
+                const slot2 = document.getElementById('slot-1');
+                
+                [slot1, slot2].forEach(s => {
+                    s.style.backgroundColor = 'var(--success)';
+                    s.style.color = 'white';
+                    s.style.borderColor = 'var(--success-shadow)';
+                    s.style.borderStyle = 'solid';
+                    createSparkles(s);
+                });
+
+                playSound('correct');
+                
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    if (currentQuestionIndex < 6) {
+                        startRound2();
+                    } else {
+                        endGame();
+                    }
+                }, 1500);
+
+            } else {
+                // Wrong
+                playSound('wrong');
+                const displayGroup = document.querySelector('.spelling-display-group');
+                displayGroup.classList.add('anim-shake');
+                
+                setTimeout(() => {
+                    displayGroup.classList.remove('anim-shake');
+                    typedLetters = [];
+                    renderSpellingSlots();
+                    isProcessing = false;
+                }, 600);
+            }
+        }
+
+        // --- END GAME & CONFETTI ---
+        function endGame() {
+            state = 'end';
+            updateProgress(); 
+            switchScreen('end');
+            playSound('win');
+            document.getElementById('final-score-text').innerText = `${score} / 12`;
+            fireConfetti();
+        }
+
+        function fireConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const pieces = [];
+            const colors = ['#1cb0f6', '#58cc02', '#ffc800', '#ff4b4b', '#ce82ff'];
+
+            for (let i = 0; i < 200; i++) {
+                pieces.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    w: Math.random() * 12 + 8,
+                    h: Math.random() * 8 + 6,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    vy: Math.random() * 4 + 3,
+                    vx: Math.random() * 3 - 1.5,
+                    rot: Math.random() * 360,
+                    rotSpeed: Math.random() * 15 - 7.5
+                });
+            }
+
+            function animate() {
+                if(state !== 'end') {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    return; 
+                }
+                requestAnimationFrame(animate);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                pieces.forEach(p => {
+                    p.y += p.vy;
+                    p.x += p.vx;
+                    p.rot += p.rotSpeed;
+                    
+                    if (p.y > canvas.height) {
+                        p.y = -20;
+                        p.x = Math.random() * canvas.width;
+                    }
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rot * Math.PI / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.roundRect(-p.w/2, -p.h/2, p.w, p.h, 2);
+                    ctx.fill();
+                    ctx.restore();
+                });
+            }
+            animate();
+        }
+
+        window.addEventListener('resize', () => {
+            if(state === 'end') {
+                const canvas = document.getElementById('confetti-canvas');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+        });
+
+    </script>
+</body>
+</html>
