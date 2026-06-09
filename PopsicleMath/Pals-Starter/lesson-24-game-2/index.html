@@ -9,8 +9,8 @@
 <!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
 
-<!-- Tone.js for synthesized sound effects -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/1.4.8/Tone.js"></script>
+<!-- Tone.js cho hiệu ứng âm thanh (Đã sửa lại phiên bản đúng 14.8.49) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 
 <!-- Google Fonts: Poppins -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -33,7 +33,7 @@
         100% { background-position: 0% 50%; }
     }
 
-    /* Custom Animations */
+    /* Hoạt ảnh tùy chỉnh */
     @keyframes bounceIn {
         0% { transform: scale(0.5); opacity: 0; }
         60% { transform: scale(1.05); opacity: 1; }
@@ -63,7 +63,7 @@
     .animate-float { animation: float 3s ease-in-out infinite; }
     .animate-pop { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 
-    /* Duolingo Style 3D Elements */
+    /* Phong cách nút nổi 3D kiểu Duolingo */
     .duo-box {
         background: #ffffff;
         border-radius: 24px;
@@ -115,7 +115,7 @@
         background-color: #e5e7eb;
     }
 
-    /* Option Cards */
+    /* Thẻ lựa chọn đáp án */
     .option-card {
         background: #ffffff;
         border-radius: 24px;
@@ -139,7 +139,7 @@
         margin-top: 5px;
     }
 
-    /* Confetti - Highest Z-Index */
+    /* Pháo giấy - Cần hiển thị trên cùng */
     .confetti {
         position: fixed;
         width: 12px;
@@ -154,7 +154,7 @@
         100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
     }
 
-    /* Missing slot styling */
+    /* Ô trống chứa dấu chấm hỏi */
     .missing-slot {
         border: 4px dashed #cbd5e1;
         background-color: #f8fafc;
@@ -177,7 +177,7 @@
              0px  6px 0 #1e3a8a;
     }
 
-    /* Icon Jiggle on hover */
+    /* Rung lắc Icon khi di chuột */
     .shape-icon {
         transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
@@ -188,18 +188,18 @@
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 md:p-8">
 <img src="../assets/logo-oodles-math.png" class="oodles-logo">
-<!-- Audio Warning -->
+<!-- Cảnh báo âm thanh -->
 <div id="audio-context-warning" class="hidden fixed top-4 left-1/2 transform -translate-x-1/2 bg-yellow-100 text-yellow-800 px-6 py-3 rounded-full font-bold shadow-lg z-50 animate-bounce">
     Tap anywhere to enable sound! 🎵
 </div>
 
-<!-- Main App Container -->
+<!-- Khung chứa Game chính -->
 <div id="app" class="w-full max-w-5xl flex flex-col items-center justify-center relative my-auto">
-    <!-- Screens injected via JS -->
+    <!-- Màn hình sẽ được nạp bằng JS -->
 </div>
 
 <script>
-// --- 1. GAME DATA & CONFIGURATION ---
+// --- 1. DỮ LIỆU GAME & CẤU HÌNH ---
 
 const COLORS = {
     red: '#ff4b4b',
@@ -221,10 +221,10 @@ let currentState = {
     questionIdx: 0,
     score: 0,
     totalQuestions: 9,
-    questions: [] // Will hold dynamically generated questions
+    questions: [] // Sẽ chứa các câu hỏi được tạo ngẫu nhiên
 };
 
-// --- 2. RANDOM QUESTION GENERATOR ---
+// --- 2. TRÌNH TẠO CÂU HỎI NGẪU NHIÊN ---
 
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -252,7 +252,7 @@ function getPatternSequence(patternStr, length) {
 function generateDynamicQuestions() {
     let questions = [];
     
-    // Helper to build a single question
+    // Hàm phụ trợ để xây dựng một câu hỏi đơn lẻ
     function buildQuestion(roundType, roundNum, roundTitle) {
         let patternType = getRandomElements(PATTERNS, 1)[0];
         
@@ -265,12 +265,12 @@ function generateDynamicQuestions() {
         
         let shapeMap = {}, colorMap = {}, sizeMap = {};
         
-        // Base attributes (fixed for this round unless varying)
+        // Thuộc tính cơ bản (cố định cho vòng này trừ khi biến đổi)
         let baseShape = getRandomElements(SHAPES, 1)[0];
         let baseColor = getRandomElements(COLOR_VALS, 1)[0];
         let baseSize = 'large';
 
-        // Vary attributes based on round
+        // Thay đổi thuộc tính dựa trên vòng chơi
         if (roundType === 'color') {
             let colors = getRandomElements(COLOR_VALS, new Set(patternType.split('')).size);
             let uniqueLabels = Array.from(new Set(patternType.split('')));
@@ -286,7 +286,7 @@ function generateDynamicQuestions() {
         }
 
         let sequence = seqLabels.map((label, idx) => {
-            if (idx === missingIndex) return null; // Missing slot ở cuối cùng
+            if (idx === missingIndex) return null; // Ô trống ở cuối cùng
             return {
                 shape: shapeMap[label] || baseShape,
                 color: colorMap[label] || baseColor,
@@ -300,7 +300,7 @@ function generateDynamicQuestions() {
             size: sizeMap[seqLabels[missingIndex]] || baseSize
         };
 
-        // Generate wrong options
+        // Tạo các tùy chọn sai
         let wrongOptions = [];
         while(wrongOptions.length < 2) {
             let wrong = {
@@ -309,7 +309,7 @@ function generateDynamicQuestions() {
                 size: roundType === 'size' ? getRandomElements(SIZES, 1)[0] : correctItem.size
             };
             
-            // Check if it's different from correct and other wrongs
+            // Kiểm tra xem nó có khác biệt với kết quả đúng và các kết quả sai khác không
             let isDiffFromCorrect = wrong.shape !== correctItem.shape || wrong.color !== correctItem.color || wrong.size !== correctItem.size;
             let isDiffFromWrongs = !wrongOptions.some(w => w.shape === wrong.shape && w.color === wrong.color && w.size === wrong.size);
             
@@ -332,7 +332,7 @@ function generateDynamicQuestions() {
         };
     }
 
-    // Generate 3 per round
+    // Tạo 3 câu hỏi cho mỗi vòng
     for(let i=0; i<3; i++) questions.push(buildQuestion('color', 1, "Round 1: Color Patterns! 🎨"));
     for(let i=0; i<3; i++) questions.push(buildQuestion('shape', 2, "Round 2: Shape Patterns! ⭐"));
     for(let i=0; i<3; i++) questions.push(buildQuestion('size', 3, "Round 3: Size Patterns! 📏"));
@@ -340,12 +340,19 @@ function generateDynamicQuestions() {
     return questions;
 }
 
-// --- 3. AUDIO SYSTEM & TTS ---
+// --- 3. HỆ THỐNG ÂM THANH & TTS ---
 let correctSynth, errorSynth, clickSynth;
 let isAudioReady = false;
 
 async function initAudio() {
     if (isAudioReady) return;
+    
+    // Kiểm tra xem thư viện Tone có tải được thành công không
+    if (typeof Tone === 'undefined') {
+        console.warn("Thư viện Tone.js chưa được tải thành công.");
+        return;
+    }
+
     try {
         // Đảm bảo trình duyệt mở khóa AudioContext
         await Tone.start();
@@ -354,22 +361,20 @@ async function initAudio() {
             oscillator: { type: "triangle" },
             envelope: { attack: 0.05, decay: 0.1, sustain: 0.2, release: 1 }
         }).toDestination();
-        correctSynth.volume.value = -5;
+        correctSynth.volume.value = 0; // Âm lượng to, rõ ràng
 
         errorSynth = new Tone.Synth({
             oscillator: { type: "sine" },
             envelope: { attack: 0.1, decay: 0.4, sustain: 0, release: 0.1 }
         }).toDestination();
-        errorSynth.volume.value = -2;
+        errorSynth.volume.value = 0;
 
-        // Âm thanh "Pop/Bloop" đáng tin cậy khi click (Sử dụng MembraneSynth cho tiếng Pop hoàn hảo)
-        clickSynth = new Tone.MembraneSynth({
-            pitchDecay: 0.05,
-            octaves: 4,
+        // Âm thanh "Pop/Bloop" đã đổi thành tiếng Synth cao và ngắn (dễ nghe trên mọi thiết bị)
+        clickSynth = new Tone.Synth({
             oscillator: { type: "sine" },
-            envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.01 }
+            envelope: { attack: 0.005, decay: 0.1, sustain: 0, release: 0.01 }
         }).toDestination();
-        clickSynth.volume.value = -4; // Âm lượng vừa đủ
+        clickSynth.volume.value = 0;
 
         isAudioReady = true;
     } catch (e) {
@@ -378,15 +383,16 @@ async function initAudio() {
 }
 
 function playClickSound() {
-    // Kích hoạt nốt ngắn giải phóng ngay lập tức để tránh treo synth
-    if (isAudioReady && clickSynth) {
-        clickSynth.triggerAttackRelease("E4", "16n"); 
+    if (isAudioReady && typeof Tone !== 'undefined' && clickSynth && Tone.context.state === 'running') {
+        // Tiếng pop cao (C6) nhịp siêu ngắn
+        clickSynth.triggerAttackRelease("C6", "32n", Tone.now()); 
     }
 }
 
 function playCorrectSound() {
-    if (isAudioReady && correctSynth) {
-        const now = Tone.now();
+    if (isAudioReady && typeof Tone !== 'undefined' && correctSynth && Tone.context.state === 'running') {
+        // Phát sau tiếng pop 1 chút
+        const now = Tone.now() + 0.15; 
         correctSynth.triggerAttackRelease("C5", "16n", now);
         correctSynth.triggerAttackRelease("E5", "16n", now + 0.1);
         correctSynth.triggerAttackRelease("G5", "16n", now + 0.2);
@@ -395,16 +401,17 @@ function playCorrectSound() {
 }
 
 function playIncorrectSound() {
-    if (isAudioReady && errorSynth) {
-        // Sliding down pitch for "boing" effect
-        errorSynth.triggerAttack("D3");
-        errorSynth.frequency.exponentialRampToValueAtTime("D2", Tone.now() + 0.4);
-        errorSynth.triggerRelease(Tone.now() + 0.4);
+    if (isAudioReady && typeof Tone !== 'undefined' && errorSynth && Tone.context.state === 'running') {
+        // Trượt dốc pitch cho hiệu ứng "boing" (phát sau tiếng pop)
+        const now = Tone.now() + 0.15;
+        errorSynth.triggerAttack("D3", now);
+        errorSynth.frequency.exponentialRampToValueAtTime("D2", now + 0.4);
+        errorSynth.triggerRelease(now + 0.4);
     }
 }
 
 function playVictorySound() {
-    if (isAudioReady && correctSynth) {
+    if (isAudioReady && typeof Tone !== 'undefined' && correctSynth && Tone.context.state === 'running') {
         const now = Tone.now();
         correctSynth.triggerAttackRelease(["C4", "E4", "G4"], "4n", now);
         correctSynth.triggerAttackRelease(["F4", "A4", "C5"], "4n", now + 0.3);
@@ -413,7 +420,7 @@ function playVictorySound() {
     }
 }
 
-// Text to Speech
+// Chuyển văn bản thành giọng nói (Text to Speech)
 function speakQuestion() {
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -425,7 +432,7 @@ function speakQuestion() {
     }
 }
 
-// --- 4. RENDERING ENGINE & SVGS ---
+// --- 4. CÔNG CỤ HIỂN THỊ & SVGS ---
 
 function getAppElement() {
     return document.getElementById('app');
@@ -437,7 +444,6 @@ function generateSVG(shapeObj) {
 
     const { shape, color, size } = shapeObj;
 
-    // Map logical sizes to responsive classes
     let sizeClasses = '';
     if (size === 'large') sizeClasses = 'w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24';
     if (size === 'medium') sizeClasses = 'w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20';
@@ -506,7 +512,7 @@ function triggerConfetti() {
     }
 }
 
-// --- 5. VIEW RENDERING ---
+// --- 5. RENDER GIAO DIỆN CHÍNH ---
 
 function renderStartScreen() {
     const app = getAppElement();
@@ -590,7 +596,7 @@ function renderGameScreen() {
             </div>
         </div>
 
-        <!-- Main Display Box -->
+        <!-- Khung hiển thị câu hỏi -->
         <div class="duo-box w-full max-w-4xl p-8 md:p-12 flex flex-col items-center justify-center mb-8 relative z-10">
             <div class="absolute -top-14 -left-4 md:-left-8 text-[80px] md:text-[100px] animate-float z-20 drop-shadow-lg">🐶</div>
             
@@ -598,7 +604,7 @@ function renderGameScreen() {
                 <h2 class="text-3xl md:text-4xl font-black text-[#374151] text-center uppercase tracking-wide">
                     What comes next?
                 </h2>
-                <!-- Speaker Button -->
+                <!-- Nút loa -->
                 <button onclick="speakQuestion()" class="duo-btn duo-btn-speaker hover:scale-110 transition-transform active:scale-95" title="Read Question">
                     <svg class="w-8 h-8 text-[#1cb0f6]" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM3 9v6h4l5 5V4L7 9H3z"/>
@@ -606,13 +612,13 @@ function renderGameScreen() {
                 </button>
             </div>
 
-            <!-- Sequence Row -->
+            <!-- Các biểu tượng mẫu trong chuỗi -->
             <div class="flex items-center justify-center flex-wrap gap-y-6 w-full px-2">
                 ${sequenceHTML}
             </div>
         </div>
 
-        <!-- Options Container -->
+        <!-- Khu vực đáp án -->
         <div class="w-full flex flex-col items-center z-10">
             <p class="text-2xl md:text-3xl font-black text-white mb-6 drop-shadow-md uppercase tracking-wide text-stroke-title" style="text-shadow: 2px 2px 0 rgba(0,0,0,0.2);">
                 Choose the missing piece!
@@ -622,7 +628,7 @@ function renderGameScreen() {
             </div>
         </div>
 
-        <!-- Feedback Overlay -->
+        <!-- Màn hình kết quả trả lời -->
         <div id="feedback-overlay" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-[#374151] bg-opacity-70 backdrop-blur-sm transition-opacity">
             <div id="feedback-card" class="duo-box p-10 md:p-16 text-center transform scale-0 transition-transform duration-300">
                 <div id="feedback-emoji" class="text-[100px] md:text-[120px] mb-4 drop-shadow-xl">✅</div>
@@ -641,7 +647,7 @@ function renderCertificate() {
         <div class="flex flex-col items-center justify-center w-full min-h-screen py-10 animate-bounceIn px-4 z-10 relative">
 
             <div class="duo-box p-8 md:p-14 w-full max-w-2xl text-center relative overflow-hidden z-20">
-                <!-- Decorative background shapes -->
+                <!-- Hình nền trang trí -->
                 <div class="absolute -top-10 -right-10 text-[150px] opacity-10">⭐</div>
                 <div class="absolute -bottom-10 -left-10 text-[150px] opacity-10">🎉</div>
 
@@ -673,20 +679,18 @@ function renderCertificate() {
         </div>
     `;
     
-    // Shoot confetti heavily over the end screen
+    // Bắn pháo giấy tại màn hình kết thúc
     triggerConfetti();
     setTimeout(triggerConfetti, 500);
     playVictorySound();
 }
 
-// --- 6. INTERACTION LOGIC ---
+// --- 6. LOGIC TƯƠNG TÁC ---
 
 async function startGame() {
-    // Await Tone.js khởi tạo sau cú nhấp chuột đầu tiên để đảm bảo âm thanh được unlock
     await initAudio(); 
     playClickSound();
     
-    // Generate fresh questions every time game starts
     currentState.questions = generateDynamicQuestions();
     
     currentState.score = 0;
@@ -695,7 +699,16 @@ async function startGame() {
     renderGameScreen();
 }
 
-function handleOptionClick(selectedIndex) {
+async function handleOptionClick(selectedIndex) {
+    // Đảm bảo đánh thức AudioContext nếu trình duyệt tạm dừng
+    if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state !== 'running') {
+        try {
+            await Tone.start();
+        } catch(e) {
+            console.log("Audio resume error:", e);
+        }
+    }
+    
     playClickSound(); // Ngay lập tức phát tiếng Pop
 
     const currentQ = currentState.questions[currentState.questionIdx];
@@ -707,15 +720,15 @@ function handleOptionClick(selectedIndex) {
     const text = document.getElementById('feedback-text');
 
     if (isCorrect) {
-        // Correct - delay the win sound slightly to hear the POP
-        setTimeout(playCorrectSound, 150); 
+        // Đúng - Phát âm thanh chính xác
+        playCorrectSound(); 
         currentState.score++;
         
         emoji.innerText = '🌟';
         text.innerText = 'Awesome!';
         text.className = 'text-5xl md:text-6xl font-black text-[#58cc02] mb-4 uppercase';
 
-        // Animate the missing slot visually updating
+        // Cập nhật ô bị thiếu
         const missingSlot = document.querySelector('.missing-slot');
         if(missingSlot) {
             missingSlot.classList.remove('missing-slot', 'animate-pulse');
@@ -724,21 +737,20 @@ function handleOptionClick(selectedIndex) {
         }
 
     } else {
-        // Incorrect - delay the loose sound slightly to hear the POP
-        setTimeout(playIncorrectSound, 150);
+        // Sai
+        playIncorrectSound();
 
         emoji.innerText = '🐶';
         text.innerText = 'Try Again!';
         text.className = 'text-5xl md:text-6xl font-black text-[#ff4b4b] mb-4 uppercase';
 
-        // Add wiggle to clicked option card
+        // Lắc nút bấm
         const buttons = document.querySelectorAll('.option-card');
         buttons[selectedIndex].classList.add('animate-wiggle', 'border-[#ff4b4b]');
         setTimeout(() => {
             buttons[selectedIndex].classList.remove('animate-wiggle', 'border-[#ff4b4b]');
         }, 500);
 
-        // Show negative feedback temporarily but don't progress
         overlay.classList.remove('hidden');
         setTimeout(() => { card.style.transform = 'scale(1)'; }, 10);
         
@@ -749,14 +761,13 @@ function handleOptionClick(selectedIndex) {
         return; 
     }
 
-    // Show positive feedback overlay
+    // Giao diện đúng
     overlay.classList.remove('hidden');
     setTimeout(() => {
         card.style.transform = 'scale(1.1) rotate(-3deg)';
         setTimeout(() => { card.style.transform = 'scale(1) rotate(0deg)'; }, 150);
     }, 10);
 
-    // Next question delay
     setTimeout(() => {
         card.style.transform = 'scale(0)';
         setTimeout(() => {
@@ -777,6 +788,11 @@ function nextQuestion() {
 }
 
 async function resetGame() {
+    if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state !== 'running') {
+        try {
+            await Tone.start();
+        } catch(e) {}
+    }
     playClickSound();
     currentState = {
         screen: 'start',
@@ -789,7 +805,7 @@ async function resetGame() {
     renderStartScreen();
 }
 
-// Initial render
+// Khởi chạy khi tải trang
 window.onload = () => {
     renderStartScreen();
 };
