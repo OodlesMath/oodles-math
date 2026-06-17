@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Make Tens! - Kids Math Game (Ver 3)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Using Poppins for a clean, round, modern look -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            overflow-x: hidden;
+            /* Background is now handled by the fixed container below */
+        }
+
+        /* 3D Button Style - Duolingo Theme */
+        .btn-3d-base {
+            transition: all 0.1s ease-in-out;
+            position: relative;
+        }
+        .btn-3d-base:active:not(:disabled) {
+            transform: translateY(6px) !important;
+            box-shadow: none !important;
+            margin-bottom: -6px;
+        }
+
+        /* Specific Button Colors */
+        .btn-cell {
+            background-color: #ffffff;
+            border: 2px solid #e5e7eb;
+            box-shadow: 0 6px 0 0 #cbd5e1;
+        }
+        .btn-cell.claimed-p1 {
+            background-color: #ffc800; /* Yellow */
+            border: 2px solid #e5b400;
+            box-shadow: 0 6px 0 0 #cc9f00;
+        }
+        .btn-cell.claimed-p2 {
+            background-color: #ff4b4b; /* Red/Pink */
+            border: 2px solid #e54343;
+            box-shadow: 0 6px 0 0 #cc3c3c;
+        }
+        
+        .btn-bubble-amber {
+            background-color: #ffc800;
+            border: 2px solid #e5b400;
+            box-shadow: 0 6px 0 0 #cc9f00;
+            color: white;
+        }
+        .btn-bubble-blue {
+            background-color: #1cb0f6;
+            border: 2px solid #1899d6;
+            box-shadow: 0 6px 0 0 #1483b8;
+            color: white;
+        }
+        .btn-bubble-green {
+            background-color: #58cc02;
+            border: 2px solid #4eb702;
+            box-shadow: 0 6px 0 0 #46a302;
+            color: white;
+        }
+        .btn-option {
+            background-color: white;
+            border: 2px solid #e5e7eb;
+            box-shadow: 0 4px 0 0 #cbd5e1;
+            color: #4b5563;
+        }
+        .btn-option:active:not(:disabled) {
+            transform: translateY(4px) !important;
+            box-shadow: none !important;
+        }
+
+        /* Pop & Shake Animations */
+        .pop-in { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .shake { animation: shake 0.5s ease-in-out; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        .bounce-custom { animation: bounceCustom 2s infinite; }
+        @keyframes bounceCustom {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .pulse-speaker { animation: pulseSpeaker 1.5s infinite; }
+        @keyframes pulseSpeaker {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(28, 176, 246, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(28, 176, 246, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(28, 176, 246, 0); }
+        }
+
+        /* Text Stroke for Game Title */
+        .text-stroke {
+            -webkit-text-stroke: 2px white;
+            color: #1cb0f6;
+            text-shadow: 0 4px 0 rgba(0,0,0,0.1);
+        }
+        
+        .emoji-3d {
+            text-shadow: 0 4px 0 rgba(0,0,0,0.15);
+        }
+
+        /* Fullscreen Confetti Canvas */
+        #confettiCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* Rainbow specific glow */
+        .rainbow-path { filter: drop-shadow(0 2px 4px rgba(255,255,255,0.3)); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 relative">
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- 🌟 Đẹp Hơn: Cảnh Nền Bầu Trời, Cầu Vồng, Đồi Cỏ, Cây Hoa -->
+    <div class="fixed inset-0 z-[-1] bg-gradient-to-b from-[#87CEEB] to-[#e0f6ff] overflow-hidden pointer-events-none">
+        
+        <!-- Ông mặt trời -->
+        <div class="absolute top-[8%] right-[10%] w-24 h-24 bg-[#ffc800] rounded-full opacity-90 shadow-[0_0_50px_20px_rgba(255,200,0,0.4)]"></div>
+        
+        <!-- Cầu vồng -->
+        <svg class="absolute top-[5%] left-[5%] w-[250px] md:w-[400px] opacity-70" viewBox="0 0 100 50">
+            <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#ff4b4b" stroke-width="4" class="rainbow-path"/>
+            <path d="M 14 50 A 36 36 0 0 1 86 50" fill="none" stroke="#ff9600" stroke-width="4" class="rainbow-path"/>
+            <path d="M 18 50 A 32 32 0 0 1 82 50" fill="none" stroke="#ffc800" stroke-width="4" class="rainbow-path"/>
+            <path d="M 22 50 A 28 28 0 0 1 78 50" fill="none" stroke="#58cc02" stroke-width="4" class="rainbow-path"/>
+            <path d="M 26 50 A 24 24 0 0 1 74 50" fill="none" stroke="#1cb0f6" stroke-width="4" class="rainbow-path"/>
+            <path d="M 30 50 A 20 20 0 0 1 70 50" fill="none" stroke="#ce82ff" stroke-width="4" class="rainbow-path"/>
+        </svg>
+
+        <!-- Những đám mây -->
+        <!-- Mây 1 -->
+        <div class="absolute top-[18%] left-[25%] opacity-90">
+            <div class="relative w-32 h-10 bg-white rounded-full">
+                <div class="absolute -top-6 left-4 w-14 h-14 bg-white rounded-full"></div>
+                <div class="absolute -top-8 right-4 w-16 h-16 bg-white rounded-full"></div>
+            </div>
+        </div>
+        <!-- Mây 2 -->
+        <div class="absolute top-[10%] right-[30%] opacity-80 scale-75">
+            <div class="relative w-32 h-10 bg-white rounded-full">
+                <div class="absolute -top-6 left-4 w-14 h-14 bg-white rounded-full"></div>
+                <div class="absolute -top-8 right-4 w-16 h-16 bg-white rounded-full"></div>
+            </div>
+        </div>
+
+        <!-- Thảm Cỏ Xanh -->
+        <svg class="absolute bottom-0 w-full h-[35vh] min-h-[250px]" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <!-- Đồi phía sau -->
+            <path d="M 0 50 Q 25 30 50 60 T 100 45 L 100 100 L 0 100 Z" fill="#7ed934" />
+            <!-- Đồi phía trước -->
+            <path d="M 0 75 Q 35 55 65 80 T 100 65 L 100 100 L 0 100 Z" fill="#58cc02" />
+        </svg>
+
+        <!-- Cây xanh -->
+        <!-- Cây trái -->
+        <div class="absolute bottom-[20%] left-[8%] md:left-[15%]">
+            <div class="w-6 h-16 bg-[#8B4513] mx-auto rounded-t-sm shadow-inner"></div>
+            <div class="w-24 h-24 bg-[#4eb702] rounded-full -mt-24 border-b-8 border-[#3a8a01]"></div>
+        </div>
+        <!-- Cây phải (nhỏ hơn) -->
+        <div class="absolute bottom-[28%] right-[12%] md:right-[20%] scale-75">
+            <div class="w-6 h-16 bg-[#8B4513] mx-auto rounded-t-sm shadow-inner"></div>
+            <div class="w-24 h-24 bg-[#4eb702] rounded-full -mt-24 border-b-8 border-[#3a8a01]"></div>
+        </div>
+
+        <!-- Hoa nhiều màu sắc rải rác trên cỏ -->
+        <div class="absolute bottom-[12%] left-[25%] flex items-center justify-center">
+            <div class="w-4 h-4 bg-[#ff4b4b] rounded-full shadow-[0_0_0_3px_#ffc800]"></div>
+        </div>
+        <div class="absolute bottom-[18%] left-[45%] flex items-center justify-center scale-75">
+            <div class="w-4 h-4 bg-[#1cb0f6] rounded-full shadow-[0_0_0_3px_#ce82ff]"></div>
+        </div>
+        <div class="absolute bottom-[8%] right-[35%] flex items-center justify-center">
+            <div class="w-4 h-4 bg-[#ffc800] rounded-full shadow-[0_0_0_3px_#ff4b4b]"></div>
+        </div>
+        <div class="absolute bottom-[15%] right-[25%] flex items-center justify-center scale-90">
+            <div class="w-4 h-4 bg-[#ce82ff] rounded-full shadow-[0_0_0_3px_#1cb0f6]"></div>
+        </div>
+        <div class="absolute bottom-[5%] left-[60%] flex items-center justify-center scale-110">
+            <div class="w-4 h-4 bg-[#ff9600] rounded-full shadow-[0_0_0_3px_white]"></div>
+        </div>
+    </div>
+    <!-- 🌟 Kết thúc nền phong cảnh -->
+
+    <div class="fixed top-4 right-4 z-40 flex gap-3">
+        <button id="soundToggleBtn" onclick="toggleSound()" class="btn-3d-base bg-white text-[#1cb0f6] w-12 h-12 rounded-full border-2 border-slate-200 shadow-[0_4px_0_0_#cbd5e1] flex items-center justify-center focus:outline-none" title="Toggle Sound">
+            <svg id="soundIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M12 18.75V5.25L7.75 9.5H4.5v5h3.25L12 18.75z" />
+            </svg>
+        </button>
+    </div>
+
+    <main class="w-full max-w-4xl mx-auto flex-1 flex flex-col justify-center items-center gap-6 z-10">
+        
+        <!-- Header -->
+        <header class="text-center w-full mt-4">
+            <h1 class="text-5xl md:text-6xl font-black tracking-widest text-stroke uppercase drop-shadow-md">
+                Make Tens! <span class="bounce-custom inline-block emoji-3d">🎯</span>
+            </h1>
+            <p class="text-[#235390] text-base md:text-lg font-bold mt-2 bg-white/70 px-5 py-2 rounded-full inline-block shadow-sm">
+                Add 3 numbers! Make 10, 20 or 30 first!
+            </p>
+        </header>
+
+        <!-- Scoreboard -->
+        <section class="grid grid-cols-2 gap-4 w-full max-w-md items-center bg-white/90 backdrop-blur-sm p-4 rounded-3xl border-4 border-slate-200 shadow-xl relative overflow-hidden">
+            <!-- Team 1: Puppy -->
+            <div id="p1Card" class="flex flex-col items-center p-3 rounded-2xl border-4 transition-all duration-300 border-[#ffc800] bg-[#fff9e5] scale-105">
+                <div class="text-4xl emoji-3d">🐶</div>
+                <div class="text-sm font-black text-[#cc9f00] mt-1 uppercase tracking-wider">Puppy</div>
+                <div id="p1Score" class="text-3xl font-black text-[#ffc800] drop-shadow-sm">0</div>
+            </div>
+
+            <!-- Team 2: Kitty -->
+            <div id="p2Card" class="flex flex-col items-center p-3 rounded-2xl border-4 transition-all duration-300 border-transparent bg-slate-50 opacity-60">
+                <div class="text-4xl emoji-3d">🐱</div>
+                <div class="text-sm font-black text-slate-400 mt-1 uppercase tracking-wider">Kitty</div>
+                <div id="p2Score" class="text-3xl font-black text-slate-400 drop-shadow-sm">0</div>
+            </div>
+        </section>
+
+        <!-- Tic-Tac-Toe Board -->
+        <section class="relative w-full max-w-[360px] aspect-square bg-slate-100/90 backdrop-blur-sm p-4 rounded-[2.5rem] border-4 border-slate-300 shadow-2xl">
+            <div id="board" class="grid grid-cols-3 grid-rows-3 gap-4 h-full w-full">
+                <!-- Cells generated by JS -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Hộp thoại câu hỏi lớn hơn -->
+    <div id="mathModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div id="modalContent" class="bg-white rounded-[2.5rem] w-full max-w-md shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300 flex flex-col pop-in border-4 border-slate-200">
+            
+            <!-- Header with TTS Button -->
+            <div class="bg-[#1cb0f6] p-5 text-white flex items-center justify-between relative border-b-4 border-[#1483b8]">
+                <div class="text-4xl emoji-3d drop-shadow-md" id="modalPlayerAvatar">🐶</div>
+                <div class="flex-1 text-center px-2">
+                    <h3 class="text-2xl md:text-3xl font-black tracking-wide uppercase" style="-webkit-text-stroke: 1px rgba(0,0,0,0.1);">Solve It!</h3>
+                </div>
+                <!-- Speaker Button -->
+                <button onclick="speakQuestion()" class="btn-3d-base bg-[#58cc02] hover:bg-[#4eb702] border-2 border-[#46a302] shadow-[0_4px_0_0_#46a302] w-12 h-12 rounded-full flex items-center justify-center pulse-speaker focus:outline-none" title="Read Question">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5L6 9H2v6h4l5 4V5z M15.54 8.46a5 5 0 0 1 0 7.07 M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 flex flex-col items-center justify-center bg-slate-50">
+                
+                <p class="text-[#afafaf] font-bold text-center mb-4 uppercase tracking-widest text-sm">Tap 2 bubbles to make 10, 20 or 30</p>
+
+                <!-- Visualization Frame (Number Bond Block - Được làm to hơn) -->
+                <div class="relative w-full max-w-[380px] h-[200px] mx-auto bg-white rounded-[2rem] border-4 border-slate-200 shadow-inner overflow-hidden">
+                    <svg id="branchSvg" class="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+
+                    <!-- Bubble 1 -->
+                    <div class="absolute z-10" style="left: 12%; top: 25%; width: 22%; aspect-ratio: 1; transform: translate(-50%, -50%);">
+                        <button id="numBubble0" onclick="selectBubble(0)" class="btn-3d-base btn-bubble-amber w-full h-full text-3xl md:text-4xl font-black rounded-full flex items-center justify-center focus:outline-none"></button>
+                    </div>
+                    <!-- + Sign 1 -->
+                    <div class="absolute z-10 text-slate-300 text-4xl font-black select-none" style="left: 28%; top: 25%; transform: translate(-50%, -50%);">+</div>
+
+                    <!-- Bubble 2 -->
+                    <div class="absolute z-10" style="left: 44%; top: 25%; width: 22%; aspect-ratio: 1; transform: translate(-50%, -50%);">
+                        <button id="numBubble1" onclick="selectBubble(1)" class="btn-3d-base btn-bubble-blue w-full h-full text-3xl md:text-4xl font-black rounded-full flex items-center justify-center focus:outline-none"></button>
+                    </div>
+                    <!-- + Sign 2 -->
+                    <div class="absolute z-10 text-slate-300 text-4xl font-black select-none" style="left: 60%; top: 25%; transform: translate(-50%, -50%);">+</div>
+
+                    <!-- Bubble 3 -->
+                    <div class="absolute z-10" style="left: 76%; top: 25%; width: 22%; aspect-ratio: 1; transform: translate(-50%, -50%);">
+                        <button id="numBubble2" onclick="selectBubble(2)" class="btn-3d-base btn-bubble-green w-full h-full text-3xl md:text-4xl font-black rounded-full flex items-center justify-center focus:outline-none"></button>
+                    </div>
+                    
+                    <!-- Bubble 10/20/30 (Result of pairing) -->
+                    <div id="tenBubbleContainer" class="absolute hidden transition-all duration-300 z-20" style="width: 22%; aspect-ratio: 1; top: 75%; transform: translate(-50%, -50%);">
+                        <div id="roundTenBubble" class="w-full h-full bg-[#ff4b4b] border-2 border-[#e54343] shadow-[0_6px_0_0_#cc3c3c] text-white text-3xl md:text-4xl font-black rounded-full flex items-center justify-center pop-in select-none">
+                            10
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Final Multiple Choice Area -->
+                <div id="finalStepContainer" class="hidden flex flex-col items-center w-full pop-in mt-8">
+                    <h4 class="text-lg font-black text-[#4b5563] mb-4 uppercase text-center">What is the total?</h4>
+                    <div id="optionsGrid" class="grid grid-cols-2 gap-4 w-full max-w-[300px]">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="winnerModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-sm border-4 border-[#ffc800] p-8 text-center shadow-2xl pop-in flex flex-col items-center">
+            <div id="winFireworks" class="text-7xl mb-4 bounce-custom emoji-3d">👑</div>
+            <h2 id="winTitle" class="text-3xl font-black text-[#ffc800] uppercase tracking-widest" style="-webkit-text-stroke: 1px #e5b400;">
+                Victory!
+            </h2>
+            <p id="winDescription" class="text-slate-500 font-bold text-lg mt-2">
+                Great job!
+            </p>
+            
+            <div class="bg-slate-100 rounded-2xl p-4 w-full mt-4 flex justify-between items-center font-black">
+                <span class="text-[#ffc800] text-xl">Puppy: <span id="summaryP1">0</span></span>
+                <span class="text-slate-300">-</span>
+                <span class="text-[#ff4b4b] text-xl">Kitty: <span id="summaryP2">0</span></span>
+            </div>
+
+            <div class="flex flex-col gap-3 w-full mt-6">
+                <button onclick="startNextRound()" class="btn-3d-base w-full bg-[#58cc02] border-2 border-[#4eb702] shadow-[0_6px_0_0_#46a302] text-white uppercase tracking-wider font-black text-xl py-4 rounded-2xl focus:outline-none">
+                    Play Again!
+                </button>
+                <button onclick="closeWinnerModal()" class="w-full text-sm text-slate-400 font-bold py-2 hover:text-slate-600 transition uppercase tracking-widest focus:outline-none">
+                    View Board
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastNotification" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[60] transform translate-y-24 opacity-0 transition-all duration-300 bg-[#1cb0f6] text-white text-base font-bold py-3 px-6 rounded-2xl border-b-4 border-[#1483b8] shadow-2xl flex items-center gap-3 whitespace-nowrap pointer-events-none">
+        <span id="toastIcon" class="text-2xl">💡</span>
+        <span id="toastMsg" class="uppercase tracking-wide">Notification</span>
+    </div>
+
+    <!-- Fullscreen Confetti Canvas -->
+    <canvas id="confettiCanvas"></canvas>
+
+    <script>
+        // --- TTS & AUDIO ENGINE ---
+        let audioCtx = null;
+        let isSoundEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        // Text To Speech
+        function speakQuestion() {
+            if (!('speechSynthesis' in window)) {
+                showToast('❌ Browser does not support speech!');
+                return;
+            }
+            
+            playSound('click');
+            window.speechSynthesis.cancel(); // Stop any ongoing speech
+
+            let textToSpeak = "";
+            if (!isFinalStep) {
+                textToSpeak = "Find two numbers that make ten, twenty, or thirty together!";
+            } else {
+                textToSpeak = "Awesome! Now, pick the correct total answer from the buttons below.";
+            }
+
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            utterance.rate = 0.9;
+            utterance.pitch = 1.1; 
+            
+            // Try to find a friendly English voice
+            const voices = window.speechSynthesis.getVoices();
+            const preferredVoice = voices.find(v => v.lang.includes('en') && (v.name.includes('Google') || v.name.includes('Female')));
+            if (preferredVoice) utterance.voice = preferredVoice;
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // SFX Synths
+        function playSound(type) {
+            if (!isSoundEnabled) return;
+            initAudio();
+            if (!audioCtx) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            try {
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                const now = audioCtx.currentTime;
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+                    gainNode.gain.setValueAtTime(0.1, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now); osc.stop(now + 0.1);
+                } else if (type === 'select-bubble') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    gainNode.gain.setValueAtTime(0.15, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now); osc.stop(now + 0.15);
+                } else if (type === 'make-10') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.1);
+                    osc.frequency.setValueAtTime(783.99, now + 0.2);
+                    gainNode.gain.setValueAtTime(0.15, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now); osc.stop(now + 0.3);
+                } else if (type === 'success') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.1);
+                    osc.frequency.setValueAtTime(783.99, now + 0.2);
+                    osc.frequency.setValueAtTime(1046.50, now + 0.3);
+                    gainNode.gain.setValueAtTime(0.15, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                    osc.start(now); osc.stop(now + 0.5);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.exponentialRampToValueAtTime(110, now + 0.4);
+                    gainNode.gain.setValueAtTime(0.12, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now); osc.stop(now + 0.4);
+                } else if (type === 'win') {
+                    osc.type = 'square';
+                    const notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50];
+                    notes.forEach((freq, idx) => {
+                        const noteOsc = audioCtx.createOscillator();
+                        const noteGain = audioCtx.createGain();
+                        noteOsc.connect(noteGain);
+                        noteGain.connect(audioCtx.destination);
+                        noteOsc.type = 'triangle';
+                        noteOsc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                        noteGain.gain.setValueAtTime(0.1, now + idx * 0.12);
+                        noteGain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.12 + 0.25);
+                        noteOsc.start(now + idx * 0.12); noteOsc.stop(now + idx * 0.12 + 0.25);
+                    });
+                }
+            } catch (err) { console.warn('Audio err:', err); }
+        }
+
+        function toggleSound() {
+            isSoundEnabled = !isSoundEnabled;
+            const icon = document.getElementById('soundIcon');
+            if (isSoundEnabled) {
+                icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M12 18.75V5.25L7.75 9.5H4.5v5h3.25L12 18.75z" />`;
+                showToast('🔊 Sound On');
+                initAudio();
+                playSound('click');
+            } else {
+                icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />`;
+                showToast('🔇 Sound Off');
+                window.speechSynthesis.cancel();
+            }
+        }
+
+        // --- GAME STATE ---
+        let board = Array(9).fill(null); 
+        let scores = { P1: 0, P2: 0 };
+        let currentPlayer = 'P1'; 
+        let currentChallengeCell = null; 
+        let activePuzzle = null; 
+        let selectedPuzzles = []; 
+        let isFinalStep = false; 
+
+        const playersInfo = {
+            P1: { symbol: '🐶', name: 'Puppy', theme: 'border-[#ffc800] bg-[#fff9e5] text-[#cc9f00]' },
+            P2: { symbol: '🐱', name: 'Kitty', theme: 'border-[#ff4b4b] bg-[#ffe5e5] text-[#cc3c3c]' }
+        };
+
+        // --- INITIALIZATION ---
+        window.addEventListener('load', () => {
+            initBoard();
+            resetGame(); 
+        });
+
+        function initBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('button');
+                cell.id = `cell-${i}`;
+                cell.className = "btn-3d-base btn-cell rounded-[1.5rem] flex items-center justify-center text-5xl font-extrabold focus:outline-none";
+                cell.setAttribute('onclick', `handleCellClick(${i})`);
+                boardEl.appendChild(cell);
+            }
+        }
+
+        function resetGame() {
+            scores = { P1: 0, P2: 0 };
+            document.getElementById('p1Score').textContent = '0';
+            document.getElementById('p2Score').textContent = '0';
+            resetBoard();
+        }
+
+        function resetBoard() {
+            board = Array(9).fill(null);
+            currentPlayer = 'P1';
+            
+            for (let i = 0; i < 9; i++) {
+                const cell = document.getElementById(`cell-${i}`);
+                cell.textContent = '';
+                cell.className = "btn-3d-base btn-cell rounded-[1.5rem] flex items-center justify-center text-5xl font-extrabold focus:outline-none";
+                cell.disabled = false;
+            }
+            updateTurnIndicator();
+        }
+
+        function updateTurnIndicator() {
+            const p1Card = document.getElementById('p1Card');
+            const p2Card = document.getElementById('p2Card');
+
+            if (currentPlayer === 'P1') {
+                p1Card.className = "flex flex-col items-center p-3 rounded-2xl border-4 transition-all duration-300 border-[#ffc800] bg-[#fff9e5] scale-105";
+                p1Card.querySelector('.text-sm').classList.replace('text-slate-400', 'text-[#cc9f00]');
+                p1Card.querySelector('.text-3xl').classList.replace('text-slate-400', 'text-[#ffc800]');
+                
+                p2Card.className = "flex flex-col items-center p-3 rounded-2xl border-4 transition-all duration-300 border-transparent bg-slate-50 opacity-60";
+                p2Card.querySelector('.text-sm').classList.replace('text-[#cc3c3c]', 'text-slate-400');
+                p2Card.querySelector('.text-3xl').classList.replace('text-[#ff4b4b]', 'text-slate-400');
+            } else {
+                p1Card.className = "flex flex-col items-center p-3 rounded-2xl border-4 transition-all duration-300 border-transparent bg-slate-50 opacity-60";
+                p1Card.querySelector('.text-sm').classList.replace('text-[#cc9f00]', 'text-slate-400');
+                p1Card.querySelector('.text-3xl').classList.replace('text-[#ffc800]', 'text-slate-400');
+
+                p2Card.className = "flex flex-col items-center p-3 rounded-2xl border-4 transition-all duration-300 border-[#ff4b4b] bg-[#ffe5e5] scale-105";
+                p2Card.querySelector('.text-sm').classList.replace('text-slate-400', 'text-[#cc3c3c]');
+                p2Card.querySelector('.text-3xl').classList.replace('text-slate-400', 'text-[#ff4b4b]');
+            }
+        }
+
+        function generateMake10Puzzle() {
+            const rand = Math.random();
+            const targetTen = rand < 0.4 ? 10 : (rand < 0.8 ? 20 : 30);
+            
+            let num1, num2;
+            if (targetTen === 10) {
+                num1 = Math.floor(Math.random() * 9) + 1; 
+                num2 = 10 - num1;
+            } else if (targetTen === 20) {
+                num1 = Math.floor(Math.random() * 19) + 1; 
+                num2 = 20 - num1;
+            } else {
+                num1 = Math.floor(Math.random() * 29) + 1; 
+                num2 = 30 - num1;
+            }
+
+            let num3 = Math.floor(Math.random() * 9) + 1; 
+            while ((num1 + num3) % 10 === 0 || (num2 + num3) % 10 === 0) {
+                num3 = Math.floor(Math.random() * 9) + 1;
+            }
+
+            const rawNumbers = [num1, num2, num3];
+            const puzzleItems = rawNumbers.map((val, idx) => ({ val, isPair: idx < 2 }));
+            
+            // Shuffle
+            for (let i = puzzleItems.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [puzzleItems[i], puzzleItems[j]] = [puzzleItems[j], puzzleItems[i]];
+            }
+
+            const finalNumbers = puzzleItems.map(item => item.val);
+            const pairIndices = puzzleItems.map((item, idx) => item.isPair ? idx : -1).filter(idx => idx !== -1);
+
+            return {
+                numbers: finalNumbers,
+                pairIndices: pairIndices, 
+                sum: num1 + num2 + num3
+            };
+        }
+
+        // --- GAME PLAY & MODAL ---
+        function handleCellClick(index) {
+            if (board[index] !== null) return;
+            playSound('click');
+            currentChallengeCell = index;
+            setupMathModal();
+        }
+
+        function getBubbleClass(index) {
+            if (index === 0) return "btn-3d-base btn-bubble-amber";
+            if (index === 1) return "btn-3d-base btn-bubble-blue";
+            return "btn-3d-base btn-bubble-green";
+        }
+
+        function setupMathModal() {
+            activePuzzle = generateMake10Puzzle();
+            selectedPuzzles = [];
+            isFinalStep = false;
+
+            for (let i = 0; i < 3; i++) {
+                const bubble = document.getElementById(`numBubble${i}`);
+                bubble.textContent = activePuzzle.numbers[i];
+                bubble.className = `${getBubbleClass(i)} w-full h-full text-3xl md:text-4xl font-black rounded-full flex items-center justify-center focus:outline-none`;
+                bubble.style.transform = "scale(1)";
+                bubble.style.boxShadow = ""; 
+                bubble.disabled = false;
+            }
+
+            document.getElementById('branchSvg').innerHTML = '';
+            document.getElementById('tenBubbleContainer').classList.add('hidden');
+            document.getElementById('finalStepContainer').classList.add('hidden');
+            document.getElementById('modalPlayerAvatar').textContent = playersInfo[currentPlayer].symbol;
+
+            const modal = document.getElementById('mathModal');
+            modal.classList.remove('hidden');
+        }
+
+        function selectBubble(index) {
+            if (isFinalStep) return;
+            playSound('select-bubble');
+
+            const idxPos = selectedPuzzles.indexOf(index);
+            const bubble = document.getElementById(`numBubble${index}`);
+
+            if (idxPos > -1) {
+                selectedPuzzles.splice(idxPos, 1);
+                bubble.style.transform = "scale(1)";
+                bubble.style.borderWidth = "2px";
+            } else {
+                if (selectedPuzzles.length < 2) {
+                    selectedPuzzles.push(index);
+                    bubble.style.transform = "scale(1.1) translateY(-4px)";
+                    bubble.style.borderWidth = "4px";
+                }
+            }
+
+            if (selectedPuzzles.length === 2) {
+                checkStep1Correctness();
+            }
+        }
+
+        function drawBranchLines(idx1, idx2) {
+            const svg = document.getElementById('branchSvg');
+            const xCoords = { 0: 12, 1: 44, 2: 76 };
+            const yTop = 25; 
+            const yBottom = 75; 
+            
+            const x1 = xCoords[idx1];
+            const x2 = xCoords[idx2];
+            const xTen = (x1 + x2) / 2;
+
+            const tenBubble = document.getElementById('tenBubbleContainer');
+            tenBubble.style.left = `${xTen}%`;
+            tenBubble.classList.remove('hidden');
+
+            svg.innerHTML = `
+                <path d="M ${x1} ${yTop} L ${xTen} ${yBottom}" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round" fill="none" class="pop-in" />
+                <path d="M ${x2} ${yTop} L ${xTen} ${yBottom}" stroke="#cbd5e1" stroke-width="5" stroke-linecap="round" fill="none" class="pop-in" />
+            `;
+        }
+
+        function checkStep1Correctness() {
+            const idx1 = selectedPuzzles[0];
+            const idx2 = selectedPuzzles[1];
+            const val1 = activePuzzle.numbers[idx1];
+            const val2 = activePuzzle.numbers[idx2];
+            const pairSum = val1 + val2;
+            
+            const isPairCorrect = (pairSum % 10 === 0);
+
+            if (isPairCorrect) {
+                activePuzzle.pairIndices = [idx1, idx2];
+                playSound('make-10');
+                isFinalStep = true;
+
+                document.getElementById('roundTenBubble').textContent = pairSum;
+                drawBranchLines(idx1, idx2);
+
+                for (let i = 0; i < 3; i++) {
+                    document.getElementById(`numBubble${i}`).disabled = true;
+                }
+
+                generateMultipleChoiceOptions();
+                document.getElementById('finalStepContainer').classList.remove('hidden');
+                
+                // Read next step aloud automatically
+                setTimeout(() => { speakQuestion(); }, 500);
+
+            } else {
+                playSound('wrong');
+                showToast('❌ Find two numbers that make 10, 20, or 30!');
+                
+                selectedPuzzles.forEach(idx => {
+                    const bubble = document.getElementById(`numBubble${idx}`);
+                    if (bubble) {
+                        bubble.classList.add('shake');
+                        bubble.style.transform = "scale(1)";
+                        bubble.style.borderWidth = "2px";
+                        setTimeout(() => bubble.classList.remove('shake'), 500);
+                    }
+                });
+                selectedPuzzles = [];
+            }
+        }
+
+        function generateMultipleChoiceOptions() {
+            const correctVal = activePuzzle.sum;
+            const optionsSet = new Set([correctVal]);
+
+            while (optionsSet.size < 4) {
+                const offset = Math.floor(Math.random() * 9) - 4; 
+                const candidate = correctVal + offset;
+                if (candidate > 0 && candidate <= 50 && candidate !== correctVal) {
+                    optionsSet.add(candidate);
+                } else {
+                    const randomVal = Math.floor(Math.random() * 40) + 10; 
+                    optionsSet.add(randomVal);
+                }
+            }
+
+            const sortedOptions = Array.from(optionsSet).sort(() => Math.random() - 0.5);
+
+            const grid = document.getElementById('optionsGrid');
+            grid.innerHTML = '';
+            
+            sortedOptions.forEach(val => {
+                const btn = document.createElement('button');
+                btn.className = "btn-3d-base btn-option text-2xl md:text-3xl font-black py-4 rounded-2xl";
+                btn.textContent = val;
+                btn.setAttribute('onclick', `selectAnswerOption(${val}, this)`);
+                grid.appendChild(btn);
+            });
+        }
+
+        function getLeftoverIndex() {
+            for (let i = 0; i < 3; i++) {
+                if (!activePuzzle.pairIndices.includes(i)) return i;
+            }
+            return 0;
+        }
+
+        function selectAnswerOption(userSum, buttonElement) {
+            if (userSum === activePuzzle.sum) {
+                playSound('success');
+                showToast("🎉 Awesome!");
+
+                const buttons = document.getElementById('optionsGrid').querySelectorAll('button');
+                buttons.forEach(btn => btn.disabled = true);
+                buttonElement.style.backgroundColor = "#58cc02";
+                buttonElement.style.color = "white";
+                buttonElement.style.borderColor = "#4eb702";
+
+                setTimeout(() => {
+                    claimCell(currentChallengeCell, currentPlayer);
+                    closeMathModal();
+                    
+                    if (checkWin(board, currentPlayer)) {
+                        triggerWin(currentPlayer);
+                    } else if (checkTie(board)) {
+                        triggerTie();
+                    } else {
+                        switchPlayer();
+                    }
+                }, 1200);
+
+            } else {
+                playSound('wrong');
+                showToast(`❌ Oops! Try again!`);
+                
+                buttonElement.classList.add('shake');
+                buttonElement.style.backgroundColor = "#ff4b4b";
+                buttonElement.style.color = "white";
+                buttonElement.style.borderColor = "#e54343";
+                buttonElement.disabled = true; 
+                setTimeout(() => buttonElement.classList.remove('shake'), 500);
+
+                const modal = document.getElementById('modalContent');
+                modal.classList.add('shake');
+                setTimeout(() => modal.classList.remove('shake'), 500);
+            }
+        }
+
+        function claimCell(index, player) {
+            board[index] = player;
+            const cell = document.getElementById(`cell-${index}`);
+            cell.textContent = playersInfo[player].symbol;
+            cell.classList.add('emoji-3d');
+            cell.disabled = true;
+
+            if (player === 'P1') {
+                cell.className = "btn-3d-base btn-cell claimed-p1 rounded-[1.5rem] flex items-center justify-center text-6xl pop-in select-none";
+            } else {
+                cell.className = "btn-3d-base btn-cell claimed-p2 rounded-[1.5rem] flex items-center justify-center text-6xl pop-in select-none";
+            }
+        }
+
+        function switchPlayer() {
+            currentPlayer = currentPlayer === 'P1' ? 'P2' : 'P1';
+            updateTurnIndicator();
+        }
+
+        const WIN_COMBOS = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8], 
+            [0, 3, 6], [1, 4, 7], [2, 5, 8], 
+            [0, 4, 8], [2, 4, 6]             
+        ];
+
+        function checkWin(currentBoard, player) {
+            return WIN_COMBOS.some(combo => combo.every(idx => currentBoard[idx] === player));
+        }
+
+        function checkTie(currentBoard) {
+            return currentBoard.every(cell => cell !== null);
+        }
+
+        function triggerWin(player) {
+            scores[player]++;
+            document.getElementById(`${player.toLowerCase()}Score`).textContent = scores[player];
+            playSound('win');
+
+            const winningCombo = WIN_COMBOS.find(combo => combo.every(idx => board[idx] === player));
+            if (winningCombo) {
+                winningCombo.forEach(idx => {
+                    const cell = document.getElementById(`cell-${idx}`);
+                    cell.classList.add('bounce-custom');
+                });
+            }
+
+            setTimeout(() => {
+                const title = document.getElementById('winTitle');
+                const desc = document.getElementById('winDescription');
+                const icon = document.getElementById('winFireworks');
+
+                if (player === 'P1') {
+                    icon.textContent = "🐶";
+                    title.textContent = "Puppy Wins!";
+                    title.className = "text-3xl font-black text-[#ffc800] uppercase tracking-widest";
+                    desc.textContent = "Super fast mental math!";
+                } else {
+                    icon.textContent = "🐱";
+                    title.textContent = "Kitty Wins!";
+                    title.className = "text-3xl font-black text-[#ff4b4b] uppercase tracking-widest";
+                    desc.textContent = "Perfect victory!";
+                }
+
+                // Update summary
+                document.getElementById('summaryP1').textContent = scores.P1;
+                document.getElementById('summaryP2').textContent = scores.P2;
+
+                document.getElementById('winnerModal').classList.remove('hidden');
+                shootFullscreenConfetti();
+            }, 1000);
+        }
+
+        function triggerTie() {
+            playSound('wrong');
+            setTimeout(() => {
+                const title = document.getElementById('winTitle');
+                const desc = document.getElementById('winDescription');
+                const icon = document.getElementById('winFireworks');
+
+                icon.textContent = "🤝";
+                title.textContent = "It's a Tie!";
+                title.className = "text-3xl font-black text-[#1cb0f6] uppercase tracking-widest";
+                desc.textContent = "Both teams are super smart!";
+
+                document.getElementById('summaryP1').textContent = scores.P1;
+                document.getElementById('summaryP2').textContent = scores.P2;
+
+                document.getElementById('winnerModal').classList.remove('hidden');
+            }, 800);
+        }
+
+        // --- FULLSCREEN CONFETTI ---
+        function shootFullscreenConfetti() {
+            const canvas = document.getElementById('confettiCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Adjust to viewport size
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#58cc02', '#1cb0f6', '#ffc800', '#ff4b4b', '#ce82ff'];
+
+            for (let i = 0; i < 150; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: (Math.random() * canvas.height) - canvas.height, // start above screen
+                    r: Math.random() * 6 + 4,
+                    dx: Math.random() * 4 - 2,
+                    dy: Math.random() * 5 + 3,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    tilt: Math.floor(Math.random() * 10) - 10,
+                    tiltAngleInc: (Math.random() * 0.07) + 0.05,
+                    tiltAngle: 0
+                });
+            }
+
+            let animationId;
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let activeCount = 0;
+
+                particles.forEach((p, idx) => {
+                    p.tiltAngle += p.tiltAngleInc;
+                    p.y += (Math.cos(p.tiltAngle) + 1 + p.r / 2) / 2 + p.dy;
+                    p.x += Math.sin(p.tiltAngle) * 2 + p.dx;
+
+                    if (p.y <= canvas.height) {
+                        activeCount++;
+                        ctx.beginPath();
+                        ctx.lineWidth = p.r;
+                        ctx.strokeStyle = p.color;
+                        ctx.moveTo(p.x + p.tilt + p.r, p.y);
+                        ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r);
+                        ctx.stroke();
+                    }
+                });
+
+                if (activeCount > 0) {
+                    animationId = requestAnimationFrame(draw);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+            draw();
+        }
+
+        // Handle window resize for confetti
+        window.addEventListener('resize', () => {
+            const canvas = document.getElementById('confettiCanvas');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // --- UTILITY UI FUNCTIONS ---
+        function closeMathModal() {
+            document.getElementById('mathModal').classList.add('hidden');
+            window.speechSynthesis.cancel();
+        }
+
+        function closeWinnerModal() {
+            playSound('click');
+            document.getElementById('winnerModal').classList.add('hidden');
+            const canvas = document.getElementById('confettiCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function startNextRound() {
+            closeWinnerModal();
+            resetBoard();
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toastNotification');
+            const content = document.getElementById('toastMsg');
+            content.textContent = msg;
+
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
