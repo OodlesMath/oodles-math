@@ -4,7 +4,7 @@
     <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hundred Chart Number Hop - Ver 5</title>
+    <title>Hundred Chart Number Hop - Ver 6</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -241,12 +241,12 @@
             z-index: 2;
         }
         
-        /* Vibrant Candy Colors for Chart Rows generated via JS */
-        .row-color-1 { background-color: #ffd6e5; border-color: #ff99bf; box-shadow: 0 3px 0 #ff99bf;} /* Pink */
-        .row-color-2 { background-color: #ffe8b3; border-color: #ffb347; box-shadow: 0 3px 0 #ffb347;} /* Orange */
-        .row-color-3 { background-color: #e2f0cb; border-color: #b5d58f; box-shadow: 0 3px 0 #b5d58f;} /* Green */
-        .row-color-4 { background-color: #c5ebfe; border-color: #8ccdef; box-shadow: 0 3px 0 #8ccdef;} /* Blue */
-        .row-color-5 { background-color: #ebd4f4; border-color: #c89bd7; box-shadow: 0 3px 0 #c89bd7;} /* Purple */
+        /* Vibrant Candy Colors for Chart Rows */
+        .row-color-1 { background-color: #ffd6e5; border-color: #ff99bf; box-shadow: 0 3px 0 #ff99bf;} 
+        .row-color-2 { background-color: #ffe8b3; border-color: #ffb347; box-shadow: 0 3px 0 #ffb347;} 
+        .row-color-3 { background-color: #e2f0cb; border-color: #b5d58f; box-shadow: 0 3px 0 #b5d58f;} 
+        .row-color-4 { background-color: #c5ebfe; border-color: #8ccdef; box-shadow: 0 3px 0 #8ccdef;} 
+        .row-color-5 { background-color: #ebd4f4; border-color: #c89bd7; box-shadow: 0 3px 0 #c89bd7;} 
 
         .cell.highlight-start {
             background-color: var(--accent) !important;
@@ -275,8 +275,9 @@
         /* The Animated Token & Arc Bounce Logic */
         .token {
             position: absolute;
-            width: 35px; /* Sized for 100 cells */
-            height: 35px;
+            /* Smaller size so it doesn't block numbers */
+            width: 28px; 
+            height: 28px;
             display: none;
             justify-content: center;
             align-items: center;
@@ -292,18 +293,27 @@
             align-items: center;
         }
         .token-inner svg {
-            width: 130%;
-            height: 130%;
-            filter: drop-shadow(0 4px 3px rgba(0,0,0,0.3));
+            width: 100%;
+            height: 100%;
+            /* Twinkle effect */
+            animation: twinkle 1.5s infinite ease-in-out;
         }
         
+        /* Twinkling star animation */
+        @keyframes twinkle {
+            0%, 100% { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)) brightness(1); transform: scale(1); }
+            50% { filter: drop-shadow(0 0 10px rgba(255, 215, 0, 1)) brightness(1.15); transform: scale(1.1); }
+        }
+
         .token-inner.bounce {
             animation: hopBounceArc 0.4s cubic-bezier(0.3, 1, 0.7, 1);
         }
+        
+        /* Cutie hop animation with slight rotation */
         @keyframes hopBounceArc {
-            0% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-25px) scale(1.15); } 
-            100% { transform: translateY(0) scale(1); }
+            0% { transform: translateY(0) scale(1) rotate(0deg); }
+            50% { transform: translateY(-30px) scale(1.15) rotate(15deg); } 
+            100% { transform: translateY(0) scale(1) rotate(0deg); }
         }
 
         /* Question Section */
@@ -468,7 +478,7 @@
             .game-header { padding: 12px 20px; }
             .game-title { font-size: 1.5rem; }
             .cell { font-size: 0.9rem; border-radius: 6px;}
-            .token { width: 30px; height: 30px; }
+            .token { width: 24px; height: 24px; }
             .equation { font-size: 2.5rem; padding: 10px 15px; }
             .option-btn { font-size: 1.6rem; padding: 12px; }
             .chart-section { padding: 15px; border-radius: 20px; }
@@ -485,7 +495,7 @@
             .row-color-4 { box-shadow: 0 2px 0 #8ccdef;} 
             .row-color-5 { box-shadow: 0 2px 0 #c89bd7;} 
             
-            .token { width: 22px; height: 22px; }
+            .token { width: 18px; height: 18px; }
             .hundred-chart { gap: 2px; }
             .question-text { font-size: 1rem; }
             .speaker-btn { width: 45px; height: 45px; min-width: 45px; }
@@ -838,27 +848,45 @@
         }
 
         function positionTokenInstantly(cellNum) {
-            const pos = getCellCenter(cellNum);
+            const cell = document.getElementById('cell-' + cellNum);
+            const chartRect = chartContainer.getBoundingClientRect();
+            const cellRect = cell.getBoundingClientRect();
+            
+            // Position at the bottom-right corner of the cell so the number remains visible
+            const x = cellRect.right - chartRect.left - 2; // 2px inset
+            const y = cellRect.bottom - chartRect.top - 2;
+
             token.style.display = 'flex';
-            token.style.transform = `translate(calc(${pos.x}px - 50%), calc(${pos.y}px - 50%))`;
+            token.style.transform = `translate(calc(${x}px - 100%), calc(${y}px - 100%))`;
         }
 
         function drawDashedArc(x1, y1, x2, y2) {
             const svg = document.getElementById('hop-canvas');
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             
-            const midX = (x1 + x2) / 2;
-            const midY = Math.min(y1, y2) - 20;
+            const isVertical = Math.abs(x1 - x2) < 10;
+            
+            let midX = (x1 + x2) / 2;
+            let midY = (y1 + y2) / 2;
+
+            if (isVertical) {
+                midX += 25; // Curve slightly to the right for up/down jumps
+            } else {
+                midY -= 25; // Curve upwards for side to side jumps
+            }
 
             const length = Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2));
             
             const d = `M ${x1} ${y1} Q ${midX} ${midY} ${x2} ${y2}`;
             path.setAttribute('d', d);
-            path.setAttribute('stroke', '#888');
-            path.setAttribute('stroke-width', '3');
-            path.setAttribute('stroke-dasharray', '6,6');
+            
+            // Beautiful glowing orange dashed line
+            path.setAttribute('stroke', '#ff7a00');
+            path.setAttribute('stroke-width', '4');
+            path.setAttribute('stroke-dasharray', '8,6');
             path.setAttribute('stroke-linecap', 'round');
             path.setAttribute('fill', 'none');
+            path.style.filter = 'drop-shadow(0px 2px 3px rgba(255,122,0,0.5))'; 
             
             path.setAttribute('stroke-dashoffset', length);
             path.style.transition = `stroke-dashoffset ${HOP_DURATION}ms linear`;
@@ -997,8 +1025,12 @@
 
                 // 2. Hop Tens (vertical steps)
                 for (let i = 0; i < tens; i++) {
+                    const prev = current;
                     current += stepTen;
                     
+                    const prevPos = getCellCenter(prev);
+                    const newPos = getCellCenter(current);
+
                     positionTokenInstantly(current); 
                     
                     tokenInner.classList.remove('bounce');
@@ -1006,6 +1038,9 @@
                     tokenInner.classList.add('bounce');
                     
                     playSound('hop');
+
+                    // Draw vertical hop dashed lines
+                    drawDashedArc(prevPos.x, prevPos.y, newPos.x, newPos.y);
 
                     await new Promise(r => setTimeout(r, HOP_DURATION)); 
                 }
