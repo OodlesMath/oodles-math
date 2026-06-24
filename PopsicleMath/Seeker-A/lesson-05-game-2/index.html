@@ -4,8 +4,10 @@
     <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Number Line Math Adventure V5</title>
+    <title>Number Line Math Adventure V7</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800;900&display=swap" rel="stylesheet">
+    <!-- Using Tone.js for Bunny Hop sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <style>
         :root {
             /* Duolingo Inspired Color Palette */
@@ -314,7 +316,7 @@
             margin-bottom: 6px;
         }
 
-        /* --- Number Line --- */
+        /* --- Number Line (Always Centered) --- */
         .number-line-container {
             width: 100%;
             overflow-x: auto;
@@ -326,6 +328,7 @@
             margin: 20px 0;
             position: relative;
             scroll-behavior: smooth;
+            text-align: center; /* Helper to align inline elements centrally */
         }
         
         .number-line-container::-webkit-scrollbar { height: 12px; }
@@ -335,7 +338,8 @@
         .number-line {
             position: relative;
             height: 95px;
-            display: flex;
+            display: inline-flex; /* Changed to inline-flex to allow margin auto centering */
+            margin: 0 auto;
             align-items: flex-end;
             min-width: max-content;
             padding: 0 50px; 
@@ -414,7 +418,7 @@
         .answers-grid {
             display: flex;
             justify-content: center;
-            gap: 30px; 
+            gap: 20px; 
             flex-wrap: wrap;
             transition: opacity 0.3s;
         }
@@ -426,13 +430,13 @@
             border: 3px solid #E5E5E5;
             border-bottom: 8px solid #E5E5E5;
             border-radius: 25px;
-            padding: 15px 50px;
-            font-size: 3rem;
+            padding: 15px 40px;
+            font-size: 2.5rem;
             font-weight: 900;
             color: var(--text-main);
             cursor: pointer;
             transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.2s;
-            min-width: 120px;
+            min-width: 100px;
             text-align: center;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
@@ -440,9 +444,11 @@
         .answer-btn:hover { transform: scale(1.08); filter: brightness(1.05); }
         .answer-btn:active { transform: scale(0.95) translateY(8px); border-bottom-width: 0px; margin-bottom: 8px; }
 
+        /* 4 Vibrant Colors for Answers */
         .answer-color-0 { background-color: #FFF200; border-color: #D4C400; border-bottom-color: #B3A500; color: #A07800; }
         .answer-color-1 { background-color: #FF9600; border-color: #E68600; border-bottom-color: #CC7700; color: white; }
         .answer-color-2 { background-color: #CE82FF; border-color: #B572E0; border-bottom-color: #9C62C2; color: white; }
+        .answer-color-3 { background-color: #FF75B5; border-color: #FA529B; border-bottom-color: #D6387C; color: white; }
 
         .answer-btn.correct { background-color: var(--btn-green) !important; border-color: var(--btn-green-shadow) !important; border-bottom-color: var(--btn-green-shadow) !important; color: white !important; animation: bounce 0.5s; }
         .answer-btn.wrong { background-color: var(--btn-red) !important; border-color: var(--btn-red-shadow) !important; border-bottom-color: var(--btn-red-shadow) !important; color: white !important; animation: shake 0.4s; }
@@ -461,24 +467,37 @@
         .stats-box p { font-size: 1.4rem; font-weight: 800; margin: 10px 0; color: var(--text-main); display: flex; align-items: center; gap: 10px; }
         #confettiCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; display: none; }
 
-        /* --- Bonus Game Styles --- */
-        #marioBonus { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #e1f5fe; display: none; flex-direction: column; align-items: center; z-index: 3000; overflow: hidden; touch-action: none; }
-        #marioCanvas { display: block; margin: auto; }
-        .bonus-ui { position: absolute; top: 20px; left: 0; width: 100%; display: flex; justify-content: space-around; color: white; font-size: 2.2rem; font-weight: 900; text-shadow: 3px 3px 0 #1565c0; pointer-events: none; z-index: 10;}
-        .bonus-start-msg { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: #fff59d; font-size: 2.5rem; font-weight: 900; text-align: center; text-shadow: 4px 4px 0 #d84315; animation: pulse 1s infinite alternate; z-index: 10;}
-        .flash-red { animation: flashRed 0.3s; }
+        /* --- Bunny Bonus Game Styles --- */
+        #bunnyBonus { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #8bd3ff; display: none; flex-direction: column; align-items: center; z-index: 3000; overflow: hidden; touch-action: none; }
+        #canvas-container { width: 100%; height: 100%; }
+        #canvas-container canvas { display: block; width: 100%; height: 100%; }
+        
+        .bonus-ui { position: absolute; top: 20px; left: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0 30px; color: white; font-size: 2.2rem; font-weight: 900; text-shadow: 3px 3px 0 #1565c0; z-index: 10;}
+        
+        .quit-bonus-btn {
+            background: rgba(255,255,255,0.3); border: 2px solid white; border-radius: 15px; 
+            color: white; font-size: 1.2rem; font-weight: 900; padding: 8px 20px; 
+            cursor: pointer; text-shadow: none; transition: all 0.2s;
+            box-shadow: 0 4px 0 rgba(255,255,255,0.2);
+            pointer-events: auto; /* Ensure clickable */
+        }
+        .quit-bonus-btn:active { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
+
+        .bonus-start-msg { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: #fff59d; font-size: 2.5rem; font-weight: 900; text-align: center; text-shadow: 4px 4px 0 #d84315; animation: pulse 1s infinite alternate; z-index: 10; pointer-events: none;}
+
         @keyframes pulse { from { transform: translate(-50%, -50%) scale(1); } to { transform: translate(-50%, -50%) scale(1.1); } }
-        @keyframes flashRed { 0%, 100% { background: #e1f5fe; } 50% { background: #ffcdd2; } }
 
         @media (max-width: 768px) {
             h1 { font-size: 2.2rem; }
             .equation-text { font-size: 3rem; padding: 10px 25px; }
             .speaker-btn { width: 60px; height: 60px; font-size: 2rem; }
             .chunky-btn { font-size: 1.4rem; padding: 12px 25px; }
-            .answer-btn { padding: 12px 25px; font-size: 2rem; min-width: 80px;}
+            .answer-btn { padding: 12px 20px; font-size: 1.8rem; min-width: 70px;}
             .score-board { font-size: 1.2rem; padding: 8px 15px;}
             .game-header { top: 10px; left: 10px; }
             .frog svg { width: 50px; height: 50px; }
+            .bonus-ui { padding: 0 15px; font-size: 1.5rem;}
+            .quit-bonus-btn { font-size: 1rem; padding: 5px 12px;}
         }
     </style>
 </head>
@@ -540,16 +559,12 @@
             <div class="number-line" id="numberLine">
                 <div class="main-line"></div>
                 <svg id="arcCanvas"></svg>
-                <!-- Ticks inserted via JS -->
                 <!-- Custom SVG Frog -->
                 <div class="frog" id="frogEl">
                     <svg viewBox="0 0 100 100">
-                        <!-- Back legs -->
                         <ellipse cx="20" cy="70" rx="15" ry="10" fill="#46A302"/>
                         <ellipse cx="80" cy="70" rx="15" ry="10" fill="#46A302"/>
-                        <!-- Body -->
                         <ellipse cx="50" cy="60" rx="40" ry="30" fill="#58CC02"/>
-                        <!-- Eyes -->
                         <circle cx="30" cy="30" r="15" fill="#58CC02"/>
                         <circle cx="70" cy="30" r="15" fill="#58CC02"/>
                         <circle cx="30" cy="30" r="10" fill="white"/>
@@ -558,9 +573,7 @@
                         <circle cx="70" cy="30" r="5" fill="#1CB0F6"/>
                         <circle cx="28" cy="28" r="2" fill="white"/>
                         <circle cx="68" cy="28" r="2" fill="white"/>
-                        <!-- Smile -->
                         <path d="M 35 65 Q 50 75 65 65" fill="none" stroke="#2B5D00" stroke-width="4" stroke-linecap="round"/>
-                        <!-- Cheeks -->
                         <circle cx="20" cy="60" r="6" fill="#FF8A80" opacity="0.8"/>
                         <circle cx="80" cy="60" r="6" fill="#FF8A80" opacity="0.8"/>
                     </svg>
@@ -571,6 +584,7 @@
         <div class="actions-container">
             <button class="chunky-btn btn-success" id="jumpBtn" style="font-size: 2rem;">🐸 Jump! (<span id="jumpsLeft">0</span>)</button>
             <div class="feedback-text" id="feedback"></div>
+            <!-- 4 Answers will be placed here -->
             <div class="answers-grid hidden-answers" id="answersGrid"></div>
         </div>
     </div>
@@ -597,14 +611,15 @@
         </div>
     </div>
 
-    <!-- Bonus Game Section -->
-    <div id="marioBonus">
+    <!-- Bunny Bonus Game Section -->
+    <div id="bunnyBonus">
         <div class="bonus-ui">
             <div>💰 <span id="bonusCoins">0</span></div>
-            <div>⏱ <span id="bonusTime">12</span>s</div>
+            <!-- Quit Button added to safely exit the infinite mode -->
+            <button class="quit-bonus-btn" id="quitBonusBtn">QUIT GAME</button>
         </div>
-        <div id="bonusMsg" class="bonus-start-msg">Avoid Cactus 🌵 & Collect Coins!</div>
-        <canvas id="marioCanvas"></canvas>
+        <div id="bonusMsg" class="bonus-start-msg">Tap or Space to Jump!</div>
+        <div id="canvas-container"></div>
     </div>
 
     <script>
@@ -622,18 +637,12 @@
         let timerInterval = null;
         let secondsElapsed = 0;
         let totalBonusCoins = 0;
-
-        // Beautiful SVGs for Bonus Game (Duolingo Style)
-        const marioSVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" width="100" height="120"><g transform="translate(10, 0)"><rect x="60" y="55" width="25" height="18" rx="9" fill="%23D32F2F" transform="rotate(-30 60 55)"/><circle cx="85" cy="45" r="11" fill="white" stroke="%23E0E0E0" stroke-width="2"/><rect x="35" y="80" width="22" height="30" rx="11" fill="%231976D2" transform="rotate(20 35 80)"/><path d="M 22 110 L 48 110 A 12 12 0 0 0 48 88 L 22 88 A 12 12 0 0 0 22 110 Z" fill="%235D4037"/><rect x="25" y="50" width="45" height="42" rx="16" fill="%231976D2"/><circle cx="35" cy="58" r="6" fill="%23FBC02D"/><circle cx="60" cy="58" r="6" fill="%23FBC02D"/><path d="M 25 50 C 25 25, 70 25, 70 50 Z" fill="%23D32F2F"/><circle cx="50" cy="35" r="24" fill="%23FFCC80"/><circle cx="75" cy="35" r="11" fill="%23FFA726"/><ellipse cx="60" cy="27" rx="4.5" ry="8" fill="black"/><ellipse cx="61" cy="24" rx="2" ry="3.5" fill="white"/><path d="M 64 42 Q 80 34, 86 45 Q 75 52, 58 46 Z" fill="%23212121"/><path d="M 16 20 Q 50 -8, 82 20 L 98 25 Q 86 32, 75 25 L 16 26 Z" fill="%23D32F2F"/><circle cx="50" cy="16" r="9" fill="white"/><text x="50" y="21" font-family="Arial" font-weight="900" font-size="13" fill="%23D32F2F" text-anchor="middle">M</text><rect x="50" y="80" width="22" height="30" rx="11" fill="%231976D2" transform="rotate(-20 50 80)"/><path d="M 62 105 L 88 105 A 12 12 0 0 0 88 83 L 62 83 A 12 12 0 0 0 62 105 Z" fill="%235D4037"/><rect x="20" y="55" width="25" height="18" rx="9" fill="%23D32F2F" transform="rotate(30 20 55)"/><circle cx="15" cy="70" r="11" fill="white" stroke="%23E0E0E0" stroke-width="2"/></g></svg>`;
-        const marioImg = new Image(); marioImg.src = marioSVG;
-
-        const cactusSVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" width="100" height="120"><rect x="35" y="20" width="30" height="100" rx="15" fill="%234CAF50" stroke="%231B5E20" stroke-width="4"/><path d="M35,60 C10,60 10,50 10,40 L10,25" fill="none" stroke="%234CAF50" stroke-width="20" stroke-linecap="round"/><path d="M35,60 C10,60 10,50 10,40 L10,25" fill="none" stroke="%231B5E20" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" z-index="-1" opacity="0.6"/><path d="M65,75 C90,75 90,65 90,55 L90,40" fill="none" stroke="%234CAF50" stroke-width="20" stroke-linecap="round"/><path d="M65,75 C90,75 90,65 90,55 L90,40" fill="none" stroke="%231B5E20" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/><rect x="35" y="20" width="30" height="100" rx="15" fill="%234CAF50"/><path d="M35,60 C13,60 13,50 13,40 L13,25" fill="none" stroke="%234CAF50" stroke-width="16" stroke-linecap="round"/><path d="M65,75 C87,75 87,65 87,55 L87,40" fill="none" stroke="%234CAF50" stroke-width="16" stroke-linecap="round"/><rect x="42" y="25" width="5" height="90" fill="%23A5D6A7" rx="2.5"/><path d="M 18 30 L 18 50" stroke="%23A5D6A7" stroke-width="4" stroke-linecap="round"/><path d="M 82 45 L 82 65" stroke="%23A5D6A7" stroke-width="4" stroke-linecap="round"/><path d="M 35 30 L 22 24 M 65 35 L 78 29 M 35 50 L 22 44 M 65 65 L 78 59 M 35 80 L 22 74 M 65 95 L 78 89 M 45 40 L 38 38 M 55 70 L 62 68 M 50 90 L 50 97" stroke="%23FFF" stroke-width="3" stroke-linecap="round"/></svg>`;
-        const cactusImg = new Image(); cactusImg.src = cactusSVG;
-
-        const coinSVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><ellipse cx="50" cy="50" rx="35" ry="45" fill="%23FBC02D" stroke="%23F57F17" stroke-width="6"/><ellipse cx="50" cy="50" rx="22" ry="35" fill="none" stroke="%23F57F17" stroke-width="5"/><rect x="45" y="25" width="10" height="50" fill="%23F57F17" rx="3"/><path d="M 30 25 Q 40 15 50 15" fill="none" stroke="%23FFF" stroke-width="4" stroke-linecap="round" opacity="0.8"/></svg>`;
-        const coinImg = new Image(); coinImg.src = coinSVG;
+        let bonusActive = false;
         
         let tickWidth = window.innerWidth <= 768 ? 55 : 75; 
+
+        // Question Pool for Random Non-Repeating Logic
+        let questionPool = [];
 
         // --- DOM Elements ---
         const rangeScreen = document.getElementById('rangeScreen');
@@ -649,9 +658,10 @@
         const scoreVal = document.getElementById('scoreVal');
         const feedback = document.getElementById('feedback');
         const winOverlay = document.getElementById('winOverlay');
-        const marioBonus = document.getElementById('marioBonus');
+        const bunnyBonus = document.getElementById('bunnyBonus');
+        const quitBonusBtn = document.getElementById('quitBonusBtn');
         
-        // --- Audio Engine ---
+        // --- Audio Engine (Main Game) ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playTone(freq, type, duration, volume = 0.1) {
             if (isMuted) return;
@@ -682,22 +692,54 @@
                 osc.connect(gain).connect(audioCtx.destination);
                 osc.start(); osc.stop(audioCtx.currentTime + 0.15);
             },
-            jump: () => {
-                if (isMuted) return;
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
-                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-                osc.connect(gain).connect(audioCtx.destination);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-            },
-            coin: () => { playTone(987, 'sine', 0.1, 0.1); setTimeout(()=>playTone(1318, 'sine', 0.2, 0.1), 50); },
-            hit: () => { playTone(150, 'sawtooth', 0.3, 0.2); setTimeout(()=>playTone(100, 'square', 0.4, 0.2), 100); },
-            gameOver: () => { [300, 250, 200, 150].forEach((f, i) => setTimeout(() => playTone(f, 'sawtooth', 0.3, 0.1), i * 200)); },
             win: () => { [523, 659, 783, 1046, 1318].forEach((f, i) => setTimeout(() => playTone(f, 'sine', 0.2, 0.1), i * 120)); }
+        };
+
+        // --- Sound Effects using Tone.js (For Bunny Game) ---
+        const SoundFX = {
+            jumpSynth: null,
+            failSynth: null,
+            winSynth: null,
+            isReady: false,
+            
+            init() {
+                if(this.isReady) return;
+                try {
+                    this.jumpSynth = new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 4, oscillator: { type: "sine" } }).toDestination();
+                    this.jumpSynth.volume.value = -10;
+
+                    this.failSynth = new Tone.FMSynth({
+                        harmonicity: 0.5, modulationIndex: 10, oscillator: { type: "sawtooth" },
+                        envelope: { attack: 0.1, decay: 0.2, sustain: 0.1, release: 0.2 }
+                    }).toDestination();
+                    this.failSynth.volume.value = -10;
+
+                    this.winSynth = new Tone.PolySynth().toDestination();
+                    this.winSynth.volume.value = -5;
+                    
+                    this.isReady = true;
+                } catch(e) { console.log("Audio context not ready"); }
+            },
+            playJump() {
+                if(isMuted) return;
+                if(!this.isReady) this.init();
+                if(this.isReady && Tone.context.state === 'running') this.jumpSynth.triggerAttackRelease("C3", "8n");
+            },
+            playFail() {
+                if(isMuted) return;
+                if(!this.isReady) this.init();
+                if(this.isReady && Tone.context.state === 'running') this.failSynth.triggerAttackRelease("G2", "4n");
+            },
+            playWin() {
+                if(isMuted) return;
+                if(!this.isReady) this.init();
+                if(this.isReady && Tone.context.state === 'running') {
+                    const now = Tone.now();
+                    this.winSynth.triggerAttackRelease("C4", "8n", now);
+                    this.winSynth.triggerAttackRelease("E4", "8n", now + 0.15);
+                    this.winSynth.triggerAttackRelease("G4", "4n", now + 0.3);
+                }
+            }
         };
 
         // --- Text to Speech ---
@@ -722,6 +764,29 @@
             stopConfetti();
         }
 
+        // Generate non-repeating question pool
+        function buildQuestionPool(maxR) {
+            questionPool = [];
+            for (let i = 0; i < maxR; i++) {
+                let maxNum2 = maxR - i;
+                if (maxNum2 < 1) continue; // Must jump at least 1 step
+                for (let j = 1; j <= maxNum2; j++) {
+                    questionPool.push({ n1: i, n2: j });
+                }
+            }
+            
+            // Fallback for extremely small ranges
+            if (questionPool.length === 0) {
+                questionPool.push({ n1: Math.max(0, maxR - 2), n2: 2 });
+            }
+            
+            // Shuffle Array (Fisher-Yates)
+            for (let i = questionPool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [questionPool[i], questionPool[j]] = [questionPool[j], questionPool[i]];
+            }
+        }
+
         function startGame(range) {
             sounds.click();
             maxRange = range;
@@ -729,6 +794,8 @@
             questionsCompleted = 0;
             totalBonusCoins = 0;
             updateScore();
+            
+            buildQuestionPool(maxRange);
             
             rangeScreen.classList.remove('active');
             mathGameScreen.classList.add('active');
@@ -752,10 +819,15 @@
             answersGrid.innerHTML = '';
             arcCanvas.innerHTML = ''; 
             
-            num1 = Math.floor(Math.random() * maxRange);
-            let maxNum2 = maxRange - num1;
-            if (maxNum2 < 1) { num1 = maxRange - 2; maxNum2 = 2; }
-            num2 = Math.floor(Math.random() * maxNum2) + 1;
+            // Refill pool if empty
+            if (questionPool.length === 0) {
+                buildQuestionPool(maxRange);
+            }
+            
+            // Pop random unique question from pool
+            const q = questionPool.pop();
+            num1 = q.n1;
+            num2 = q.n2;
             
             currentCorrectAnswer = num1 + num2;
             jumpsRemaining = num2;
@@ -808,16 +880,17 @@
         }
 
         function centerFrog() {
+            if (numberLine.offsetWidth <= nlContainer.clientWidth) return;
+            
             setTimeout(() => {
-                const targetScroll = frogEl.offsetLeft - nlContainer.clientWidth/2 + 30;
+                const scrollLeftPos = frogEl.offsetLeft - (nlContainer.clientWidth / 2) + (frogEl.offsetWidth / 2);
                 nlContainer.scrollTo({
-                    left: Math.max(0, targetScroll),
+                    left: Math.max(0, scrollLeftPos),
                     behavior: 'smooth'
                 });
             }, 50);
         }
 
-        // Draw Dashed Arc using SVG with Number
         function drawJumpArc(fromVal, toVal, jumpNumber) {
             const startTick = parseInt(numberLine.dataset.startTick);
             const x1 = 50 + (fromVal - startTick) * tickWidth + tickWidth/2;
@@ -865,6 +938,7 @@
 
         jumpBtn.onclick = () => {
             if(jumpsRemaining <= 0) return;
+            Tone.start(); 
             
             const prevPos = currentPos;
             const jumpIndex = (currentPos - num1) + 1;
@@ -888,8 +962,9 @@
 
         function generateAnswers() {
             let opts = [currentCorrectAnswer];
-            while(opts.length < 3) {
-                let variation = Math.floor(Math.random() * 5) - 2;
+            // Request 4 answers instead of 3
+            while(opts.length < 4) {
+                let variation = Math.floor(Math.random() * 7) - 3; // Broader random variation
                 let w = currentCorrectAnswer + variation;
                 if(w !== currentCorrectAnswer && w >= 0 && w <= maxRange && !opts.includes(w)) {
                     opts.push(w);
@@ -910,7 +985,8 @@
 
         function checkAnswer(btn, val) {
             if (jumpsRemaining > 0) return;
-
+            Tone.start(); 
+            
             if(val === currentCorrectAnswer) {
                 btn.classList.add('correct');
                 equationDisplay.textContent = `${num1} + ${num2} = ${currentCorrectAnswer}`;
@@ -1020,172 +1096,415 @@
             requestAnimationFrame(confettiLoop);
         }
 
-        // --- Upgraded Bonus Game Engine (V5) ---
-        const bCanvas = document.getElementById('marioCanvas');
-        const bCtx = bCanvas.getContext('2d');
-        let bonusActive = false, currentBonusCoins = 0, bonusTimeLeft = 12;
-        let marioY = 0, marioVY = 0, groundY = 0;
-        let clouds = [], coins = [], obstacles = [], scenery = [];
-        let framesSinceLastObstacle = 0;
+        // --- Bunny Hop Engine ---
+        function Runner(containerSelector, config) {
+            const container = document.querySelector(containerSelector);
+            if (!container) return;
+            this.container = container;
+            this.config = Object.assign({
+                SPEED: 7, GRAVITY: 0.6, INITIAL_JUMP_VELOCITY: 14
+            }, config);
+            this.init();
+        }
 
+        Runner.prototype = {
+            init: function() {
+                this.canvas = document.createElement('canvas');
+                this.canvas.style.display = "block";
+                this.ctx = this.canvas.getContext('2d');
+                this.container.innerHTML = '';
+                this.container.appendChild(this.canvas);
+                
+                this.bunny = { x: 150, y: 0, vy: 0, jumping: false, width: 70, height: 80 };
+                this.obstacles = [];
+                this.decorations = [];
+                this.flowers = [];
+                this.score = 0;
+                this.isGameOver = false;
+                this.isStarted = false;
+                this.frameCount = 0;
+                this.animationFrameId = null;
+
+                for(let i=0; i<5; i++) {
+                    this.decorations.push({ x: Math.random() * 2000, type: 'tree' });
+                }
+                for(let i=0; i<12; i++) {
+                    this.flowers.push(this.createFlower(Math.random() * 2000));
+                }
+
+                this.bindEvents();
+                this.resize();
+            },
+            resize: function() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+                this.floorY = this.canvas.height - 120;
+                
+                if (!this.bunny.jumping) {
+                    this.bunny.y = this.floorY - this.bunny.height;
+                }
+                this.flowers.forEach(f => {
+                    f.y = this.floorY + 15 + Math.random() * 60;
+                });
+                if(!this.isStarted) this.draw();
+            },
+            createFlower: function(xPos) {
+                const colors = ['#ff8fab', '#facc15', '#f87171', '#c084fc'];
+                return {
+                    x: xPos,
+                    y: (this.floorY || window.innerHeight - 120) + 15 + Math.random() * 60,
+                    color: colors[Math.floor(Math.random() * colors.length)]
+                };
+            },
+            bindEvents: function() {
+                const handleInput = (e) => {
+                    // Bypass logic if we aren't in the bonus game
+                    if(!bonusActive) return;
+                    
+                    // Don't intercept clicks inside the button
+                    if(e.target.tagName.toLowerCase() === 'button' && e.type !== 'keydown') return; 
+                    
+                    if (this.isGameOver) return; 
+                    
+                    if (!this.isStarted) {
+                        Tone.start(); 
+                        document.getElementById('bonusMsg').style.display = 'none';
+                        return this.isStarted = true;
+                    }
+                    this.jump();
+                };
+
+                this.canvas.addEventListener('mousedown', handleInput);
+                this.canvas.addEventListener('touchstart', (e) => { 
+                     if(e.target.tagName.toLowerCase() !== 'button') {
+                        e.preventDefault(); 
+                        handleInput(e); 
+                     }
+                }, {passive: false});
+            },
+            start: function() {
+                this.resize();
+                this.restart();
+                if(this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
+                this.gameLoop();
+            },
+            stop: function() {
+                if(this.animationFrameId) cancelAnimationFrame(this.animationFrameId);
+            },
+            jump: function() {
+                if (!this.bunny.jumping) {
+                    this.bunny.vy = -this.config.INITIAL_JUMP_VELOCITY;
+                    this.bunny.jumping = true;
+                    SoundFX.playJump();
+                }
+            },
+            restart: function() {
+                this.bunny.y = this.floorY - this.bunny.height;
+                this.bunny.vy = 0;
+                this.bunny.jumping = false;
+                this.obstacles = [];
+                this.score = 0; 
+                this.isGameOver = false; 
+                this.isStarted = true;
+                this.frameCount = 0;
+            },
+            update: function() {
+                if (!this.isStarted || this.isGameOver) return;
+
+                this.frameCount++;
+                this.score += 0.05; 
+                document.getElementById('bonusCoins').textContent = Math.floor(this.score);
+
+                this.bunny.y += this.bunny.vy;
+                this.bunny.vy += this.config.GRAVITY;
+                const restY = this.floorY - this.bunny.height;
+                
+                if (this.bunny.y > restY) {
+                    this.bunny.y = restY;
+                    this.bunny.vy = 0;
+                    this.bunny.jumping = false;
+                }
+
+                this.decorations.forEach(d => {
+                    d.x -= this.config.SPEED * 0.4;
+                    if(d.x < -100) {
+                        d.x = this.canvas.width + 100 + Math.random() * 300;
+                    }
+                });
+                
+                this.flowers.forEach(f => {
+                    f.x -= this.config.SPEED;
+                    if(f.x < -50) {
+                        Object.assign(f, this.createFlower(this.canvas.width + Math.random() * 200));
+                    }
+                });
+
+                const spawnRate = Math.max(60, Math.floor(140 - this.config.SPEED * 5));
+                if (this.frameCount % spawnRate === 0) {
+                    this.obstacles.push({ 
+                        x: this.canvas.width + 50, 
+                        w: 45 + Math.random() * 25, 
+                        h: 45 + Math.random() * 20,
+                        type: Math.random() > 0.5 ? 'rock' : 'log'
+                    });
+                }
+
+                this.obstacles.forEach(o => {
+                    o.x -= this.config.SPEED;
+                    
+                    const bx = this.bunny.x + 20;
+                    const by = this.bunny.y + 15;
+                    const bw = this.bunny.width - 40;
+                    const bh = this.bunny.height - 25;
+
+                    const ox = o.x + 10;
+                    const oy = this.floorY - o.h + 10;
+                    const ow = o.w - 20;
+                    const oh = o.h - 10;
+
+                    if (bx < ox + ow && bx + bw > ox && by < oy + oh && by + bh > oy) {
+                        this.gameOver(false);
+                    }
+                });
+                
+                this.obstacles = this.obstacles.filter(o => o.x > -150);
+            },
+            gameOver: function(userQuit = false) {
+                this.isGameOver = true;
+                bonusActive = false; 
+                
+                const bMsg = document.getElementById('bonusMsg');
+                if (userQuit) {
+                    SoundFX.playWin();
+                    bMsg.textContent = `GOOD JOB! +${Math.floor(this.score)} Coins! ➔`;
+                    bMsg.style.color = '#fff59d';
+                } else {
+                    SoundFX.playFail();
+                    bMsg.textContent = `GAME OVER! 💥 +${Math.floor(this.score)} Coins`;
+                    bMsg.style.color = '#ff5252';
+                }
+                bMsg.style.display = 'block';
+
+                totalBonusCoins += Math.floor(this.score);
+
+                setTimeout(() => {
+                    document.getElementById('bunnyBonus').style.display = 'none';
+                    document.getElementById('mathGameScreen').style.opacity = '1';
+                    generateQuestion(); 
+                }, 2000);
+            },
+            draw: function() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                const skyGrad = this.ctx.createLinearGradient(0, 0, 0, this.floorY);
+                skyGrad.addColorStop(0, '#7cd0fc');
+                skyGrad.addColorStop(1, '#dff4ff');
+                this.ctx.fillStyle = skyGrad;
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                this.ctx.fillStyle = 'rgba(255, 234, 138, 0.4)';
+                this.ctx.beginPath(); this.ctx.arc(100, 90, 70, 0, Math.PI * 2); this.ctx.fill();
+                this.ctx.fillStyle = '#ffdf6d'; 
+                this.ctx.beginPath(); this.ctx.arc(100, 90, 50, 0, Math.PI * 2); this.ctx.fill();
+
+                const rbColors = ['#e992aa', '#e5cd78', '#88d0c2', '#6ab1d1', '#54819d', '#cc95c0'];
+                this.ctx.lineWidth = Math.min(30, this.canvas.width / 40);
+                this.ctx.lineCap = 'butt';
+                const rbRadiusBase = Math.min(this.canvas.width * 0.4, 450);
+                
+                rbColors.forEach((color, i) => {
+                    this.ctx.strokeStyle = color;
+                    this.ctx.beginPath();
+                    this.ctx.arc(this.canvas.width / 2, this.floorY + 20, rbRadiusBase - i * (this.ctx.lineWidth - 1), Math.PI, 0);
+                    this.ctx.stroke();
+                });
+
+                this.ctx.fillStyle = '#ffffff';
+                [[this.canvas.width * 0.2, 100], [this.canvas.width * 0.8, 80], [this.canvas.width * 0.5, 50]].forEach(pos => {
+                    this.ctx.beginPath();
+                    this.ctx.arc(pos[0], pos[1], 20, 0, Math.PI * 2);
+                    this.ctx.arc(pos[0] + 25, pos[1] - 12, 30, 0, Math.PI * 2);
+                    this.ctx.arc(pos[0] + 50, pos[1], 20, 0, Math.PI * 2);
+                    this.ctx.fill();
+                });
+
+                this.decorations.forEach(d => {
+                    this.ctx.fillStyle = '#9c6644';
+                    this.ctx.fillRect(d.x + 20, this.floorY - 70, 15, 70);
+                    this.ctx.fillStyle = '#4ade80';
+                    this.ctx.beginPath(); this.ctx.arc(d.x + 27, this.floorY - 80, 35, 0, Math.PI * 2); this.ctx.fill();
+                    this.ctx.fillStyle = '#22c55e';
+                    this.ctx.beginPath(); this.ctx.arc(d.x + 20, this.floorY - 70, 18, 0, Math.PI * 2); this.ctx.fill();
+                });
+
+                this.ctx.fillStyle = '#a3e635'; 
+                this.ctx.beginPath();
+                this.ctx.moveTo(0, this.floorY - 25);
+                this.ctx.quadraticCurveTo(this.canvas.width / 2, this.floorY - 100, this.canvas.width, this.floorY - 10);
+                this.ctx.lineTo(this.canvas.width, this.canvas.height);
+                this.ctx.lineTo(0, this.canvas.height);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = '#65a30d'; 
+                this.ctx.beginPath();
+                this.ctx.moveTo(0, this.floorY + 15);
+                this.ctx.quadraticCurveTo(this.canvas.width / 3, this.floorY - 30, this.canvas.width, this.floorY + 30);
+                this.ctx.lineTo(this.canvas.width, this.canvas.height);
+                this.ctx.lineTo(0, this.canvas.height);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = '#65a30d';
+                this.ctx.fillRect(0, this.floorY + 15, this.canvas.width, this.canvas.height - this.floorY - 15);
+
+                this.flowers.forEach(f => {
+                    this.ctx.fillStyle = f.color;
+                    this.ctx.beginPath();
+                    this.ctx.arc(f.x - 5, f.y, 5, 0, Math.PI*2);
+                    this.ctx.arc(f.x + 5, f.y, 5, 0, Math.PI*2);
+                    this.ctx.arc(f.x, f.y - 5, 5, 0, Math.PI*2);
+                    this.ctx.arc(f.x, f.y + 5, 5, 0, Math.PI*2);
+                    this.ctx.fill();
+                    this.ctx.fillStyle = '#ffffff';
+                    this.ctx.beginPath(); this.ctx.arc(f.x, f.y, 4, 0, Math.PI*2); this.ctx.fill();
+                });
+
+                this.obstacles.forEach(o => {
+                    const oy = this.floorY - o.h;
+                    if(o.type === 'rock') {
+                        this.ctx.fillStyle = '#afbac4'; 
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(o.x, this.floorY);
+                        this.ctx.lineTo(o.x + o.w/2, oy);
+                        this.ctx.lineTo(o.x + o.w, this.floorY);
+                        this.ctx.fill();
+                        this.ctx.fillStyle = '#8e9fac';
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(o.x + o.w/2, oy);
+                        this.ctx.lineTo(o.x + o.w, this.floorY);
+                        this.ctx.lineTo(o.x + o.w*0.8, this.floorY);
+                        this.ctx.fill();
+                    } else {
+                        this.ctx.fillStyle = '#a67b5b'; 
+                        this.ctx.fillRect(o.x, oy + o.h/2, o.w, o.h/2);
+                        this.ctx.fillStyle = '#8b5a2b'; 
+                        this.ctx.fillRect(o.x, oy + o.h - 5, o.w, 5);
+                        this.ctx.fillStyle = '#d4b886';
+                        this.ctx.beginPath();
+                        this.ctx.ellipse(o.x, oy + o.h*0.75, 5, o.h/4, 0, 0, Math.PI*2);
+                        this.ctx.fill();
+                    }
+                });
+
+                const bx = this.bunny.x, by = this.bunny.y;
+                const jump = this.bunny.jumping;
+                
+                this.ctx.save();
+                this.ctx.translate(bx, by);
+                if(jump) {
+                    this.ctx.rotate(-0.1);
+                    this.ctx.translate(0, -5);
+                }
+
+                const bunnyColor = '#ffffff';
+                const earColor = '#ffb3c6';
+
+                const s = 1.2; 
+                this.ctx.scale(s, s);
+
+                this.ctx.fillStyle = bunnyColor;
+                this.ctx.beginPath(); this.ctx.ellipse(20, 15, 8, 25, -0.2, 0, Math.PI*2); this.ctx.fill();
+                this.ctx.fillStyle = earColor;
+                this.ctx.beginPath(); this.ctx.ellipse(20, 18, 4, 18, -0.2, 0, Math.PI*2); this.ctx.fill();
+                
+                this.ctx.fillStyle = bunnyColor;
+                this.ctx.beginPath(); this.ctx.ellipse(40, 10, 8, 25, 0.1, 0, Math.PI*2); this.ctx.fill();
+                this.ctx.fillStyle = earColor;
+                this.ctx.beginPath(); this.ctx.ellipse(40, 13, 4, 18, 0.1, 0, Math.PI*2); this.ctx.fill();
+
+                this.ctx.fillStyle = bunnyColor;
+                this.ctx.beginPath(); this.ctx.ellipse(35, 50, 25, 20, 0, 0, Math.PI*2); this.ctx.fill();
+                this.ctx.beginPath(); this.ctx.arc(35, 35, 20, 0, Math.PI*2); this.ctx.fill();
+
+                this.ctx.fillStyle = '#f3f4f6';
+                this.ctx.beginPath(); this.ctx.arc(8, 55, 8, 0, Math.PI*2); this.ctx.fill();
+
+                this.ctx.fillStyle = '#4b5563'; 
+                this.ctx.beginPath(); this.ctx.arc(42, 30, 3, 0, Math.PI*2); this.ctx.fill();
+                
+                this.ctx.fillStyle = '#ffb3c6'; 
+                this.ctx.beginPath(); this.ctx.arc(46, 38, 4, 0, Math.PI*2); this.ctx.fill();
+                
+                this.ctx.fillStyle = '#ff8fab'; 
+                this.ctx.beginPath(); this.ctx.arc(52, 34, 2, 0, Math.PI*2); this.ctx.fill();
+
+                this.ctx.fillStyle = bunnyColor;
+                if(!jump) {
+                    const offset = Math.sin(this.frameCount * 0.5) * 4;
+                    this.ctx.beginPath(); this.ctx.ellipse(25 + offset, 68, 6, 4, 0, 0, Math.PI*2); this.ctx.fill();
+                    this.ctx.beginPath(); this.ctx.ellipse(45 - offset, 68, 6, 4, 0, 0, Math.PI*2); this.ctx.fill();
+                } else {
+                    this.ctx.beginPath(); this.ctx.ellipse(25, 72, 5, 8, 0.5, 0, Math.PI*2); this.ctx.fill();
+                }
+
+                this.ctx.restore();
+            },
+            gameLoop: function() {
+                this.update(); 
+                this.draw();
+                this.animationFrameId = requestAnimationFrame(() => this.gameLoop());
+            }
+        };
+
+        // Secure Global Keyboard Listener for Bunny Hop Jump
+        window.addEventListener('keydown', (e) => {
+            if (bonusActive && (e.code === 'Space' || e.key === ' ')) {
+                e.preventDefault(); // Prevents page scrolling down
+                
+                if (window.bunnyRunner && !window.bunnyRunner.isGameOver) {
+                    if (!window.bunnyRunner.isStarted) {
+                        Tone.start(); 
+                        document.getElementById('bonusMsg').style.display = 'none';
+                        window.bunnyRunner.isStarted = true;
+                    }
+                    window.bunnyRunner.jump();
+                }
+            }
+        }, {passive: false});
+
+        // Quit Button Logic
+        quitBonusBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.currentTarget.blur(); // Remove focus so spacebar doesn't trigger it again
+            if(bonusActive && window.bunnyRunner) {
+                window.bunnyRunner.gameOver(true); // Call game over explicitly cleanly
+            }
+        });
+
+        // --- Start Bonus Game Setup ---
         function startBonusLevel() {
             sounds.win();
             mathGameScreen.style.opacity = '0';
-            marioBonus.style.display = 'flex';
-            bCanvas.width = window.innerWidth;
-            bCanvas.height = Math.min(window.innerHeight * 0.7, 500);
+            const bBonus = document.getElementById('bunnyBonus');
+            bBonus.style.display = 'flex';
             
-            groundY = bCanvas.height - 50; 
-            marioY = groundY;
-            
-            currentBonusCoins = 0; bonusTimeLeft = 12;
-            bonusActive = true; framesSinceLastObstacle = 0;
+            currentBonusCoins = 0; 
+            bonusActive = true; 
             
             const bMsg = document.getElementById('bonusMsg');
             bMsg.style.display = 'block';
             bMsg.style.color = '#fff59d';
-            bMsg.textContent = "Press Space to Jump & Collect Coins!";
-            marioBonus.classList.remove('flash-red');
-            
-            coins = []; clouds = []; obstacles = []; scenery = [];
-            for(let i=0; i<6; i++) clouds.push({x: Math.random()*bCanvas.width, y: Math.random()*120 + 20, s: 0.5+Math.random()*1.5});
-            for(let i=0; i<3; i++) scenery.push({x: i*400, type: 'mountain'});
+            bMsg.textContent = "Tap or Space to Jump!";
             
             document.getElementById('bonusCoins').textContent = currentBonusCoins;
-            document.getElementById('bonusTime').textContent = bonusTimeLeft;
 
-            const timer = setInterval(() => {
-                if(!bonusActive) return clearInterval(timer);
-                bonusTimeLeft--;
-                document.getElementById('bonusTime').textContent = bonusTimeLeft;
-                if(bonusTimeLeft <= 0) endBonus();
-            }, 1000);
-
-            requestAnimationFrame(bonusLoop);
+            if (!window.bunnyRunner) {
+                window.bunnyRunner = new Runner('#canvas-container');
+            }
+            window.bunnyRunner.start();
+            // Removed setInterval completely so the game runs infinitely until death or quit.
         }
 
-        function endBonus() {
-            bonusActive = false;
-            totalBonusCoins += currentBonusCoins;
-            document.getElementById('bonusMsg').textContent = `BONUS OVER! +${currentBonusCoins} Coins! ➔`;
-            document.getElementById('bonusMsg').style.display = 'block';
-            
-            setTimeout(() => {
-                marioBonus.style.display = 'none';
-                mathGameScreen.style.opacity = '1';
-                generateQuestion(); 
-            }, 2000);
-        }
-
-        function jump(e) {
-            if(bonusActive && e.type === 'touchstart') e.preventDefault(); 
-            if(marioY >= groundY - 5 && bonusActive) {
-                marioVY = -16; 
-                sounds.jump();
-                document.getElementById('bonusMsg').style.display = 'none';
-            }
-        }
-
-        window.addEventListener('mousedown', jump);
-        window.addEventListener('touchstart', jump, {passive: false});
-        // Keydown for Spacebar (V4 feature retained)
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                e.preventDefault();
-                jump(e);
-            }
-        });
-
-        function bonusLoop() {
-            if(!bonusActive) return;
-
-            // Bright Duolingo Sky
-            let gradient = bCtx.createLinearGradient(0, 0, 0, bCanvas.height);
-            gradient.addColorStop(0, "#1CB0F6"); 
-            gradient.addColorStop(1, "#89E2FE"); 
-            bCtx.fillStyle = gradient;
-            bCtx.fillRect(0, 0, bCanvas.width, bCanvas.height);
-
-            // Fluffy Clouds
-            bCtx.fillStyle = "rgba(255, 255, 255, 0.9)";
-            clouds.forEach(c => {
-                c.x -= c.s;
-                if(c.x < -100) { c.x = bCanvas.width + 100; c.y = Math.random()*120 + 20; }
-                bCtx.beginPath(); bCtx.arc(c.x, c.y, 30, 0, Math.PI*2); bCtx.arc(c.x+30, c.y-15, 35, 0, Math.PI*2); bCtx.arc(c.x+60, c.y, 30, 0, Math.PI*2); bCtx.fill();
-            });
-
-            // Smooth Rolling Hills (Duolingo Style)
-            bCtx.fillStyle = "#74D620";
-            scenery.forEach(s => {
-                s.x -= 2;
-                if(s.x < -400) s.x = bCanvas.width + 100;
-                bCtx.beginPath(); bCtx.arc(s.x + 200, groundY + 100, 250, Math.PI, 0); bCtx.fill();
-            });
-
-            // Vibrant Grass Ground
-            bCtx.fillStyle = "#58CC02"; 
-            bCtx.fillRect(0, groundY, bCanvas.width, bCanvas.height - groundY);
-            bCtx.fillStyle = "#46A302"; // Grass top dark rim
-            bCtx.fillRect(0, groundY, bCanvas.width, 15);
-
-            // Grass details
-            for(let i=0; i<bCanvas.width; i+=40) {
-                bCtx.fillRect((i - (scenery[0].x*3)%40), groundY+5, 10, 8);
-            }
-
-            marioVY += 0.8; marioY += marioVY;
-            if(marioY > groundY) { marioY = groundY; marioVY = 0; }
-
-            const mx = 80; const my = marioY - 50; 
-
-            framesSinceLastObstacle++;
-            if(Math.random() < 0.008 && framesSinceLastObstacle > 120) {
-                obstacles.push({x: bCanvas.width + 50, y: groundY - 40, w: 30, h: 40, active: true});
-                framesSinceLastObstacle = 0;
-            }
-            
-            // Draw SVG Obstacles (Cactus)
-            obstacles.forEach((ob, i) => {
-                ob.x -= 8;
-                if (cactusImg.complete) {
-                    bCtx.drawImage(cactusImg, ob.x - 10, ob.y - 20, ob.w + 20, ob.h + 20);
-                }
-
-                if (ob.active && mx + 15 > ob.x && mx - 15 < ob.x + ob.w && my + 45 > ob.y) {
-                    ob.active = false; sounds.gameOver(); bonusActive = false;
-                    const bMsg = document.getElementById('bonusMsg');
-                    bMsg.textContent = "GAME OVER! 💥"; bMsg.style.display = 'block'; bMsg.style.color = '#ff5252';
-                    marioBonus.classList.add('flash-red');
-                    setTimeout(endBonus, 2000);
-                }
-            });
-            obstacles = obstacles.filter(o => o.x > -100);
-
-            // Draw SVG Coins
-            if(Math.random() < 0.05) coins.push({x: bCanvas.width, y: groundY - 50 - Math.random()*130});
-            coins.forEach((c, i) => {
-                c.x -= 8;
-                if (coinImg.complete) {
-                    bCtx.drawImage(coinImg, c.x - 18, c.y - 22, 36, 44);
-                }
-
-                const dx = c.x - mx; const dy = c.y - (marioY - 25); 
-                if(Math.sqrt(dx*dx + dy*dy) < 45) {
-                    coins.splice(i, 1); currentBonusCoins++;
-                    document.getElementById('bonusCoins').textContent = currentBonusCoins;
-                    sounds.coin();
-                }
-            });
-            coins = coins.filter(c => c.x > -50);
-
-            // Draw SVG Mario
-            if (marioImg.complete) {
-                bCtx.drawImage(marioImg, mx - 30, marioY - 60, 60, 60);
-            }
-
-            requestAnimationFrame(bonusLoop);
-        }
-
+        // Global Listeners for sound toggles
         document.getElementById('soundToggle').onclick = function() {
             isMuted = !isMuted; this.textContent = isMuted ? '🔇' : '🔊';
             if(!isMuted && audioCtx.state === 'suspended') audioCtx.resume();
@@ -1208,11 +1527,8 @@
 
         window.addEventListener('resize', () => {
             tickWidth = window.innerWidth <= 768 ? 55 : 75; 
-            if (bonusActive) {
-                bCanvas.width = window.innerWidth;
-                bCanvas.height = Math.min(window.innerHeight * 0.7, 500);
-                groundY = bCanvas.height - 50;
-                if (marioY > groundY) marioY = groundY;
+            if (bonusActive && window.bunnyRunner) {
+                window.bunnyRunner.resize();
             }
             if (cfActive) {
                 cfCanvas.width = window.innerWidth;
