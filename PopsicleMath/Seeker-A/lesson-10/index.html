@@ -4,1314 +4,1182 @@
     <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Number Line Subtraction Game V7</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Number Line Adventure - Math Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;800;900&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap');
-        
+        /* --- MAIN GAME STYLES --- */
         :root {
-            --sky-top: #38bdf8;
-            --sky-bottom: #bae6fd;
-            --grass-light: #86efac;
-            --grass-dark: #4ade80;
+            --green: #58cc02; --green-shadow: #58a700;
+            --blue: #1cb0f6; --blue-shadow: #1899d6;
+            --yellow: #ffc800; --yellow-shadow: #e5b400;
+            --red: #ff4b4b; --red-shadow: #ea2b2b;
+            --purple: #ce82ff; --white: #ffffff;
+            --bg-gray: #f7f7f7; --border-gray: #e5e5e5;
+            --text-dark: #4b4b4b; --text-light: #afafaf;
         }
 
-        body {
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background-color: #7dd3fc;
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 60%, var(--grass-light) 60%, var(--grass-dark) 100%);
-            touch-action: manipulation;
-            overflow-x: hidden;
-            overflow-y: auto;
-            min-height: 100dvh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            margin: 0;
-            padding: 1rem;
+            touch-action: none; user-select: none; -webkit-user-select: none;
         }
 
-        /* --- Beautiful Background Elements --- */
-        .scenery-layer {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: -1;
-            overflow: hidden;
-        }
-
-        /* Sun */
-        .sun {
-            position: absolute;
-            top: 5%;
-            left: 5%;
-            width: 100px;
-            height: 100px;
-            background: #fde047;
-            border-radius: 50%;
-            box-shadow: 0 0 40px #fde047, 0 0 80px #fef08a;
-            animation: pulse-sun 4s infinite alternate;
-        }
-
-        @keyframes pulse-sun {
-            0% { transform: scale(1); }
-            100% { transform: scale(1.05); }
-        }
-
-        /* Rainbow - Thinner by 50%, precise semi-circle touching the grass */
-        .rainbow {
-            position: absolute;
-            bottom: 40%; /* Matches hill height */
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100vw;
-            max-width: 120vh; /* Limits width to exactly 2x the 60vh top section */
-            height: auto;
-            aspect-ratio: 2 / 1;
-            opacity: 0.65;
-            z-index: -1;
-        }
-
-        /* Clouds */
-        @keyframes float-cloud {
-            from { transform: translateX(-200px); }
-            to { transform: translateX(120vw); }
-        }
-        .cloud {
-            position: absolute;
-            fill: white;
-            opacity: 0.8;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
-        }
-        .cloud-1 { top: 10%; animation: float-cloud 50s linear infinite; width: 150px; }
-        .cloud-2 { top: 25%; animation: float-cloud 35s linear infinite; animation-delay: -15s; width: 100px; }
-        .cloud-3 { top: 8%; animation: float-cloud 45s linear infinite; animation-delay: -30s; width: 180px; }
-
-        /* Hills */
-        .hills {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 40%;
-        }
-
-        /* Trees & Flowers styling */
-        .tree, .flower {
-            position: absolute;
-            bottom: 0;
-            transform-origin: bottom center;
-            animation: sway 6s ease-in-out infinite alternate;
-        }
-        .flower { animation-duration: 4s; }
-        @keyframes sway {
-            0% { transform: rotate(-3deg); }
-            100% { transform: rotate(3deg); }
-        }
-
-        /* --- Game UI Elements --- */
-        .game-card {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(10px);
-            border: 8px solid #ffffff;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 8px rgba(255, 255, 255, 0.4);
-            width: 100%;
-            max-width: 900px; /* Wider for laptop/tablet */
-            border-radius: 2.5rem;
-            padding: 1.5rem;
-            user-select: none;
-            position: relative;
-            z-index: 10;
-        }
-
-        @media (min-width: 640px) {
-            .game-card { padding: 2.5rem; border-radius: 3.5rem; }
-        }
-
-        /* Number Line Styling */
-        .number-line-container {
-            position: relative;
-            height: 120px;
-            margin: 20px 0;
-            user-select: none;
-        }
-
-        @media (min-width: 640px) {
-            .number-line-container { height: 180px; margin: 40px 0; }
-        }
-
-        .line {
-            position: absolute;
-            top: 50%;
-            left: 5%;
-            right: 5%;
-            height: 12px;
-            background: linear-gradient(90deg, #3b82f6, #60a5fa, #3b82f6);
-            border-radius: 10px;
-            transform: translateY(-50%);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), inset 0 3px 5px rgba(255,255,255,0.4);
-        }
-
-        .tick-zone {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 40px;
+        #gameCanvas {
+            display: block; width: 100%; height: 100%;
+            position: absolute; top: 0; left: 0; z-index: 1;
             cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transform: translateX(-50%);
-            z-index: 10;
         }
 
-        @media (min-width: 640px) { .tick-zone { width: 60px; } }
-
-        .tick {
-            width: 6px;
-            height: 24px;
-            background-color: #1e3a8a;
-            position: absolute;
-            bottom: 50%;
-            border-radius: 4px;
-        }
-
-        @media (min-width: 640px) { .tick { width: 8px; height: 32px; } }
-
-        .tick-label {
-            font-weight: 900;
-            font-size: 1.5rem;
-            color: #334155;
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            margin-top: 70px;
-            text-shadow: 0 3px 0 white, 0 -3px 0 white, 3px 0 0 white, -3px 0 0 white;
-        }
-
-        @media (min-width: 640px) { .tick-label { font-size: 2.2rem; margin-top: 100px; } }
-
-        .tick-zone:hover .tick-label {
-            transform: scale(1.3) translateY(5px);
-            color: #3b82f6;
-        }
-
-        /* SVG Frog Character */
-        .character {
-            position: absolute;
-            bottom: 50%;
-            width: 70px;
-            height: 90px;
-            transition: left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 30;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        #fxCanvas {
+            display: block; width: 100%; height: 100%;
+            position: absolute; top: 0; left: 0; z-index: 100;
             pointer-events: none;
-            filter: drop-shadow(0 10px 8px rgba(0,0,0,0.3));
-            transform: translateY(15%);
         }
 
-        @media (min-width: 640px) { .character { width: 90px; height: 120px; } }
-
-        /* Jump Arc & Animation */
-        .arc-path {
-            position: absolute;
-            top: 0;
-            fill: none;
-            stroke-width: 6;
-            stroke-dasharray: 10, 6;
-            stroke-dashoffset: 1000;
-            stroke-linecap: round;
-            filter: drop-shadow(0 4px 3px rgba(0,0,0,0.2));
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 10;
         }
 
-        @media (min-width: 640px) { .arc-path { stroke-width: 8; stroke-dasharray: 14, 8; } }
-
-        @keyframes drawArc { to { stroke-dashoffset: 0; } }
-
-        @keyframes fadeUpIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        #top-bar {
+            position: absolute; top: 20px; width: 100%; display: flex;
+            justify-content: center; align-items: flex-start; padding: 0 20px;
+            box-sizing: border-box; pointer-events: none; display: none;
         }
 
-        .jump-animation { animation: jump 0.4s ease; }
+        .top-bar-inner {
+            display: flex; width: 100%; max-width: 1200px;
+            justify-content: flex-start; gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .top-bar-inner { flex-direction: column; align-items: center; gap: 10px; }
+        }
+
+        .ui-box {
+            background: var(--white); border: 3px solid var(--border-gray);
+            border-bottom: 6px solid var(--border-gray); padding: 10px 25px;
+            border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex; align-items: center; justify-content: center;
+            pointer-events: auto;
+        }
+
+        #score-container { flex-direction: column; min-width: 120px; }
+        .gem-icon { width: 32px; height: 32px; margin-right: 8px; filter: drop-shadow(0px 3px 0px rgba(0,0,0,0.15)); }
+        #score-display { font-size: 2rem; font-weight: 900; color: var(--blue); display: flex; align-items: center; }        
+        #progress-display { font-size: 1rem; font-weight: 700; color: var(--text-light); margin-top: -5px; text-transform: uppercase; letter-spacing: 1px; }
+
+        #question-board { gap: 20px; transform: translateY(0); animation: bounceSoft 3s ease-in-out infinite; }
+        @keyframes bounceSoft { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
         
-        @keyframes jump {
-            0%, 100% { transform: translateY(15%) scale(1); }
-            50% { transform: translateY(-60px) scale(1.1); }
+        #question-text { font-size: 3rem; font-weight: 900; color: var(--purple); white-space: nowrap; }
+
+        #speaker-btn {
+            background: var(--blue); border: none; border-bottom: 5px solid var(--blue-shadow);
+            border-radius: 50%; width: 60px; height: 60px; display: flex;
+            justify-content: center; align-items: center; cursor: pointer;
+            transition: all 0.1s ease; flex-shrink: 0; padding: 12px;
+        }
+        #speaker-btn svg { width: 100%; height: 100%; fill: var(--white); }
+        #speaker-btn:active { transform: translateY(5px); border-bottom: 0px solid var(--blue-shadow); margin-bottom: 5px; }
+
+        #bottom-controls {
+            position: absolute; bottom: 30px; display: flex; gap: 15px;
+            pointer-events: auto; display: none; background: rgba(255, 255, 255, 0.9);
+            padding: 15px 25px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border: 4px solid var(--border-gray); align-items: center; justify-content: center; flex-wrap: wrap;
         }
 
-        @media (min-width: 640px) {
-            @keyframes jump {
-                0%, 100% { transform: translateY(15%) scale(1); }
-                50% { transform: translateY(-90px) scale(1.1); }
-            }
+        .ctrl-btn {
+            border: none; border-radius: 20px; padding: 15px 35px;
+            font-size: 1.5rem; color: var(--white); font-family: 'Poppins', sans-serif;
+            font-weight: 900; cursor: pointer; text-transform: uppercase;
+            letter-spacing: 1px; transition: all 0.1s ease; display: flex;
+            align-items: center; justify-content: center; gap: 10px;
         }
 
-        /* Ripple Effect */
-        .ripple {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(59, 130, 246, 0.4);
-            transform: scale(0);
-            animation: ripple-effect 0.6s ease-out;
-            pointer-events: none;
-            z-index: 5;
-        }
-        @keyframes ripple-effect { to { transform: scale(4); opacity: 0; } }
-
-        /* Candy-style Buttons */
-        .btn-base {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 1.5rem;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            transition: all 0.1s;
-            user-select: none;
-            outline: none;
-            border: none;
-        }
-
-        .btn-primary {
-            background: #3b82f6;
-            color: white;
-            box-shadow: 0 8px 0 #1d4ed8, 0 12px 15px rgba(59, 130, 246, 0.4);
-        }
-        .btn-primary:active { transform: translateY(8px); box-shadow: 0 0px 0 #1d4ed8; }
-
-        .btn-secondary {
-            background: #f43f5e;
-            color: white;
-            box-shadow: 0 8px 0 #be123c, 0 12px 15px rgba(244, 63, 94, 0.4);
-        }
-        .btn-secondary:active { transform: translateY(8px); box-shadow: 0 0px 0 #be123c; }
-
-        .btn-success {
-            background: #22c55e;
-            color: white;
-            box-shadow: 0 8px 0 #15803d, 0 12px 15px rgba(34, 197, 94, 0.4);
-        }
-        .btn-success:active { transform: translateY(8px); box-shadow: 0 0px 0 #15803d; }
+        .btn-blue { background: var(--blue); border-bottom: 6px solid var(--blue-shadow); }
+        .btn-yellow { background: var(--yellow); border-bottom: 6px solid var(--yellow-shadow); color: var(--text-dark); }
+        .btn-green { background: var(--green); border-bottom: 6px solid var(--green-shadow); }
+        .btn-green-next { background: #10b981; border-bottom: 6px solid #059669; }
         
-        .btn-speaker {
-            background: #fbbf24;
-            color: white;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            box-shadow: 0 5px 0 #d97706, 0 8px 10px rgba(251, 191, 36, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        @media (min-width: 640px) { .btn-speaker { width: 70px; height: 70px; } }
-        .btn-speaker:active { transform: translateY(5px); box-shadow: 0 0px 0 #d97706; }
+        .ctrl-btn:active { transform: translateY(6px); border-bottom-width: 0px; margin-bottom: 6px; }
+        .ctrl-btn svg { width: 28px; height: 28px; fill: currentColor; font-weight: bold; }
 
-        /* Bonus Game Overlay - Twilight theme */
-        .bonus-overlay {
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at center, #1e1b4b 0%, #0f172a 100%);
-            z-index: 500;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            border-radius: 2rem;
-            animation: fadeIn 0.3s ease-in;
-            padding-top: 1.5rem;
+        .panel {
+            background: var(--white); border: 4px solid var(--border-gray);
+            border-bottom: 12px solid var(--border-gray); box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            padding: 40px 50px; border-radius: 35px; text-align: center; color: var(--text-dark);
+            pointer-events: auto; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 90%; width: 450px; box-sizing: border-box; display: flex;
+            flex-direction: column; align-items: center;
         }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* Redesigned Firefly Element */
-        .bonus-fly-element {
-            position: absolute;
-            width: 80px; /* Made slightly larger for better detail visibility */
-            height: 80px;
-            cursor: pointer;
-            z-index: 600;
-            user-select: none;
-            animation: buzz-jitter 0.15s infinite;
-        }
-        @media (min-width: 640px) { .bonus-fly-element { width: 100px; height: 100px; } }
-
-        @keyframes buzz-jitter {
-            0%, 100% { transform: translate(0, 0); }
-            25% { transform: translate(1px, -1px) rotate(2deg); }
-            50% { transform: translate(-1px, 1px) rotate(-2deg); }
-            75% { transform: translate(1px, 1px) rotate(1deg); }
-        }
-
-        @keyframes pulse-glow {
-            from { opacity: 0.3; transform: scale(0.9); }
-            to { opacity: 0.9; transform: scale(1.1); }
-        }
-        .firefly-glow-part {
-            transform-origin: center;
-            animation: pulse-glow 0.8s infinite alternate ease-in-out;
-        }
-
-        .bonus-frog {
-            position: absolute;
-            bottom: -5px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 140px;
-            height: 180px;
-            z-index: 700;
-            pointer-events: none;
-            filter: drop-shadow(0 15px 25px rgba(0,0,0,0.6));
-        }
-        @media (min-width: 640px) { .bonus-frog { width: 180px; height: 240px; } }
-        .bonus-tongue { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 650; }
+        .panel.hidden { display: none !important; }
+        .title-icon { width: 100px; height: 100px; margin-bottom: 10px; animation: bounceSoft 2s infinite ease-in-out; }
         
-        .text-glow { text-shadow: 0 0 15px rgba(255,255,255,0.9), 0 0 30px rgba(255,255,255,0.7); }
+        .panel h1 { margin: 5px 0 10px; font-size: 3.5rem; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; line-height: 1.1; }
+        .title-start { color: var(--green); }
+        .title-win { color: var(--yellow); }
+        .panel p { font-size: 1.2rem; color: var(--text-light); margin-bottom: 25px; line-height: 1.6; font-weight: 700; }
+        .highlight { color: var(--blue); font-weight: 900; font-size: 2.2rem; }
 
-        .confetti-piece, .firework-particle { z-index: 9999 !important; }
+        button.main-btn {
+            background: var(--green); border: none; border-bottom: 6px solid var(--green-shadow);
+            border-radius: 20px; padding: 18px 0; font-size: 1.8rem; color: var(--white);
+            font-family: 'Poppins', sans-serif; font-weight: 900; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 2px; width: 100%; margin-top: 10px; transition: all 0.1s ease;
+        }
+        button.main-btn.btn-blue { background: var(--blue); border-bottom-color: var(--blue-shadow); }
+        button.main-btn:hover { filter: brightness(1.1); }
+        button.main-btn:active { transform: translateY(6px); border-bottom-width: 0px; margin-bottom: 6px; }
+
+        @media (max-width: 768px) {
+            #question-text { font-size: 2.2rem; }
+            .panel h1 { font-size: 2.8rem; }
+            button.main-btn { font-size: 1.5rem; padding: 15px 0; }
+            .ctrl-btn { padding: 12px 25px; font-size: 1.2rem; }
+            #bottom-controls { width: 95%; padding: 10px; bottom: 15px; }
+        }
+
+        /* --- MINIGAME OVERLAY STYLES --- */
+        #mg-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #a1c4fd 0%, #e0c3fc 100%);
+            z-index: 2000; display: none; flex-direction: column; align-items: center;
+            font-family: 'Poppins', sans-serif; user-select: none;
+        }
+        
+        .mg-bg-shapes { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: hidden; }
+        .mg-cloud { position: absolute; background: rgba(255, 255, 255, 0.3); border-radius: 100px; }
+        .mg-cloud::before, .mg-cloud::after { content: ''; position: absolute; background: rgba(255, 255, 255, 0.3); border-radius: 50%; }
+
+        .mg-header-pill {
+            background: #ffffff; border-radius: 20px; padding: 10px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            width: 90%; max-width: 600px; box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            position: absolute; top: 30px; left: 50%; transform: translateX(-50%); z-index: 20;
+        }
+        .mg-header-pill h2 { font-size: 24px; color: #4b4b4b; margin: 0; font-weight: 800; }
+        .mg-controls-group { display: flex; gap: 10px; }
+        
+        .mg-btn-icon {
+            width: 45px; height: 45px; border-radius: 12px; border: none; cursor: pointer;
+            display: flex; justify-content: center; align-items: center; transition: transform 0.1s;
+        }
+        .mg-btn-icon:active { transform: translateY(4px); box-shadow: 0 0 0 transparent !important; }
+        .mg-btn-icon svg { width: 24px; height: 24px; }
+        .mg-btn-gray { background: #e5e5e5; box-shadow: 0 4px 0 #cccccc; }
+        .mg-btn-red { background: #ff4b4b; box-shadow: 0 4px 0 #ea2b2b; }
+
+        #mg-tubes-container {
+            display: flex; gap: 15px; justify-content: center; align-items: flex-end;
+            margin-top: 150px; z-index: 10;
+        }
+        
+        .mg-tube {
+            width: 55px; height: 240px; border: 3px solid rgba(255, 255, 255, 0.9); border-top: none; border-radius: 0 0 30px 30px;
+            background: rgba(255, 255, 255, 0.2); box-shadow: inset 0 0 10px rgba(255,255,255,0.5), 0 5px 15px rgba(0,0,0,0.05);
+            display: flex; flex-direction: column-reverse; align-items: center; justify-content: flex-start;
+            padding-bottom: 5px; gap: 2px; cursor: pointer; position: relative;
+        }
+        
+        .mg-tube::after {
+            content: ''; position: absolute; left: 4px; top: 0; bottom: 10px; width: 10px;
+            background: linear-gradient(to right, rgba(255,255,255,0.8), transparent); border-radius: 10px; pointer-events: none;
+        }
+        .mg-tube.completed {
+            border-color: #FFD700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), inset 0 0 15px rgba(255,255,255,0.8);
+            animation: mgPulseGlow 1.5s infinite;
+        }
+        @keyframes mgPulseGlow { 0% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.4), inset 0 0 15px rgba(255,255,255,0.8); } 50% { box-shadow: 0 0 25px rgba(255, 215, 0, 0.8), inset 0 0 15px rgba(255,255,255,0.8); } 100% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.4), inset 0 0 15px rgba(255,255,255,0.8); } }
+        
+        .mg-ball {
+            width: 45px; height: 45px; border-radius: 50%; position: relative; z-index: 2;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.1); transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .mg-ball::after {
+            content: ''; position: absolute; top: 15%; left: 20%; width: 30%; height: 30%;
+            background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%); border-radius: 50%; transform: rotate(-45deg);
+        }
+        .mg-ball.selected { transform: translateY(-40px); }
+
+        .mg-overlay {
+            position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px); z-index: 25; display: none; justify-content: center; align-items: center;
+        }
+        .mg-overlay.active { display: flex; }
+        .mg-card { background: rgba(255, 255, 255, 0.95); border-radius: 30px; padding: 30px; text-align: center; box-shadow: 0 15px 30px rgba(0,0,0,0.15); max-width: 90%; width: 400px; }
+        .mg-btn { display: inline-block; font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 20px; padding: 15px 30px; border-radius: 20px; border: none; cursor: pointer; transition: transform 0.1s ease; margin-top: 15px;}
+        .mg-btn-green { background: #58CC02; color: white; box-shadow: 0 6px 0 #58A700; }
+        .mg-btn-green:active { transform: translateY(6px); box-shadow: 0 0 0 #58A700; }
+        
+        #mg-confetti-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 99999; }
+        
+        .mg-particle { position: absolute; pointer-events: none; background: white; border-radius: 50%; z-index: 25; animation: mgSparkle 0.6s ease-out forwards; }
+        @keyframes mgSparkle { 0% { transform: scale(0) translateY(0); opacity: 1; } 50% { opacity: 1; } 100% { transform: scale(1.5) translateY(-30px); opacity: 0; } }
+
+        @media (max-width: 600px) {
+            .mg-header-pill { width: 95%; padding: 10px; }
+            .mg-header-pill h2 { font-size: 18px; }
+            .mg-tube { width: 45px; height: 200px; }
+            .mg-ball { width: 36px; height: 36px; }
+            #mg-tubes-container { gap: 10px; }
+        }
     </style>
 </head>
 <body>
     <img src="../assets/logo-oodles-math.png" class="oodles-logo">
-    <!-- --- SCENERY BACKGROUND --- -->
-    <div class="scenery-layer">
-        <!-- Sun -->
-        <div class="sun"></div>
-        
-        <!-- Rainbow - Recalculated for exactly 50% thinner bands, matching semi-circle layout perfectly -->
-        <svg class="rainbow" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMax meet">
-            <!-- 
-                Original Widths were 35. New Widths are 18.
-                Center is (500, 500). Max radius is 500.
-            -->
-            <path d="M 0 500 A 500 500 0 0 1 1000 500" fill="none" stroke="#ef4444" stroke-width="18"/>
-            <path d="M 18 500 A 482 482 0 0 1 982 500" fill="none" stroke="#f97316" stroke-width="18"/>
-            <path d="M 36 500 A 464 464 0 0 1 964 500" fill="none" stroke="#eab308" stroke-width="18"/>
-            <path d="M 54 500 A 446 446 0 0 1 946 500" fill="none" stroke="#22c55e" stroke-width="18"/>
-            <path d="M 72 500 A 428 428 0 0 1 928 500" fill="none" stroke="#3b82f6" stroke-width="18"/>
-            <path d="M 90 500 A 410 410 0 0 1 910 500" fill="none" stroke="#a855f7" stroke-width="18"/>
-        </svg>
+    <!-- MAIN GAME LAYERS -->
+    <canvas id="gameCanvas"></canvas>
+    <canvas id="fxCanvas"></canvas> 
 
-        <!-- Clouds -->
-        <svg class="cloud cloud-1" viewBox="0 0 150 80"><path d="M 30 50 A 20 20 0 0 1 50 30 A 30 30 0 0 1 100 30 A 20 20 0 0 1 120 50 Q 140 50 140 65 Q 140 80 120 80 L 30 80 Q 10 80 10 65 Q 10 50 30 50 Z"/></svg>
-        <svg class="cloud cloud-2" viewBox="0 0 150 80"><path d="M 30 50 A 20 20 0 0 1 50 30 A 30 30 0 0 1 100 30 A 20 20 0 0 1 120 50 Q 140 50 140 65 Q 140 80 120 80 L 30 80 Q 10 80 10 65 Q 10 50 30 50 Z"/></svg>
-        <svg class="cloud cloud-3" viewBox="0 0 150 80"><path d="M 30 50 A 20 20 0 0 1 50 30 A 30 30 0 0 1 100 30 A 20 20 0 0 1 120 50 Q 140 50 140 65 Q 140 80 120 80 L 30 80 Q 10 80 10 65 Q 10 50 30 50 Z"/></svg>
-
-        <!-- Hills Overlay -->
-        <div class="hills">
-            <svg viewBox="0 0 1440 320" preserveAspectRatio="none" style="position:absolute; bottom:0; width:100%; height:100%;">
-                <!-- Back Hill -->
-                <path fill="#22c55e" d="M0,128L48,138.7C96,149,192,171,288,160C384,149,480,107,576,96C672,85,768,107,864,138.7C960,171,1056,213,1152,224C1248,235,1344,213,1392,202.7L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
-                <!-- Front Hill -->
-                <path fill="#16a34a" d="M0,256L60,245.3C120,235,240,213,360,208C480,203,600,213,720,229.3C840,245,960,267,1080,261.3C1200,256,1320,224,1380,208L1440,192L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"></path>
-            </svg>
-            
-            <!-- Trees & Flowers -->
-            <svg class="tree" style="left: 10%; bottom: 15%; width: 60px; height: 100px;" viewBox="0 0 100 150">
-                <rect x="40" y="80" width="20" height="70" fill="#78350f" rx="5"/>
-                <circle cx="50" cy="50" r="50" fill="#15803d"/>
-                <circle cx="30" cy="30" r="30" fill="#22c55e"/>
-                <circle cx="70" cy="40" r="35" fill="#16a34a"/>
-            </svg>
-            <svg class="tree" style="left: 85%; bottom: 25%; width: 50px; height: 80px;" viewBox="0 0 100 150">
-                <rect x="40" y="80" width="20" height="70" fill="#78350f" rx="5"/>
-                <polygon points="50,0 10,80 90,80" fill="#15803d"/>
-                <polygon points="50,20 20,90 80,90" fill="#16a34a"/>
-            </svg>
-            <svg class="flower" style="left: 25%; bottom: 10%; width: 30px; height: 40px;" viewBox="0 0 50 60">
-                <rect x="23" y="30" width="4" height="30" fill="#15803d"/>
-                <circle cx="25" cy="20" r="8" fill="#fde047"/>
-                <circle cx="10" cy="20" r="10" fill="#ec4899"/><circle cx="40" cy="20" r="10" fill="#ec4899"/>
-                <circle cx="25" cy="5" r="10" fill="#ec4899"/><circle cx="25" cy="35" r="10" fill="#ec4899"/>
-            </svg>
-            <svg class="flower" style="left: 70%; bottom: 5%; width: 40px; height: 50px; animation-delay: -2s;" viewBox="0 0 50 60">
-                <rect x="23" y="30" width="4" height="30" fill="#15803d"/>
-                <circle cx="25" cy="20" r="8" fill="#fde047"/>
-                <circle cx="10" cy="20" r="10" fill="#3b82f6"/><circle cx="40" cy="20" r="10" fill="#3b82f6"/>
-                <circle cx="25" cy="5" r="10" fill="#3b82f6"/><circle cx="25" cy="35" r="10" fill="#3b82f6"/>
-            </svg>
-        </div>
-    </div>
-
-    <!-- --- START SCREEN --- -->
-    <div id="start-screen" class="fixed inset-0 z-[100] bg-white/40 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center">
-        <div class="bg-white border-8 border-sky-400 p-8 sm:p-16 rounded-[3rem] shadow-2xl flex flex-col items-center max-w-2xl w-full">
-            <div class="w-40 h-48 sm:w-56 sm:h-64 mb-6">
-                <!-- Cute Frog SVG -->
-                <svg viewBox="0 0 200 220" width="100%" height="100%" style="overflow: visible;">
-                    <path d="M 35 60 Q 30 140 45 180" fill="none" stroke="#15803d" stroke-width="8" stroke-linecap="round"/>
-                    <ellipse cx="65" cy="190" rx="25" ry="14" fill="#22c55e"/>
-                    <ellipse cx="145" cy="190" rx="25" ry="14" fill="#22c55e"/>
-                    <ellipse cx="105" cy="140" rx="65" ry="55" fill="#22c55e"/>
-                    <ellipse cx="105" cy="165" rx="45" ry="28" fill="#e2e8f0"/>
-                    <circle cx="45" cy="150" r="14" fill="#22c55e"/>
-                    <circle cx="70" cy="85" r="32" fill="#22c55e"/>
-                    <circle cx="140" cy="85" r="32" fill="#22c55e"/>
-                    <ellipse cx="105" cy="110" rx="80" ry="48" fill="#22c55e"/>
-                    <circle cx="70" cy="85" r="18" fill="#0f172a"/>
-                    <circle cx="63" cy="78" r="8" fill="#ffffff"/>
-                    <circle cx="140" cy="85" r="18" fill="#0f172a"/>
-                    <circle cx="133" cy="78" r="8" fill="#ffffff"/>
-                    <circle cx="40" cy="120" r="16" fill="#fca5a5"/>
-                    <circle cx="170" cy="120" r="16" fill="#fca5a5"/>
-                    <path d="M 75 130 Q 105 150 135 130" stroke="#0f172a" stroke-width="6" fill="none" stroke-linecap="round"/>
-                </svg>
+    <div id="ui-layer">
+        <div id="top-bar">
+            <div class="top-bar-inner">
+                <div id="score-container" class="ui-box">
+                    <div id="score-display">
+                        <svg class="gem-icon" viewBox="0 0 24 24"><path fill="#00e5ff" d="M12 2L2 8l10 14L22 8Z"/><path fill="#00b8cc" d="M12 2v20l10-14Z"/><path fill="#e0ffff" d="M12 2L2 8h20Z"/></svg>
+                        <span id="score-text">0</span>
+                    </div>
+                    <div id="progress-display">Level 1/10</div>
+                </div>
+                
+                <div id="question-board" class="ui-box">
+                    <span id="question-text">1 + 1 = ?</span>
+                    <button id="speaker-btn" onclick="playTTS()" title="Read aloud">
+                        <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    </button>
+                </div>
             </div>
-            <h1 class="text-4xl sm:text-6xl font-black text-blue-500 mb-2 drop-shadow-md uppercase tracking-wide">Froggy Jump!</h1>
-            <p class="text-xl sm:text-3xl font-bold text-slate-500 mb-10">Learn Subtraction with Fun!</p>
-            <button id="start-game-btn" class="btn-base btn-primary py-5 px-10 sm:py-6 sm:px-16 text-3xl sm:text-5xl">
-                PLAY NOW!
+        </div>
+
+        <div id="bottom-controls">
+            <button onclick="handleReset()" class="ctrl-btn btn-yellow" id="btn-reset" title="Reset Hops">
+                <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+                RESET
             </button>
-        </div>
-    </div>
-
-    <!-- --- END SCREEN --- -->
-    <div id="end-screen" class="hidden fixed inset-0 z-[90] bg-white/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
-        <h1 class="text-6xl sm:text-8xl md:text-9xl font-black text-rose-500 mb-6 animate-bounce text-glow tracking-wider uppercase">AMAZING!</h1>
-        <p class="text-3xl sm:text-5xl text-slate-700 font-bold mb-8">You are a math superstar!</p>
-        <div class="flex items-center gap-4 text-5xl sm:text-7xl font-black text-blue-600 bg-blue-100 px-12 py-8 rounded-[3rem] mb-12 border-8 border-blue-300 shadow-2xl">
-            Score: <span id="final-score">0</span>
-        </div>
-        <button id="play-again-btn" class="btn-base btn-success py-6 px-12 sm:py-8 sm:px-20 text-3xl sm:text-5xl">
-            PLAY AGAIN!
-        </button>
-    </div>
-
-    <!-- --- MAIN GAME UI --- -->
-    <div class="game-card">
-        
-        <!-- Bonus Game Overlay -->
-        <div id="bonus-overlay" class="hidden bonus-overlay">
-            <div class="text-center z-10 px-4 w-full max-w-md">
-                <h2 class="text-5xl sm:text-7xl font-black text-yellow-300 mb-2 drop-shadow-md text-glow">BONUS!</h2>
-                <p class="text-xl sm:text-3xl text-blue-200 mb-6 font-bold uppercase tracking-widest">Catch the Fireflies!</p>
-                <div class="w-full bg-slate-800/70 rounded-full h-5 sm:h-8 overflow-hidden mb-3 border-4 border-slate-600">
-                    <div id="bonus-timer-bar" class="h-full bg-yellow-400 transition-all duration-75 shadow-[0_0_15px_#facc15]" style="width: 100%"></div>
-                </div>
-                <p class="font-black text-blue-100 text-xl sm:text-3xl">TIME: <span id="bonus-seconds">15.0</span>s</p>
-            </div>
-
-            <div id="bonus-area" class="absolute inset-0 overflow-hidden pointer-events-none">
-                <!-- Cute SVG Frog for Bonus -->
-                <div class="bonus-frog">
-                    <svg viewBox="0 0 200 220" width="100%" height="100%" style="overflow: visible;">
-                        <path d="M 35 60 Q 30 140 45 180" fill="none" stroke="#15803d" stroke-width="8" stroke-linecap="round"/>
-                        <ellipse cx="65" cy="190" rx="25" ry="14" fill="#22c55e"/>
-                        <ellipse cx="145" cy="190" rx="25" ry="14" fill="#22c55e"/>
-                        <ellipse cx="105" cy="140" rx="65" ry="55" fill="#22c55e"/>
-                        <ellipse cx="105" cy="165" rx="45" ry="28" fill="#e2e8f0"/>
-                        <circle cx="45" cy="150" r="14" fill="#22c55e"/>
-                        <circle cx="70" cy="85" r="32" fill="#22c55e"/>
-                        <circle cx="140" cy="85" r="32" fill="#22c55e"/>
-                        <ellipse cx="105" cy="110" rx="80" ry="48" fill="#22c55e"/>
-                        <circle cx="70" cy="85" r="18" fill="#0f172a"/>
-                        <circle cx="63" cy="78" r="8" fill="#ffffff"/>
-                        <circle cx="140" cy="85" r="18" fill="#0f172a"/>
-                        <circle cx="133" cy="78" r="8" fill="#ffffff"/>
-                        <circle cx="40" cy="120" r="16" fill="#fca5a5"/>
-                        <circle cx="170" cy="120" r="16" fill="#fca5a5"/>
-                        <!-- Interactive Mouth -->
-                        <path class="bonus-mouth-closed" d="M 75 130 Q 105 150 135 130" stroke="#0f172a" stroke-width="6" fill="none" stroke-linecap="round"/>
-                        <ellipse class="bonus-mouth-open" cx="105" cy="130" rx="25" ry="18" fill="#991b1b" visibility="hidden"/>
-                    </svg>
-                </div>
-                <svg class="bonus-tongue" id="bonus-tongue-svg">
-                    <line id="tongue-line" x1="0" y1="0" x2="0" y2="0" stroke="#f472b6" stroke-width="12" stroke-linecap="round" visibility="hidden" />
-                    <circle id="tongue-tip" cx="0" cy="0" r="10" fill="#f472b6" visibility="hidden" />
-                </svg>
-            </div>
-        </div>
-
-        <!-- Header -->
-        <div class="text-center mb-6 sm:mb-8 mt-2">
-            <h1 class="text-4xl sm:text-5xl md:text-6xl font-black text-rose-500 mb-2 drop-shadow-sm uppercase">Jump & Subtract!</h1>
-            <p class="text-slate-500 text-xl sm:text-3xl font-bold">Help the frog jump backward!</p>
-        </div>
-
-        <!-- Problem Display & Audio Button -->
-        <div class="flex items-center justify-center gap-3 sm:gap-6 md:gap-8 text-5xl sm:text-7xl md:text-8xl font-black text-slate-800 mb-8 select-none flex-wrap">
-            <span id="num1" class="text-blue-500 drop-shadow-md">0</span>
-            <span class="text-slate-300">-</span>
-            <span id="num2" class="text-amber-500 drop-shadow-md">0</span>
-            <span class="text-slate-300">=</span>
-            <div class="relative">
-                <div id="answer-display" class="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 flex items-center justify-center border-[6px] sm:border-[8px] border-dashed border-slate-300 rounded-[2rem] bg-slate-50 text-slate-400 transition-all duration-300 shadow-inner">?</div>
-            </div>
-            <!-- Speaker Icon for Text to Speech -->
-            <button id="speak-btn" class="btn-base btn-speaker ml-2" aria-label="Read Question Aloud">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 sm:w-10 sm:h-10">
-                    <path d="M13.5 4.06c0-1.336-1.616-2.005-2.56-1.06l-4.5 4.5H4.508c-1.141 0-2.318.664-2.66 1.905A9.76 9.76 0 0 0 1.5 12c0 .898.121 1.768.35 2.595.341 1.24 1.518 1.905 2.659 1.905h1.93l4.5 4.5c.945.945 2.561.276 2.561-1.06V4.06ZM18.584 5.106a.75.75 0 0 1 1.06 0c3.808 3.807 3.808 9.98 0 13.788a.75.75 0 0 1-1.06-1.06 8.25 8.25 0 0 0 0-11.668.75.75 0 0 1 0-1.06Z" />
-                    <path d="M15.932 7.757a.75.75 0 0 1 1.061 0 6 6 0 0 1 0 8.486.75.75 0 0 1-1.06-1.061 4.5 4.5 0 0 0 0-6.364.75.75 0 0 1 0-1.06Z" />
-                </svg>
+            <button onclick="handleCheck()" class="ctrl-btn btn-green" id="btn-check" title="Check Answer">
+                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                CHECK
+            </button>
+            <button onclick="handleNext()" class="ctrl-btn btn-green-next" id="btn-next" style="display:none;" title="Next Question">
+                NEXT <svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
             </button>
         </div>
 
-        <!-- Number Line -->
-        <div class="number-line-container" id="number-line">
-            <div class="line"></div>
-            <div id="ticks-container"></div>
-            
-            <!-- Character -->
-            <div id="character" class="character">
-                <svg viewBox="0 0 200 220" width="100%" height="100%" style="overflow: visible;">
-                    <path d="M 35 60 Q 30 140 45 180" fill="none" stroke="#15803d" stroke-width="8" stroke-linecap="round"/>
-                    <ellipse cx="65" cy="190" rx="25" ry="14" fill="#22c55e"/>
-                    <ellipse cx="145" cy="190" rx="25" ry="14" fill="#22c55e"/>
-                    <ellipse cx="105" cy="140" rx="65" ry="55" fill="#22c55e"/>
-                    <ellipse cx="105" cy="165" rx="45" ry="28" fill="#e2e8f0"/>
-                    <circle cx="45" cy="150" r="14" fill="#22c55e"/>
-                    <circle cx="70" cy="85" r="32" fill="#22c55e"/>
-                    <circle cx="140" cy="85" r="32" fill="#22c55e"/>
-                    <ellipse cx="105" cy="110" rx="80" ry="48" fill="#22c55e"/>
-                    <circle cx="70" cy="85" r="18" fill="#0f172a"/>
-                    <circle cx="63" cy="78" r="8" fill="#ffffff"/>
-                    <circle cx="140" cy="85" r="18" fill="#0f172a"/>
-                    <circle cx="133" cy="78" r="8" fill="#ffffff"/>
-                    <circle cx="40" cy="120" r="16" fill="#fca5a5"/>
-                    <circle cx="170" cy="120" r="16" fill="#fca5a5"/>
-                    <path class="frog-mouth-closed" d="M 75 130 Q 105 150 135 130" stroke="#0f172a" stroke-width="6" fill="none" stroke-linecap="round"/>
-                </svg>
-            </div>
-            <svg id="arc-svg" class="absolute inset-0 w-full h-full pointer-events-none"></svg>
+        <div id="start-panel" class="panel">
+            <svg class="title-icon" viewBox="0 0 100 100">
+                <circle cx="50" cy="55" r="40" fill="#a1e535"/>
+                <circle cx="30" cy="25" r="15" fill="#a1e535"/>
+                <circle cx="70" cy="25" r="15" fill="#a1e535"/>
+                <circle cx="30" cy="25" r="8" fill="#fff"/>
+                <circle cx="70" cy="25" r="8" fill="#fff"/>
+                <circle cx="30" cy="25" r="4" fill="#000"/>
+                <circle cx="70" cy="25" r="4" fill="#000"/>
+                <path d="M 35 60 Q 50 75 65 60" stroke="#4b4b4b" stroke-width="6" fill="none" stroke-linecap="round"/>
+            </svg>
+            <h1 class="title-start">Number Line</h1>
+            <p>Tap the leaf to hop to it<br>and solve the math!</p>
+            <button class="main-btn" onclick="startGame()">START GAME</button>
         </div>
 
-        <!-- Controls -->
-        <div class="flex flex-col items-center gap-5 sm:gap-8 mt-12">
-            <div id="action-buttons" class="flex gap-4 sm:gap-6 w-full max-w-3xl">
-                <button id="reset-jumps-btn" class="btn-base btn-secondary flex-1 py-4 sm:py-6 text-xl sm:text-3xl">
-                    START OVER
+        <div id="win-panel" class="panel hidden">
+            <svg class="title-icon" viewBox="0 0 24 24" fill="#ffc800"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            <h1 id="win-title" class="title-win">GREAT JOB!</h1>
+            <p>You completed all the hops!</p>
+            <h2 style="color:var(--text-dark); font-size:1.8rem; margin:10px 0 25px;">Total Score: <br><span id="win-score" class="highlight">10</span></h2>
+            <button class="main-btn btn-blue" onclick="resetMainGame()">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <!-- MINIGAME OVERLAY PENALTY -->
+    <div id="mg-layer">
+        <div class="mg-bg-shapes" id="mg-bg-shapes"></div>
+        <div class="mg-header-pill">
+            <h2>Bonus: Sort the Colors!</h2>
+            <div class="mg-controls-group">
+                <button class="mg-btn-icon mg-btn-gray" onclick="mg_undoMove()">
+                    <svg viewBox="0 0 24 24"><path fill="#1cb0f6" d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C20.48 10.3 16.89 8 12.5 8z"/></svg>
                 </button>
-                <button id="check-btn" class="btn-base btn-primary flex-[2] py-4 sm:py-6 text-2xl sm:text-4xl">
-                    CHECK ANSWER
+                <button class="mg-btn-icon mg-btn-red" onclick="mg_restartLevel()">
+                    <svg viewBox="0 0 24 24"><path fill="#ffffff" d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
                 </button>
             </div>
-            
-            <button id="next-btn" class="btn-base btn-success hidden w-full max-w-3xl py-4 sm:py-6 text-2xl sm:text-4xl">
-                NEXT PROBLEM!
-            </button>
-            
-            <div id="feedback" class="h-12 sm:h-16 text-3xl sm:text-5xl font-black transition-all duration-300 opacity-0 transform"></div>
         </div>
-
-        <!-- Progress Footer -->
-        <div class="mt-6 sm:mt-10 pt-6 sm:pt-8 border-t-4 border-slate-100 flex justify-between items-center text-slate-500 font-bold uppercase tracking-widest text-base sm:text-2xl">
-            <div class="bg-blue-50 px-6 py-3 sm:px-8 sm:py-4 rounded-3xl border-4 border-blue-200">Score: <span id="score" class="text-blue-600 text-2xl sm:text-4xl font-black">0</span></div>
-            <div class="bg-emerald-50 px-6 py-3 sm:px-8 sm:py-4 rounded-3xl border-4 border-emerald-200"><span id="solved-count" class="text-emerald-500 text-2xl sm:text-4xl font-black">1</span>/10</div>
+        
+        <div id="mg-tubes-container"></div>
+        
+        <div id="mg-level-complete-overlay" class="mg-overlay">
+            <div class="mg-card">
+                <h1 style="color: #58CC02;">Excellent!</h1>
+                <p>You sorted the colors.<br>Let's go back to Math!</p>
+                <button class="mg-btn mg-btn-green" onclick="closeMinigame()">RETURN TO MATH</button>
+            </div>
         </div>
+        <canvas id="mg-confetti-canvas"></canvas>
     </div>
 
-    <script>
-        // --- Audio Context & Synth ---
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        let audioUnlocked = false;
+<script>
+    // =========================================================================
+    // MAIN GAME SCRIPT
+    // =========================================================================
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d', { alpha: false });
+    const fxCanvas = document.getElementById('fxCanvas');
+    const fxCtx = fxCanvas.getContext('2d');
+    
+    let canvasWidth, canvasHeight;
+    let leafSpacing, startX, leafWidth;
+    let WATER_LEVEL;
+    
+    let gameState = 'start'; 
+    let diamonds = 0; 
+    let questionsAnswered = 0;
+    let maxQuestions = 10;
+    let usedQuestions = new Set();
+    
+    let frog = {
+        leafIndex: 1, 
+        startLeafIndex: 1, 
+        x: -1000, y: 0,
+        vx: 0, vy: 0,
+        hopProgress: 0,
+        isHopping: false,
+        state: 'idle', 
+        facing: 1,
+        targetIndex: 1,
+        currentHopData: null
+    };
 
-        function unlockAudio() {
-            if (!audioUnlocked) {
-                audioCtx.resume();
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                gain.gain.value = 0;
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.01);
-                audioUnlocked = true;
-            }
+    let jumpQueue = [];      
+    let completedHops = [];  
+    
+    let clouds = [];
+    let bgTrees = [];
+    let mountains = [];
+    let decorFishes = [];
+    let standingLotuses = [];
+    let floatingLeaves = [];
+    let platforms = []; 
+    let particles = [];
+    let confetti = [];
+    
+    let backgroundTime = 0;
+    let currentQuestion = null;
+
+    // --- AUDIO SYSTEM ---
+    let audioCtx = null;
+    function initAudio() { 
+        if(!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
-
-        document.body.addEventListener('click', unlockAudio, { once: true });
-        document.body.addEventListener('touchstart', unlockAudio, { once: true });
-
-        function playSound(type) {
-            if (!audioUnlocked || audioCtx.state === 'suspended') return;
-            const now = audioCtx.currentTime;
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            
-            if (type === 'jump') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(400, now);
-                osc.frequency.exponentialRampToValueAtTime(700, now + 0.15);
-                gain.gain.setValueAtTime(0.3, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-                osc.start(now);
-                osc.stop(now + 0.15);
-            } else if (type === 'correct') {
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(440, now);
-                osc.frequency.setValueAtTime(554.37, now + 0.1);
-                osc.frequency.setValueAtTime(659.25, now + 0.2);
-                osc.frequency.setValueAtTime(880, now + 0.3);
-                gain.gain.setValueAtTime(0.15, now);
-                gain.gain.linearRampToValueAtTime(0, now + 0.5);
-                osc.start(now);
-                osc.stop(now + 0.5);
-            } else if (type === 'wrong') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(250, now);
-                osc.frequency.exponentialRampToValueAtTime(100, now + 0.4);
-                gain.gain.setValueAtTime(0.2, now);
-                gain.gain.linearRampToValueAtTime(0, now + 0.4);
-                osc.start(now);
-                osc.stop(now + 0.4);
-            } else if (type === 'catch') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(900, now);
-                osc.frequency.exponentialRampToValueAtTime(1600, now + 0.1);
-                gain.gain.setValueAtTime(0.2, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                osc.start(now);
-                osc.stop(now + 0.1);
-            } else if (type === 'firework') {
-                const bufferSize = audioCtx.sampleRate * 0.5;
-                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-                const noise = audioCtx.createBufferSource();
-                noise.buffer = buffer;
-                const filter = audioCtx.createBiquadFilter();
-                filter.type = 'lowpass';
-                filter.frequency.value = 1200;
-                const noiseGain = audioCtx.createGain();
-                noiseGain.gain.setValueAtTime(0.5, now);
-                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-                noise.connect(filter);
-                filter.connect(noiseGain);
-                noiseGain.connect(audioCtx.destination);
-                noise.start(now);
-            }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume(); 
         }
+    }
+    
+    function playTone(freq, type, duration, vol=0.1) {
+        if(!audioCtx) return;
+        try {
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        } catch(e) {}
+    }
 
-        // --- Game Logic Variables ---
-        let problemPool = [];
-        let currentProblemIndex = 0;
-        let currentNum1 = 0;
-        let currentNum2 = 0;
-        let score = 0;
-        let currentPos = 0;
-        let isInitialJumping = false;
-        let isAnimating = false;
-        let solvedCount = 0;
-        let totalRounds = 10; 
-        let isBonusActive = false;
-        let bonusTimer = null;
-        let flyInterval = null;
-        let fireworkInterval = null;
-        const maxNum = 10;
+    const sfx = {
+        hop: () => { playTone(400, 'sine', 0.1, 0.05); setTimeout(() => playTone(600, 'sine', 0.15, 0.05), 50); },
+        correct: () => { playTone(523.25, 'sine', 0.1, 0.1); setTimeout(() => playTone(659.25, 'sine', 0.1, 0.1), 100); setTimeout(() => playTone(783.99, 'sine', 0.3, 0.1), 200); },
+        wrong: () => { playTone(250, 'square', 0.2, 0.08); setTimeout(() => playTone(150, 'square', 0.3, 0.1), 150); },
+        reset: () => { playTone(300, 'triangle', 0.1, 0.1); setTimeout(() => playTone(250, 'triangle', 0.2, 0.1), 100); },
+        win: () => { [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((freq, i) => setTimeout(() => playTone(freq, 'square', 0.4, 0.08), i * 120)); }
+    };
+
+    function resize() {
+        canvasWidth = window.innerWidth;
+        canvasHeight = window.innerHeight;
+        canvas.width = canvasWidth; canvas.height = canvasHeight;
+        fxCanvas.width = canvasWidth; fxCanvas.height = canvasHeight;
         
-        // DOM Elements
-        const character = document.getElementById('character');
-        const num1El = document.getElementById('num1');
-        const num2El = document.getElementById('num2');
-        const answerDisplay = document.getElementById('answer-display');
-        const checkBtn = document.getElementById('check-btn');
-        const nextBtn = document.getElementById('next-btn');
-        const resetBtn = document.getElementById('reset-jumps-btn');
-        const speakBtn = document.getElementById('speak-btn');
-        const feedback = document.getElementById('feedback');
-        const scoreEl = document.getElementById('score');
-        const solvedCountEl = document.getElementById('solved-count');
-        const ticksContainer = document.getElementById('ticks-container');
-        const arcSvg = document.getElementById('arc-svg');
-        const bonusOverlay = document.getElementById('bonus-overlay');
-        const bonusBar = document.getElementById('bonus-timer-bar');
-        const bonusSeconds = document.getElementById('bonus-seconds');
-        const tongueLine = document.getElementById('tongue-line');
-        const tongueTip = document.getElementById('tongue-tip');
-        const mouthClosed = document.querySelector('.bonus-mouth-closed');
-        const mouthOpen = document.querySelector('.bonus-mouth-open');
+        WATER_LEVEL = canvasHeight * 0.7;
 
-        // Generate 10 unique non-repeating problems, ensuring answer > 0
-        function generateProblemPool() {
-            const allPossibleProblems = [];
-            for (let a = 3; a <= 10; a++) {
-                for (let b = 1; b < a; b++) { // Condition b < a guarantees non-zero answer
-                    allPossibleProblems.push({ num1: a, num2: b });
-                }
-            }
-            // Shuffle array using Fisher-Yates
-            for (let i = allPossibleProblems.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [allPossibleProblems[i], allPossibleProblems[j]] = [allPossibleProblems[j], allPossibleProblems[i]];
-            }
-            // Take the first 10 for this game session
-            problemPool = allPossibleProblems.slice(0, 10);
+        let padding = canvasWidth * 0.05; 
+        if (padding < 20) padding = 20;
+        let availableWidth = canvasWidth - padding * 2;
+        leafSpacing = availableWidth / 9; 
+        startX = padding;
+        leafWidth = Math.min(leafSpacing * 0.7, 80); 
+
+        platforms = [];
+        let lineY = WATER_LEVEL + 20; 
+        for(let i = 1; i <= 10; i++) {
+            platforms.push({ num: i, x: startX + (i - 1) * leafSpacing, y: lineY, w: leafWidth });
         }
 
-        // Text to Speech
-        speakBtn.addEventListener('click', () => {
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const text = `What is ${currentNum1} minus ${currentNum2}?`;
-                const msg = new SpeechSynthesisUtterance(text);
-                msg.rate = 0.85; 
-                msg.pitch = 1.2; 
-                msg.lang = 'en-US';
-                window.speechSynthesis.speak(msg);
-            }
-        });
-
-        // Start Screen
-        document.getElementById('start-game-btn').addEventListener('click', () => {
-            unlockAudio();
-            document.getElementById('start-screen').classList.add('hidden');
-            playSound('correct');
-            initNumberLine();
-            
-            generateProblemPool();
-            currentProblemIndex = 0;
-            loadNextProblem();
-        });
-
-        // End Screen
-        document.getElementById('play-again-btn').addEventListener('click', () => {
-            document.getElementById('end-screen').classList.add('hidden');
-            clearInterval(fireworkInterval);
-            document.querySelectorAll('.confetti-piece, .firework-particle').forEach(e => e.remove());
-            
-            score = 0;
-            solvedCount = 0;
-            scoreEl.innerText = score;
-            solvedCountEl.innerText = 1;
-            
-            generateProblemPool();
-            currentProblemIndex = 0;
-            loadNextProblem();
-        });
-
-        function initNumberLine() {
-            ticksContainer.innerHTML = '';
-            for (let i = 0; i <= maxNum; i++) {
-                const percentage = 5 + (i * 9);
-                const zone = document.createElement('div');
-                zone.className = 'tick-zone';
-                zone.style.left = `${percentage}%`;
-                zone.onclick = () => handleTickClick(i);
-                
-                const tick = document.createElement('div');
-                tick.className = 'tick';
-                
-                const label = document.createElement('div');
-                label.className = 'tick-label';
-                label.innerText = i;
-                
-                zone.appendChild(tick);
-                zone.appendChild(label);
-                ticksContainer.appendChild(zone);
-            }
+        if(!frog.isHopping && frog.state === 'idle' && platforms[frog.leafIndex - 1]) {
+            let p = platforms[frog.leafIndex - 1];
+            frog.x = p.x; frog.y = p.y;
         }
+        generateEnvironment();
+    }
+    window.addEventListener('resize', resize);
 
-        function getPositionForValue(val) { return 5 + (val * 9); }
+    function generateEnvironment() {
+        clouds = []; bgTrees = []; decorFishes = []; standingLotuses = []; floatingLeaves = []; mountains = [];
+        
+        for(let i=0; i<8; i++) { clouds.push({ x: Math.random() * canvasWidth, y: Math.random() * (WATER_LEVEL * 0.5), size: 30 + Math.random() * 50, speed: Math.random() * 0.2 + 0.1 }); }
+        for(let i=0; i<8; i++) { bgTrees.push({ x: Math.random() * canvasWidth, y: WATER_LEVEL - (10 + Math.random() * 20), scale: 0.4 + Math.random() * 0.5 }); }
+        
+        mountains.push({ x: canvasWidth * 0.2, h: 250, w: 500, c1: "#8cd136", c2: "#5cb823" });
+        mountains.push({ x: canvasWidth * 0.8, h: 220, w: 450, c1: "#a1e535", c2: "#7ab823" });
+        mountains.push({ x: canvasWidth * 0.5, h: 300, w: 600, c1: "#b5ea54", c2: "#499b2e" });
 
-        function createRipple(pos) {
-            const ripple = document.createElement('div');
-            ripple.className = 'ripple';
-            const left = getPositionForValue(pos);
-            const container = document.getElementById('number-line');
-            ripple.style.left = `calc(${left}% - 10px)`;
-            ripple.style.top = '50%';
-            ripple.style.width = '20px';
-            ripple.style.height = '20px';
-            container.appendChild(ripple);
-            setTimeout(() => ripple.remove(), 600);
+        let fishColors = [ {body: '#ff9900', stripe: '#ffd633'}, {body: '#00b4d8', stripe: '#74c69d'}, {body: '#ce82ff', stripe: '#ffb2d1'}, {body: '#ff4b4b', stripe: '#ffc800'} ];
+        for(let i=0; i<15; i++) {
+            decorFishes.push({ x: Math.random() * canvasWidth, y: WATER_LEVEL + 40 + Math.random() * (canvasHeight - WATER_LEVEL - 60), speed: 0.5 + Math.random(), dir: Math.random() > 0.5 ? 1 : -1, scale: 0.4 + Math.random() * 0.3, bobOffset: Math.random() * Math.PI * 2, colorObj: fishColors[Math.floor(Math.random() * fishColors.length)] });
         }
-
-        function loadNextProblem() {
-            if (currentProblemIndex >= problemPool.length) return;
-
-            const prob = problemPool[currentProblemIndex];
-            currentNum1 = prob.num1;
-            currentNum2 = prob.num2;
-            
-            num1El.innerText = currentNum1;
-            num2El.innerText = currentNum2;
-            solvedCountEl.innerText = Math.min(solvedCount + 1, totalRounds);
-            
-            resetAnswerDisplay();
-            
-            currentPos = 0;
-            isInitialJumping = true;
-            feedback.style.opacity = '0';
-            
-            document.getElementById('action-buttons').classList.remove('hidden');
-            nextBtn.classList.add('hidden');
-            bonusOverlay.classList.add('hidden');
-            
-            clearArcs();
-            moveCharacter(0, false);
-            
-            setTimeout(() => { showInitialJump(); }, 600);
+        for(let i=0; i<10; i++) {
+            standingLotuses.push({ x: Math.random()*canvasWidth, y: WATER_LEVEL - 10 + Math.random() * 10, height: 40 + Math.random() * 30, scale: 0.5 + Math.random() * 0.3, swayOffset: Math.random() * Math.PI * 2 });
+            floatingLeaves.push({ x: Math.random()*canvasWidth, y: WATER_LEVEL + Math.random() * 20, scale: 0.3 + Math.random() * 0.4, rotation: Math.random() * Math.PI * 2 });
         }
+    }
 
-        function resetAnswerDisplay() {
-            answerDisplay.innerText = '?';
-            answerDisplay.className = "w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 flex items-center justify-center border-[6px] sm:border-[8px] border-dashed border-slate-300 rounded-[2rem] bg-slate-50 text-slate-400 transition-all duration-300 shadow-inner";
-        }
-
-        function moveCharacter(value, animate = true) {
-            const pos = getPositionForValue(value);
-            const charWidth = character.offsetWidth || 90;
-            character.style.left = `calc(${pos}% - ${charWidth / 2}px)`;
-            
-            if (animate) {
-                character.classList.remove('jump-animation');
-                void character.offsetWidth; // trigger reflow
-                character.classList.add('jump-animation');
-                playSound('jump');
-                setTimeout(() => createRipple(value), 350);
-            }
-            currentPos = value;
-            
-            if (!isInitialJumping) updateAnswerDisplay();
-        }
-
-        function updateAnswerDisplay() {
-            answerDisplay.innerText = currentPos;
-            answerDisplay.classList.remove('border-dashed', 'text-slate-400', 'border-slate-300', 'bg-slate-50');
-            answerDisplay.classList.add('border-solid', 'text-rose-500', 'border-rose-400', 'bg-rose-50');
-        }
-
-        function handleTickClick(targetVal) {
-            if (!nextBtn.classList.contains('hidden') || isBonusActive || isAnimating) return;
-            isInitialJumping = false;
-            isAnimating = true;
-
-            if (targetVal < currentPos) {
-                let jumpCount = 0;
-                const stepBack = () => {
-                    if (currentPos > targetVal) {
-                        jumpCount++;
-                        // ONLY ADD ARC AND NUMBER FOR BACKWARD JUMPS
-                        drawJumpArc(currentPos, currentPos - 1, '#f43f5e', `-${jumpCount}`);
-                        moveCharacter(currentPos - 1);
-                        setTimeout(stepBack, 450);
-                    } else {
-                        isAnimating = false;
-                    }
-                };
-                stepBack();
-            } else if (targetVal > currentPos) {
-                const stepForward = () => {
-                    if (currentPos < targetVal) {
-                        // NO ARC, NO NUMBER FOR FORWARD JUMPS
-                        moveCharacter(currentPos + 1);
-                        setTimeout(stepForward, 450);
-                    } else {
-                        isAnimating = false;
-                    }
-                };
-                stepForward();
+    function generateMathQuestion() {
+        let op = (questionsAnswered % 2 === 0) ? '+' : '-';
+        let num1, num2, ans, qString;
+        let attempts = 0;
+        do {
+            if (op === '+') {
+                ans = Math.floor(Math.random() * 9) + 2; 
+                num1 = Math.floor(Math.random() * (ans - 1)) + 1; 
+                num2 = ans - num1;
             } else {
-                isAnimating = false;
+                num1 = Math.floor(Math.random() * 9) + 2; 
+                num2 = Math.floor(Math.random() * (num1 - 1)) + 1; 
+                ans = num1 - num2; 
+            }
+            qString = `${num1} ${op} ${num2}`;
+            attempts++;
+            if (attempts > 50) break;
+        } while (usedQuestions.has(qString));
+
+        usedQuestions.add(qString);
+        currentQuestion = {
+            num1: num1, op: op, num2: num2, ans: ans, failed: false,
+            text: `${num1} ${op} ${num2} = ?`,
+            spokenText: `${num1} ${op === '+' ? 'plus' : 'minus'} ${num2} equals what?`
+        };
+        
+        document.getElementById('question-text').innerText = currentQuestion.text;
+        document.getElementById('progress-display').innerText = `Level ${questionsAnswered + 1}/10`;
+
+        jumpQueue = [];
+        completedHops = [];
+        resetFrogToStart(num1, op === '+');
+    }
+
+    function resetFrogToStart(num1, isAdd) {
+        frog.startLeafIndex = num1;
+        frog.leafIndex = num1;
+        frog.targetIndex = num1;
+        frog.state = 'idle';
+        
+        let startLeaf = platforms[num1 - 1];
+        if (startLeaf) {
+            frog.x = startLeaf.x; frog.y = startLeaf.y;
+            frog.facing = isAdd ? 1 : -1;
+            createSparkles(frog.x, frog.y, 15, '#ffffff');
+        }
+    }
+
+    function playTTS() {
+        if (!currentQuestion) return;
+        initAudio();
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            let msg = new SpeechSynthesisUtterance(currentQuestion.spokenText);
+            msg.lang = 'en-US'; msg.rate = 0.9; msg.pitch = 1.2;
+            window.speechSynthesis.speak(msg);
+        }
+    }
+
+    function initLevel() {
+        initAudio();
+        diamonds = 0; questionsAnswered = 0; usedQuestions.clear();
+        document.getElementById('score-text').innerText = `0`;
+        particles = []; confetti = []; jumpQueue = []; completedHops = [];
+        resize(); 
+        setTimeout(() => { generateMathQuestion(); }, 500);
+    }
+
+    canvas.addEventListener('mousedown', handleCanvasClick);
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleCanvasClick(e.touches[0] || e); }, {passive: false});
+
+    function handleCanvasClick(e) {
+        initAudio();
+        if(gameState !== 'playing' || frog.isHopping || frog.state !== 'idle' || jumpQueue.length > 0) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        for(let p of platforms) {
+            let leafCenterX = p.x + p.w / 2;
+            let leafCenterY = p.y;
+            // Tighter bound prevents overlapping click bugs
+            if(Math.abs(x - leafCenterX) < p.w * 0.7 && Math.abs(y - leafCenterY) < 80) {
+                planJumpToLeaf(p.num);
+                break;
             }
         }
+    }
 
-        function drawJumpArc(start, end, color = '#f43f5e', labelText = null) {
-            const containerRect = arcSvg.getBoundingClientRect();
-            const startX = (getPositionForValue(start) / 100) * containerRect.width;
-            const endX = (getPositionForValue(end) / 100) * containerRect.width;
-            const centerY = containerRect.height / 2;
-            const dist = Math.abs(end - start);
-            const height = Math.min(containerRect.height * 0.4, dist * (containerRect.height / 5));
+    function planJumpToLeaf(targetNum) {
+        if (frog.leafIndex === targetNum) return; 
+        
+        let step = targetNum > frog.leafIndex ? 1 : -1;
+        let curr = frog.leafIndex;
+        jumpQueue = [];
+        
+        while (curr !== targetNum) {
+            curr += step;
+            jumpQueue.push(curr);
+        }
+        
+        startNextHop();
+    }
 
-            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            const peakY = centerY - height * 2.5;
-            const d = `M ${startX} ${centerY} Q ${(startX + endX) / 2} ${peakY} ${endX} ${centerY}`;
-            
-            path.setAttribute("d", d);
-            path.setAttribute("class", "arc-path");
-            path.style.stroke = color;
-            path.style.animation = "drawArc 0.5s forwards";
-            
-            arcSvg.appendChild(path);
+    function startNextHop() {
+        if (jumpQueue.length === 0) return;
+        let nextLeaf = jumpQueue.shift();
+        
+        let stepCount = completedHops.length + 1;
+        
+        frog.targetIndex = nextLeaf;
+        frog.facing = nextLeaf > frog.leafIndex ? 1 : -1;
+        frog.isHopping = true;
+        frog.hopProgress = 0;
+        
+        frog.currentHopData = { from: frog.leafIndex, to: nextLeaf, stepNum: stepCount };
+        sfx.hop();
+    }
 
-            if (labelText) {
-                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                text.setAttribute("x", (startX + endX) / 2);
-                const truePeakY = 0.25 * centerY + 0.5 * peakY + 0.25 * centerY;
-                text.setAttribute("y", truePeakY - 15);
-                text.setAttribute("text-anchor", "middle");
-                text.setAttribute("font-weight", "900");
-                text.setAttribute("font-size", window.innerWidth > 640 ? "24px" : "18px");
-                text.setAttribute("fill", color);
-                text.setAttribute("class", "jump-label text-glow");
-                text.textContent = labelText;
-                
-                text.style.opacity = "0";
-                text.style.animation = "fadeUpIn 0.3s forwards 0.1s";
-                
-                arcSvg.appendChild(text);
+    function handleReset() {
+        initAudio();
+        if(gameState !== 'playing' || frog.isHopping || frog.state !== 'idle') return;
+        if(completedHops.length === 0 && jumpQueue.length === 0) return; 
+
+        sfx.reset();
+        jumpQueue = [];
+        completedHops = [];
+        frog.leafIndex = frog.startLeafIndex;
+        let p = platforms[frog.startLeafIndex - 1];
+        frog.x = p.x; frog.y = p.y;
+        createSparkles(frog.x, frog.y, 10, '#ffc800');
+    }
+
+    function handleCheck() {
+        initAudio();
+        if(gameState !== 'playing' || frog.isHopping || frog.state !== 'idle' || jumpQueue.length > 0) return;
+
+        if (frog.leafIndex === currentQuestion.ans) {
+            // Correct
+            sfx.correct();
+            if(!currentQuestion.failed) {
+                diamonds++;
+                document.getElementById('score-text').innerText = `${diamonds}`;
+                createSparkles(frog.x, frog.y, 25, '#ffc800');
             }
+            
+            // Show full math equation
+            currentQuestion.text = `${currentQuestion.num1} ${currentQuestion.op} ${currentQuestion.num2} = ${currentQuestion.ans}`;
+            currentQuestion.spokenText = `${currentQuestion.num1} ${currentQuestion.op === '+' ? 'plus' : 'minus'} ${currentQuestion.num2} equals ${currentQuestion.ans}`;
+            document.getElementById('question-text').innerText = currentQuestion.text;
+            
+            // Switch UI for Next
+            document.getElementById('btn-check').style.display = 'none';
+            document.getElementById('btn-reset').style.display = 'none';
+            document.getElementById('btn-next').style.display = 'flex';
+        } else {
+            // Wrong
+            sfx.wrong();
+            currentQuestion.failed = true;
+            createSparkles(frog.x, frog.y, 20, '#ff4b4b');
+            
+            // Reset to start of question to retry
+            jumpQueue = [];
+            completedHops = [];
+            frog.leafIndex = frog.startLeafIndex;
+            frog.targetIndex = frog.startLeafIndex;
+            let p = platforms[frog.startLeafIndex - 1];
+            frog.x = p.x;
+            frog.y = p.y;
+            frog.state = 'idle';
+            frog.isHopping = false;
         }
+    }
 
-        function clearArcs() { arcSvg.innerHTML = ''; }
-
-        function showInitialJump() {
-            isAnimating = true;
-            const step = () => {
-                if (currentPos < currentNum1) {
-                    // SILENT MOVE - NO ARCS FOR INITIAL JUMP
-                    moveCharacter(currentPos + 1);
-                    setTimeout(step, 450);
-                } else {
-                    isInitialJumping = false;
-                    isAnimating = false;
-                    resetAnswerDisplay();
-                }
-            };
-            step();
+    function handleNext() {
+        initAudio();
+        questionsAnswered++;
+        document.getElementById('btn-check').style.display = 'flex';
+        document.getElementById('btn-reset').style.display = 'flex';
+        document.getElementById('btn-next').style.display = 'none';
+        
+        if(questionsAnswered >= maxQuestions) {
+            gameState = 'win';
+            document.getElementById('top-bar').style.display = 'none';
+            document.getElementById('bottom-controls').style.display = 'none';
+            document.getElementById('win-score').innerText = diamonds;
+            document.getElementById('win-panel').classList.remove('hidden');
+            sfx.win();
+            for(let i=0; i<5; i++) {
+                setTimeout(() => { createConfettiBurst(canvasWidth*0.2 + Math.random()*canvasWidth*0.6, canvasHeight*0.3); }, i * 300);
+            }
+        } else if (questionsAnswered % 2 === 0) {
+            openMinigamePenalty(); // Reward!
+        } else {
+            generateMathQuestion();
         }
+    }
 
-        function checkAnswer() {
-            const correctAnswer = currentNum1 - currentNum2;
+    function update() {
+        backgroundTime += 0.03;
 
-            if (currentPos === correctAnswer) {
-                score += 10;
-                solvedCount++;
-                scoreEl.innerText = score;
+        clouds.forEach(el => { el.x -= el.speed; if (el.x + el.size * 2 < 0) { el.x = canvasWidth + el.size * 2; el.y = Math.random() * (WATER_LEVEL * 0.4); } });
+        decorFishes.forEach(f => {
+            f.x += f.speed * f.dir;
+            if(f.dir === 1 && f.x > canvasWidth + 100) { f.x = -100; f.y = WATER_LEVEL + 40 + Math.random()*(canvasHeight - WATER_LEVEL - 60); } 
+            else if(f.dir === -1 && f.x < -100) { f.x = canvasWidth + 100; f.y = WATER_LEVEL + 40 + Math.random()*(canvasHeight - WATER_LEVEL - 60); }
+        });
+
+        // Hop logic
+        if (frog.isHopping) {
+            frog.hopProgress += 0.1; // Smooth sequential speed
+            let startP = platforms[frog.leafIndex - 1];
+            let endP = platforms[frog.targetIndex - 1];
+            
+            if (frog.hopProgress >= 1) {
+                frog.hopProgress = 1; frog.isHopping = false;
                 
-                showFeedback("GREAT JOB! 🌟", "text-emerald-500");
-                playSound('correct');
-                answerDisplay.classList.remove('bg-rose-50', 'border-rose-400', 'text-rose-500');
-                answerDisplay.classList.add('bg-emerald-100', 'border-emerald-500', 'text-emerald-600');
-                createConfetti();
+                completedHops.push(frog.currentHopData);
+                frog.leafIndex = frog.targetIndex;
+                frog.x = endP.x; frog.y = endP.y;
+                createSparkles(frog.x, frog.y + 10, 5, '#ffffff');
                 
-                document.getElementById('action-buttons').classList.add('hidden');
-                
-                if (solvedCount >= totalRounds) {
-                    setTimeout(() => {
-                        document.getElementById('end-screen').classList.remove('hidden');
-                        document.getElementById('final-score').innerText = score;
-                        playSound('correct');
-                        fireworkInterval = setInterval(launchFirework, 600);
-                    }, 1500);
-                } else if (solvedCount % 2 === 0) { // Bonus game every 2 solved problems
-                    setTimeout(startBonusGame, 1200);
-                } else {
-                    nextBtn.classList.remove('hidden');
+                if (jumpQueue.length > 0) {
+                    startNextHop();
                 }
             } else {
-                showFeedback("OOPS! TRY AGAIN 🐸", "text-rose-500");
-                playSound('wrong');
-                answerDisplay.classList.add('animate-pulse');
-                setTimeout(() => answerDisplay.classList.remove('animate-pulse'), 500);
+                frog.x = startP.x + (endP.x - startP.x) * frog.hopProgress;
+                let hopHeight = Math.abs(endP.x - startP.x) * 0.4 + 40;
+                frog.y = startP.y - Math.sin(frog.hopProgress * Math.PI) * hopHeight;
             }
         }
 
-        function startBonusGame() {
-            isBonusActive = true;
-            bonusOverlay.classList.remove('hidden');
-            
-            for(let i=0; i<4; i++) spawnFly(); // Spawn initial fireflies
-            flyInterval = setInterval(spawnFly, 1200); 
+        for (let i = particles.length - 1; i >= 0; i--) { let p = particles[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.15; p.life -= p.decay; if (p.life <= 0) particles.splice(i, 1); }
+        for (let i = confetti.length - 1; i >= 0; i--) { let c = confetti[i]; c.x += c.vx; c.y += c.vy; c.vy += 0.1; c.rot += c.rotSpeed; c.wobble += c.wobbleSpeed; c.x += Math.sin(c.wobble) * 2; if (c.y > canvasHeight + 100) confetti.splice(i, 1); }
+    }
 
-            let timeLeft = 15000; // 15 seconds
-            const interval = 50;
-            
-            bonusTimer = setInterval(() => {
-                timeLeft -= interval;
-                bonusBar.style.width = (timeLeft / 15000) * 100 + '%';
-                bonusSeconds.innerText = (timeLeft / 1000).toFixed(1);
-
-                if (timeLeft <= 0) endBonusGame();
-            }, interval);
+    function createSparkles(x, y, amount, color) {
+        for(let i=0; i<amount; i++) { particles.push({ x: x + (Math.random() - 0.5) * 30, y: y + (Math.random() - 0.5) * 20, vx: (Math.random() - 0.5) * 6, vy: -Math.random() * 6 - 2, size: Math.random() * 6 + 3, color: color, life: 1, decay: 0.02 + Math.random()*0.02 }); }
+    }
+    function createConfettiBurst(x, y) {
+        let count = 60 + Math.random()*20; let colors = ["#1cb0f6", "#58cc02", "#ffc800", "#ff4b4b", "#ce82ff"];
+        for(let i=0; i<count; i++) {
+            let angle = Math.random() * Math.PI * 2; let speed = Math.random() * 12 + 4;
+            confetti.push({ x: x, y: y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed - 5, size: Math.random()*15 + 8, color: colors[Math.floor(Math.random()*colors.length)], rot: Math.random()*Math.PI*2, rotSpeed: (Math.random()-0.5)*0.3, wobbleSpeed: Math.random()*0.1 + 0.05, wobble: Math.random()*Math.PI*2 });
         }
+    }
 
-        function spawnFly() {
-            // Cap fireflies to max 6
-            if(!isBonusActive || document.querySelectorAll('.bonus-fly-element').length >= 6) return;
-            
-            const firefly = document.createElement('div');
-            firefly.className = 'bonus-fly-element pointer-events-auto';
-            
-            // Render the highly detailed illustration-based Firefly SVG
-            firefly.innerHTML = `
-                <div class="w-full h-full relative">
-                    <svg viewBox="0 0 100 100" class="w-full h-full" style="overflow: visible;">
-                        <defs>
-                            <radialGradient id="glowGrad" cx="50%" cy="50%" r="50%">
-                                <stop offset="0%" stop-color="#fef08a" stop-opacity="1" />
-                                <stop offset="70%" stop-color="#facc15" stop-opacity="0.9" />
-                                <stop offset="100%" stop-color="#f97316" stop-opacity="0.8" />
-                            </radialGradient>
-                        </defs>
-                        
-                        <!-- Glowing Aura/Sparkles -->
-                        <circle cx="50" cy="65" r="35" fill="#fef08a" opacity="0.3" class="firefly-glow-part" />
-                        
-                        <!-- Sparkles (Stars) -->
-                        <path d="M 15 65 L 18 68 L 15 71 L 12 68 Z" fill="#fef08a" class="firefly-glow-part"/>
-                        <path d="M 85 55 L 87 57 L 85 59 L 83 57 Z" fill="#fef08a" class="firefly-glow-part"/>
-                        <path d="M 25 85 L 28 88 L 25 91 L 22 88 Z" fill="#fef08a" class="firefly-glow-part"/>
-                        <path d="M 75 80 L 78 83 L 75 86 L 72 83 Z" fill="#fef08a" class="firefly-glow-part"/>
-                        <path d="M 40 95 L 42 97 L 40 99 L 38 97 Z" fill="#fef08a" class="firefly-glow-part"/>
-                        <path d="M 60 90 L 62 92 L 60 94 L 58 92 Z" fill="#fef08a" class="firefly-glow-part"/>
+    function drawMountain(ctx, mx, my, mw, mh, colorLight, colorDark) {
+        let peakX = mx; let peakY = my - mh;
+        ctx.fillStyle = colorLight; ctx.beginPath(); ctx.moveTo(mx - mw/2, my); ctx.lineTo(peakX, peakY); ctx.lineTo(peakX, my); ctx.fill();
+        ctx.fillStyle = colorDark; ctx.beginPath(); ctx.moveTo(peakX, peakY); ctx.lineTo(mx + mw/2, my); ctx.lineTo(peakX, my); ctx.fill();
+        ctx.fillStyle = "#ffffff"; ctx.beginPath();
+        let sH = mh * 0.2; 
+        ctx.moveTo(peakX, peakY); ctx.lineTo(peakX - (mw/2)*(sH/mh), peakY + sH);
+        let wStep = (mw/2)*(sH/mh) / 3;
+        ctx.lineTo(peakX - wStep*2, peakY + sH + 15); ctx.lineTo(peakX - wStep, peakY + sH - 5); ctx.lineTo(peakX, peakY + sH + 20); ctx.lineTo(peakX + wStep, peakY + sH - 5); ctx.lineTo(peakX + wStep*2, peakY + sH + 15); ctx.lineTo(peakX + (mw/2)*(sH/mh), peakY + sH);
+        ctx.closePath(); ctx.fill();
+    }
 
-                        <!-- Abdomen/Belly -->
-                        <circle cx="50" cy="60" r="22" fill="url(#glowGrad)" />
-                        <!-- Belly Stripes -->
-                        <path d="M 31 52 Q 50 56 69 52" stroke="#ea580c" stroke-width="2" fill="none" opacity="0.7"/>
-                        <path d="M 29 60 Q 50 65 71 60" stroke="#ea580c" stroke-width="2" fill="none" opacity="0.7"/>
-                        <path d="M 33 68 Q 50 72 67 68" stroke="#ea580c" stroke-width="2" fill="none" opacity="0.7"/>
-                        <path d="M 41 76 Q 50 79 59 76" stroke="#ea580c" stroke-width="2" fill="none" opacity="0.7"/>
-                        
-                        <!-- Antennae -->
-                        <path d="M 50 30 Q 30 15 25 20" stroke="#57534e" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-                        <circle cx="25" cy="20" r="3" fill="#57534e"/>
-                        <path d="M 50 30 Q 70 15 75 20" stroke="#57534e" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-                        <circle cx="75" cy="20" r="3" fill="#57534e"/>
-                        
-                        <!-- Head -->
-                        <ellipse cx="50" cy="30" rx="14" ry="10" fill="#78716c"/>
-                        
-                        <!-- Red Wings (Elytra) - Slightly open -->
-                        <!-- Left Wing -->
-                        <g transform="translate(50, 32) rotate(-25)">
-                            <path d="M 0 0 C -35 0, -45 40, -5 45 Q 0 45 0 0 Z" fill="#ef4444"/>
-                            <!-- Speckles -->
-                            <circle cx="-15" cy="15" r="1.5" fill="white" opacity="0.8"/>
-                            <circle cx="-22" cy="25" r="1" fill="white" opacity="0.6"/>
-                            <circle cx="-10" cy="30" r="2" fill="white" opacity="0.9"/>
-                            <circle cx="-18" cy="38" r="1" fill="white" opacity="0.5"/>
-                            <circle cx="-5" cy="20" r="1.2" fill="white" opacity="0.7"/>
-                        </g>
-                        <!-- Right Wing -->
-                        <g transform="translate(50, 32) rotate(25)">
-                            <path d="M 0 0 C 35 0, 45 40, 5 45 Q 0 45 0 0 Z" fill="#ef4444"/>
-                            <circle cx="15" cy="15" r="1.5" fill="white" opacity="0.8"/>
-                            <circle cx="22" cy="25" r="1" fill="white" opacity="0.6"/>
-                            <circle cx="10" cy="30" r="2" fill="white" opacity="0.9"/>
-                            <circle cx="18" cy="38" r="1" fill="white" opacity="0.5"/>
-                            <circle cx="5" cy="20" r="1.2" fill="white" opacity="0.7"/>
-                        </g>
-                    </svg>
-                </div>
-            `;
-            
-            const rect = bonusOverlay.getBoundingClientRect();
-            const startX = Math.random() * (rect.width - 80);
-            const startY = Math.random() * (rect.height * 0.45) + 80; 
-            
-            firefly.style.left = startX + 'px';
-            firefly.style.top = startY + 'px';
-            bonusOverlay.appendChild(firefly);
+    function drawBackground(ctx) {
+        let skyGrad = ctx.createLinearGradient(0, 0, 0, WATER_LEVEL);
+        skyGrad.addColorStop(0, "#7dd3fc"); skyGrad.addColorStop(1, "#bae6fd");
+        ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, canvasWidth, WATER_LEVEL);
 
-            const moveFly = () => {
-                if(!isBonusActive || !firefly.parentElement) return;
-                const nextX = Math.max(20, Math.min(rect.width - 80, parseFloat(firefly.style.left) + (Math.random() - 0.5) * 200));
-                const nextY = Math.max(80, Math.min(rect.height * 0.6, parseFloat(firefly.style.top) + (Math.random() - 0.5) * 150));
-                
-                firefly.animate([
-                    { left: firefly.style.left, top: firefly.style.top },
-                    { left: nextX + 'px', top: nextY + 'px' }
-                ], { duration: 1100 + Math.random() * 1200, easing: 'ease-in-out' }).onfinish = moveFly;
-            };
-            moveFly();
-
-            firefly.onclick = (e) => catchFly(e, firefly);
+        // Rainbow (Drawn BEFORE Mountains, larger size)
+        ctx.save(); ctx.translate(canvasWidth / 2, WATER_LEVEL);
+        ctx.lineWidth = Math.min(25, canvasWidth * 0.02);
+        let rbColors = ['#ff4b4b', '#ff9900', '#ffc800', '#58cc02', '#1cb0f6', '#ce82ff'];
+        let baseRad = Math.min(canvasWidth * 0.45, 600);
+        for(let i=0; i<rbColors.length; i++) { 
+            ctx.strokeStyle = rbColors[i]; ctx.beginPath(); ctx.arc(0, 0, baseRad - i*(ctx.lineWidth), Math.PI, 0); ctx.stroke(); 
         }
+        ctx.restore();
 
-        function catchFly(e, fly) {
-            if (fly.getAttribute('data-caught')) return;
-            fly.setAttribute('data-caught', 'true');
-            fly.style.pointerEvents = 'none';
+        // Mountains (Drawn AFTER Rainbow)
+        mountains.forEach(m => { drawMountain(ctx, m.x, WATER_LEVEL, m.w, m.h, m.c1, m.c2); });
 
-            playSound('catch');
-
-            const rect = bonusOverlay.getBoundingClientRect();
-            const frogX = rect.width / 2;
-            const frogY = rect.height - (rect.height < 500 ? 60 : 90); 
-            
-            const flyRect = fly.getBoundingClientRect();
-            const flyX = flyRect.left - rect.left + flyRect.width / 2;
-            const flyY = flyRect.top - rect.top + flyRect.height / 2;
-
-            mouthClosed.setAttribute('visibility', 'hidden');
-            mouthOpen.setAttribute('visibility', 'visible');
-
-            tongueLine.setAttribute('x1', frogX);
-            tongueLine.setAttribute('y1', frogY);
-            tongueLine.setAttribute('x2', frogX);
-            tongueLine.setAttribute('y2', frogY);
-            tongueLine.setAttribute('visibility', 'visible');
-            
-            tongueTip.setAttribute('cx', frogX);
-            tongueTip.setAttribute('cy', frogY);
-            tongueTip.setAttribute('visibility', 'visible');
-
-            const duration = 120;
-            const startTime = performance.now();
-
-            function animateTongue(time) {
-                const progress = Math.min((time - startTime) / duration, 1);
-                
-                if (progress < 1) {
-                    const curX = frogX + (flyX - frogX) * progress;
-                    const curY = frogY + (flyY - frogY) * progress;
-                    tongueLine.setAttribute('x2', curX);
-                    tongueLine.setAttribute('y2', curY);
-                    tongueTip.setAttribute('cx', curX);
-                    tongueTip.setAttribute('cy', curY);
-                    requestAnimationFrame(animateTongue);
-                } else {
-                    score += 5;
-                    scoreEl.innerText = score;
-                    
-                    const pullStartTime = performance.now();
-                    function retract(time2) {
-                        const p2 = Math.min((time2 - pullStartTime) / duration, 1);
-                        const curX = flyX + (frogX - flyX) * p2;
-                        const curY = flyY + (frogY - flyY) * p2;
-                        
-                        tongueLine.setAttribute('x2', curX);
-                        tongueLine.setAttribute('y2', curY);
-                        tongueTip.setAttribute('cx', curX);
-                        tongueTip.setAttribute('cy', curY);
-                        
-                        fly.style.left = (curX - flyRect.width/2) + 'px';
-                        fly.style.top = (curY - flyRect.height/2) + 'px';
-                        fly.style.transform = `scale(${1 - p2}) rotate(${p2 * 360}deg)`;
-
-                        if (p2 < 1) {
-                            requestAnimationFrame(retract);
-                        } else {
-                            tongueLine.setAttribute('visibility', 'hidden');
-                            tongueTip.setAttribute('visibility', 'hidden');
-                            fly.remove();
-                            mouthClosed.setAttribute('visibility', 'visible');
-                            mouthOpen.setAttribute('visibility', 'hidden');
-                        }
-                    }
-                    requestAnimationFrame(retract);
-                }
-            }
-            requestAnimationFrame(animateTongue);
-        }
-
-        function endBonusGame() {
-            clearInterval(bonusTimer);
-            clearInterval(flyInterval);
-            isBonusActive = false;
-            document.querySelectorAll('.bonus-fly-element').forEach(f => f.remove());
-            bonusOverlay.classList.add('hidden');
-            nextBtn.classList.remove('hidden');
-            showFeedback("BONUS DONE! 🌟", "text-rose-500");
-        }
-
-        function showFeedback(text, colorClass) {
-            feedback.innerText = text;
-            feedback.className = `h-12 sm:h-16 text-3xl sm:text-5xl font-black transition-all duration-300 opacity-100 transform translate-y-0 ${colorClass}`;
-        }
-
-        // Highly Realistic 3D Confetti Engine
-        function createConfetti() {
-            const colors = ['#f43f5e', '#22c55e', '#eab308', '#3b82f6', '#a855f7', '#ec4899', '#06b6d4'];
-            for (let i = 0; i < 120; i++) {
-                const conf = document.createElement('div');
-                conf.className = 'absolute z-[9999] pointer-events-none';
-                
-                const w = Math.random() * 8 + 6;
-                const h = Math.random() * 12 + 8;
-                conf.style.width = w + 'px';
-                conf.style.height = Math.random() > 0.4 ? h + 'px' : w + 'px'; // Mix of rectangles and squares
-                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                conf.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px'; // Mix of circles and rectangles
-                
-                conf.style.left = (Math.random() * 100) + 'vw';
-                conf.style.top = '-30px';
-                document.body.appendChild(conf);
-
-                const fallDuration = 2000 + Math.random() * 2500;
-                const endY = window.innerHeight + 150;
-                const endX = (Math.random() - 0.5) * 600; // Drift sideways
-                
-                // 3D rotations for highly realistic flutter
-                const rotateX = Math.random() * 15 + 5; 
-                const rotateY = Math.random() * 15 + 5;
-                const rotateZ = Math.random() * 5;
-
-                conf.animate([
-                    { transform: `translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg) rotateZ(0deg)`, opacity: 1 },
-                    { transform: `translate3d(${endX}px, ${endY}px, 0) rotateX(${rotateX*360}deg) rotateY(${rotateY*180}deg) rotateZ(${rotateZ*90}deg)`, opacity: 1 }
-                ], {
-                    duration: fallDuration,
-                    easing: 'cubic-bezier(0.37, 0, 0.63, 1)' 
-                }).onfinish = () => conf.remove();
-            }
-        }
-
-        // Firework Engine for End Screen
-        function launchFirework() {
-            const x = Math.random() * (window.innerWidth - 100) + 50;
-            const y = window.innerHeight; 
-            const rocket = document.createElement('div');
-            rocket.className = 'absolute w-2 h-10 bg-yellow-300 rounded-full firework-particle shadow-[0_0_15px_#fde047]';
-            rocket.style.left = x + 'px';
-            rocket.style.top = y + 'px';
-            document.body.appendChild(rocket);
-            
-            const targetY = window.innerHeight * 0.1 + Math.random() * (window.innerHeight * 0.4);
-            playSound('jump');
-            
-            rocket.animate([
-                { top: y + 'px', transform: 'scaleY(1)' },
-                { top: targetY + 'px', transform: 'scaleY(0.5)' }
-            ], { duration: 700, easing: 'ease-out' }).onfinish = () => {
-                rocket.remove();
-                playSound('firework');
-                createExplosion(x, targetY);
-            };
-        }
-
-        function createExplosion(x, y) {
-            const colors = ['#f43f5e', '#22c55e', '#3b82f6', '#eab308', '#a855f7', '#06b6d4', '#ec4899'];
-            for(let i=0; i<80; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'absolute w-4 h-4 rounded-full firework-particle';
-                particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                particle.style.left = x + 'px';
-                particle.style.top = y + 'px';
-                particle.style.boxShadow = `0 0 10px ${particle.style.backgroundColor}`;
-                document.body.appendChild(particle);
-                
-                const angle = Math.random() * Math.PI * 2;
-                const velocity = 100 + Math.random() * 300;
-                
-                particle.animate([
-                    { transform: 'translate(0,0) scale(1)', opacity: 1 },
-                    { transform: `translate(${Math.cos(angle)*velocity}px, ${Math.sin(angle)*velocity + 200}px) scale(0)`, opacity: 0 }
-                ], { duration: 1500 + Math.random()*1000, easing: 'cubic-bezier(.17,.89,.32,1)' }).onfinish = () => particle.remove();
-            }
-        }
-
-        // Action Listeners
-        checkBtn.addEventListener('click', checkAnswer);
-        nextBtn.addEventListener('click', () => {
-            currentProblemIndex++;
-            loadNextProblem();
-        });
-        resetBtn.addEventListener('click', () => {
-            if (isBonusActive || isAnimating) return;
-            isInitialJumping = true; 
-            clearArcs();
-            currentPos = 0;
-            moveCharacter(0, false);
-            setTimeout(showInitialJump, 300);
-            playSound('jump');
+        ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+        clouds.forEach(el => { ctx.beginPath(); ctx.arc(el.x, el.y, el.size, 0, Math.PI*2); ctx.arc(el.x + el.size*0.8, el.y + el.size*0.2, el.size*0.7, 0, Math.PI*2); ctx.arc(el.x - el.size*0.8, el.y + el.size*0.2, el.size*0.7, 0, Math.PI*2); ctx.fill(); });
+        bgTrees.forEach(t => {
+            ctx.save(); ctx.translate(t.x, t.y); ctx.scale(t.scale, t.scale);
+            ctx.fillStyle = "#78350f"; ctx.fillRect(-10, 0, 20, 60);
+            ctx.fillStyle = "#4ade80"; ctx.beginPath(); ctx.arc(0, -20, 40, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(-25, -10, 30, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(25, -10, 30, 0, Math.PI*2); ctx.fill();
+            ctx.restore();
         });
 
-        // Handle Resizing Gracefully
-        window.addEventListener('resize', () => {
-            clearArcs();
-            const pos = getPositionForValue(currentPos);
-            const charWidth = character.offsetWidth || 90;
-            character.style.left = `calc(${pos}% - ${charWidth / 2}px)`;
-        });
+        let waterGrad = ctx.createLinearGradient(0, WATER_LEVEL, 0, canvasHeight);
+        waterGrad.addColorStop(0, "#1ca3ec"); waterGrad.addColorStop(1, "#0f5e9c");
+        ctx.fillStyle = waterGrad; ctx.fillRect(0, WATER_LEVEL, canvasWidth, canvasHeight - WATER_LEVEL);
 
-    </script>
+        ctx.fillStyle = "rgba(0, 40, 80, 0.4)";
+        for(let x = 0; x < canvasWidth; x+= 120) { ctx.beginPath(); ctx.ellipse(x + Math.sin(x)*40, canvasHeight - 30, 30 + Math.sin(x)*10, 15, 0, 0, Math.PI*2); ctx.fill(); }
+
+        ctx.fillStyle = "rgba(100, 200, 255, 0.4)"; ctx.beginPath(); ctx.moveTo(0, canvasHeight);
+        let speed1 = backgroundTime * 0.8;
+        for(let x = 0; x <= canvasWidth + 50; x += 50) { let wave = Math.sin(x/120 + speed1) * 6; ctx.lineTo(x, WATER_LEVEL + 10 + wave); }
+        ctx.lineTo(canvasWidth, canvasHeight); ctx.fill();
+
+        standingLotuses.forEach(lotus => { drawStandingLotus(ctx, lotus.x, lotus.y, lotus.height, lotus.scale, Math.sin(backgroundTime * 1.5 + lotus.swayOffset) * 0.15); });
+        floatingLeaves.forEach(leaf => { drawFloatingLeaf(ctx, leaf.x, leaf.y + Math.sin(leaf.x/120 + speed1)*6, leaf.scale, leaf.rotation + Math.sin(backgroundTime)*0.05); });
+
+        ctx.fillStyle = "rgba(40, 180, 240, 0.8)"; ctx.beginPath(); ctx.moveTo(0, canvasHeight);
+        let speed2 = backgroundTime * 1.0;
+        for(let x = 0; x <= canvasWidth + 50; x += 50) { let wave = Math.sin(x/150 + speed2) * 10; ctx.lineTo(x, WATER_LEVEL + 30 + wave); }
+        ctx.lineTo(canvasWidth, canvasHeight); ctx.fill();
+        
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.5)"; ctx.lineWidth = 4; ctx.beginPath();
+        for(let x = 0; x <= canvasWidth + 50; x += 50) { let wave = Math.sin(x/150 + speed2) * 10; if(x===0) ctx.moveTo(x, WATER_LEVEL + 30 + wave); else ctx.lineTo(x, WATER_LEVEL + 30 + wave); }
+        ctx.stroke();
+
+        decorFishes.forEach(f => {
+            ctx.save(); ctx.translate(f.x, f.y + Math.sin(backgroundTime * 5 + f.bobOffset) * 15); ctx.scale(f.scale * f.dir, f.scale);
+            ctx.fillStyle = f.colorObj.body; ctx.beginPath(); ctx.ellipse(0, 0, 25, 15, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = f.colorObj.stripe; ctx.beginPath(); ctx.moveTo(-20, 0); ctx.lineTo(-40, -15); ctx.lineTo(-35, 0); ctx.lineTo(-40, 15); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(0, -15); ctx.lineTo(-10, -25); ctx.lineTo(-15, -10); ctx.fill(); ctx.beginPath(); ctx.moveTo(0, 15); ctx.lineTo(-10, 25); ctx.lineTo(-15, 10); ctx.fill();
+            ctx.fillStyle = f.colorObj.stripe; ctx.beginPath(); ctx.ellipse(-5, 0, 4, 18, 0, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.ellipse(-15, 0, 3, 14, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(15, -5, 8, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = "#000000"; ctx.beginPath(); ctx.arc(18, -5, 4, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(19, -6, 1.5, 0, Math.PI*2); ctx.fill();
+            ctx.restore();
+        });
+    }
+
+    function drawStandingLotus(ctx, px, py, h, scale, sway) {
+        ctx.save(); ctx.translate(px, py); ctx.rotate(sway); ctx.scale(scale, scale);
+        ctx.strokeStyle = "#276b1f"; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(-10, -h/2, 0, -h); ctx.stroke();
+        ctx.translate(0, -h);
+        ctx.fillStyle = "#ff63a5"; ctx.beginPath(); ctx.ellipse(-18, -10, 16, 28, -Math.PI/4, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.ellipse(18, -10, 16, 28, Math.PI/4, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#ff9ec4"; ctx.beginPath(); ctx.ellipse(-10, -15, 14, 32, -Math.PI/8, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.ellipse(10, -15, 14, 32, Math.PI/8, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#ffe0ec"; ctx.beginPath(); ctx.ellipse(0, -20, 14, 34, 0, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#ffc800"; ctx.beginPath(); ctx.ellipse(0, 0, 14, 6, 0, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+    }
+    function drawFloatingLeaf(ctx, px, py, scale, rot) {
+        ctx.save(); ctx.translate(px, py); ctx.scale(scale, scale * 0.5); ctx.rotate(rot);
+        let w = 120;
+        ctx.fillStyle = "#1e7a1e"; ctx.beginPath(); ctx.arc(0, 10, w/2, Math.PI * 0.1, Math.PI * 1.9); ctx.lineTo(0, 10); ctx.fill();
+        let leafGrad = ctx.createLinearGradient(-w/2, -w/2, w/2, w/2); leafGrad.addColorStop(0, "#58cc02"); leafGrad.addColorStop(1, "#3ba302"); 
+        ctx.fillStyle = leafGrad; ctx.beginPath(); ctx.arc(0, 0, w/2, Math.PI * 0.1, Math.PI * 1.9); ctx.lineTo(0, 0); ctx.fill();
+        ctx.restore();
+    }
+
+    function drawNumberLine(ctx) {
+        if (platforms.length === 0) return;
+        ctx.strokeStyle = "rgba(0, 0, 0, 0.15)"; ctx.lineWidth = 12; ctx.lineCap = "round"; ctx.beginPath();
+        ctx.moveTo(platforms[0].x, platforms[0].y + 10); ctx.lineTo(platforms[platforms.length-1].x, platforms[platforms.length-1].y + 10); ctx.stroke();
+
+        platforms.forEach(p => {
+            ctx.save(); ctx.translate(p.x, p.y + 10); ctx.scale(1, 0.4); 
+            let w = p.w;
+            ctx.fillStyle = "rgba(0,0,0,0.15)"; ctx.beginPath(); ctx.arc(0, 20, w/2, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = "#4ade80"; ctx.beginPath(); ctx.arc(0, 0, w/2, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = "#22c55e"; ctx.beginPath(); ctx.arc(0, 0, w/2 * 0.7, 0, Math.PI*2); ctx.fill();
+            ctx.restore();
+
+            ctx.save(); ctx.translate(p.x, p.y + 25); ctx.font = "900 " + Math.max(16, p.w*0.4) + "px Poppins, sans-serif"; 
+            ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineWidth = 6; ctx.strokeStyle = "#ffffff"; 
+            ctx.strokeText(p.num, 0, 0); ctx.fillStyle = "#333333"; ctx.fillText(p.num, 0, 0); ctx.restore();
+        });
+    }
+
+    function drawHops(ctx) {
+        if (completedHops.length === 0) return;
+        ctx.lineWidth = 6; ctx.lineCap = "round"; ctx.setLineDash([10, 10]);
+        completedHops.forEach(hop => {
+            let startP = platforms[hop.from - 1]; let endP = platforms[hop.to - 1];
+            if (!startP || !endP) return;
+            let arcHeight = Math.abs(endP.x - startP.x) * 0.4 + 40;
+            let midX = (startP.x + endP.x) / 2; let midY = startP.y - arcHeight;
+            ctx.strokeStyle = "#1cb0f6"; ctx.beginPath(); ctx.moveTo(startP.x, startP.y - 10); ctx.quadraticCurveTo(midX, midY - 50, endP.x, endP.y - 10); ctx.stroke();
+            
+            ctx.setLineDash([]); ctx.save(); ctx.translate(midX, midY - 15);
+            ctx.fillStyle = "#ffc800"; ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 3; ctx.stroke();
+            ctx.font = "900 18px Poppins, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "#333"; ctx.fillText(hop.stepNum, 0, 2);
+            ctx.restore(); ctx.setLineDash([10, 10]); 
+        });
+        ctx.setLineDash([]);
+    }
+
+    function drawFrog(ctx, px, py) {
+        ctx.save(); ctx.translate(px, py - 5); 
+        let squishY = 1, squishX = 1;
+        if(!frog.isHopping && frog.state !== 'falling') { squishY = 1 + Math.sin(backgroundTime*5) * 0.05; squishX = 1 - Math.sin(backgroundTime*5) * 0.05; } 
+        else { squishY = 1.1; squishX = 0.9; }
+        let fScale = Math.min(1, leafWidth / 100); 
+        ctx.scale(squishX * frog.facing * fScale, squishY * fScale);
+        if(!frog.isHopping && frog.state !== 'falling') { ctx.fillStyle = "rgba(0,0,0,0.2)"; ctx.beginPath(); ctx.ellipse(0, 5, 30, 12, 0, 0, Math.PI*2); ctx.fill(); }
+
+        const skinBright = "#a1e535"; const skinShadow = "#7ec41a"; const belly = "#faffb3"; 
+        let legOffset = (!frog.isHopping) ? 0 : 15;
+
+        ctx.fillStyle = skinShadow; ctx.beginPath(); ctx.ellipse(-28, -12 + legOffset/2, 14, 20, -Math.PI/6, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.ellipse(28, -12 + legOffset/2, 14, 20, Math.PI/6, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = skinBright; ctx.beginPath(); ctx.ellipse(-34, 2 + legOffset, 12, 6, -Math.PI/8, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.ellipse(34, 2 + legOffset, 12, 6, Math.PI/8, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = skinBright; ctx.beginPath(); ctx.moveTo(0, -40); ctx.bezierCurveTo(40, -40, 45, 5, 0, 5); ctx.bezierCurveTo(-45, 5, -40, -40, 0, -40); ctx.fill();
+        ctx.fillStyle = belly; ctx.beginPath(); ctx.ellipse(0, -8, 24, 14, 0, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "rgba(255, 120, 150, 0.6)"; ctx.beginPath(); ctx.ellipse(-22, -15, 7, 4, -0.1, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.ellipse(20, -15, 7, 4, 0.1, 0, Math.PI*2); ctx.fill();
+        
+        ctx.fillStyle = skinBright; ctx.beginPath(); ctx.arc(-18, -42, 16, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(18, -42, 16, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(-18, -42, 12, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(18, -42, 12, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#111111"; ctx.beginPath(); ctx.arc(-18, -42, 6, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(18, -42, 6, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(-20, -45, 2.5, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(16, -45, 2.5, 0, Math.PI*2); ctx.fill();
+        
+        ctx.strokeStyle = "#2b6311"; ctx.lineWidth = 3; ctx.lineCap = "round"; ctx.beginPath();
+        ctx.moveTo(-12, -26); ctx.quadraticCurveTo(-6, -20, 0, -26); ctx.quadraticCurveTo(6, -20, 12, -26); ctx.stroke();
+        ctx.fillStyle = "#ff4b4b"; ctx.beginPath(); ctx.moveTo(-10, -23); ctx.quadraticCurveTo(0, -8, 10, -23); ctx.fill(); ctx.fillStyle = "#ff8a8a"; ctx.beginPath(); ctx.arc(0, -15, 4, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+    }
+
+    function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBackground(ctx);
+        drawNumberLine(ctx);
+        drawHops(ctx);
+        if(gameState !== 'start' && gameState !== 'win') drawFrog(ctx, frog.x, frog.y);
+
+        particles.forEach(p => { ctx.fillStyle = p.color; ctx.globalAlpha = Math.max(0, p.life); ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill(); ctx.globalAlpha = 1.0; });
+
+        fxCtx.clearRect(0, 0, fxCanvas.width, fxCanvas.height);
+        confetti.forEach(c => {
+            fxCtx.save(); fxCtx.translate(c.x, c.y); fxCtx.rotate(c.rot); fxCtx.fillStyle = c.color;
+            if(c.size % 2 > 1) { fxCtx.beginPath(); fxCtx.arc(0, 0, c.size/2, 0, Math.PI*2); fxCtx.fill(); } else { fxCtx.fillRect(-c.size/2, -c.size/2, c.size, c.size); }
+            fxCtx.restore();
+        });
+    }
+
+    function loop() { update(); render(); requestAnimationFrame(loop); }
+
+    function startGame() {
+        initAudio();
+        document.getElementById('start-panel').classList.add('hidden');
+        document.getElementById('top-bar').style.display = 'flex';
+        document.getElementById('bottom-controls').style.display = 'flex';
+        initLevel(); gameState = 'playing';
+    }
+
+    function resetMainGame() {
+        initAudio();
+        document.getElementById('win-panel').classList.add('hidden');
+        document.getElementById('start-panel').classList.remove('hidden');
+        document.getElementById('top-bar').style.display = 'none';
+        document.getElementById('bottom-controls').style.display = 'none';
+        document.getElementById('btn-check').style.display = 'flex';
+        document.getElementById('btn-reset').style.display = 'flex';
+        document.getElementById('btn-next').style.display = 'none';
+        frog.x = -1000; frog.isHopping = false; frog.state = 'idle';
+        gameState = 'start';
+    }
+
+    resize(); requestAnimationFrame(loop);
+
+
+    // =========================================================================
+    // MINIGAME BONUS SCRIPT (FLIP Animation)
+    // =========================================================================
+    const MG = {
+        COLORS: [
+            { id: 'red', main: '#FF4B4B', dark: '#cc0000' },
+            { id: 'blue', main: '#1CB0F6', dark: '#007BB5' },
+            { id: 'yellow', main: '#FFC800', dark: '#CC9A00' }
+        ],
+        TUBE_CAPACITY: 4,
+        tubesState: [],
+        selectedTubeIdx: null,
+        isAnimating: false,
+        history: [],
+        containers: {
+            tubes: document.getElementById('mg-tubes-container')
+        }
+    };
+
+    function mg_createBackground() {
+        const bg = document.getElementById('mg-bg-shapes');
+        bg.innerHTML = '';
+        for(let i=0; i<6; i++) {
+            const cloud = document.createElement('div'); cloud.className = 'mg-cloud';
+            const size = 50 + Math.random() * 100;
+            cloud.style.width = size + 'px'; cloud.style.height = (size/2) + 'px';
+            cloud.style.top = (Math.random() * 80) + '%'; cloud.style.left = (Math.random() * 100) + '%';
+            cloud.innerHTML = `<style>.mg-cloud:nth-child(${i+1})::before { width: ${size*0.6}px; height: ${size*0.6}px; top: ${-size*0.3}px; left: ${size*0.1}px; } .mg-cloud:nth-child(${i+1})::after { width: ${size*0.5}px; height: ${size*0.5}px; top: -${size*0.2}px; right: ${size*0.1}px; }</style>`;
+            bg.appendChild(cloud);
+        }
+    }
+
+    function mg_generateLevel() {
+        let initialTubes = Array.from({length: 5}, () => []);
+        for(let i=0; i<3; i++) {
+            for(let j=0; j<MG.TUBE_CAPACITY; j++) {
+                initialTubes[i].push({ colorId: MG.COLORS[i].id, colorObj: MG.COLORS[i] });
+            }
+        }
+        let shuffles = 3 * 20; 
+        for(let i=0; i<shuffles; i++) {
+            let nonEmptyIdxs = []; for(let t=0; t<initialTubes.length; t++) { if(initialTubes[t].length > 0) nonEmptyIdxs.push(t); }
+            if(nonEmptyIdxs.length === 0) continue;
+            let fromIdx = nonEmptyIdxs[Math.floor(Math.random() * nonEmptyIdxs.length)];
+            let notFullIdxs = []; for(let t=0; t<initialTubes.length; t++) { if(initialTubes[t].length < MG.TUBE_CAPACITY && t !== fromIdx) notFullIdxs.push(t); }
+            if(notFullIdxs.length === 0) continue;
+            let toIdx = notFullIdxs[Math.floor(Math.random() * notFullIdxs.length)];
+            initialTubes[toIdx].push(initialTubes[fromIdx].pop());
+        }
+        if (mg_checkWinCondition(initialTubes)) return mg_generateLevel(); 
+        return initialTubes;
+    }
+
+    function mg_buildDOM(initialState) {
+        MG.containers.tubes.innerHTML = '';
+        initialState.forEach((tubeArr, tIdx) => {
+            const tubeEl = document.createElement('div'); tubeEl.className = 'mg-tube';
+            tubeEl.addEventListener('click', () => mg_handleTubeClick(tIdx));
+            tubeEl.addEventListener('touchstart', (e) => { e.preventDefault(); mg_handleTubeClick(tIdx); }, {passive: false});
+            
+            tubeArr.forEach((ballObj) => {
+                const ballEl = document.createElement('div'); ballEl.className = 'mg-ball';
+                ballEl.style.background = `radial-gradient(circle at 30% 30%, #fff 0%, ${ballObj.colorObj.main} 40%, ${ballObj.colorObj.dark} 100%)`;
+                tubeEl.appendChild(ballEl);
+            });
+            MG.containers.tubes.appendChild(tubeEl);
+        });
+    }
+
+    function mg_handleTubeClick(clickedIdx) {
+        if (MG.isAnimating) return;
+        initAudio(); 
+        const clickedTube = MG.tubesState[clickedIdx];
+        const clickedTubeEl = MG.containers.tubes.children[clickedIdx];
+        
+        // Deselect
+        if (MG.selectedTubeIdx === clickedIdx) { 
+            MG.selectedTubeIdx = null; 
+            const topBall = clickedTubeEl.lastElementChild;
+            if(topBall) topBall.classList.remove('selected');
+            sfx.hop(); return; 
+        }
+
+        // Select
+        if (MG.selectedTubeIdx === null) {
+            if (clickedTube.length === 0) return;
+            MG.selectedTubeIdx = clickedIdx; 
+            const topBall = clickedTubeEl.lastElementChild;
+            if(topBall) topBall.classList.add('selected');
+            sfx.hop(); return;
+        }
+
+        // Validate Move
+        const fromIdx = MG.selectedTubeIdx; const toIdx = clickedIdx;
+        const fromTubeState = MG.tubesState[fromIdx]; const toTubeState = MG.tubesState[toIdx];
+        const ballToMoveState = fromTubeState[fromTubeState.length - 1];
+        const topBallAtTargetState = toTubeState.length > 0 ? toTubeState[toTubeState.length - 1] : null;
+
+        if (toTubeState.length >= MG.TUBE_CAPACITY || (topBallAtTargetState !== null && topBallAtTargetState.colorId !== ballToMoveState.colorId)) {
+            sfx.wrong();
+            const fromTubeEl = MG.containers.tubes.children[fromIdx];
+            if(fromTubeEl.lastElementChild) fromTubeEl.lastElementChild.classList.remove('selected');
+            MG.selectedTubeIdx = null; return;
+        }
+
+        // Valid Move
+        MG.history.push(MG.tubesState.map(t => [...t]));
+        toTubeState.push(fromTubeState.pop());
+        MG.selectedTubeIdx = null; MG.isAnimating = true;
+        sfx.hop();
+
+        // FLIP Animation
+        const fromTubeEl = MG.containers.tubes.children[fromIdx];
+        const toTubeEl = MG.containers.tubes.children[toIdx];
+        const ballEl = fromTubeEl.lastElementChild;
+        
+        const firstRect = ballEl.getBoundingClientRect();
+        ballEl.classList.remove('selected');
+        
+        toTubeEl.appendChild(ballEl);
+        const lastRect = ballEl.getBoundingClientRect();
+        
+        const dx = firstRect.left - lastRect.left;
+        const dy = firstRect.top - lastRect.top;
+        
+        ballEl.style.transition = 'none';
+        ballEl.style.transform = `translate(${dx}px, ${dy}px)`;
+        
+        requestAnimationFrame(() => {
+            void ballEl.offsetWidth; // force reflow
+            ballEl.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
+            ballEl.style.transform = 'translate(0px, 0px)';
+            
+            setTimeout(() => {
+                ballEl.style.transition = '';
+                MG.isAnimating = false;
+                mg_checkTubeComplete(toIdx);
+                if(mg_checkWinCondition(MG.tubesState)) { mg_handleWin(); }
+            }, 300);
+        });
+    }
+
+    function mg_checkTubeComplete(tIdx) {
+        const tube = MG.tubesState[tIdx];
+        if (tube.length === MG.TUBE_CAPACITY && tube.every(b => b.colorId === tube[0].colorId)) {
+            sfx.correct();
+            const tubeEl = MG.containers.tubes.children[tIdx];
+            tubeEl.classList.add('completed');
+            
+            const rect = tubeEl.getBoundingClientRect();
+            for(let i=0; i<8; i++) {
+                const p = document.createElement('div'); p.className = 'mg-particle';
+                const size = 5 + Math.random() * 8; p.style.width = size + 'px'; p.style.height = size + 'px';
+                p.style.left = (rect.left + (Math.random() * rect.width)) + 'px'; p.style.top = (rect.top + (Math.random() * rect.height)) + 'px';
+                document.body.appendChild(p); setTimeout(() => p.remove(), 600);
+            }
+        }
+    }
+
+    function mg_checkWinCondition(state) {
+        let completedTubes = 0;
+        for(let tube of state) {
+            if(tube.length === MG.TUBE_CAPACITY && tube.every(b => b.colorId === tube[0].colorId)) completedTubes++;
+            else if (tube.length > 0) return false;
+        }
+        return completedTubes === 3;
+    }
+
+    function mg_undoMove() {
+        if(MG.isAnimating || MG.history.length === 0) return;
+        initAudio();
+        
+        const prevState = MG.history.pop();
+        let fromIdx = -1, toIdx = -1;
+        for(let i=0; i<MG.tubesState.length; i++) {
+            if(MG.tubesState[i].length > prevState[i].length) toIdx = i;
+            else if (MG.tubesState[i].length < prevState[i].length) fromIdx = i;
+        }
+        
+        if (toIdx !== -1 && fromIdx !== -1) {
+            MG.isAnimating = true;
+            const fromTubeEl = MG.containers.tubes.children[toIdx]; 
+            const toTubeEl = MG.containers.tubes.children[fromIdx]; 
+            const ballEl = fromTubeEl.lastElementChild;
+            
+            if(MG.selectedTubeIdx !== null) {
+                const selTube = MG.containers.tubes.children[MG.selectedTubeIdx];
+                if(selTube.lastElementChild) selTube.lastElementChild.classList.remove('selected');
+                MG.selectedTubeIdx = null;
+            }
+
+            const firstRect = ballEl.getBoundingClientRect();
+            toTubeEl.appendChild(ballEl);
+            const lastRect = ballEl.getBoundingClientRect();
+            
+            const dx = firstRect.left - lastRect.left;
+            const dy = firstRect.top - lastRect.top;
+            
+            ballEl.style.transition = 'none';
+            ballEl.style.transform = `translate(${dx}px, ${dy}px)`;
+            
+            requestAnimationFrame(() => {
+                void ballEl.offsetWidth;
+                ballEl.style.transition = 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)';
+                ballEl.style.transform = 'translate(0px, 0px)';
+                setTimeout(() => {
+                    ballEl.style.transition = '';
+                    MG.isAnimating = false;
+                }, 300);
+            });
+        }
+        
+        MG.tubesState = prevState;
+        Array.from(MG.containers.tubes.children).forEach(t => t.classList.remove('completed'));
+        sfx.hop();
+    }
+
+    function mg_restartLevel() {
+        if(MG.isAnimating || MG.history.length === 0) return;
+        initAudio();
+        MG.tubesState = MG.history[0].map(t => [...t]); 
+        MG.history = []; MG.selectedTubeIdx = null;
+        mg_buildDOM(MG.tubesState); sfx.hop();
+    }
+
+    let mgParticles = []; let mgConfettiActive = false;
+    function mg_fireConfetti() {
+        const mgCanvas = document.getElementById('mg-confetti-canvas');
+        mgCanvas.width = window.innerWidth; mgCanvas.height = window.innerHeight;
+        const colors = ['#FF4B4B', '#1CB0F6', '#FFC800', '#58CC02', '#A66CFF', '#ffffff'];
+        for(let i=0; i<100; i++) {
+            mgParticles.push({ x: Math.random() * mgCanvas.width, y: -Math.random() * mgCanvas.height, r: Math.random() * 6 + 4, dx: Math.random() * 4 - 2, dy: Math.random() * 3 + 2, color: colors[Math.floor(Math.random() * colors.length)], tilt: Math.floor(Math.random() * 10) - 10, tiltAngleInc: (Math.random() * 0.07) + 0.05, tiltAngle: 0 });
+        }
+        if(!mgConfettiActive) { mgConfettiActive = true; mg_drawConfetti(); }
+    }
+    function mg_drawConfetti() {
+        if(!mgConfettiActive) return;
+        requestAnimationFrame(mg_drawConfetti);
+        const mgCanvas = document.getElementById('mg-confetti-canvas');
+        const mgCtx = mgCanvas.getContext('2d');
+        mgCtx.clearRect(0, 0, mgCanvas.width, mgCanvas.height);
+        for(let i=0; i<mgParticles.length; i++) {
+            let p = mgParticles[i]; p.tiltAngle += p.tiltAngleInc; p.y += (Math.cos(p.tiltAngle) + 1 + p.r / 2) / 2; p.x += Math.sin(p.tiltAngle) * 2;
+            mgCtx.beginPath(); mgCtx.lineWidth = p.r; mgCtx.strokeStyle = p.color; mgCtx.moveTo(p.x + p.tilt + p.r, p.y); mgCtx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r); mgCtx.stroke();
+            if(p.y > mgCanvas.height) { mgParticles.splice(i, 1); i--; }
+        }
+    }
+
+    function mg_handleWin() {
+        MG.isAnimating = true; sfx.win();
+        setTimeout(() => {
+            mg_fireConfetti();
+            document.getElementById('mg-level-complete-overlay').classList.add('active');
+        }, 500);
+    }
+
+    function openMinigamePenalty() {
+        initAudio();
+        document.getElementById('mg-layer').style.display = 'flex';
+        mg_createBackground();
+        MG.history = []; MG.selectedTubeIdx = null; MG.isAnimating = false;
+        MG.tubesState = mg_generateLevel();
+        mg_buildDOM(MG.tubesState);
+        document.getElementById('mg-level-complete-overlay').classList.remove('active');
+        mgParticles = []; mgConfettiActive = false; 
+        const mgCanvas = document.getElementById('mg-confetti-canvas');
+        const mgCtx = mgCanvas.getContext('2d');
+        mgCtx.clearRect(0, 0, mgCanvas.width, mgCanvas.height);
+    }
+
+    function closeMinigame() {
+        initAudio();
+        document.getElementById('mg-layer').style.display = 'none';
+        mgParticles = []; mgConfettiActive = false;
+        jumpQueue = []; completedHops = [];
+        resetFrogToStart(currentQuestion.num1, currentQuestion.op === '+');
+    }
+
+</script>
 </body>
 </html>
