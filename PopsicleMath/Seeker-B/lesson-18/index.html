@@ -206,6 +206,7 @@
         .basket {
             position: absolute;
             bottom: 5vh;
+            left: 0;
             width: 140px;
             height: 75px;
             background: linear-gradient(to bottom, #E8B478, #C48E55);
@@ -214,7 +215,9 @@
             box-shadow: inset 0 -10px 0 rgba(0,0,0,0.1), 0 15px 10px rgba(0,0,0,0.2);
             z-index: 50;
             transform-origin: center;
-            transition: left 0.1s ease-out;
+            transition: none;
+            will-change: transform;
+            contain: layout paint style;
         }
         .falling-item {
             position: absolute;
@@ -231,8 +234,19 @@
         #mini-game-area {
             contain: layout paint size;
         }
+        #mini-game-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 39;
+            pointer-events: none;
+            transform: translateZ(0);
+        }
         #mini-game-layer {
             transform: translateZ(0);
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
         }
 
         #fireworks-canvas {
@@ -553,7 +567,8 @@
             </div>
         </div>
         <div id="mini-game-area" class="w-full flex-grow relative overflow-hidden pointer-events-auto touch-none mt-10">
-            <div id="basket" class="basket left-1/2 -translate-x-1/2"></div>
+            <canvas id="mini-game-canvas" aria-label="Falling fruits and bombs"></canvas>
+            <div id="basket" class="basket"></div>
         </div>
     </div>
 
@@ -760,8 +775,8 @@
         function backgroundAnimationLoop(timestamp) {
             requestAnimationFrame(backgroundAnimationLoop);
             const miniGameIsRunning = typeof isMiniGameActive !== 'undefined' && isMiniGameActive;
-            const minFrameGap = miniGameIsRunning ? 66 : 16;
-            if (timestamp - lastBackgroundFrame < minFrameGap) return;
+            if (miniGameIsRunning) return;
+            if (timestamp - lastBackgroundFrame < 16) return;
             lastBackgroundFrame = timestamp;
             updateBackgroundCanvas();
             drawBackgroundCanvas();
@@ -1153,6 +1168,8 @@
         }
 
         // --- Mini-game Logic ---
+        // Version 4: the fruit-catching mini game is drawn on one canvas.
+        // This removes dozens of DOM updates and keeps gameplay smooth on tablets and phones.
         let itemSpawnInterval;
         let miniGameStartTime;
         let miniGameAnimationId = null;
@@ -1162,11 +1179,19 @@
         let basketPosition = 50;
         let cachedAreaWidth = 0;
         let cachedAreaHeight = 0;
+        let cachedAreaLeft = 0;
+        let cachedBasketWidth = 140;
+        let cachedBasketHeight = 75;
         let cachedBasketLeft = 0;
         let cachedBasketRight = 0;
         let cachedBasketTop = 0;
+        let basketScale = 1;
+        let basketLift = 0;
+        let basketPopTimer = null;
         const basket = document.getElementById('basket');
         const miniGameArea = document.getElementById('mini-game-area');
+        const miniGameCanvas = document.getElementById('mini-game-canvas');
+        const miniGameCtx = miniGameCanvas.getContext('2d');
         const fruitScoreEl = document.getElementById('fruit-score');
 
         function startMiniGame() {
@@ -1177,7 +1202,11 @@
             activeFallingItems = [];
             clearTimeout(itemSpawnInterval);
             cancelAnimationFrame(miniGameAnimationId);
+            clearTimeout(basketPopTimer);
+            basketScale = 1;
+            basketLift = 0;
             document.querySelectorAll('.falling-item').forEach(el => el.remove());
+            clearMiniGameCanvas();
             
             document.getElementById('main-game-layer').classList.add('opacity-0', 'pointer-events-none');
             document.getElementById('mini-game-layer').classList.remove('hidden', 'opacity-0', 'pointer-events-none');
@@ -1186,40 +1215,67 @@
             speak("Fruit party! Catch the apples!");
 
             basketPosition = 50;
-            updateBasketPosition();
             setupMiniGameControls();
             cacheMiniGameLayout();
+            updateBasketPosition();
             miniGameAnimationId = requestAnimationFrame(miniGameLoop);
         }
 
+        function resizeMiniGameCanvas() {
+            const dpr = Math.min(2, window.devicePixelRatio || 1);
+            const width = Math.max(1, miniGameArea.clientWidth || window.innerWidth);
+            const height = Math.max(1, miniGameArea.clientHeight || Math.round(window.innerHeight * 0.65));
+            if (miniGameCanvas.width !== Math.round(width * dpr) || miniGameCanvas.height !== Math.round(height * dpr)) {
+                miniGameCanvas.width = Math.round(width * dpr);
+                miniGameCanvas.height = Math.round(height * dpr);
+                miniGameCanvas.style.width = `${width}px`;
+                miniGameCanvas.style.height = `${height}px`;
+                miniGameCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            }
+        }
+
+        function clearMiniGameCanvas() {
+            if (!miniGameCtx) return;
+            miniGameCtx.clearRect(0, 0, cachedAreaWidth || miniGameCanvas.width, cachedAreaHeight || miniGameCanvas.height);
+        }
+
         function cacheMiniGameLayout() {
-            cachedAreaWidth = miniGameArea.clientWidth || window.innerWidth;
-            cachedAreaHeight = miniGameArea.clientHeight || Math.round(window.innerHeight * 0.65);
-            const basketWidth = basket.offsetWidth || 140;
+            const areaRect = miniGameArea.getBoundingClientRect();
+            cachedAreaWidth = areaRect.width || window.innerWidth;
+            cachedAreaHeight = areaRect.height || Math.round(window.innerHeight * 0.65);
+            cachedAreaLeft = areaRect.left || 0;
+            cachedBasketWidth = basket.offsetWidth || 140;
+            cachedBasketHeight = basket.offsetHeight || 75;
+            cachedBasketTop = Math.max(0, cachedAreaHeight - cachedBasketHeight - (window.innerHeight * 0.05));
+            resizeMiniGameCanvas();
+            updateBasketBounds();
+        }
+
+        function updateBasketBounds() {
             const basketCenter = (basketPosition / 100) * cachedAreaWidth;
-            cachedBasketLeft = basketCenter - basketWidth / 2;
-            cachedBasketRight = basketCenter + basketWidth / 2;
-            cachedBasketTop = basket.offsetTop || Math.max(0, cachedAreaHeight - 120);
+            cachedBasketLeft = basketCenter - cachedBasketWidth / 2;
+            cachedBasketRight = basketCenter + cachedBasketWidth / 2;
         }
 
         function getMiniGameDelay(now) {
             const elapsed = now - miniGameStartTime;
-            const level = Math.floor(elapsed / 3500);
-            return Math.max(430, 820 - (level * 70));
+            const level = Math.floor(elapsed / 4500);
+            return Math.max(520, 920 - (level * 65));
         }
 
         function scheduleNextSpawn() {
             // Kept for compatibility with the original game flow.
-            // Version 3 uses one requestAnimationFrame loop instead of many timers.
+            // Version 4 uses a single canvas requestAnimationFrame loop.
         }
 
         function endMiniGame() {
             if (!isMiniGameActive) return;
             clearTimeout(itemSpawnInterval);
             cancelAnimationFrame(miniGameAnimationId);
+            clearTimeout(basketPopTimer);
             miniGameAnimationId = null;
-            activeFallingItems.forEach(obj => obj.el.remove());
             activeFallingItems = [];
+            clearMiniGameCanvas();
             document.querySelectorAll('.falling-item').forEach(el => el.remove());
             teardownMiniGameControls();
 
@@ -1248,34 +1304,38 @@
 
         function spawnItem() {
             if (!isMiniGameActive) return;
-            cacheMiniGameLayout();
 
             const elapsed = performance.now() - miniGameStartTime;
-            const level = Math.floor(elapsed / 4200);
+            const level = Math.floor(elapsed / 5000);
             const choices = ['🍎', '🍎', '🍊', '🍇', '🍓', '🍌'];
-            const bombCount = Math.min(3, 1 + Math.floor(level / 3));
+            const bombCount = Math.min(2, 1 + Math.floor(level / 4));
             for (let i = 0; i < bombCount; i++) choices.push('💣');
 
             const item = choices[Math.floor(Math.random() * choices.length)];
-            const el = document.createElement('div');
-            el.className = 'falling-item';
-            el.textContent = item;
-
-            const size = Math.max(48, Math.min(65, cachedAreaWidth * 0.08));
+            const size = Math.max(46, Math.min(62, cachedAreaWidth * 0.075));
             const x = Math.random() * Math.max(40, cachedAreaWidth - size - 40) + 20;
-            const speed = Math.min(620, 285 + level * 36 + Math.random() * 65);
-            el.style.transform = `translate3d(${x}px, -${size + 35}px, 0)`;
-            miniGameArea.appendChild(el);
+            const speed = Math.min(520, 245 + level * 28 + Math.random() * 55);
 
             activeFallingItems.push({
-                el,
                 item,
                 x,
                 y: -size - 35,
                 size,
                 speed,
-                collected: false
+                phase: Math.random() * Math.PI * 2
             });
+        }
+
+        function drawMiniGameItem(obj, timestamp) {
+            const bob = Math.sin(timestamp * 0.004 + obj.phase) * 2;
+            miniGameCtx.save();
+            miniGameCtx.font = `${obj.size}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Poppins", sans-serif`;
+            miniGameCtx.textBaseline = 'top';
+            miniGameCtx.shadowColor = 'rgba(0,0,0,0.28)';
+            miniGameCtx.shadowBlur = 8;
+            miniGameCtx.shadowOffsetY = 6;
+            miniGameCtx.fillText(obj.item, obj.x, obj.y + bob);
+            miniGameCtx.restore();
         }
 
         function miniGameLoop(timestamp) {
@@ -1286,23 +1346,22 @@
                 nextMiniGameSpawnAt = timestamp;
             }
 
-            const delta = Math.min(0.033, Math.max(0.001, (timestamp - lastMiniGameFrame) / 1000));
+            const delta = Math.min(0.032, Math.max(0.001, (timestamp - lastMiniGameFrame) / 1000));
             lastMiniGameFrame = timestamp;
 
-            if (timestamp >= nextMiniGameSpawnAt && activeFallingItems.length < 7) {
+            if (timestamp >= nextMiniGameSpawnAt && activeFallingItems.length < 5) {
                 spawnItem();
                 nextMiniGameSpawnAt = timestamp + getMiniGameDelay(timestamp);
             }
 
-            cacheMiniGameLayout();
+            miniGameCtx.clearRect(0, 0, cachedAreaWidth, cachedAreaHeight);
 
             for (let i = activeFallingItems.length - 1; i >= 0; i--) {
                 const obj = activeFallingItems[i];
                 obj.y += obj.speed * delta;
-                obj.el.style.transform = `translate3d(${obj.x}px, ${obj.y}px, 0)`;
 
-                const itemLeft = obj.x + 4;
-                const itemRight = obj.x + obj.size - 4;
+                const itemLeft = obj.x + 6;
+                const itemRight = obj.x + obj.size - 6;
                 const itemBottom = obj.y + obj.size;
 
                 if (itemBottom >= cachedBasketTop &&
@@ -1310,17 +1369,21 @@
                     itemLeft < cachedBasketRight - 18) {
                     handleMiniGameCatch(obj, i);
                     if (!isMiniGameActive) return;
-                } else if (obj.y > cachedAreaHeight + 80) {
-                    obj.el.remove();
-                    activeFallingItems.splice(i, 1);
+                    continue;
                 }
+
+                if (obj.y > cachedAreaHeight + 80) {
+                    activeFallingItems.splice(i, 1);
+                    continue;
+                }
+
+                drawMiniGameItem(obj, timestamp);
             }
 
             miniGameAnimationId = requestAnimationFrame(miniGameLoop);
         }
 
         function handleMiniGameCatch(obj, index) {
-            obj.el.remove();
             activeFallingItems.splice(index, 1);
 
             if (obj.item === '💣') {
@@ -1344,33 +1407,52 @@
             setTimeout(() => plusOne.remove(), 600);
 
             fruitScoreEl.innerText = fruitScore;
-            basket.style.transform = 'translateX(-50%) scale(1.08) translateY(8px)';
-            setTimeout(() => basket.style.transform = 'translateX(-50%) scale(1) translateY(0)', 90);
+            popBasket();
+        }
+
+        function popBasket() {
+            basketScale = 1.08;
+            basketLift = 8;
+            applyBasketTransform();
+            clearTimeout(basketPopTimer);
+            basketPopTimer = setTimeout(() => {
+                basketScale = 1;
+                basketLift = 0;
+                applyBasketTransform();
+            }, 90);
         }
 
         function setupMiniGameControls() {
             miniGameArea.addEventListener('touchmove', handleMove, {passive: false});
             miniGameArea.addEventListener('mousemove', handleMove);
-            window.addEventListener('resize', cacheMiniGameLayout);
+            window.addEventListener('resize', handleMiniGameResize);
         }
         function teardownMiniGameControls() {
             miniGameArea.removeEventListener('touchmove', handleMove);
             miniGameArea.removeEventListener('mousemove', handleMove);
-            window.removeEventListener('resize', cacheMiniGameLayout);
+            window.removeEventListener('resize', handleMiniGameResize);
+        }
+        function handleMiniGameResize() {
+            cacheMiniGameLayout();
+            updateBasketPosition();
         }
         function handleMove(e) {
             if(!isMiniGameActive) return;
             e.preventDefault();
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const rect = miniGameArea.getBoundingClientRect();
-            let relativeX = clientX - rect.left;
-            basketPosition = (relativeX / rect.width) * 100;
+            const relativeX = clientX - cachedAreaLeft;
+            basketPosition = (relativeX / cachedAreaWidth) * 100;
             updateBasketPosition();
         }
         function updateBasketPosition() {
-            basketPosition = Math.max(10, Math.min(90, basketPosition)); 
-            basket.style.left = `${basketPosition}%`;
-            cacheMiniGameLayout();
+            basketPosition = Math.max(10, Math.min(90, basketPosition));
+            updateBasketBounds();
+            applyBasketTransform();
+        }
+        function applyBasketTransform() {
+            const left = Math.max(0, Math.min(cachedAreaWidth - cachedBasketWidth, cachedBasketLeft));
+            basket.style.left = '0px';
+            basket.style.transform = `translate3d(${left}px, ${basketLift}px, 0) scale(${basketScale})`;
         }
 
         function restartGame() {
