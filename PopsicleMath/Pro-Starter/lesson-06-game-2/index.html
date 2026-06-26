@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Time Quest - Version 3</title>
+    <title>Time Quest - Version 4</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap');
 
@@ -88,10 +89,7 @@
             width: 100px;
             height: 80px;
             /* Empty top-right space for logo */
-        }
-
-        .replay-btn-container {
-            pointer-events: auto;
+            margin-left: auto;
         }
 
         /* Main App Container */
@@ -183,7 +181,7 @@
             width: 100%;
         }
 
-        .btn:active {
+        .btn:active:not(.wrong) {
             transform: translateY(4px);
         }
 
@@ -231,17 +229,6 @@
             stroke-linejoin: round;
         }
 
-        .btn-speaker-small {
-            width: 55px;
-            height: 55px;
-            background-color: var(--btn-purple);
-            border-color: var(--btn-purple-shadow);
-        }
-        .btn-speaker-small svg {
-            width: 26px;
-            height: 26px;
-        }
-
         .answers-grid {
             display: flex;
             gap: 15px;
@@ -261,10 +248,10 @@
             padding: 18px 10px;
             border-radius: 20px;
         }
-        .btn-answer:active {
+        .btn-answer:active:not(.wrong) {
             border-bottom-width: 2px;
         }
-        .btn-answer:hover {
+        .btn-answer:hover:not(.wrong):not(.correct) {
             background-color: #F7F7F7;
         }
 
@@ -292,12 +279,14 @@
             border-color: var(--btn-red);
             border-bottom-color: var(--btn-red-shadow);
             opacity: 0.6;
+            transform: none !important;
+            cursor: not-allowed;
         }
 
-        /* Clock - Increased physical size by 20% */
+        /* Clock - Increased physical size (+10% from 312px = ~343px) */
         .clock-container {
-            width: 312px;
-            height: 312px;
+            width: 343px;
+            height: 343px;
             margin-bottom: 35px;
             background: var(--clock-face);
             border-radius: 50%;
@@ -337,12 +326,6 @@
         }
         #feedback-overlay.correct .feedback-text { color: var(--btn-green-shadow); }
 
-        #feedback-overlay.wrong {
-            background-color: #FFD2D2;
-            border-top: 4px solid var(--btn-red);
-        }
-        #feedback-overlay.wrong .feedback-text { color: var(--btn-red-shadow); }
-
         .feedback-text {
             font-size: 2.2rem;
             font-weight: 800;
@@ -371,11 +354,6 @@
         #feedback-overlay.correct .btn-next {
             background-color: var(--btn-green);
             border-color: var(--btn-green-shadow);
-            color: white;
-        }
-        #feedback-overlay.wrong .btn-next {
-            background-color: var(--btn-red);
-            border-color: var(--btn-red-shadow);
             color: white;
         }
 
@@ -414,8 +392,8 @@
             .question-text { font-size: 1.3rem; }
             .answers-grid { flex-direction: column; align-items: center; }
             .btn-answer { width: 100%; }
-            /* Adjusted Mobile Clock Size (20% larger than old 220px) */
-            .clock-container { width: 264px; height: 264px; }
+            /* Adjusted Mobile Clock Size (+10% from 264px = 290px) */
+            .clock-container { width: 290px; height: 290px; }
             
             .feedback-content { flex-direction: column; gap: 20px; text-align: center; }
             .feedback-text { justify-content: center; }
@@ -436,23 +414,14 @@
     </style>
 </head>
 <body>
-
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
     <!-- Background SVG Decorations -->
     <div class="bg-decorations" id="bg-decorations">
         <!-- Injected via JS for neatness -->
     </div>
 
-    <!-- Top Bar -->
+    <!-- Top Bar (Kept only for logo space) -->
     <div class="top-bar hidden" id="top-bar">
-        <div class="replay-btn-container">
-            <button class="btn btn-speaker btn-speaker-small" onclick="speakCurrentQuestion()" aria-label="Replay Question">
-                <svg viewBox="0 0 24 24">
-                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="white" stroke="white"></polygon>
-                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-                </svg>
-            </button>
-        </div>
         <div class="logo-space"></div>
     </div>
 
@@ -484,28 +453,29 @@
             </div>
             
             <div class="clock-container">
-                <!-- Expanded viewBox from 200 to 240. Scale remains same, so elements inside look identical in size -->
-                <svg class="clock-svg" id="analog-clock" viewBox="0 0 240 240">
-                    <!-- Clock Face -->
-                    <circle cx="120" cy="120" r="114" fill="var(--clock-face)" stroke="var(--clock-border)" stroke-width="12"/>
-                    <circle cx="120" cy="120" r="102" fill="none" stroke="#F0F0F0" stroke-width="1"/>
+                <!-- Expanded viewBox to 264 to allow 10% larger face. Scale inside keeps exact size of elements -->
+                <svg class="clock-svg" id="analog-clock" viewBox="0 0 264 264">
+                    <!-- Clock Face (Radius increased to fit the 10% larger box) -->
+                    <circle cx="132" cy="132" r="125" fill="var(--clock-face)" stroke="var(--clock-border)" stroke-width="12"/>
+                    <circle cx="132" cy="132" r="113" fill="none" stroke="#F0F0F0" stroke-width="1"/>
                     
                     <!-- Ticks and Numbers injected by JS -->
                     <g id="clock-ticks"></g>
                     <g id="clock-numbers"></g>
                     
-                    <!-- Shadow layer for hands (Fixed Safari Issue) -->
+                    <!-- Shadow layer for hands -->
                     <g transform="translate(0, 3)">
-                        <line id="hour-hand-shadow" x1="120" y1="120" x2="120" y2="75" stroke="rgba(0,0,0,0.15)" stroke-width="12" stroke-linecap="round" transform="rotate(0 120 120)"/>
-                        <line id="minute-hand-shadow" x1="120" y1="120" x2="120" y2="45" stroke="rgba(0,0,0,0.15)" stroke-width="8" stroke-linecap="round" transform="rotate(0 120 120)"/>
-                        <circle cx="120" cy="120" r="10" fill="rgba(0,0,0,0.15)"/>
+                        <!-- Shadows keep the same absolute length as hands -->
+                        <line id="hour-hand-shadow" x1="132" y1="132" x2="132" y2="87" stroke="rgba(0,0,0,0.15)" stroke-width="12" stroke-linecap="round" transform="rotate(0 132 132)"/>
+                        <line id="minute-hand-shadow" x1="132" y1="132" x2="132" y2="57" stroke="rgba(0,0,0,0.15)" stroke-width="8" stroke-linecap="round" transform="rotate(0 132 132)"/>
+                        <circle cx="132" cy="132" r="10" fill="rgba(0,0,0,0.15)"/>
                     </g>
                     
-                    <!-- Hands -->
-                    <line id="hour-hand" x1="120" y1="120" x2="120" y2="75" stroke="var(--clock-hour)" stroke-width="12" stroke-linecap="round" transform="rotate(0 120 120)"/>
-                    <line id="minute-hand" x1="120" y1="120" x2="120" y2="45" stroke="var(--clock-minute)" stroke-width="8" stroke-linecap="round" transform="rotate(0 120 120)"/>
-                    <circle cx="120" cy="120" r="10" fill="var(--clock-center)"/>
-                    <circle cx="120" cy="120" r="4" fill="#FFFFFF"/>
+                    <!-- Hands (Kept identical absolute length as v3, numbers moved outward) -->
+                    <line id="hour-hand" x1="132" y1="132" x2="132" y2="87" stroke="var(--clock-hour)" stroke-width="12" stroke-linecap="round" transform="rotate(0 132 132)"/>
+                    <line id="minute-hand" x1="132" y1="132" x2="132" y2="57" stroke="var(--clock-minute)" stroke-width="8" stroke-linecap="round" transform="rotate(0 132 132)"/>
+                    <circle cx="132" cy="132" r="10" fill="var(--clock-center)"/>
+                    <circle cx="132" cy="132" r="4" fill="#FFFFFF"/>
                 </svg>
             </div>
 
@@ -528,7 +498,7 @@
         </div>
     </div>
 
-    <!-- Feedback Overlay -->
+    <!-- Feedback Overlay (Only shown on Correct answer now) -->
     <div id="feedback-overlay" class="hidden">
         <div class="feedback-content">
             <div class="feedback-text">
@@ -544,6 +514,7 @@
 
     <script>
         /* --- QUESTION DATABASE --- */
+        // Updated daily routine questions with spokenText property for natural TTS reading
         const allQuestions = [
             // O'clock Times (12)
             { type: 'standard', h: 1, m: 0, digital: "1:00", phrase: "one o'clock" },
@@ -584,14 +555,14 @@
             { type: 'standard', h: 10, m: 55, digital: "10:55", phrase: "five to eleven" },
 
             // Daily Routine Questions (8)
-            { type: 'routine', h: 7, m: 0, digital: "7:00 am", phrase: "in the morning", text: "The baby woke up at ______ in the morning." },
-            { type: 'routine', h: 12, m: 15, digital: "12:15 pm", phrase: "in the afternoon", text: "Sally eats her lunch at ______." },
-            { type: 'routine', h: 3, m: 30, digital: "3:30 pm", phrase: "in the afternoon", text: "The students finish school at ______." },
-            { type: 'routine', h: 6, m: 45, digital: "6:45 pm", phrase: "in the evening", text: "My family eats dinner at ______." },
-            { type: 'routine', h: 8, m: 0, digital: "8:00 pm", phrase: "at night", text: "Anita jogs at the park every evening at ______." },
-            { type: 'routine', h: 6, m: 0, digital: "6:00 am", phrase: "in the morning", text: "The sun comes up at ______ in the morning." },
-            { type: 'routine', h: 10, m: 30, digital: "10:30 am", phrase: "in the morning", text: "We have a morning snack at ______." },
-            { type: 'routine', h: 8, m: 30, digital: "8:30 pm", phrase: "at night", text: "Tom brushes his teeth at ______ before bed." }
+            { type: 'routine', h: 7, m: 0, digital: "7:00 am", phrase: "in the morning", text: "The baby woke up at ______ in the morning.", spokenText: "What time did the baby wake up in the morning?" },
+            { type: 'routine', h: 12, m: 15, digital: "12:15 pm", phrase: "in the afternoon", text: "Sally eats her lunch at ______.", spokenText: "What time does Sally eat her lunch?" },
+            { type: 'routine', h: 3, m: 30, digital: "3:30 pm", phrase: "in the afternoon", text: "The students finish school at ______.", spokenText: "What time do the students finish school?" },
+            { type: 'routine', h: 6, m: 45, digital: "6:45 pm", phrase: "in the evening", text: "My family eats dinner at ______.", spokenText: "What time does your family eat dinner?" },
+            { type: 'routine', h: 8, m: 0, digital: "8:00 pm", phrase: "at night", text: "Anita jogs at the park every evening at ______.", spokenText: "What time does Anita jog at the park every evening?" },
+            { type: 'routine', h: 6, m: 0, digital: "6:00 am", phrase: "in the morning", text: "The sun comes up at ______ in the morning.", spokenText: "What time does the sun come up in the morning?" },
+            { type: 'routine', h: 10, m: 30, digital: "10:30 am", phrase: "in the morning", text: "We have a morning snack at ______.", spokenText: "What time do we have a morning snack?" },
+            { type: 'routine', h: 8, m: 30, digital: "8:30 pm", phrase: "at night", text: "Tom brushes his teeth at ______ before bed.", spokenText: "What time does Tom brush his teeth before bed?" }
         ];
 
         const standardAnswers = allQuestions.filter(q => q.type === 'standard');
@@ -602,6 +573,7 @@
         let currentQuestionIndex = 0;
         let score = 0;
         let isAnswered = false;
+        let hasAttemptedWrong = false; // Tracks if the user made a mistake in current question
 
         /* --- AUDIO CONTEXT --- */
         let audioCtx;
@@ -657,17 +629,21 @@
         }
 
         /* --- SPEECH SYNTHESIS --- */
-        function speakCurrentQuestion() {
+        function speakText(text) {
             if (!('speechSynthesis' in window)) return;
-            const q = currentRound[currentQuestionIndex];
-            let textToSpeak = q.type === 'routine' ? q.text.replace("______", "blank") : "What time is it?";
-            
             window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'en-US';
             utterance.rate = 0.9;
             utterance.pitch = 1.3; 
             window.speechSynthesis.speak(utterance);
+        }
+
+        function speakCurrentQuestion() {
+            const q = currentRound[currentQuestionIndex];
+            // Use natural spokenText if provided, otherwise default fallback
+            let textToSpeak = q.spokenText || (q.type === 'routine' ? q.text : "What time is it?");
+            speakText(textToSpeak);
         }
 
         /* --- UTILS --- */
@@ -688,17 +664,18 @@
             ticksGroup.innerHTML = '';
             numbersGroup.innerHTML = '';
 
-            // Using the new viewBox center (120, 120) and increased radius
+            // Using the new viewBox center (132, 132)
             for (let i = 0; i < 60; i++) {
                 let angle = (i * 6) * (Math.PI / 180);
                 let isHour = i % 5 === 0;
-                let rOuter = 108; // 88 + 20
-                let rInner = isHour ? 95 : 102; // 75 + 20, 82 + 20
+                // Pushed outward by ~12px to match new 10% larger box, while preserving hand sizes
+                let rOuter = 120;
+                let rInner = isHour ? 107 : 114;
                 
-                let x1 = 120 + rInner * Math.sin(angle);
-                let y1 = 120 - rInner * Math.cos(angle);
-                let x2 = 120 + rOuter * Math.sin(angle);
-                let y2 = 120 - rOuter * Math.cos(angle);
+                let x1 = 132 + rInner * Math.sin(angle);
+                let y1 = 132 - rInner * Math.cos(angle);
+                let x2 = 132 + rOuter * Math.sin(angle);
+                let y2 = 132 - rOuter * Math.cos(angle);
 
                 let line = document.createElementNS("http://www.w3.org/2000/svg", "line");
                 line.setAttribute("x1", x1);
@@ -706,15 +683,15 @@
                 line.setAttribute("x2", x2);
                 line.setAttribute("y2", y2);
                 line.setAttribute("stroke", "var(--clock-text)");
-                line.setAttribute("stroke-width", isHour ? "4" : "1.5");
+                line.setAttribute("stroke-width", isHour ? "4" : "1.5"); // Same absolute thickness
                 line.setAttribute("stroke-linecap", "round");
                 ticksGroup.appendChild(line);
 
                 if (isHour) {
                     let num = i === 0 ? 12 : i / 5;
-                    let rNum = 78; // 58 + 20
-                    let nx = 120 + rNum * Math.sin(angle);
-                    let ny = 120 - rNum * Math.cos(angle);
+                    let rNum = 90; // Moved numbers outwards to not overlap with hands
+                    let nx = 132 + rNum * Math.sin(angle);
+                    let ny = 132 - rNum * Math.cos(angle);
                     
                     let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
                     text.setAttribute("x", nx);
@@ -822,17 +799,18 @@
             const mAngle = m * 6;
             const hAngle = ((h % 12) * 30) + (m * 0.5);
             
-            // Set rotation for actual hands
-            document.getElementById('hour-hand').setAttribute('transform', `rotate(${hAngle} 120 120)`);
-            document.getElementById('minute-hand').setAttribute('transform', `rotate(${mAngle} 120 120)`);
+            // Set rotation for actual hands with new center (132, 132)
+            document.getElementById('hour-hand').setAttribute('transform', `rotate(${hAngle} 132 132)`);
+            document.getElementById('minute-hand').setAttribute('transform', `rotate(${mAngle} 132 132)`);
             
             // Set rotation for shadow layers
-            document.getElementById('hour-hand-shadow').setAttribute('transform', `rotate(${hAngle} 120 120)`);
-            document.getElementById('minute-hand-shadow').setAttribute('transform', `rotate(${mAngle} 120 120)`);
+            document.getElementById('hour-hand-shadow').setAttribute('transform', `rotate(${hAngle} 132 132)`);
+            document.getElementById('minute-hand-shadow').setAttribute('transform', `rotate(${mAngle} 132 132)`);
         }
 
         function loadQuestion() {
             isAnswered = false;
+            hasAttemptedWrong = false; // Reset attempt tracker
             document.getElementById('feedback-overlay').classList.add('hidden');
             
             const q = currentRound[currentQuestionIndex];
@@ -860,7 +838,7 @@
             options.forEach((opt) => {
                 let btn = document.createElement('button');
                 btn.className = 'btn btn-answer';
-                btn.onclick = () => selectAnswer(btn, opt.digital === q.digital);
+                btn.onclick = () => selectAnswer(btn, opt.digital === q.digital, opt);
                 
                 let divDigital = document.createElement('div');
                 divDigital.className = 'digital';
@@ -876,45 +854,47 @@
             });
         }
 
-        function selectAnswer(btn, isCorrect) {
-            if (isAnswered) return;
-            isAnswered = true;
+        function selectAnswer(btn, isCorrect, opt) {
+            if (isAnswered || btn.classList.contains('wrong')) return;
             
-            const allBtns = document.getElementById('answers-container').children;
-            for (let b of allBtns) {
-                b.style.pointerEvents = 'none';
-            }
-
-            const overlay = document.getElementById('feedback-overlay');
-            const feedbackMsg = document.getElementById('feedback-msg');
-            const feedbackIcon = document.getElementById('feedback-icon');
-
-            overlay.className = ''; 
+            // Speak the specific answer text immediately
+            speakText(opt.phrase);
             
             if (isCorrect) {
+                isAnswered = true; // Lock further selection once correct
                 btn.classList.add('correct');
-                score++;
+                
+                // Add score only if no wrong attempt was made this round
+                if (!hasAttemptedWrong) {
+                    score++;
+                }
+                
                 playSound('correct');
-                overlay.classList.add('correct');
+                
+                // Disable all other buttons
+                const allBtns = document.getElementById('answers-container').children;
+                for (let b of allBtns) {
+                    b.style.pointerEvents = 'none';
+                }
+
+                // Show the Next overlay for Teacher review
+                const overlay = document.getElementById('feedback-overlay');
+                const feedbackMsg = document.getElementById('feedback-msg');
+                const feedbackIcon = document.getElementById('feedback-icon');
+
+                overlay.className = 'correct'; 
                 feedbackMsg.innerText = "Great job!";
                 feedbackIcon.innerText = "✓";
                 feedbackIcon.style.color = "var(--btn-green)";
+                overlay.classList.remove('hidden');
+                
             } else {
+                // If wrong, mark as wrong, no points, let them try again
                 btn.classList.add('wrong');
-                const q = currentRound[currentQuestionIndex];
-                for (let b of allBtns) {
-                    if (b.querySelector('.digital').innerText === q.digital) {
-                        b.classList.add('correct');
-                    }
-                }
+                hasAttemptedWrong = true;
                 playSound('wrong');
-                overlay.classList.add('wrong');
-                feedbackMsg.innerText = "Try again!";
-                feedbackIcon.innerText = "×";
-                feedbackIcon.style.color = "var(--btn-red)";
+                // The feedback overlay intentionally does NOT show here.
             }
-            
-            overlay.classList.remove('hidden');
         }
 
         function nextQuestion() {
