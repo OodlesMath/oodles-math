@@ -4,14 +4,13 @@
     <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tens and Ones Game</title>
+    <title>Tens and Ones & Ball Sort Game - Ver2</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Tone.js for Audio -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-
     <!-- Canvas Confetti for Fireworks -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
@@ -26,6 +25,7 @@
             --cube-size: 26px; 
             --rod-width: calc(var(--cube-size) * 10);
         }
+
         @media (min-width: 768px) {
             :root {
                 --cube-size: 32px;
@@ -34,12 +34,15 @@
 
         body {
             font-family: 'Poppins', sans-serif;
-            /* Animated Candy Gradient Background */
             background: linear-gradient(45deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
             background-size: 400% 400%;
             animation: gradientBG 15s ease infinite;
             touch-action: none;
             overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
         }
 
         @keyframes gradientBG {
@@ -69,14 +72,26 @@
             100% { bottom: 1080px; transform: translateX(-200px); opacity: 0; }
         }
 
-        #game-container {
+        /* Game Containers */
+        .game-wrapper {
             max-width: 900px;
+            width: 95%;
             max-height: 98vh;
             overflow-y: auto;
             box-shadow: 0 20px 50px rgba(0,0,0,0.15);
             background-color: rgba(255, 255, 255, 0.95);
             border: 4px solid #fff;
+            border-radius: 1.5rem;
             backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        #ball-sort-wrapper {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            border: 4px solid rgba(255,255,255,0.8);
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
         }
 
         /* Fun Text Gradient */
@@ -86,6 +101,12 @@
             color: transparent;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
             letter-spacing: 1px;
+        }
+
+        .ball-sort-title {
+            background: linear-gradient(to right, #f6d365, #fda085, #4facfe, #43e97b);
+            -webkit-background-clip: text;
+            color: transparent;
         }
 
         /* -- Drag & Drop Area -- */
@@ -105,9 +126,10 @@
             display: flex;
             flex-wrap: wrap;
             align-content: flex-start;
-            justify-content: center; /* Center to make blocks perfectly neat */
+            justify-content: center;
             gap: 6px;
             position: relative;
+            transition: background-color 0.3s;
         }
         
         .dropzone-tens {
@@ -124,18 +146,17 @@
 
         /* -- 3D Realistic Unifix Cubes -- */
         .cube {
-            cursor: pointer; /* Change to pointer to show it's clickable */
+            cursor: pointer;
             user-select: none;
             border-radius: 6px;
             transition: transform 0.1s ease-out;
-            touch-action: none; /* Crucial for mobile drag */
+            touch-action: none;
         }
         .cube:active {
             transform: scale(1.1);
             z-index: 50;
         }
         
-        /* One Cube (Blue) */
         .one-cube {
             width: var(--cube-size); 
             height: var(--cube-size);
@@ -147,7 +168,6 @@
             border-radius: 4px;
         }
         
-        /* Ten Rod (Red) */
         .ten-rod {
             width: var(--rod-width);
             height: var(--cube-size);
@@ -159,7 +179,7 @@
                         inset 2px 2px 4px rgba(255,255,255,0.4), 
                         3px 3px 6px rgba(0,0,0,0.3);
             border-radius: 4px;
-            overflow: hidden; /* Keep segments inside border */
+            overflow: hidden;
         }
         .ten-rod-segment {
             width: var(--cube-size);
@@ -172,17 +192,12 @@
 
         /* -- Playful Flashcard -- */
         #flashcard-deck {
-            width: 100px; 
-            height: 120px; 
-            position: relative; 
-            cursor: pointer;
-            perspective: 1000px;
-            margin: 0 auto;
+            width: 100px; height: 120px; 
+            position: relative; cursor: pointer;
+            perspective: 1000px; margin: 0 auto;
         }
         .card-face {
-            position: absolute;
-            width: 100%;
-            height: 100%;
+            position: absolute; width: 100%; height: 100%;
             backface-visibility: hidden;
             transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
             border-radius: 16px;
@@ -191,37 +206,24 @@
         }
         .card-back {
             background: repeating-linear-gradient(45deg, #A78BFA, #A78BFA 10px, #8B5CF6 10px, #8B5CF6 20px);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3.5rem; 
-            font-weight: 900;
+            color: white; display: flex; align-items: center; justify-content: center;
+            font-size: 3.5rem; font-weight: 900;
             text-shadow: 2px 2px 0px #5B21B6;
             transform: rotateY(0deg);
         }
         .card-front {
-            background: #FFFBEB;
-            color: #D97706;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3.5rem; 
-            font-weight: 900;
+            background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center;
+            font-size: 3.5rem; font-weight: 900;
             transform: rotateY(180deg);
             background-image: radial-gradient(#FDE68A 10%, transparent 10%);
             background-size: 10px 10px;
         }
-        
         #flashcard-deck.is-flipped .card-back { transform: rotateY(-180deg); }
         #flashcard-deck.is-flipped .card-front { transform: rotateY(0deg); }
         
         /* -- Drag Clone -- */
         .drag-clone {
-            position: absolute;
-            pointer-events: none;
-            z-index: 9999;
-            opacity: 0.9;
+            position: absolute; pointer-events: none; z-index: 9999; opacity: 0.9;
             transform: translate(-50%, -50%) scale(1.2);
             filter: drop-shadow(0 10px 10px rgba(0,0,0,0.3));
         }
@@ -247,111 +249,144 @@
             50% { transform: translateY(-10px); }
         }
 
-        /* Kid-Friendly Chunky Buttons */
         .chunky-btn {
-            transition: all 0.1s;
-            border-bottom: 6px solid rgba(0,0,0,0.2);
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            transition: all 0.1s; border-bottom: 6px solid rgba(0,0,0,0.2);
+            text-transform: uppercase; letter-spacing: 1px;
         }
-        .chunky-btn:active {
-            transform: translateY(6px);
-            border-bottom: 0px solid rgba(0,0,0,0.2);
-            margin-top: 6px;
+        .chunky-btn:active:not(:disabled) {
+            transform: translateY(6px); border-bottom: 0px solid rgba(0,0,0,0.2); margin-top: 6px;
         }
 
-        /* Mystery Box */
-        .mystery-box {
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            cursor: pointer;
-            font-size: 5rem;
-            animation: float 3s ease-in-out infinite;
+        .speaker-btn { transition: all 0.1s; }
+        .speaker-btn:active { transform: scale(0.9); }
+
+        .col-header {
+            text-align: center; font-size: 1.5rem; font-weight: 900;
+            padding: 8px; border-radius: 8px; margin-bottom: 8px;
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
         }
-        .mystery-box:hover {
-            transform: scale(1.15) rotate(5deg);
-            filter: drop-shadow(0 15px 15px rgba(0,0,0,0.3));
-            animation: none;
+
+        /* Switch Game Button */
+        .switch-game-btn {
+            position: fixed; top: 1rem; left: 1rem; z-index: 100;
+            background: white; padding: 10px 20px; border-radius: 30px;
+            font-weight: 800; color: #4b5563; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 2px solid #e5e7eb; cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .switch-game-btn:hover { transform: scale(1.05); }
+
+        /* Ball Sort Specifics */
+        .bs-tube {
+            width: 60px; height: 200px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 4px solid rgba(255,255,255,0.7);
+            border-top: none; border-radius: 0 0 30px 30px;
+            display: flex; flex-direction: column-reverse;
+            align-items: center; padding-bottom: 5px; gap: 4px;
+            cursor: pointer; position: relative;
+            box-shadow: inset 0 -10px 20px rgba(0,0,0,0.05);
+        }
+        .bs-ball {
+            width: 44px; height: 44px; border-radius: 50%;
+            box-shadow: inset -5px -5px 10px rgba(0,0,0,0.2), inset 5px 5px 10px rgba(255,255,255,0.5), 0 4px 6px rgba(0,0,0,0.2);
+            transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .bs-tube.selected .bs-ball:last-child {
+            transform: translateY(-40px);
+            box-shadow: inset -5px -5px 10px rgba(0,0,0,0.2), inset 5px 5px 10px rgba(255,255,255,0.5), 0 15px 15px rgba(0,0,0,0.3);
         }
         
-        /* Headers for columns */
-        .col-header {
-            text-align: center;
-            font-size: 1.5rem;
-            font-weight: 900;
-            padding: 8px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
+        .bs-header-card {
+            background: white; border-radius: 20px; padding: 10px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05); margin-bottom: 40px;
+        }
+        .bs-stat { display: flex; flex-direction: column; align-items: center; margin: 0 10px; }
+        .bs-stat-label { font-size: 0.75rem; font-weight: 800; color: #9ca3af; text-transform: uppercase; }
+        .bs-stat-val { font-size: 1.5rem; font-weight: 900; color: #3b82f6; line-height: 1; }
+        
+        .bs-icon-btn {
+            width: 40px; height: 40px; border-radius: 12px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.2rem; cursor: pointer; transition: transform 0.1s;
+            border-bottom: 4px solid rgba(0,0,0,0.2);
+            color: white;
+        }
+        .bs-icon-btn:active { transform: translateY(4px); border-bottom-width: 0; }
+
+
+        /* Ver2 fix: keep only one game visible at a time.
+           Tailwind's .hidden can be overridden by #ball-sort-wrapper { display:flex; },
+           so this stronger rule prevents Tens & Ones and Ball Sort from appearing together. */
+        #tens-game-container.hidden,
+        #ball-sort-wrapper.hidden,
+        .game-wrapper.hidden {
+            display: none !important;
         }
 
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-2 sm:p-4">
+<body>
     <img src="../assets/logo-oodles-math.png" class="oodles-logo">
     <!-- Decorative Background Bubbles -->
     <div class="bubbles" id="bubbles"></div>
 
-    <div id="game-container" class="w-full rounded-3xl p-4 md:p-8 relative">
+    <!-- Toggle Game Button -->
+    <button id="switch-game-btn" class="switch-game-btn">
+        🎮 Play Ball Sort
+    </button>
+
+    <!-- ========================================== -->
+    <!--          GAME 1: TENS AND ONES             -->
+    <!-- ========================================== -->
+    <div id="tens-game-container" class="game-wrapper p-4 md:p-8">
         
         <!-- Score Display -->
         <div class="absolute top-4 right-4 bg-yellow-400 text-yellow-900 px-4 py-2 rounded-full font-black text-lg md:text-xl shadow-lg border-2 border-yellow-200 z-10 flex items-center gap-2">
             ⭐ <span id="score">Score: 0</span>
         </div>
 
-        <!-- Title and Cards Area -->
-        <div class="flex flex-col items-center pt-8 md:pt-0">
+        <div class="flex flex-col items-center pt-8 md:pt-0 mb-6">
             <h1 class="text-3xl md:text-5xl font-black kid-title text-center mb-6">Tens & Ones Game</h1>
             
-            <div class="flex flex-col md:flex-row justify-center items-center w-full gap-8"> 
-                
+            <div class="flex flex-col md:flex-row justify-center items-center w-full gap-8">
                 <!-- Deck Area -->
                 <div class="text-center flex flex-col items-center">
                     <div id="flashcard-deck" title="Click to draw a new number!">
                         <div id="card-face-back" class="card-face card-back">?</div>
                         <div id="card-face-front" class="card-face card-front"></div>
                     </div>
-                    <h2 class="text-lg font-bold text-gray-500 mt-4 animate-pulse">Tap the card!</h2>
+                    <h2 class="text-sm font-bold text-gray-500 mt-2 animate-pulse">Tap the card!</h2>
                 </div>
 
                 <!-- Source Bank -->
-                <div class="flex flex-col sm:flex-row items-center justify-center gap-6 p-4 md:p-6 bg-white border-4 border-blue-200 rounded-2xl shadow-inner relative w-full md:w-auto">
-                    
-                    <div id="tens-first-warning" class="text-sm md:text-base text-white font-bold hidden absolute -top-12 bg-red-500 px-4 py-2 rounded-full shadow-lg border-2 border-white bounce-in">
-                        Oops! Put Tens first! 🦒
-                        <div class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-red-500"></div>
-                    </div>
-                    
-                    <!-- Ten Rod Source -->
+                <div class="flex flex-row items-center justify-center gap-6 p-4 md:p-6 bg-white border-2 border-blue-200 rounded-2xl shadow-sm relative w-full md:w-auto">
                     <div class="text-center flex flex-col items-center">
-                        <p class="font-black text-xl text-red-500 mb-2">Ten Rod</p>
-                        <div id="source-ten-rod" class="cube ten-rod hover:scale-105" data-type="ten" title="Click or Drag">
-                            <script>
-                                for(let i = 0; i < 10; i++) {
-                                    document.write('<div class="ten-rod-segment"></div>');
-                                }
-                            </script>
+                        <p class="font-bold text-sm text-red-500 mb-2">Ten Rod</p>
+                        <div id="source-ten-rod" class="cube ten-rod hover:scale-105" data-type="ten" title="Drag to ONES to split into 10!">
+                            <script>for(let i = 0; i < 10; i++) document.write('<div class="ten-rod-segment"></div>');</script>
                         </div>
                     </div>
                     
-                    <!-- One Cube Source -->
-                    <div class="text-center flex flex-col items-center">
-                        <p class="font-black text-xl text-blue-500 mb-2">One Cube</p>
-                        <div id="source-one-cube" class="cube one-cube hover:scale-105" data-type="one" title="Click or Drag"></div>
+                    <div class="text-center flex flex-col items-center ml-4">
+                        <p class="font-bold text-sm text-blue-500 mb-2">One Cube</p>
+                        <div id="source-one-cube" class="cube one-cube hover:scale-105" data-type="one" title="Drag 10 to TENS to make a Rod!"></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- NEW: Instruction Block updated -->
-        <div class="w-full flex justify-center my-4">
-            <div class="bg-white bg-opacity-80 px-6 py-2 rounded-full shadow-sm border-2 border-purple-200 text-center animate-bounce" style="animation-duration: 2s;">
-                <p class="text-purple-600 font-bold text-base md:text-lg">
-                    ✨ Click or drag the rods and cubes into the boxes below! 👇
+        <div class="w-full flex justify-center my-4 items-center gap-2">
+            <div class="bg-white bg-opacity-90 px-6 py-2 rounded-full shadow-sm border-2 border-purple-200 text-center flex items-center gap-2">
+                <p class="text-purple-600 font-bold text-sm md:text-base">
+                    ✨ Drag rods to ONES to split! Drag ONES to TENS to group! 👇
                 </p>
+                <button id="speak-btn" class="speaker-btn ml-2 bg-blue-100 hover:bg-blue-200 p-2 rounded-full text-xl shadow-sm border border-blue-300" title="Listen to instruction">🔊</button>
             </div>
         </div>
 
-        <!-- Working Area (Dropzones) -->
+        <!-- Working Area -->
         <div class="w-full">
             <div class="tens-and-ones-frame">
                 <div class="flex flex-col border-r-4 border-dashed border-purple-300">
@@ -365,38 +400,69 @@
             </div>
         </div>
         
-        <!-- Controls -->
         <div class="flex justify-center items-center gap-4 mt-8">
-            <button id="reset-board-button" class="chunky-btn px-6 py-3 bg-gray-300 text-gray-700 text-lg font-bold rounded-2xl hover:bg-gray-400">
-                Clear Board
-            </button>
-            <button id="submit-button" class="chunky-btn px-10 py-3 bg-green-500 text-white text-2xl font-black rounded-2xl hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed disabled:border-b-0 disabled:translate-y-[6px]">
-                CHECK! ✓
-            </button>
-        </div>
-
-    </div>
-
-    <!-- Feedback Modal (Correct/Incorrect) -->
-    <div id="feedback-modal" class="hidden fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
-        <div id="feedback-content" class="text-6xl md:text-8xl font-black text-white p-10 rounded-3xl border-8 shadow-2xl bounce-in flex flex-col items-center text-center">
-            <!-- Dynamic Content -->
+            <button id="reset-board-button" class="chunky-btn px-6 py-3 bg-gray-300 text-gray-700 text-lg font-bold rounded-2xl hover:bg-gray-400">CLEAR</button>
+            <button id="submit-button" class="chunky-btn px-10 py-3 bg-green-500 text-white text-2xl font-black rounded-2xl hover:bg-green-600 disabled:opacity-50">CHECK! ✓</button>
         </div>
     </div>
-    
-    <!-- Bonus Round Modal -->
-    <div id="bonus-modal" class="hidden fixed inset-0 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex flex-col items-center justify-center z-50 p-4">
-        <h2 class="text-6xl md:text-8xl font-black text-yellow-300 mb-2 kid-title text-center shadow-none animate-pulse">BONUS TIME!</h2>
-        <p class="text-2xl md:text-3xl font-bold text-white mb-10 text-center">Tap a magic gift box! ✨</p>
+
+
+    <!-- ========================================== -->
+    <!--          GAME 2: BALL SORT                 -->
+    <!-- ========================================== -->
+    <div id="ball-sort-wrapper" class="game-wrapper p-4 md:p-8 hidden">
         
-        <div id="box-container" class="flex flex-wrap justify-center gap-8 md:gap-12 mb-8">
-            <!-- Boxes injected via JS -->
+        <!-- Top Bar -->
+        <div class="bs-header-card w-full mt-8 md:mt-0">
+            <div class="flex">
+                <div class="bs-stat"><span class="bs-stat-label">Level</span><span id="bs-level-display" class="bs-stat-val">1</span></div>
+                <div class="bs-stat"><span class="bs-stat-label">Score</span><span id="bs-score-display" class="bs-stat-val">0</span></div>
+                <div class="bs-stat"><span class="bs-stat-label">Moves</span><span id="bs-moves-display" class="bs-stat-val">0</span></div>
+            </div>
+            <div class="flex gap-2">
+                <button id="bs-sound-btn" class="bs-icon-btn bg-gray-300 text-gray-700" title="Toggle Sound">🔊</button>
+                <button id="bs-undo-btn" class="bs-icon-btn bg-blue-500" title="Undo Move">↩️</button>
+                <button id="bs-restart-btn" class="bs-icon-btn bg-red-500" title="Restart Level">🔄</button>
+            </div>
         </div>
-        <div id="bonus-result" class="text-4xl md:text-5xl text-white font-black mt-8 hidden bounce-in bg-black bg-opacity-30 px-8 py-4 rounded-full"></div>
+
+        <!-- Tubes Container -->
+        <div id="bs-tubes-container" class="flex flex-wrap justify-center items-end gap-4 md:gap-8 flex-grow mt-10">
+            <!-- Tubes injected by JS -->
+        </div>
+
+        <!-- Start/Rules Overlay -->
+        <div id="bs-start-overlay" class="absolute inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex justify-center items-center z-50 rounded-[1.2rem]">
+            <div class="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center w-11/12 max-w-sm bounce-in text-center">
+                <h2 class="text-3xl md:text-4xl font-black ball-sort-title mb-2">Color Ball<br>Sort Adventure</h2>
+                <p class="text-gray-500 font-bold mb-4">Sort the balls by color!</p>
+                
+                <div class="flex gap-2 mb-6">
+                    <div class="bs-ball" style="background: radial-gradient(circle at 30% 30%, #ff6b6b, #c0392b);"></div>
+                    <div class="bs-ball" style="background: radial-gradient(circle at 30% 30%, #4facfe, #00f2fe);"></div>
+                    <div class="bs-ball" style="background: radial-gradient(circle at 30% 30%, #f6d365, #fda085);"></div>
+                </div>
+
+                <div class="bg-gray-100 rounded-xl p-4 text-left text-sm font-bold text-gray-600 mb-6 w-full">
+                    👉 Tap a tube.<br>
+                    👆 Move the top ball.<br>
+                    🎨 Match the same colors!
+                </div>
+
+                <button id="bs-start-btn" class="chunky-btn w-full py-4 bg-green-500 text-white text-xl font-black rounded-2xl hover:bg-green-600">
+                    START GAME
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Modals (Shared) -->
+    <div id="feedback-modal" class="hidden fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-[100]">
+        <div id="feedback-content" class="text-5xl md:text-7xl font-black text-white p-10 rounded-3xl border-8 shadow-2xl bounce-in flex flex-col items-center text-center"></div>
     </div>
     
     <!-- Game Over Modal -->
-    <div id="game-over-modal" class="hidden fixed inset-0 bg-gradient-to-br from-blue-500 to-purple-600 flex flex-col items-center justify-center z-50 p-4 text-center">
+    <div id="game-over-modal" class="hidden fixed inset-0 bg-gradient-to-br from-blue-500 to-purple-600 flex flex-col items-center justify-center z-[100] p-4 text-center">
         <h2 class="text-7xl md:text-9xl font-black text-white mb-4 bounce-in" style="text-shadow: 0 10px 20px rgba(0,0,0,0.3)">AMAZING!</h2>
         <p class="text-3xl md:text-4xl font-bold text-blue-100 mb-8">You finished all the cards!</p>
         
@@ -411,113 +477,85 @@
     </div>
 
     <script>
-        // -- Create Background Bubbles --
-        const bubblesContainer = document.getElementById('bubbles');
-        for (let i = 0; i < 15; i++) {
-            let bubble = document.createElement('div');
-            bubble.className = 'bubble';
-            let size = Math.random() * 60 + 20 + 'px';
-            bubble.style.width = size;
-            bubble.style.height = size;
-            bubble.style.left = Math.random() * 100 + 'vw';
-            bubble.style.animationDuration = Math.random() * 5 + 5 + 's';
-            bubble.style.animationDelay = Math.random() * 5 + 's';
-            bubblesContainer.appendChild(bubble);
-        }
-
-        // --- DOM Elements ---
-        let gameContainer, scoreEl, cardDeckEl, cardBackEl, cardFrontEl, 
-            submitButton, resetButton, feedbackModal, feedbackContent, 
-            tensFirstWarning, bonusModal, boxContainer, bonusResult, 
-            gameOverModal, finalScoreEl, playAgainButton, sourceTenRod, 
-            sourceOneCube, tensColumn, onesColumn;
-        
-        // --- Game State ---
-        let score = 0;
-        let currentNumber = 0;
-        let cardDeck = [];
-        let isChecking = false;
-        let isBonusChecking = false;
-        let isDragging = false;
-        let hasMoved = false; // Flag to check if drag or click
-        let startPos = { x: 0, y: 0 };
-        let dragClone = null;
-        let dragSourceType = ''; 
+        // --- Shared & Audio Setup ---
         let audioInitialized = false;
-        
-        // --- Audio Synths (Tone.js) ---
-        let popSynth, winChime, wrongSynth, cardSynth, dragSynth, dropSynth, bonusSynth, bigWinSynth;
+        let popSynth, winChime, wrongSynth, cardSynth, dragSynth, dropSynth, bigWinSynth, reverb;
+        let bsMuted = false;
         
         async function initAudio() {
             if (!audioInitialized) {
                 await Tone.start();
                 audioInitialized = true;
-                
-                // Kid-friendly sounds
-                popSynth = new Tone.MembraneSynth({ pitchDecay: 0.05, envelope: { attack: 0.001, decay: 0.2, sustain: 0 } }).toDestination();
-                winChime = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.3, release: 1 } }).toDestination();
-                wrongSynth = new Tone.Synth({ oscillator: { type: 'fmsawtooth', modulationType: 'sine' }, envelope: { attack: 0.1, decay: 0.2, sustain: 0.1, release: 0.2 } }).toDestination();
-                cardSynth = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.1 } }).toDestination();
-                dragSynth = new Tone.FMSynth({ harmonicity: 2, modulationIndex: 5, oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.2 } }).toDestination();
-                dropSynth = new Tone.PluckSynth({ attackNoise: 1, dampening: 2000, resonance: 0.8 }).toDestination();
-                bonusSynth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'square' } }).toDestination();
-                bigWinSynth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.05, decay: 0.3, sustain: 0.4, release: 1.5 } }).toDestination();
+                reverb = new Tone.Reverb({ decay: 2.5, wet: 0.35 }).toDestination();
+                popSynth = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.1 }, volume: -5 }).connect(reverb);
+                winChime = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.05, decay: 0.2, sustain: 0.4, release: 1.5 }, volume: -5 }).connect(reverb);
+                wrongSynth = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.05, decay: 0.3, sustain: 0, release: 0.2 }, volume: -2 }).connect(reverb);
+                cardSynth = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.02, decay: 0.1, sustain: 0, release: 0.1 }, volume: -8 }).toDestination();
+                dragSynth = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.05, sustain: 0, release: 0.01 }, volume: -15 }).toDestination();
+                dropSynth = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 }, volume: -10 }).toDestination();
+                bigWinSynth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.05, decay: 0.4, sustain: 0.5, release: 2.5 } }).connect(reverb);
             }
         }
         
-        // Ensure Audio starts on first interaction
-        document.body.addEventListener('pointerdown', async () => {
-            if(!audioInitialized) await initAudio();
-        }, { once: true });
+        document.body.addEventListener('pointerdown', async () => { if(!audioInitialized) await initAudio(); }, { once: true });
 
-        // --- Core Logic ---
-        
-        function initGame() {
-            // Assign DOM
-            gameContainer = document.getElementById('game-container');
-            scoreEl = document.getElementById('score');
-            cardDeckEl = document.getElementById('flashcard-deck');
-            cardBackEl = document.getElementById('card-face-back');
-            cardFrontEl = document.getElementById('card-face-front');
-            submitButton = document.getElementById('submit-button');
-            resetButton = document.getElementById('reset-board-button');
-            feedbackModal = document.getElementById('feedback-modal');
-            feedbackContent = document.getElementById('feedback-content');
-            tensFirstWarning = document.getElementById('tens-first-warning');
-            bonusModal = document.getElementById('bonus-modal');
-            boxContainer = document.getElementById('box-container');
-            bonusResult = document.getElementById('bonus-result');
-            gameOverModal = document.getElementById('game-over-modal');
-            finalScoreEl = document.getElementById('final-score');
-            playAgainButton = document.getElementById('play-again-button');
-            sourceTenRod = document.getElementById('source-ten-rod'); 
-            sourceOneCube = document.getElementById('source-one-cube');
-            tensColumn = document.getElementById('tens-column');
-            onesColumn = document.getElementById('ones-column');
+        // --- Game Switching Logic ---
+        const switchBtn = document.getElementById('switch-game-btn');
+        const tensGame = document.getElementById('tens-game-container');
+        const ballGame = document.getElementById('ball-sort-wrapper');
+        let currentActiveGame = 'tens'; // 'tens' or 'ball'
+
+        function switchToBallSort() {
+            if (currentActiveGame === 'ball') return;
+            tensGame.classList.add('hidden');
+            ballGame.classList.remove('hidden');
+            switchBtn.innerHTML = '🧊 Play Tens & Ones';
+            currentActiveGame = 'ball';
+            if (!bsInitialized) initBallSort(); 
+        }
+
+        function switchToTens() {
+            if (currentActiveGame === 'tens') return;
+            ballGame.classList.add('hidden');
+            tensGame.classList.remove('hidden');
+            switchBtn.innerHTML = '🎮 Play Ball Sort';
+            currentActiveGame = 'tens';
+        }
+
+        switchBtn.addEventListener('click', () => {
+            if (currentActiveGame === 'tens') {
+                switchToBallSort();
+            } else {
+                switchToTens();
+            }
+            if(audioInitialized) popSynth.triggerAttackRelease("C5", "32n");
+        });
+
+        // ==========================================
+        //       GAME 1: TENS AND ONES LOGIC
+        // ==========================================
+        let score = 0, currentNumber = 0, cardDeck = [];
+        let isChecking = false, isDragging = false, hasMoved = false;
+        let startPos = { x: 0, y: 0 };
+        let dragClone = null, dragSourceType = '', dragOrigin = '', dragOriginEl = null;
+
+        const scoreEl = document.getElementById('score');
+        const tensColumn = document.getElementById('tens-column');
+        const onesColumn = document.getElementById('ones-column');
+        const feedbackModal = document.getElementById('feedback-modal');
+        const feedbackContent = document.getElementById('feedback-content');
+
+        function initTensGame() {
+            score = 0; updateScore(); shuffleDeck(); drawCard();
+            setupDragEvents();
             
-            score = 0;
-            updateScore(); 
-            shuffleDeck();
-            drawCard();
-            setupDragEvents(); 
-            
-            // Clean & re-add listeners
-            submitButton.removeEventListener('click', handleSubmit);
-            resetButton.removeEventListener('click', resetBoard);
-            cardDeckEl.removeEventListener('click', drawCard);
-            playAgainButton.removeEventListener('click', initGame);
-
-            submitButton.addEventListener('click', handleSubmit);
-            resetButton.addEventListener('click', resetBoard);
-            cardDeckEl.addEventListener('click', drawCard);
-            playAgainButton.addEventListener('click', initGame);
-
-            gameOverModal.classList.add('hidden');
-            bonusModal.classList.add('hidden');
+            document.getElementById('submit-button').addEventListener('click', handleSubmit);
+            document.getElementById('reset-board-button').addEventListener('click', resetBoard);
+            document.getElementById('flashcard-deck').addEventListener('click', drawCard);
+            document.getElementById('speak-btn').addEventListener('click', speakQuestion);
         }
 
         function shuffleDeck() {
-            // Array from 11 to 20 for 4-5yo
             cardDeck = Array.from({ length: 10 }, (_, i) => i + 11);
             for (let i = cardDeck.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -526,389 +564,476 @@
         }
 
         function drawCard() {
-            if (isChecking || isBonusChecking) return;
+            if (isChecking) return;
             
             if (cardDeck.length === 0) {
                 showGameEnd();
                 return;
             }
             
+            const cardDeckEl = document.getElementById('flashcard-deck');
             cardDeckEl.classList.remove('is-flipped');
-            submitButton.disabled = true;
-            tensFirstWarning.classList.add('hidden'); 
+            document.getElementById('submit-button').disabled = true;
             
             setTimeout(() => {
                 currentNumber = cardDeck.pop();
-                cardFrontEl.textContent = currentNumber;
-                cardBackEl.textContent = "?"; 
-                
+                document.getElementById('card-face-front').textContent = currentNumber;
+                document.getElementById('card-face-back').textContent = "?";
                 cardDeckEl.classList.add('is-flipped');
-                if(audioInitialized) cardSynth.triggerAttackRelease("E5", "16n");
-                
+                if(audioInitialized) cardSynth.triggerAttackRelease("C5", "32n");
                 resetBoard();
-                submitButton.disabled = false;
+                document.getElementById('submit-button').disabled = false;
             }, 300);
+        }
+
+        function speakQuestion() {
+            if (!currentNumber) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(`Can you make the number ${currentNumber}?`);
+            utterance.lang = 'en-US'; utterance.rate = 0.9; utterance.pitch = 1.2;
+            window.speechSynthesis.speak(utterance);
         }
         
         function resetBoard() {
-            tensColumn.innerHTML = '';
-            onesColumn.innerHTML = '';
-            tensFirstWarning.classList.add('hidden');
-            if(audioInitialized && !isChecking) dropSynth.triggerAttackRelease("C2", "16n");
+            tensColumn.innerHTML = ''; onesColumn.innerHTML = '';
+            if(audioInitialized && !isChecking) dropSynth.triggerAttackRelease("G2", "32n");
         }
 
         function updateScore() {
-            if (scoreEl) {
-                scoreEl.textContent = `Score: ${score}`;
-                // Pop animation
-                scoreEl.parentElement.classList.remove('bounce-in');
-                void scoreEl.parentElement.offsetWidth; // trigger reflow
-                scoreEl.parentElement.classList.add('bounce-in');
+            scoreEl.textContent = `Score: ${score}`;
+            scoreEl.parentElement.classList.remove('bounce-in');
+            void scoreEl.parentElement.offsetWidth; 
+            scoreEl.parentElement.classList.add('bounce-in');
+        }
+
+        // --- Drag & Drop for Tens & Ones (Including Regrouping) ---
+        function setupDragEvents() {
+            // Setup source banks
+            [document.getElementById('source-ten-rod'), document.getElementById('source-one-cube')].forEach(source => {
+                source.addEventListener('mousedown', startDrag);
+                source.addEventListener('touchstart', startDrag, { passive: false });
+            });
+            document.addEventListener('mousemove', dragMove);
+            document.addEventListener('touchmove', dragMove, { passive: false });
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchend', endDrag);
+        }
+
+        function attachDragToDropzoneCube(cube) {
+            cube.addEventListener('mousedown', startDrag);
+            cube.addEventListener('touchstart', startDrag, { passive: false });
+        }
+
+        function startDrag(e) {
+            if (currentActiveGame !== 'tens' || isChecking) return;
+            if (e.type === 'touchstart') e.preventDefault(); // Prevent scroll
+            
+            isDragging = true; hasMoved = false;
+            startPos = getEventPosition(e);
+            dragOriginEl = e.currentTarget;
+            dragSourceType = dragOriginEl.dataset.type;
+            
+            if (dragOriginEl.closest('#tens-column')) dragOrigin = 'tens';
+            else if (dragOriginEl.closest('#ones-column')) dragOrigin = 'ones';
+            else dragOrigin = 'source';
+
+            // Clone for visuals
+            dragClone = dragOriginEl.cloneNode(true);
+            if (dragSourceType === 'ten') dragClone.innerHTML = dragOriginEl.innerHTML;
+            dragClone.classList.add('drag-clone');
+            document.body.appendChild(dragClone);
+            updateClonePosition(startPos.x, startPos.y);
+
+            dragOriginEl.style.opacity = '0.3'; // dim original
+            if(audioInitialized) dragSynth.triggerAttackRelease("C5", "32n");
+        }
+
+        function dragMove(e) {
+            if (!isDragging || currentActiveGame !== 'tens') return;
+            if (e.type === 'touchmove') e.preventDefault();
+            const pos = getEventPosition(e);
+            if (!hasMoved && (Math.abs(pos.x - startPos.x) > 3 || Math.abs(pos.y - startPos.y) > 3)) hasMoved = true;
+            updateClonePosition(pos.x, pos.y);
+        }
+
+        function endDrag(e) {
+            if (!isDragging || currentActiveGame !== 'tens') return;
+            isDragging = false;
+            if(dragClone) { dragClone.style.display = 'none'; document.body.removeChild(dragClone); dragClone = null; }
+            if(dragOriginEl) dragOriginEl.style.opacity = '1';
+
+            const pos = getEventPosition(e);
+            const dropTarget = document.elementFromPoint(pos.x, pos.y);
+
+            // Handle Click (No movement)
+            if (!hasMoved) {
+                if (dragOrigin === 'source') placeCube(dragSourceType);
+                else {
+                    // Click inside column -> remove
+                    dragOriginEl.style.transform = 'scale(0)';
+                    setTimeout(() => dragOriginEl.remove(), 100);
+                    if(audioInitialized) dropSynth.triggerAttackRelease("G2", "16n");
+                }
+                return;
+            }
+
+            // Handle Drag Drop
+            if (!dropTarget) { if(audioInitialized) dropSynth.triggerAttackRelease("C3", "16n"); return; }
+            
+            const isTensDrop = tensColumn.contains(dropTarget) || tensColumn === dropTarget;
+            const isOnesDrop = onesColumn.contains(dropTarget) || onesColumn === dropTarget;
+
+            if (dragOrigin === 'source') {
+                if (dragSourceType === 'ten' && isTensDrop) placeCube('ten');
+                else if (dragSourceType === 'one' && isOnesDrop) placeCube('one');
+                else if(audioInitialized) dropSynth.triggerAttackRelease("C3", "16n");
+            } 
+            else if (dragOrigin === 'tens') {
+                if (isOnesDrop && dragSourceType === 'ten') {
+                    // TÁCH: Ten -> 10 Ones
+                    dragOriginEl.remove();
+                    for(let i=0; i<10; i++) setTimeout(() => placeCube('one', true), i*40);
+                    if(audioInitialized) winChime.triggerAttackRelease("C5", "8n");
+                    tensColumn.classList.add('bg-green-100'); setTimeout(() => tensColumn.classList.remove('bg-green-100'), 300);
+                } else if (!isTensDrop) if(audioInitialized) dropSynth.triggerAttackRelease("C3", "16n");
+            } 
+            else if (dragOrigin === 'ones') {
+                if (isTensDrop && dragSourceType === 'one') {
+                    // GỘP: 10 Ones -> 1 Ten
+                    const allOnes = onesColumn.querySelectorAll('.one-cube');
+                    if (allOnes.length >= 10) {
+                        for(let i=0; i<10; i++) allOnes[i].remove();
+                        placeCube('ten', true);
+                        if(audioInitialized) winChime.triggerAttackRelease("E5", "8n");
+                    } else {
+                        // Báo lỗi không đủ 10
+                        if(audioInitialized) wrongSynth.triggerAttackRelease("D3", "8n");
+                        onesColumn.classList.add('bg-red-200'); setTimeout(() => onesColumn.classList.remove('bg-red-200'), 300);
+                    }
+                } else if (!isOnesDrop) if(audioInitialized) dropSynth.triggerAttackRelease("C3", "16n");
             }
         }
-        
+
+        function placeCube(type, skipSound = false) {
+            let newCube = document.getElementById(`source-${type === 'ten' ? 'ten-rod' : 'one-cube'}`).cloneNode(true);
+            newCube.id = ''; // remove id from clones
+            newCube.dataset.type = type;
+            if(type==='ten') newCube.innerHTML = document.getElementById('source-ten-rod').innerHTML;
+            
+            if (type === 'ten') tensColumn.appendChild(newCube);
+            else onesColumn.appendChild(newCube);
+            
+            newCube.classList.add('bounce-in');
+            attachDragToDropzoneCube(newCube);
+
+            if(!skipSound && audioInitialized) {
+                if(type === 'ten') popSynth.triggerAttackRelease("G3", "8n");
+                else popSynth.triggerAttackRelease("C4", "8n");
+            }
+        }
+
+        function updateClonePosition(x, y) {
+            if (dragClone) { dragClone.style.left = `${x}px`; dragClone.style.top = `${y}px`; }
+        }
+        function getEventPosition(e) {
+            if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            if (e.changedTouches && e.changedTouches.length > 0) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+            return { x: e.clientX, y: e.clientY };
+        }
+
+        // --- Tens Validation ---
         function handleSubmit() {
             if (isChecking || !currentNumber) return;
-            
             const targetTens = Math.floor(currentNumber / 10);
             const targetOnes = currentNumber % 10;
-            
             const placedTens = tensColumn.querySelectorAll('.ten-rod').length;
             const placedOnes = onesColumn.querySelectorAll('.one-cube').length;
             
-            if (placedTens === targetTens && placedOnes === targetOnes) {
-                handleCorrectAnswer();
-            } else {
-                handleIncorrectAnswer();
-            }
+            if (placedTens === targetTens && placedOnes === targetOnes) handleCorrectAnswer();
+            else handleIncorrectAnswer();
         }
 
         function handleCorrectAnswer() {
             isChecking = true;
-            if(audioInitialized) winChime.triggerAttackRelease(["C5", "E5", "G5", "C6"], "0.5");
+            if(audioInitialized) {
+                const now = Tone.now();
+                winChime.triggerAttackRelease("C5", "8n", now); winChime.triggerAttackRelease("E5", "8n", now + 0.1);
+                winChime.triggerAttackRelease("G5", "8n", now + 0.2); winChime.triggerAttackRelease("C6", "4n", now + 0.3);
+            }
+            shootConfetti();
             
-            // Bắn pháo giấy từ 2 góc 
-            const confettiColors = ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff'];
-            
-            // Từ bên trái qua phải
-            confetti({
-                particleCount: 60,
-                spread: 80,
-                angle: 60,
-                origin: { x: 0, y: 0.6 },
-                colors: confettiColors
-            });
-            
-            // Từ bên phải qua trái
-            confetti({
-                particleCount: 60,
-                spread: 80,
-                angle: 120,
-                origin: { x: 1, y: 0.6 },
-                colors: confettiColors
-            });
-
-            showFeedback("YAY! Correct! 🎉", "bg-green-500", "border-green-300");
-            
-            setTimeout(() => {
+            showFeedback("YAY! Correct! 🎉", "bg-green-500", "border-green-300", "text-green-500", () => {
                 feedbackModal.classList.add('hidden');
-                // 30% chance for a bonus round to keep it exciting
-                if (Math.random() < 0.4) {
-                    showBonusRound(); 
-                } else {
-                    score += 10;
-                    updateScore();
-                    isChecking = false;
-                    drawCard();
-                }
-            }, 1800); 
+                score += 10; updateScore(); 
+                isChecking = false; 
+                switchToBallSort();
+            });
         }
 
         function handleIncorrectAnswer() {
             isChecking = true;
-            if(audioInitialized) wrongSynth.triggerAttackRelease("D3", "0.3");
-            
-            gameContainer.classList.add('shake');
+            if(audioInitialized) {
+                const now = Tone.now();
+                wrongSynth.triggerAttackRelease("D3", "8n", now); wrongSynth.triggerAttackRelease("C#3", "4n", now + 0.15);
+            }
+            document.getElementById('tens-game-container').classList.add('shake');
             showFeedback("Oops! Try Again! 🤔", "bg-red-500", "border-red-300");
-            
             setTimeout(() => {
-                gameContainer.classList.remove('shake');
-                feedbackModal.classList.add('hidden');
-                isChecking = false;
+                document.getElementById('tens-game-container').classList.remove('shake');
+                feedbackModal.classList.add('hidden'); isChecking = false;
             }, 1500);
         }
 
-        function showFeedback(message, bgColor, borderColor) {
-            feedbackContent.innerHTML = message;
+        function showFeedback(message, bgColor, borderColor, nextBtnTextColor = null, onNext = null) {
+            if (nextBtnTextColor && onNext) {
+                feedbackContent.innerHTML = `
+                    <div class="mb-6">${message}</div>
+                    <button id="feedback-next-btn" class="chunky-btn px-10 py-4 bg-white ${nextBtnTextColor} text-3xl md:text-4xl font-black rounded-full shadow-lg hover:scale-105 active:scale-95 transition-transform" style="text-shadow: none;">NEXT ➡️</button>
+                `;
+                document.getElementById('feedback-next-btn').addEventListener('click', onNext);
+            } else {
+                feedbackContent.innerHTML = message;
+            }
             feedbackContent.className = `text-5xl md:text-7xl font-black text-white p-8 md:p-12 rounded-3xl border-8 shadow-2xl bounce-in flex flex-col items-center text-center ${bgColor} ${borderColor}`;
             feedbackModal.classList.remove('hidden');
         }
-        
-        // --- BONUS ROUND (Mystery Boxes) ---
-        const doorPrizes = [5, 10, 15, 20]; 
-        
-        function showBonusRound() {
-            isBonusChecking = true;
-            bonusModal.classList.remove('hidden');
-            bonusResult.classList.add('hidden');
-            
-            const shuffledPrizes = [...doorPrizes].sort(() => Math.random() - 0.5).slice(0,3);
-            
-            boxContainer.innerHTML = ''; 
-            
-            shuffledPrizes.forEach((prize) => {
-                const box = document.createElement('div');
-                box.className = 'mystery-box';
-                box.innerHTML = `🎁`;
-                box.dataset.prize = prize;
-                box.addEventListener('click', handleBoxClick, { once: true });
-                boxContainer.appendChild(box);
-            });
-            if(audioInitialized) winChime.triggerAttackRelease(["C5", "F5"], "0.3");
+
+        function shootConfetti() {
+            const end = Date.now() + 1000;
+            const colors = ['#ff9a9e', '#fecfef', '#a18cd1', '#fbc2eb', '#84fab0', '#8fd3f4', '#f6d365'];
+            (function frame() {
+                confetti({ particleCount: 6, angle: 60, spread: 60, origin: { x: 0, y: 0.7 }, colors: colors, zIndex: 10000 });
+                confetti({ particleCount: 6, angle: 120, spread: 60, origin: { x: 1, y: 0.7 }, colors: colors, zIndex: 10000 });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
         }
-        
-        function handleBoxClick(e) {
-            if (!isBonusChecking) return;
-            
-            const clickedBox = e.currentTarget;
-            const prize = parseInt(clickedBox.dataset.prize);
-            
-            score += prize + 10; // Prize + base 10 points for correct answer
-            updateScore();
-            
-            if(audioInitialized) bonusSynth.triggerAttackRelease(["C5", "E5", "G5"], "0.3");
 
-            // Confetti burst on the clicked box
-            const rect = clickedBox.getBoundingClientRect();
-            const x = (rect.left + rect.width / 2) / window.innerWidth;
-            const y = (rect.top + rect.height / 2) / window.innerHeight;
-            confetti({ particleCount: 60, spread: 70, origin: { x, y } });
+        // ==========================================
+        //       GAME 2: BALL SORT LOGIC
+        // ==========================================
+        let bsInitialized = false;
+        let bsLevel = 1, bsScore = 0, bsMoves = 0;
+        let bsTubes = [], bsHistory = [];
+        let bsSelectedTubeIdx = null;
 
-            const allBoxes = boxContainer.querySelectorAll('.mystery-box');
-            allBoxes.forEach(box => {
-                const boxPrize = parseInt(box.dataset.prize);
-                box.style.animation = 'none'; // Stop floating
-                
-                if (box !== clickedBox) {
-                    box.innerHTML = `<span class="text-3xl font-bold text-white bg-gray-500 bg-opacity-50 p-4 rounded-full shadow-inner block">+${boxPrize}</span>`;
-                    box.style.transform = 'scale(0.8)';
-                    box.style.opacity = '0.7';
-                } else {
-                    box.innerHTML = `<span class="text-6xl font-black text-yellow-300 drop-shadow-lg block bounce-in">+${boxPrize}</span>`;
-                    box.style.transform = 'scale(1.2)';
+        const ballColors = {
+            red: 'radial-gradient(circle at 30% 30%, #ff6b6b, #c0392b)',
+            blue: 'radial-gradient(circle at 30% 30%, #4facfe, #00f2fe)',
+            yellow: 'radial-gradient(circle at 30% 30%, #f6d365, #fda085)',
+            green: 'radial-gradient(circle at 30% 30%, #43e97b, #38f9d7)',
+            purple: 'radial-gradient(circle at 30% 30%, #a18cd1, #6b21a8)',
+            orange: 'radial-gradient(circle at 30% 30%, #fda085, #ea580c)'
+        };
+        const colorNames = Object.keys(ballColors);
+
+        function initBallSort() {
+            bsInitialized = true;
+            document.getElementById('bs-start-btn').addEventListener('click', () => {
+                document.getElementById('bs-start-overlay').classList.add('hidden');
+                if(audioInitialized && !bsMuted) popSynth.triggerAttackRelease("C5", "16n");
+                startBSLevel(bsLevel);
+            });
+            
+            document.getElementById('bs-sound-btn').addEventListener('click', (e) => {
+                bsMuted = !bsMuted;
+                e.currentTarget.innerHTML = bsMuted ? '🔇' : '🔊';
+            });
+            
+            document.getElementById('bs-undo-btn').addEventListener('click', () => {
+                if(bsHistory.length > 0) {
+                    bsTubes = bsHistory.pop();
+                    bsMoves++; updateBSStats(); renderBSTubes();
+                    if(audioInitialized && !bsMuted) dropSynth.triggerAttackRelease("E2", "16n");
                 }
             });
             
-            bonusResult.innerHTML = `Awesome! <span class="text-yellow-300">+${prize}</span> Bonus Points!`;
-            bonusResult.classList.remove('hidden');
-            
-            setTimeout(() => {
-                bonusModal.classList.add('hidden');
-                isChecking = false;
-                isBonusChecking = false;
-                drawCard(); 
-            }, 2500);
+            document.getElementById('bs-restart-btn').addEventListener('click', () => {
+                if(bsHistory.length > 0) {
+                    bsTubes = bsHistory[0]; // First state
+                    bsHistory = []; bsMoves = 0; bsSelectedTubeIdx = null;
+                    updateBSStats(); renderBSTubes();
+                    if(audioInitialized && !bsMuted) dragSynth.triggerAttackRelease("C3", "16n");
+                }
+            });
         }
-        
+
+        function generateBSLevelData(level) {
+            let numColors = Math.min(3 + Math.floor((level-1)/2), 6); 
+            let numTubes = numColors + 2; 
+            let usedColors = colorNames.slice(0, numColors);
+            
+            let solvedState = Array.from({length: numColors}, (_, i) => [usedColors[i], usedColors[i], usedColors[i], usedColors[i]]);
+            solvedState.push([], []); 
+            
+            let state = JSON.parse(JSON.stringify(solvedState));
+            // Backwards shuffle to guarantee solvable
+            let shuffleIter = 50 + level * 20;
+            for(let i=0; i<shuffleIter; i++) {
+                let from = Math.floor(Math.random() * numTubes);
+                let to = Math.floor(Math.random() * numTubes);
+                if(from !== to && state[from].length > 0 && state[to].length < 4) {
+                    state[to].push(state[from].pop());
+                }
+            }
+            return state;
+        }
+
+        function startBSLevel(level) {
+            bsTubes = generateBSLevelData(level);
+            // Ensure not instantly solved
+            while(checkBSWin()) bsTubes = generateBSLevelData(level);
+            
+            bsHistory = []; bsMoves = 0; bsSelectedTubeIdx = null;
+            updateBSStats(); renderBSTubes();
+        }
+
+        function updateBSStats() {
+            document.getElementById('bs-level-display').innerText = bsLevel;
+            document.getElementById('bs-score-display').innerText = bsScore;
+            document.getElementById('bs-moves-display').innerText = bsMoves;
+        }
+
+        function renderBSTubes() {
+            const container = document.getElementById('bs-tubes-container');
+            container.innerHTML = '';
+            
+            bsTubes.forEach((tube, idx) => {
+                const tubeEl = document.createElement('div');
+                tubeEl.className = `bs-tube ${bsSelectedTubeIdx === idx ? 'selected' : ''}`;
+                tubeEl.onclick = () => handleBSTubeClick(idx);
+                
+                // Render balls (Array is [bottom, ..., top], so render in order since flex-col-reverse)
+                tube.forEach(color => {
+                    const ballEl = document.createElement('div');
+                    ballEl.className = 'bs-ball';
+                    ballEl.style.background = ballColors[color];
+                    tubeEl.appendChild(ballEl);
+                });
+                container.appendChild(tubeEl);
+            });
+        }
+
+        function handleBSTubeClick(idx) {
+            if(bsSelectedTubeIdx === null) {
+                // Select
+                if(bsTubes[idx].length > 0) {
+                    bsSelectedTubeIdx = idx;
+                    renderBSTubes();
+                    if(audioInitialized && !bsMuted) popSynth.triggerAttackRelease("F4", "16n");
+                }
+            } else {
+                if(bsSelectedTubeIdx === idx) {
+                    // Deselect
+                    bsSelectedTubeIdx = null; renderBSTubes();
+                    if(audioInitialized && !bsMuted) dropSynth.triggerAttackRelease("C3", "16n");
+                } else {
+                    // Try to move
+                    const fromTube = bsTubes[bsSelectedTubeIdx];
+                    const toTube = bsTubes[idx];
+                    
+                    const canMove = toTube.length < 4 && 
+                                    (toTube.length === 0 || toTube[toTube.length-1] === fromTube[fromTube.length-1]);
+                    
+                    if(canMove) {
+                        bsHistory.push(JSON.parse(JSON.stringify(bsTubes)));
+                        toTube.push(fromTube.pop());
+                        bsMoves++; bsSelectedTubeIdx = null;
+                        updateBSStats(); renderBSTubes();
+                        if(audioInitialized && !bsMuted) popSynth.triggerAttackRelease("C5", "16n");
+                        
+                        // Check Win
+                        if(checkBSWin()) {
+                            setTimeout(handleBSWin, 300);
+                        }
+                    } else {
+                        // Invalid Move
+                        bsSelectedTubeIdx = null; renderBSTubes();
+                        if(audioInitialized && !bsMuted) wrongSynth.triggerAttackRelease("D3", "8n");
+                        // shake target
+                        const targetEl = document.getElementById('bs-tubes-container').children[idx];
+                        targetEl.classList.add('shake');
+                        setTimeout(() => targetEl.classList.remove('shake'), 500);
+                    }
+                }
+            }
+        }
+
+        function checkBSWin() {
+            // All tubes must be either empty or have 4 of the same color
+            return bsTubes.every(tube => {
+                if(tube.length === 0) return true;
+                if(tube.length !== 4) return false;
+                const firstColor = tube[0];
+                return tube.every(c => c === firstColor);
+            });
+        }
+
+        function handleBSWin() {
+            if(audioInitialized && !bsMuted) {
+                const now = Tone.now();
+                winChime.triggerAttackRelease("C5", "8n", now); winChime.triggerAttackRelease("E5", "8n", now+0.1);
+                winChime.triggerAttackRelease("G5", "4n", now+0.2);
+            }
+            shootConfetti();
+            bsScore += (100 - bsMoves * 2 > 10 ? 100 - bsMoves * 2 : 10);
+            updateBSStats();
+            
+            showFeedback("Level Complete! 🌟", "bg-blue-500", "border-blue-300", "text-blue-500", () => {
+                feedbackModal.classList.add('hidden');
+                bsLevel++; startBSLevel(bsLevel);
+                
+                // After clearing ball sort level, switch back to tens & ones
+                switchToTens();
+                drawCard();
+            });
+        }
+
         // --- GAME OVER & FIREWORKS ---
         function showGameEnd() {
-            finalScoreEl.textContent = score;
-            gameOverModal.classList.remove('hidden');
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('game-over-modal').classList.remove('hidden');
             
             if(audioInitialized) {
                 const now = Tone.now();
                 bigWinSynth.triggerAttackRelease(["C4", "E4", "G4"], "8n", now);
                 bigWinSynth.triggerAttackRelease(["E4", "G4", "C5"], "8n", now + 0.2);
                 bigWinSynth.triggerAttackRelease(["G4", "C5", "E5"], "8n", now + 0.4);
-                bigWinSynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "2n", now + 0.6);
+                bigWinSynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "1m", now + 0.6);
             }
-
             fireworksSequence();
         }
 
         function fireworksSequence() {
-            const duration = 5 * 1000;
+            const duration = 6 * 1000;
             const animationEnd = Date.now() + duration;
-            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 60 };
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 10000 };
 
-            function randomInRange(min, max) {
-                return Math.random() * (max - min) + min;
-            }
+            function randomInRange(min, max) { return Math.random() * (max - min) + min; }
 
             const interval = setInterval(function() {
                 const timeLeft = animationEnd - Date.now();
+                if (timeLeft <= 0) return clearInterval(interval);
 
-                if (timeLeft <= 0) {
-                    return clearInterval(interval);
-                }
-
-                const particleCount = 50 * (timeLeft / duration);
-                // since particles fall down, start a bit higher than random
-                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
-                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
-            }, 250);
-        }
-
-        // --- DRAG AND DROP & CLICK LOGIC ---
-        
-        function setupDragEvents() {
-            [sourceTenRod, sourceOneCube].forEach(source => {
-                source.addEventListener('mousedown', startDrag);
-                source.addEventListener('touchstart', startDrag, { passive: false });
-            });
-            
-            document.addEventListener('mousemove', dragMove);
-            document.addEventListener('touchmove', dragMove, { passive: false });
-            
-            document.addEventListener('mouseup', endDrag);
-            document.addEventListener('touchend', endDrag);
-        }
-        
-        function startDrag(e) {
-            if(e.type === 'touchstart') e.preventDefault();
-            
-            if (isChecking || isBonusChecking) return;
-            
-            isDragging = true;
-            hasMoved = false;
-            startPos = getEventPosition(e);
-            
-            const sourceEl = e.currentTarget;
-            dragSourceType = sourceEl.dataset.type; 
-            
-            dragClone = sourceEl.cloneNode(true);
-            if (dragSourceType === 'ten') {
-                dragClone.innerHTML = sourceEl.innerHTML; 
-            }
-            
-            dragClone.classList.add('drag-clone');
-            document.body.appendChild(dragClone);
-            
-            // Ban đầu để clone ngay tại chuột/tay
-            updateClonePosition(startPos.x, startPos.y);
-            
-            if(audioInitialized) dragSynth.triggerAttackRelease("C5", "16n"); 
-        }
-        
-        function dragMove(e) {
-            if (!isDragging || isBonusChecking) return;
-            if(e.type === 'touchmove') e.preventDefault(); // Dừng cuộn trang khi đang kéo
-            
-            const pos = getEventPosition(e);
-            
-            // Tính toán khoảng cách di chuyển để phân biệt Click và Kéo
-            if (!hasMoved) {
-                const dx = pos.x - startPos.x;
-                const dy = pos.y - startPos.y;
-                if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-                    hasMoved = true;
-                }
-            }
-            
-            updateClonePosition(pos.x, pos.y);
-        }
-        
-        function updateClonePosition(x, y) {
-            if (!dragClone) return;
-            dragClone.style.left = `${x}px`;
-            dragClone.style.top = `${y}px`;
-        }
-
-        function endDrag(e) {
-            if (!isDragging || !dragClone || isBonusChecking) return;
-            
-            isDragging = false;
-            dragClone.style.display = 'none'; // Ẩn ngay để hàm lấy đúng element bên dưới
-            
-            const pos = getEventPosition(e);
-            const dropTarget = document.elementFromPoint(pos.x, pos.y);
-            
-            document.body.removeChild(dragClone);
-            dragClone = null;
-            
-            // Xử lý Click (nếu không có sự di chuyển chuột/tay)
-            if (!hasMoved) {
-                handleClickPlace(dragSourceType);
-                return;
-            }
-            
-            // Xử lý Thả (Drop)
-            if (!dropTarget) {
-                if(audioInitialized) dropSynth.triggerAttackRelease("C2", "16n");
-                return;
-            }
-
-            const isTensDrop = tensColumn.contains(dropTarget) || tensColumn === dropTarget;
-            const isOnesDrop = onesColumn.contains(dropTarget) || onesColumn === dropTarget;
-
-            if (dragSourceType === 'ten' && isTensDrop) {
-                handleClickPlace('ten');
-            } else if (dragSourceType === 'one' && isOnesDrop) {
-                handleClickPlace('one');
-            } else {
-                if(audioInitialized) dropSynth.triggerAttackRelease("C2", "16n"); // Dropped outside
-            }
-        }
-        
-        // Hàm dùng chung cho Click và Drop thành công
-        function handleClickPlace(type) {
-            if (type === 'ten') {
-                placeCube('ten');
-                if(audioInitialized) popSynth.triggerAttackRelease("G3", "8n");
-            } else if (type === 'one') {
-                const targetTens = Math.floor(currentNumber / 10);
-                const placedTens = tensColumn.querySelectorAll('.ten-rod').length;
+                const particleCount = 60 * (timeLeft / duration);
                 
-                if (placedTens < targetTens) {
-                    tensFirstWarning.classList.remove('hidden');
-                    if(audioInitialized) wrongSynth.triggerAttackRelease("C3", "8n");
-                    gameContainer.classList.add('shake');
-                    setTimeout(() => gameContainer.classList.remove('shake'), 500);
-                } else {
-                    tensFirstWarning.classList.add('hidden');
-                    placeCube('one');
-                    if(audioInitialized) popSynth.triggerAttackRelease("C4", "8n");
-                }
-            }
+                confetti(Object.assign({}, defaults, { 
+                    particleCount, 
+                    origin: { x: randomInRange(0.1, 0.9), y: Math.random() - 0.2 },
+                    colors: ['#ff4b2b', '#f6d365', '#84fab0', '#8fd3f4', '#a18cd1']
+                }));
+            }, 300);
         }
-        
-        function placeCube(type) {
-            let newCube;
-            if (type === 'ten') {
-                newCube = sourceTenRod.cloneNode(true);
-                newCube.innerHTML = sourceTenRod.innerHTML; 
-                tensColumn.appendChild(newCube);
-            } else {
-                newCube = sourceOneCube.cloneNode(true);
-                onesColumn.appendChild(newCube);
-            }
+
+        // Init Everything on Load
+        document.addEventListener('DOMContentLoaded', () => {
+            initTensGame();
             
-            // Chỉ thêm hiệu ứng nảy (không random xoay nghiêng nữa để block nằm hoàn toàn ngay ngắn)
-            newCube.classList.add('bounce-in');
-            
-            // Click to remove
-            newCube.addEventListener('click', () => {
-                if(isChecking) return;
-                newCube.style.transform = 'scale(0)';
-                setTimeout(() => newCube.remove(), 100);
-                if(audioInitialized) dropSynth.triggerAttackRelease("G2", "16n");
-                if(type === 'ten') {
-                    tensFirstWarning.classList.add('hidden');
-                }
+            // Add listener to play again button
+            document.getElementById('play-again-button').addEventListener('click', () => {
+                document.getElementById('game-over-modal').classList.add('hidden');
+                initTensGame(); // Restart main game
             });
-        }
-        
-        function getEventPosition(e) {
-            if (e.touches && e.touches.length > 0) {
-                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-            }
-            if (e.changedTouches && e.changedTouches.length > 0) {
-                return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
-            }
-            return { x: e.clientX, y: e.clientY };
-        }
-        
-        document.addEventListener('DOMContentLoaded', initGame);
+        });
 
     </script>
 </body>
