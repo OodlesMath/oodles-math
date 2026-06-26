@@ -643,25 +643,26 @@
                 setTimeout(() => { createConfettiBurst(canvasWidth*0.2 + Math.random()*canvasWidth*0.6, canvasHeight*0.3); }, i * 300);
             }
         } else if (questionsAnswered % 2 === 0) {
+            generateMathQuestion(); // Chuẩn bị sẵn câu hỏi trước khi mở mini-game
             openMinigamePenalty(); // Reward!
         } else {
             generateMathQuestion();
         }
     }
 
-    function update() {
-        backgroundTime += 0.03;
+    function update(timeScale = 1) {
+        backgroundTime += 0.03 * timeScale;
 
-        clouds.forEach(el => { el.x -= el.speed; if (el.x + el.size * 2 < 0) { el.x = canvasWidth + el.size * 2; el.y = Math.random() * (WATER_LEVEL * 0.4); } });
+        clouds.forEach(el => { el.x -= el.speed * timeScale; if (el.x + el.size * 2 < 0) { el.x = canvasWidth + el.size * 2; el.y = Math.random() * (WATER_LEVEL * 0.4); } });
         decorFishes.forEach(f => {
-            f.x += f.speed * f.dir;
+            f.x += f.speed * f.dir * timeScale;
             if(f.dir === 1 && f.x > canvasWidth + 100) { f.x = -100; f.y = WATER_LEVEL + 40 + Math.random()*(canvasHeight - WATER_LEVEL - 60); } 
             else if(f.dir === -1 && f.x < -100) { f.x = canvasWidth + 100; f.y = WATER_LEVEL + 40 + Math.random()*(canvasHeight - WATER_LEVEL - 60); }
         });
 
         // Hop logic
         if (frog.isHopping) {
-            frog.hopProgress += 0.1; // Smooth sequential speed
+            frog.hopProgress += 0.035 * timeScale; // Tốc độ giảm 30% so với bản v10
             let startP = platforms[frog.leafIndex - 1];
             let endP = platforms[frog.targetIndex - 1];
             
@@ -683,8 +684,8 @@
             }
         }
 
-        for (let i = particles.length - 1; i >= 0; i--) { let p = particles[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.15; p.life -= p.decay; if (p.life <= 0) particles.splice(i, 1); }
-        for (let i = confetti.length - 1; i >= 0; i--) { let c = confetti[i]; c.x += c.vx; c.y += c.vy; c.vy += 0.1; c.rot += c.rotSpeed; c.wobble += c.wobbleSpeed; c.x += Math.sin(c.wobble) * 2; if (c.y > canvasHeight + 100) confetti.splice(i, 1); }
+        for (let i = particles.length - 1; i >= 0; i--) { let p = particles[i]; p.x += p.vx * timeScale; p.y += p.vy * timeScale; p.vy += 0.15 * timeScale; p.life -= p.decay * timeScale; if (p.life <= 0) particles.splice(i, 1); }
+        for (let i = confetti.length - 1; i >= 0; i--) { let c = confetti[i]; c.x += c.vx * timeScale; c.y += c.vy * timeScale; c.vy += 0.1 * timeScale; c.rot += c.rotSpeed * timeScale; c.wobble += c.wobbleSpeed * timeScale; c.x += Math.sin(c.wobble) * 2 * timeScale; if (c.y > canvasHeight + 100) confetti.splice(i, 1); }
     }
 
     function createSparkles(x, y, amount, color) {
@@ -876,7 +877,18 @@
         });
     }
 
-    function loop() { update(); render(); requestAnimationFrame(loop); }
+    let lastTime = 0;
+    function loop(timestamp) { 
+        if (!lastTime) lastTime = timestamp;
+        let dt = timestamp - lastTime;
+        lastTime = timestamp;
+        if (dt > 100) dt = 16.66; // Ngăn nhảy khung hình lớn nếu người dùng sang tab khác
+        let timeScale = dt / 16.666; // Cân bằng tốc độ chuẩn theo tần số quét 60Hz
+        
+        update(timeScale); 
+        render(); 
+        requestAnimationFrame(loop); 
+    }
 
     function startGame() {
         initAudio();
@@ -1122,12 +1134,11 @@
     function mg_restartLevel() {
         if(MG.isAnimating || MG.history.length === 0) return;
         initAudio();
-        MG.tubesState = MG.history[0].map(t => [...t]); 
-        MG.history = []; MG.selectedTubeIdx = null;
+        MG.tubesState = MG.history[0].map(t => [...t]); MG.history = []; MG.selectedTubeIdx = null;
         mg_buildDOM(MG.tubesState); sfx.hop();
     }
 
-    let mgParticles = []; let mgConfettiActive = false;
+    let mgParticles = []; let mgConfettiActive = false; let mgLastTime = 0;
     function mg_fireConfetti() {
         const mgCanvas = document.getElementById('mg-confetti-canvas');
         mgCanvas.width = window.innerWidth; mgCanvas.height = window.innerHeight;
@@ -1135,16 +1146,30 @@
         for(let i=0; i<100; i++) {
             mgParticles.push({ x: Math.random() * mgCanvas.width, y: -Math.random() * mgCanvas.height, r: Math.random() * 6 + 4, dx: Math.random() * 4 - 2, dy: Math.random() * 3 + 2, color: colors[Math.floor(Math.random() * colors.length)], tilt: Math.floor(Math.random() * 10) - 10, tiltAngleInc: (Math.random() * 0.07) + 0.05, tiltAngle: 0 });
         }
-        if(!mgConfettiActive) { mgConfettiActive = true; mg_drawConfetti(); }
+        if(!mgConfettiActive) { 
+            mgConfettiActive = true; 
+            mgLastTime = 0;
+            requestAnimationFrame(mg_drawConfetti); 
+        }
     }
-    function mg_drawConfetti() {
+    function mg_drawConfetti(timestamp) {
         if(!mgConfettiActive) return;
         requestAnimationFrame(mg_drawConfetti);
+        
+        if (!mgLastTime) mgLastTime = timestamp;
+        let dt = timestamp - mgLastTime;
+        mgLastTime = timestamp;
+        if (dt > 100) dt = 16.66;
+        let timeScale = dt / 16.666; // Normalize
+
         const mgCanvas = document.getElementById('mg-confetti-canvas');
         const mgCtx = mgCanvas.getContext('2d');
         mgCtx.clearRect(0, 0, mgCanvas.width, mgCanvas.height);
         for(let i=0; i<mgParticles.length; i++) {
-            let p = mgParticles[i]; p.tiltAngle += p.tiltAngleInc; p.y += (Math.cos(p.tiltAngle) + 1 + p.r / 2) / 2; p.x += Math.sin(p.tiltAngle) * 2;
+            let p = mgParticles[i]; 
+            p.tiltAngle += p.tiltAngleInc * timeScale; 
+            p.y += ((Math.cos(p.tiltAngle) + 1 + p.r / 2) / 2) * timeScale; 
+            p.x += Math.sin(p.tiltAngle) * 2 * timeScale;
             mgCtx.beginPath(); mgCtx.lineWidth = p.r; mgCtx.strokeStyle = p.color; mgCtx.moveTo(p.x + p.tilt + p.r, p.y); mgCtx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r); mgCtx.stroke();
             if(p.y > mgCanvas.height) { mgParticles.splice(i, 1); i--; }
         }
@@ -1176,8 +1201,8 @@
         initAudio();
         document.getElementById('mg-layer').style.display = 'none';
         mgParticles = []; mgConfettiActive = false;
-        jumpQueue = []; completedHops = [];
-        resetFrogToStart(currentQuestion.num1, currentQuestion.op === '+');
+        
+        // Bỏ generateMathQuestion() đi vì câu hỏi đã được tạo sẵn từ handleNext()
     }
 
 </script>
