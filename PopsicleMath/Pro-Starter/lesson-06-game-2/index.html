@@ -4,7 +4,7 @@
     <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Time Quest - Version 4</title>
+    <title>Time Quest - Version 5</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap');
 
@@ -13,7 +13,6 @@
             --bg-color: #DDF4FF;
             --card-bg: #FFFFFF;
             --text-color: #4B4B4B;
-            --text-question: #1CB0F6;
             
             --btn-blue: #1CB0F6;
             --btn-blue-shadow: #1899D6;
@@ -53,14 +52,15 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            /* Allow scrolling if content is too tall */
+            overflow-y: auto; 
+            overflow-x: hidden;
             min-height: 100vh;
-            overflow: hidden;
-            position: relative;
         }
 
         /* Background Decorations */
         .bg-decorations {
-            position: absolute;
+            position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             z-index: 0;
             pointer-events: none;
@@ -103,7 +103,8 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
+            height: auto;
         }
 
         /* Screens */
@@ -114,6 +115,11 @@
             justify-content: center;
             width: 100%;
             animation: fadeIn 0.4s ease-out;
+        }
+        
+        #screen-game {
+            /* Create space at the bottom so the fixed Continue bar won't overlap answers */
+            padding-bottom: 140px; 
         }
 
         .hidden {
@@ -139,25 +145,27 @@
             font-weight: 700;
         }
 
+        /* Question Block - Updated colors */
         .question-block {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 20px;
-            background: var(--card-bg);
+            background: #F4E5FF; /* Soft pastel purple */
             padding: 20px 30px;
             border-radius: 24px;
-            box-shadow: 0 8px 0 var(--btn-white-shadow);
+            border: 4px solid var(--btn-purple);
+            border-bottom-width: 8px;
+            border-bottom-color: var(--btn-purple-shadow);
             margin-bottom: 30px;
             width: 100%;
             max-width: 650px;
-            border: 2px solid var(--btn-white-shadow);
         }
 
         .question-text {
             font-size: 1.6rem;
             font-weight: 800;
-            color: var(--text-question);
+            color: #8C39C4; /* Deeper purple for high contrast */
             flex: 1;
             text-align: center;
             line-height: 1.4;
@@ -238,27 +246,33 @@
             flex-wrap: wrap;
         }
 
+        /* Answer Buttons - Updated colors */
         .btn-answer {
-            background-color: var(--btn-white);
+            background-color: #F0F8FF; /* Light pastel blue */
             color: var(--text-color);
-            border-color: var(--btn-white-shadow);
-            border-bottom-width: 6px;
+            border-color: var(--btn-blue);
+            border-width: 4px;
+            border-bottom-width: 8px;
+            border-bottom-color: var(--btn-blue-shadow);
             flex: 1;
             min-width: 200px;
             padding: 18px 10px;
             border-radius: 20px;
         }
+        
         .btn-answer:active:not(.wrong) {
-            border-bottom-width: 2px;
+            border-bottom-width: 4px !important;
+            transform: translateY(4px) !important;
         }
+        
         .btn-answer:hover:not(.wrong):not(.correct) {
-            background-color: #F7F7F7;
+            background-color: #DDF1FF;
         }
 
         .btn-answer .digital {
             font-size: 1.8rem;
             font-weight: 800;
-            color: var(--btn-blue);
+            color: var(--btn-blue-shadow);
             margin-bottom: 5px;
         }
 
@@ -273,6 +287,9 @@
             border-color: var(--btn-green);
             border-bottom-color: var(--btn-green-shadow);
         }
+        .btn-answer.correct .digital {
+            color: var(--btn-green-shadow);
+        }
 
         .btn-answer.wrong {
             background-color: #FFD2D2;
@@ -282,8 +299,11 @@
             transform: none !important;
             cursor: not-allowed;
         }
+        .btn-answer.wrong .digital {
+            color: var(--btn-red-shadow);
+        }
 
-        /* Clock - Increased physical size (+10% from 312px = ~343px) */
+        /* Clock */
         .clock-container {
             width: 343px;
             height: 343px;
@@ -300,15 +320,18 @@
             overflow: visible;
         }
 
-        /* Feedback Overlay */
+        /* Feedback Overlay - Updated to fixed overlay that doesn't block content */
         #feedback-overlay {
-            position: absolute;
+            position: fixed; /* Fix to bottom */
             bottom: 0; left: 0; width: 100%;
-            padding: 30px 20px;
+            padding: 25px 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 100;
+            z-index: 1000;
+            border-top-left-radius: 30px;
+            border-top-right-radius: 30px;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1); /* Beautiful shadow */
             animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
 
@@ -322,9 +345,7 @@
 
         #feedback-overlay.correct {
             background-color: #D7FFB8;
-            border-top: 4px solid var(--btn-green);
         }
-        #feedback-overlay.correct .feedback-text { color: var(--btn-green-shadow); }
 
         .feedback-text {
             font-size: 2.2rem;
@@ -332,6 +353,7 @@
             display: flex;
             align-items: center;
             gap: 15px;
+            color: var(--btn-green-shadow);
         }
         
         .feedback-icon {
@@ -340,7 +362,8 @@
             display: flex; justify-content: center; align-items: center;
             background: white;
             font-size: 1.8rem;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+            box-shadow: 0 4px 0 rgba(0,0,0,0.08);
+            color: var(--btn-green);
         }
 
         .btn-next {
@@ -359,7 +382,7 @@
 
         /* Confetti */
         #confetti-canvas {
-            position: absolute;
+            position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none;
             z-index: 9999;
@@ -392,8 +415,9 @@
             .question-text { font-size: 1.3rem; }
             .answers-grid { flex-direction: column; align-items: center; }
             .btn-answer { width: 100%; }
-            /* Adjusted Mobile Clock Size (+10% from 264px = 290px) */
             .clock-container { width: 290px; height: 290px; }
+            
+            #screen-game { padding-bottom: 180px; } /* Ensure more space on mobile */
             
             .feedback-content { flex-direction: column; gap: 20px; text-align: center; }
             .feedback-text { justify-content: center; }
@@ -453,25 +477,21 @@
             </div>
             
             <div class="clock-container">
-                <!-- Expanded viewBox to 264 to allow 10% larger face. Scale inside keeps exact size of elements -->
                 <svg class="clock-svg" id="analog-clock" viewBox="0 0 264 264">
-                    <!-- Clock Face (Radius increased to fit the 10% larger box) -->
                     <circle cx="132" cy="132" r="125" fill="var(--clock-face)" stroke="var(--clock-border)" stroke-width="12"/>
                     <circle cx="132" cy="132" r="113" fill="none" stroke="#F0F0F0" stroke-width="1"/>
                     
-                    <!-- Ticks and Numbers injected by JS -->
                     <g id="clock-ticks"></g>
                     <g id="clock-numbers"></g>
                     
                     <!-- Shadow layer for hands -->
                     <g transform="translate(0, 3)">
-                        <!-- Shadows keep the same absolute length as hands -->
                         <line id="hour-hand-shadow" x1="132" y1="132" x2="132" y2="87" stroke="rgba(0,0,0,0.15)" stroke-width="12" stroke-linecap="round" transform="rotate(0 132 132)"/>
                         <line id="minute-hand-shadow" x1="132" y1="132" x2="132" y2="57" stroke="rgba(0,0,0,0.15)" stroke-width="8" stroke-linecap="round" transform="rotate(0 132 132)"/>
                         <circle cx="132" cy="132" r="10" fill="rgba(0,0,0,0.15)"/>
                     </g>
                     
-                    <!-- Hands (Kept identical absolute length as v3, numbers moved outward) -->
+                    <!-- Hands -->
                     <line id="hour-hand" x1="132" y1="132" x2="132" y2="87" stroke="var(--clock-hour)" stroke-width="12" stroke-linecap="round" transform="rotate(0 132 132)"/>
                     <line id="minute-hand" x1="132" y1="132" x2="132" y2="57" stroke="var(--clock-minute)" stroke-width="8" stroke-linecap="round" transform="rotate(0 132 132)"/>
                     <circle cx="132" cy="132" r="10" fill="var(--clock-center)"/>
@@ -498,7 +518,7 @@
         </div>
     </div>
 
-    <!-- Feedback Overlay (Only shown on Correct answer now) -->
+    <!-- Feedback Overlay -->
     <div id="feedback-overlay" class="hidden">
         <div class="feedback-content">
             <div class="feedback-text">
@@ -509,12 +529,11 @@
         </div>
     </div>
 
-    <!-- Confetti layer at the very top -->
+    <!-- Confetti layer -->
     <canvas id="confetti-canvas"></canvas>
 
     <script>
         /* --- QUESTION DATABASE --- */
-        // Updated daily routine questions with spokenText property for natural TTS reading
         const allQuestions = [
             // O'clock Times (12)
             { type: 'standard', h: 1, m: 0, digital: "1:00", phrase: "one o'clock" },
@@ -555,14 +574,15 @@
             { type: 'standard', h: 10, m: 55, digital: "10:55", phrase: "five to eleven" },
 
             // Daily Routine Questions (8)
-            { type: 'routine', h: 7, m: 0, digital: "7:00 am", phrase: "in the morning", text: "The baby woke up at ______ in the morning.", spokenText: "What time did the baby wake up in the morning?" },
-            { type: 'routine', h: 12, m: 15, digital: "12:15 pm", phrase: "in the afternoon", text: "Sally eats her lunch at ______.", spokenText: "What time does Sally eat her lunch?" },
-            { type: 'routine', h: 3, m: 30, digital: "3:30 pm", phrase: "in the afternoon", text: "The students finish school at ______.", spokenText: "What time do the students finish school?" },
-            { type: 'routine', h: 6, m: 45, digital: "6:45 pm", phrase: "in the evening", text: "My family eats dinner at ______.", spokenText: "What time does your family eat dinner?" },
-            { type: 'routine', h: 8, m: 0, digital: "8:00 pm", phrase: "at night", text: "Anita jogs at the park every evening at ______.", spokenText: "What time does Anita jog at the park every evening?" },
-            { type: 'routine', h: 6, m: 0, digital: "6:00 am", phrase: "in the morning", text: "The sun comes up at ______ in the morning.", spokenText: "What time does the sun come up in the morning?" },
-            { type: 'routine', h: 10, m: 30, digital: "10:30 am", phrase: "in the morning", text: "We have a morning snack at ______.", spokenText: "What time do we have a morning snack?" },
-            { type: 'routine', h: 8, m: 30, digital: "8:30 pm", phrase: "at night", text: "Tom brushes his teeth at ______ before bed.", spokenText: "What time does Tom brush his teeth before bed?" }
+            // Added `spokenAnswer` so when clicking the answer, it only reads the time!
+            { type: 'routine', h: 7, m: 0, digital: "7:00 am", phrase: "in the morning", text: "The baby woke up at ______ in the morning.", spokenText: "What time did the baby wake up in the morning?", spokenAnswer: "seven a.m." },
+            { type: 'routine', h: 12, m: 15, digital: "12:15 pm", phrase: "in the afternoon", text: "Sally eats her lunch at ______.", spokenText: "What time does Sally eat her lunch?", spokenAnswer: "twelve fifteen p.m." },
+            { type: 'routine', h: 3, m: 30, digital: "3:30 pm", phrase: "in the afternoon", text: "The students finish school at ______.", spokenText: "What time do the students finish school?", spokenAnswer: "three thirty p.m." },
+            { type: 'routine', h: 6, m: 45, digital: "6:45 pm", phrase: "in the evening", text: "My family eats dinner at ______.", spokenText: "What time does your family eat dinner?", spokenAnswer: "six forty-five p.m." },
+            { type: 'routine', h: 8, m: 0, digital: "8:00 pm", phrase: "at night", text: "Anita jogs at the park every evening at ______.", spokenText: "What time does Anita jog at the park every evening?", spokenAnswer: "eight p.m." },
+            { type: 'routine', h: 6, m: 0, digital: "6:00 am", phrase: "in the morning", text: "The sun comes up at ______ in the morning.", spokenText: "What time does the sun come up in the morning?", spokenAnswer: "six a.m." },
+            { type: 'routine', h: 10, m: 30, digital: "10:30 am", phrase: "in the morning", text: "We have a morning snack at ______.", spokenText: "What time do we have a morning snack?", spokenAnswer: "ten thirty a.m." },
+            { type: 'routine', h: 8, m: 30, digital: "8:30 pm", phrase: "at night", text: "Tom brushes his teeth at ______ before bed.", spokenText: "What time does Tom brush his teeth before bed?", spokenAnswer: "eight thirty p.m." }
         ];
 
         const standardAnswers = allQuestions.filter(q => q.type === 'standard');
@@ -573,7 +593,7 @@
         let currentQuestionIndex = 0;
         let score = 0;
         let isAnswered = false;
-        let hasAttemptedWrong = false; // Tracks if the user made a mistake in current question
+        let hasAttemptedWrong = false; 
 
         /* --- AUDIO CONTEXT --- */
         let audioCtx;
@@ -641,7 +661,6 @@
 
         function speakCurrentQuestion() {
             const q = currentRound[currentQuestionIndex];
-            // Use natural spokenText if provided, otherwise default fallback
             let textToSpeak = q.spokenText || (q.type === 'routine' ? q.text : "What time is it?");
             speakText(textToSpeak);
         }
@@ -664,11 +683,9 @@
             ticksGroup.innerHTML = '';
             numbersGroup.innerHTML = '';
 
-            // Using the new viewBox center (132, 132)
             for (let i = 0; i < 60; i++) {
                 let angle = (i * 6) * (Math.PI / 180);
                 let isHour = i % 5 === 0;
-                // Pushed outward by ~12px to match new 10% larger box, while preserving hand sizes
                 let rOuter = 120;
                 let rInner = isHour ? 107 : 114;
                 
@@ -683,13 +700,13 @@
                 line.setAttribute("x2", x2);
                 line.setAttribute("y2", y2);
                 line.setAttribute("stroke", "var(--clock-text)");
-                line.setAttribute("stroke-width", isHour ? "4" : "1.5"); // Same absolute thickness
+                line.setAttribute("stroke-width", isHour ? "4" : "1.5"); 
                 line.setAttribute("stroke-linecap", "round");
                 ticksGroup.appendChild(line);
 
                 if (isHour) {
                     let num = i === 0 ? 12 : i / 5;
-                    let rNum = 90; // Moved numbers outwards to not overlap with hands
+                    let rNum = 90; 
                     let nx = 132 + rNum * Math.sin(angle);
                     let ny = 132 - rNum * Math.cos(angle);
                     
@@ -699,7 +716,7 @@
                     text.setAttribute("text-anchor", "middle");
                     text.setAttribute("dominant-baseline", "central");
                     text.setAttribute("fill", "var(--clock-text)");
-                    text.setAttribute("font-size", "24px"); // Unchanged font size
+                    text.setAttribute("font-size", "24px"); 
                     text.setAttribute("font-weight", "800");
                     text.setAttribute("font-family", "Poppins");
                     text.textContent = num;
@@ -799,18 +816,16 @@
             const mAngle = m * 6;
             const hAngle = ((h % 12) * 30) + (m * 0.5);
             
-            // Set rotation for actual hands with new center (132, 132)
             document.getElementById('hour-hand').setAttribute('transform', `rotate(${hAngle} 132 132)`);
             document.getElementById('minute-hand').setAttribute('transform', `rotate(${mAngle} 132 132)`);
             
-            // Set rotation for shadow layers
             document.getElementById('hour-hand-shadow').setAttribute('transform', `rotate(${hAngle} 132 132)`);
             document.getElementById('minute-hand-shadow').setAttribute('transform', `rotate(${mAngle} 132 132)`);
         }
 
         function loadQuestion() {
             isAnswered = false;
-            hasAttemptedWrong = false; // Reset attempt tracker
+            hasAttemptedWrong = false;
             document.getElementById('feedback-overlay').classList.add('hidden');
             
             const q = currentRound[currentQuestionIndex];
@@ -857,43 +872,32 @@
         function selectAnswer(btn, isCorrect, opt) {
             if (isAnswered || btn.classList.contains('wrong')) return;
             
-            // Speak the specific answer text immediately
-            speakText(opt.phrase);
+            // Speak the specific TIME ONLY based on requested changes
+            speakText(opt.spokenAnswer || opt.phrase);
             
             if (isCorrect) {
-                isAnswered = true; // Lock further selection once correct
+                isAnswered = true; 
                 btn.classList.add('correct');
                 
-                // Add score only if no wrong attempt was made this round
                 if (!hasAttemptedWrong) {
                     score++;
                 }
                 
                 playSound('correct');
                 
-                // Disable all other buttons
                 const allBtns = document.getElementById('answers-container').children;
                 for (let b of allBtns) {
                     b.style.pointerEvents = 'none';
                 }
 
-                // Show the Next overlay for Teacher review
                 const overlay = document.getElementById('feedback-overlay');
-                const feedbackMsg = document.getElementById('feedback-msg');
-                const feedbackIcon = document.getElementById('feedback-icon');
-
                 overlay.className = 'correct'; 
-                feedbackMsg.innerText = "Great job!";
-                feedbackIcon.innerText = "✓";
-                feedbackIcon.style.color = "var(--btn-green)";
                 overlay.classList.remove('hidden');
                 
             } else {
-                // If wrong, mark as wrong, no points, let them try again
                 btn.classList.add('wrong');
                 hasAttemptedWrong = true;
                 playSound('wrong');
-                // The feedback overlay intentionally does NOT show here.
             }
         }
 
