@@ -1,10 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Even or Odd Adventure - Ver 7</title>
+    <title>Even or Odd Adventure - Ver 2</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -41,6 +42,35 @@
             align-items: center;
             position: relative;
         }
+
+        /* BGnew.html canvas background - Ver 2 */
+        #backgroundCanvas {
+            display: block;
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+        #top-bar, #game-container, #mascot-area {
+            position: relative;
+            z-index: 10;
+        }
+        .oodles-logo { z-index: 2000; }
+
+        /* Performance helpers for macOS / Retina screens */
+        .mg-container {
+            contain: layout paint;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+        }
+        .balloon-wrapper, .falling-star, .floating-bubble, .dot, #mascot {
+            backface-visibility: hidden;
+            transform-style: preserve-3d;
+        }
+        .firework { will-change: transform, opacity; }
+
 
         /* Cute Sun */
         .sun-wrapper {
@@ -295,20 +325,8 @@
     </style>
 </head>
 <body>
-    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
-    <div class="cloud c1"></div>
-    <div class="cloud c2"></div>
-
-    <!-- Cute Sun -->
-    <div class="sun-wrapper">
-        <div class="sun">
-            <div class="sun-eyes">
-                <div class="sun-eye"></div>
-                <div class="sun-eye"></div>
-            </div>
-            <div class="sun-smile"></div>
-        </div>
-    </div>
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo" onerror="this.style.display='none'">
+    <canvas id="backgroundCanvas" aria-label="Background with sky, rainbow, grass, flowers, butterflies, and trees"></canvas>
 
     <div id="top-bar">
         <button class="icon-btn" onclick="goHome()" title="Home">🏠</button>
@@ -438,6 +456,314 @@
     </div>
 
     <script>
+(() => {
+            const bgCanvas = document.getElementById('backgroundCanvas');
+            const bgCtx = bgCanvas.getContext('2d', { alpha: false });
+
+            let bgWidth = 0;
+            let bgHeight = 0;
+            let bgClouds = [];
+            let bgTrees = [];
+            let bgFlowers = [];
+            let bgButterflies = [];
+
+            const flowerColors = ['#ff4b4b', '#ffc800', '#ce82ff', '#ffffff', '#1cb0f6', '#ff8fab'];
+
+            function resizeBackgroundCanvas() {
+                const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 1.5));
+                bgWidth = window.innerWidth;
+                bgHeight = window.innerHeight;
+                bgCanvas.width = Math.floor(bgWidth * dpr);
+                bgCanvas.height = Math.floor(bgHeight * dpr);
+                bgCanvas.style.width = bgWidth + 'px';
+                bgCanvas.style.height = bgHeight + 'px';
+                bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                generateBackgroundEnvironment();
+            }
+
+            function generateBackgroundEnvironment() {
+                bgClouds = [];
+                bgTrees = [];
+                bgFlowers = [];
+                bgButterflies = [];
+
+                // Reduced cloud count by about 40% from ver6.
+                const cloudCount = bgWidth < 600 ? 3 : 5;
+                for (let i = 0; i < cloudCount; i++) {
+                    bgClouds.push({
+                        x: Math.random() * bgWidth,
+                        y: bgHeight * (0.08 + Math.random() * 0.34),
+                        size: 28 + Math.random() * (bgWidth < 600 ? 34 : 52),
+                        speed: Math.random() * 0.16 + 0.05,
+                        opacity: 0.72 + Math.random() * 0.24
+                    });
+                }
+
+                const treeCount = bgWidth < 600 ? 6 : 11;
+                for (let i = 0; i < treeCount; i++) {
+                    bgTrees.push({
+                        x: (i / Math.max(1, treeCount - 1)) * bgWidth + (Math.random() * 70 - 35),
+                        y: bgHeight * (0.66 + Math.random() * 0.04),
+                        scale: 0.48 + Math.random() * 0.56
+                    });
+                }
+
+                const flowerCount = bgWidth < 600 ? 10 : 18;
+                for (let i = 0; i < flowerCount; i++) {
+                    bgFlowers.push({
+                        x: Math.random() * bgWidth,
+                        y: bgHeight * 0.80 + Math.random() * (bgHeight * 0.16),
+                        color: flowerColors[Math.floor(Math.random() * flowerColors.length)],
+                        scale: 0.42 + Math.random() * 0.42,
+                        sway: Math.random() * Math.PI * 2,
+                        petals: Math.random() > 0.45 ? 6 : 5
+                    });
+                }
+
+                for (let i = 0; i < 4; i++) {
+                    bgButterflies.push({
+                        x: Math.random() * bgWidth,
+                        y: bgHeight * (0.28 + Math.random() * 0.24),
+                        size: 5 + Math.random() * 4,
+                        speed: 0.18 + Math.random() * 0.18,
+                        phase: Math.random() * Math.PI * 2,
+                        color: ['#ff6b9d', '#ffd93d', '#9b5de5', '#00bbf9'][i % 4]
+                    });
+                }
+            }
+
+            function updateBackground(delta = 16.67) {
+                const step = Math.min(delta, 33.33) / 16.67;
+                bgClouds.forEach(cloud => {
+                    cloud.x -= cloud.speed * step;
+                    if (cloud.x + cloud.size * 2.4 < 0) {
+                        cloud.x = bgWidth + cloud.size * 2.4;
+                        cloud.y = bgHeight * (0.08 + Math.random() * 0.34);
+                    }
+                });
+
+                bgButterflies.forEach(b => {
+                    b.x += b.speed * step;
+                    b.phase += 0.08 * step;
+                    if (b.x > bgWidth + 30) {
+                        b.x = -30;
+                        b.y = bgHeight * (0.28 + Math.random() * 0.24);
+                    }
+                });
+            }
+
+            function drawRoundedCloud(cloud) {
+                bgCtx.save();
+                bgCtx.globalAlpha = cloud.opacity;
+                bgCtx.fillStyle = '#ffffff';
+                bgCtx.beginPath();
+                bgCtx.arc(cloud.x, cloud.y, cloud.size, 0, Math.PI * 2);
+                bgCtx.arc(cloud.x + cloud.size * 0.82, cloud.y + cloud.size * 0.2, cloud.size * 0.72, 0, Math.PI * 2);
+                bgCtx.arc(cloud.x - cloud.size * 0.85, cloud.y + cloud.size * 0.22, cloud.size * 0.68, 0, Math.PI * 2);
+                bgCtx.arc(cloud.x + cloud.size * 0.15, cloud.y - cloud.size * 0.28, cloud.size * 0.72, 0, Math.PI * 2);
+                bgCtx.fill();
+                bgCtx.restore();
+            }
+
+            function drawSun() {
+                const x = Math.min(90, bgWidth * 0.12);
+                const y = Math.min(92, bgHeight * 0.13);
+                const r = Math.max(35, Math.min(bgWidth, bgHeight) * 0.055);
+                bgCtx.save();
+                bgCtx.translate(x, y);
+                bgCtx.fillStyle = 'rgba(255, 213, 82, 0.22)';
+                bgCtx.beginPath();
+                bgCtx.arc(0, 0, r * 1.75, 0, Math.PI * 2);
+                bgCtx.fill();
+                bgCtx.fillStyle = '#FFD369';
+                bgCtx.beginPath();
+                bgCtx.arc(0, 0, r, 0, Math.PI * 2);
+                bgCtx.fill();
+                bgCtx.fillStyle = '#D35400';
+                bgCtx.beginPath();
+                bgCtx.arc(-r * 0.32, -r * 0.1, r * 0.08, 0, Math.PI * 2);
+                bgCtx.arc(r * 0.32, -r * 0.1, r * 0.08, 0, Math.PI * 2);
+                bgCtx.fill();
+                bgCtx.strokeStyle = '#D35400';
+                bgCtx.lineWidth = Math.max(3, r * 0.07);
+                bgCtx.lineCap = 'round';
+                bgCtx.beginPath();
+                bgCtx.arc(0, r * 0.12, r * 0.36, 0.15 * Math.PI, 0.85 * Math.PI);
+                bgCtx.stroke();
+                bgCtx.restore();
+            }
+
+            function drawRainbow() {
+                bgCtx.save();
+                bgCtx.translate(bgWidth * 0.5, bgHeight * 0.67);
+                bgCtx.lineWidth = Math.max(13, Math.min(22, bgWidth * 0.015));
+                bgCtx.lineCap = 'round';
+                const rainbowColors = ['#ff4b4b', '#ff9900', '#ffc800', '#58cc02', '#1cb0f6', '#ce82ff'];
+                const baseRadius = Math.min(bgWidth * 0.34, bgHeight * 0.46, 420);
+                for (let i = 0; i < rainbowColors.length; i++) {
+                    bgCtx.strokeStyle = rainbowColors[i];
+                    bgCtx.globalAlpha = 0.82;
+                    bgCtx.beginPath();
+                    bgCtx.arc(0, 0, baseRadius - i * bgCtx.lineWidth, Math.PI, 0);
+                    bgCtx.stroke();
+                }
+                bgCtx.restore();
+            }
+
+            function drawTree(tree) {
+                bgCtx.save();
+                bgCtx.translate(tree.x, tree.y);
+                bgCtx.scale(tree.scale, tree.scale);
+                bgCtx.fillStyle = '#8B5A2B';
+                bgCtx.fillRect(-9, 0, 18, 56);
+                bgCtx.fillStyle = '#4ade80';
+                bgCtx.beginPath();
+                bgCtx.arc(0, -24, 38, 0, Math.PI * 2);
+                bgCtx.arc(-25, -12, 29, 0, Math.PI * 2);
+                bgCtx.arc(24, -10, 30, 0, Math.PI * 2);
+                bgCtx.fill();
+                bgCtx.fillStyle = 'rgba(255,255,255,0.28)';
+                bgCtx.beginPath();
+                bgCtx.arc(-12, -34, 12, 0, Math.PI * 2);
+                bgCtx.fill();
+                bgCtx.restore();
+            }
+
+            function drawFlower(flower, time) {
+                bgCtx.save();
+                const sway = Math.sin(time * 0.0015 + flower.sway) * 1.4;
+                bgCtx.translate(flower.x + sway, flower.y);
+                bgCtx.scale(flower.scale, flower.scale);
+
+                bgCtx.strokeStyle = '#259a3f';
+                bgCtx.lineWidth = 2.4;
+                bgCtx.lineCap = 'round';
+                bgCtx.beginPath();
+                bgCtx.moveTo(0, 5);
+                bgCtx.quadraticCurveTo(2, 14, 0, 23);
+                bgCtx.stroke();
+
+                bgCtx.fillStyle = '#55d85a';
+                bgCtx.beginPath();
+                bgCtx.ellipse(-6, 15, 4, 8, -0.8, 0, Math.PI * 2);
+                bgCtx.ellipse(6, 18, 4, 8, 0.75, 0, Math.PI * 2);
+                bgCtx.fill();
+
+                const petalCount = flower.petals || 6;
+                bgCtx.fillStyle = flower.color;
+                for (let petal = 0; petal < petalCount; petal++) {
+                    bgCtx.save();
+                    bgCtx.rotate((Math.PI * 2 * petal) / petalCount);
+                    bgCtx.beginPath();
+                    bgCtx.ellipse(0, -9, 5.2, 9.5, 0, 0, Math.PI * 2);
+                    bgCtx.fill();
+                    bgCtx.restore();
+                }
+
+                bgCtx.fillStyle = '#ffe066';
+                bgCtx.beginPath();
+                bgCtx.arc(0, 0, 5, 0, Math.PI * 2);
+                bgCtx.fill();
+                bgCtx.strokeStyle = 'rgba(154,103,0,0.28)';
+                bgCtx.lineWidth = 1;
+                bgCtx.stroke();
+                bgCtx.restore();
+            }
+
+            function drawButterfly(b) {
+                const y = b.y + Math.sin(b.phase) * 10;
+                bgCtx.save();
+                bgCtx.translate(b.x, y);
+                bgCtx.fillStyle = b.color;
+                bgCtx.globalAlpha = 0.88;
+                bgCtx.beginPath();
+                bgCtx.ellipse(-b.size, 0, b.size, b.size * 1.35, Math.sin(b.phase) * 0.5, 0, Math.PI * 2);
+                bgCtx.ellipse(b.size, 0, b.size, b.size * 1.35, -Math.sin(b.phase) * 0.5, 0, Math.PI * 2);
+                bgCtx.fill();
+                bgCtx.strokeStyle = '#334155';
+                bgCtx.lineWidth = 1.4;
+                bgCtx.beginPath();
+                bgCtx.moveTo(0, -b.size * 1.1);
+                bgCtx.lineTo(0, b.size * 1.2);
+                bgCtx.stroke();
+                bgCtx.restore();
+            }
+
+            function drawBackground(time = 0) {
+                const skyGradient = bgCtx.createLinearGradient(0, 0, 0, bgHeight * 0.72);
+                skyGradient.addColorStop(0, '#7dd3fc');
+                skyGradient.addColorStop(0.62, '#bae6fd');
+                skyGradient.addColorStop(1, '#e0f8ff');
+                bgCtx.fillStyle = skyGradient;
+                bgCtx.fillRect(0, 0, bgWidth, bgHeight);
+
+                drawSun();
+                drawRainbow();
+
+                bgClouds.forEach(drawRoundedCloud);
+                bgButterflies.forEach(drawButterfly);
+
+                bgCtx.fillStyle = '#65a30d';
+                bgCtx.beginPath();
+                bgCtx.moveTo(0, bgHeight);
+                bgCtx.lineTo(0, bgHeight * 0.66);
+                for (let x = 0; x <= bgWidth + 280; x += 280) {
+                    bgCtx.quadraticCurveTo(x - 140, bgHeight * 0.55, x, bgHeight * 0.66);
+                }
+                bgCtx.lineTo(bgWidth, bgHeight);
+                bgCtx.fill();
+
+                bgTrees.forEach(drawTree);
+
+                bgCtx.fillStyle = '#58cc02';
+                bgCtx.beginPath();
+                bgCtx.moveTo(0, bgHeight);
+                bgCtx.lineTo(0, bgHeight * 0.72);
+                bgCtx.quadraticCurveTo(bgWidth * 0.5, bgHeight * 0.66, bgWidth, bgHeight * 0.72);
+                bgCtx.lineTo(bgWidth, bgHeight);
+                bgCtx.fill();
+
+                bgCtx.strokeStyle = '#84cc16';
+                bgCtx.lineWidth = Math.max(10, Math.min(18, bgWidth * 0.014));
+                bgCtx.lineCap = 'round';
+                bgCtx.beginPath();
+                bgCtx.moveTo(-20, bgHeight * 0.72);
+                bgCtx.quadraticCurveTo(bgWidth * 0.5, bgHeight * 0.66, bgWidth + 20, bgHeight * 0.72);
+                bgCtx.stroke();
+
+                bgFlowers.forEach(flower => drawFlower(flower, time));
+            }
+
+            let lastBgTime = 0;
+            let bgRunning = true;
+
+            function backgroundAnimationLoop(time = 0) {
+                if (!bgRunning || document.hidden) {
+                    lastBgTime = time;
+                    requestAnimationFrame(backgroundAnimationLoop);
+                    return;
+                }
+                const delta = lastBgTime ? time - lastBgTime : 16.67;
+                lastBgTime = time;
+                updateBackground(delta);
+                drawBackground(time);
+                requestAnimationFrame(backgroundAnimationLoop);
+            }
+
+            let resizeTimer = null;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(resizeBackgroundCanvas, 120);
+            });
+            document.addEventListener('visibilitychange', () => {
+                lastBgTime = 0;
+            });
+            resizeBackgroundCanvas();
+            requestAnimationFrame(backgroundAnimationLoop);
+        })();
+    </script>
+
+    <script>
         // --- GAME STATE ---
         let score = 0;
         let currentRound = 1;
@@ -462,7 +788,7 @@
 
         function speakText(text) {
             if (!soundEnabled || !window.speechSynthesis) return;
-            window.speechSynthesis.cancel(); // Stop current speech
+            if (window.speechSynthesis) window.speechSynthesis.cancel(); // Stop current speech
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'en-US';
             utterance.rate = 0.9; // Friendly, slightly slower pace for kids
@@ -507,7 +833,7 @@
             soundEnabled = !soundEnabled;
             document.getElementById('mute-btn').innerText = soundEnabled ? '🔊' : '🔇';
             if (soundEnabled) initAudio();
-            else window.speechSynthesis.cancel();
+            else if (window.speechSynthesis) window.speechSynthesis.cancel();
         }
 
         // --- UI UTILITIES ---
@@ -713,20 +1039,39 @@
 
         // --- MINI GAME 1: BALLOONS ---
         let mg1Interval, mg2Interval, mg3Interval; 
+        let mgEndTimeout = null;
+        let mgNextTimeout = null;
         let mgActive = false;
+
+        function stopMiniGameTimers() {
+            mgActive = false;
+            clearInterval(mg1Interval);
+            clearInterval(mg2Interval);
+            clearInterval(mg3Interval);
+            clearTimeout(mgEndTimeout);
+            clearTimeout(mgNextTimeout);
+            ['mg1-area', 'mg2-area', 'mg3-area'].forEach(id => {
+                const area = document.getElementById(id);
+                if (area) area.innerHTML = '';
+            });
+        }
+
+        function canSpawnMiniItem(area, maxItems = 12) {
+            return mgActive && area && area.childElementCount < maxItems;
+        }
         function startMG1() {
+            stopMiniGameTimers();
             showScreen('screen-mg1'); setMascot("Pop the EVEN balloons!", "wow");
             const area = document.getElementById('mg1-area'); area.innerHTML = '';
             mgActive = true; let poppedCount = 0;
             clearInterval(mg1Interval); 
             
             mg1Interval = setInterval(() => {
-                if(!mgActive) return;
+                if(!canSpawnMiniItem(area)) return;
                 const balloon = document.createElement('div'); balloon.className = 'balloon-wrapper';
                 const num = Math.floor(Math.random() * 20) + 1;
                 balloon.innerHTML = `<div class="balloon">🎈<div class="balloon-num">${num}</div></div>`;
                 balloon.style.left = `${Math.random() * 70 + 10}%`; 
-                balloon.style.filter = `hue-rotate(${Math.random() * 360}deg)`;
                 
                 balloon.onpointerdown = (e) => {
                     e.preventDefault();
@@ -742,12 +1087,12 @@
                 };
                 balloon.addEventListener('animationend', () => { if(balloon.parentNode) balloon.remove(); });
                 area.appendChild(balloon);
-            }, 600); // Faster spawn
+            }, 800); // smoother spawn rate for Mac/Retina screens
 
-            setTimeout(() => {
+            mgEndTimeout = setTimeout(() => {
                 mgActive = false; clearInterval(mg1Interval); playTada();
                 setMascot(`Awesome! You popped ${poppedCount} balloons!`, "happy");
-                setTimeout(startRound2, 3000);
+                mgNextTimeout = setTimeout(startRound2, 3000);
             }, 15000); // 15 seconds to enjoy more
         }
 
@@ -846,6 +1191,7 @@
 
         // --- MINI GAME 2: STARS ---
         function startMG2() {
+            stopMiniGameTimers();
             showScreen('screen-mg2'); setMascot("Catch the ODD stars!", "happy");
             const area = document.getElementById('mg2-area'); area.innerHTML = '';
             mgActive = true; let caughtCount = 0;
@@ -854,7 +1200,7 @@
             const starShapes = ['⭐', '🌟'];
 
             mg2Interval = setInterval(() => {
-                if(!mgActive) return;
+                if(!canSpawnMiniItem(area)) return;
                 const star = document.createElement('div'); star.className = 'falling-star';
                 const num = Math.floor(Math.random() * 20) + 1;
                 const shape = starShapes[Math.floor(Math.random() * starShapes.length)];
@@ -876,12 +1222,12 @@
                 };
                 star.addEventListener('animationend', () => { if(star.parentNode) star.remove(); });
                 area.appendChild(star);
-            }, 600); // Faster spawn
+            }, 800); // smoother spawn rate for Mac/Retina screens
 
-            setTimeout(() => {
+            mgEndTimeout = setTimeout(() => {
                 mgActive = false; clearInterval(mg2Interval); playTada();
                 setMascot(`Nice! You caught ${caughtCount} stars!`, "wow");
-                setTimeout(startRound3, 3000);
+                mgNextTimeout = setTimeout(startRound3, 3000);
             }, 15000); // 15 seconds to enjoy more
         }
 
@@ -990,13 +1336,14 @@
 
         // --- MINI GAME 3: BUBBLES ---
         function startMG3() {
+            stopMiniGameTimers();
             showScreen('screen-mg3'); setMascot("Pop the EVEN bubbles!", "wow");
             const area = document.getElementById('mg3-area'); area.innerHTML = '';
             mgActive = true; let popCount = 0;
             clearInterval(mg3Interval);
 
             mg3Interval = setInterval(() => {
-                if(!mgActive) return;
+                if(!canSpawnMiniItem(area)) return;
                 const bubble = document.createElement('div'); bubble.className = 'floating-bubble';
                 const num = Math.floor(Math.random() * 20) + 1;
                 bubble.innerText = num;
@@ -1017,12 +1364,12 @@
                 };
                 bubble.addEventListener('animationend', () => { if(bubble.parentNode) bubble.remove(); });
                 area.appendChild(bubble);
-            }, 600); // Faster spawn
+            }, 800); // smoother spawn rate for Mac/Retina screens
 
-            setTimeout(() => {
+            mgEndTimeout = setTimeout(() => {
                 mgActive = false; clearInterval(mg3Interval); playTada();
                 setMascot(`Splendid! You popped ${popCount} bubbles!`, "happy");
-                setTimeout(endGame, 3000);
+                mgNextTimeout = setTimeout(endGame, 3000);
             }, 15000); // 15 seconds to enjoy more
         }
 
@@ -1030,18 +1377,24 @@
         function createFireworks() {
             if(!soundEnabled && Math.random()>0.5) return;
             const colors = ['#FF5A5F', '#08D9D6', '#FFD369', '#4CAF50', '#FF4757', '#1E90FF', '#FF00FF'];
-            const startX = 20 + Math.random() * 60; const startY = 20 + Math.random() * 40; 
-            for(let i=0; i<40; i++) {
+            const startX = 20 + Math.random() * 60; const startY = 20 + Math.random() * 36;
+            const particles = [];
+            const frag = document.createDocumentFragment();
+            for(let i=0; i<26; i++) {
                 const fw = document.createElement('div'); fw.className = 'firework';
                 fw.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
                 fw.style.left = startX + 'vw'; fw.style.top = startY + 'vh';
-                document.body.appendChild(fw);
-                const angle = Math.random() * Math.PI * 2; const velocity = 50 + Math.random() * 100;
-                const tx = Math.cos(angle) * velocity; const ty = Math.sin(angle) * velocity;
-                fw.animate([ { transform: `translate(0,0) scale(1)`, opacity: 1 }, { transform: `translate(${tx}px, ${ty + 50}px) scale(0)`, opacity: 0 } ], { duration: 1000 + Math.random()*500, easing: 'cubic-bezier(.17,.89,.32,1)' });
-                setTimeout(() => fw.remove(), 1500);
+                frag.appendChild(fw);
+                particles.push(fw);
             }
-            playTone(800 + Math.random()*400, 'sine', 0.1, 0.05); 
+            document.body.appendChild(frag);
+            particles.forEach(fw => {
+                const angle = Math.random() * Math.PI * 2; const velocity = 45 + Math.random() * 90;
+                const tx = Math.cos(angle) * velocity; const ty = Math.sin(angle) * velocity;
+                fw.animate([ { transform: `translate3d(0,0,0) scale(1)`, opacity: 1 }, { transform: `translate3d(${tx}px, ${ty + 45}px, 0) scale(0)`, opacity: 0 } ], { duration: 900 + Math.random()*400, easing: 'cubic-bezier(.17,.89,.32,1)' });
+                setTimeout(() => fw.remove(), 1350);
+            });
+            playTone(800 + Math.random()*400, 'sine', 0.1, 0.05);
         }
 
         let fireworksInterval;
@@ -1051,13 +1404,14 @@
             showScreen('screen-end');
             playTada(); setTimeout(playTada, 500);
             let count = 0;
-            fireworksInterval = setInterval(() => { createFireworks(); count++; if(count > 10) clearInterval(fireworksInterval); }, 500);
+            fireworksInterval = setInterval(() => { createFireworks(); count++; if(count > 6) clearInterval(fireworksInterval); }, 600);
         }
 
         function resetGame() {
-            window.speechSynthesis.cancel();
-            clearInterval(mg1Interval); clearInterval(mg2Interval); clearInterval(mg3Interval); clearInterval(fireworksInterval);
-            score = 0; updateScore(0); mgActive = false;
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+            stopMiniGameTimers();
+            clearInterval(fireworksInterval);
+            score = 0; updateScore(0);
             showScreen('screen-start');
         }
         document.getElementById('score-val').innerText = score;
