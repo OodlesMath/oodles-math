@@ -1073,16 +1073,12 @@
       const gTarget = Math.random()>0.5 ? gData.reduce((a,b)=>a.count>b.count?a:b) : gData.reduce((a,b)=>a.count<b.count?a:b);
 
       return [
-          buildOrder(6, 20, 4, 'seeker'),
+          numberCompareQuestion(6, 20),
           buildAdd(10, 'bird', '🦜', 'Addition'),
           buildAdd(20, 'apple', '🍎', 'Addition'),
           buildSub(10, 'cupcake', '🧁', 'Subtraction'),
           buildSub(20, 'candy', '🍬', 'Subtraction'),
-          {
-              q: `What is the name of this 3D shape?`, speakText: `What is the name of this 3D shape?`, icon: "🧊", tag: "Geometry",
-              vis: `<div style="display:flex; justify-content:center; padding:10px;"><div style="background:#fff; border:4px solid #cbd5e1; border-radius:24px; padding:30px; width:200px; height:200px;">${tShape.svg}</div></div>`,
-              opts: sChoices, ans: tShape.n
-          },
+          shape2DQuestion(),
           {
               q: "What time is it?", speakText: "What time is it?", icon: "⏰", tag: "Time",
               vis: `<div style="display:flex; gap: 40px; align-items: center; justify-content: center; width: 100%; margin-bottom: 20px;">
@@ -1359,6 +1355,65 @@
       };
   }
 
+
+  function numberCompareQuestion(min = 6, max = 20) {
+      const nums = new Set();
+      while (nums.size < 3) nums.add(rand(min, max));
+      const arr = Array.from(nums);
+      const askGreatest = Math.random() > 0.5;
+      const target = askGreatest ? Math.max(...arr) : Math.min(...arr);
+      const word = askGreatest ? 'greatest' : 'smallest';
+      const visItems = arr.map((n, i) => ({ icon: String(n), label: String.fromCharCode(65 + i) }));
+      return {
+          q: `Look at these numbers: <b>${arr.join(', ')}</b>. Which number is the <b>${word}</b>?`,
+          speakText: `Look at these numbers: ${arr.join(', ')}. Which number is the ${word}?`,
+          icon: '🔢', tag: 'Comparing Numbers',
+          vis: labeledLineVisual(visItems),
+          opts: shuffle(arr.map(String)),
+          ans: String(target)
+      };
+  }
+
+  function shape3DQuestion() {
+      const shapes3D = [
+        { n: 'Cube', svg: `<svg viewBox="0 0 100 100" width="100%" height="100%"><path d="M 30 45 L 65 45 L 75 30 L 40 30 Z" fill="#bae6fd" stroke="#0284c7" stroke-width="4" stroke-linejoin="round"/><path d="M 30 45 L 30 80 L 65 80 L 65 45 Z" fill="#7dd3fc" stroke="#0284c7" stroke-width="4" stroke-linejoin="round"/><path d="M 65 45 L 75 30 L 75 65 L 65 80 Z" fill="#38bdf8" stroke="#0284c7" stroke-width="4" stroke-linejoin="round"/></svg>` },
+        { n: 'Sphere', svg: `<svg viewBox="0 0 100 100" width="100%" height="100%"><defs><radialGradient id="sphereGradV10" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#a7f3d0"/><stop offset="100%" stop-color="#10b981"/></radialGradient></defs><circle cx="50" cy="50" r="40" fill="url(#sphereGradV10)" stroke="#059669" stroke-width="4"/></svg>` },
+        { n: 'Cylinder', svg: `<svg viewBox="0 0 100 100" width="100%" height="100%"><path d="M25 35 L25 75 A 25 15 0 0 0 75 75 L75 35 Z" fill="#f472b6" stroke="#be185d" stroke-width="4"/><ellipse cx="50" cy="35" rx="25" ry="15" fill="#fbcfe8" stroke="#be185d" stroke-width="4"/></svg>` },
+        { n: 'Cone', svg: `<svg viewBox="0 0 100 100" width="100%" height="100%"><path d="M50 20 L20 75 A 30 15 0 0 0 80 75 Z" fill="#facc15" stroke="#b45309" stroke-width="4" stroke-linejoin="round"/><ellipse cx="50" cy="75" rx="30" ry="15" fill="#fde047" stroke="#b45309" stroke-width="4"/></svg>` }
+      ];
+      const target = shapes3D[rand(0, shapes3D.length - 1)];
+      const options = shuffle([target.n, ...shuffle(shapes3D.map(s => s.n).filter(n => n !== target.n)).slice(0, 3)]);
+      return {
+          q: `What is the name of this 3D shape?`,
+          speakText: `What is the name of this 3D shape?`,
+          icon: '🧊', tag: '3D Shapes',
+          vis: `<div style="display:flex; justify-content:center; padding:10px;"><div style="background:#fff; border:4px solid #cbd5e1; border-radius:24px; padding:30px; width:200px; height:200px; box-shadow:0 7px 0 #cbd5e1;">${target.svg}</div></div>`,
+          opts: options,
+          ans: target.n
+      };
+  }
+
+  function shape2DQuestion() {
+      const shapes2D = [
+        { n: 'Circle', svg: `<svg viewBox="0 0 120 120" width="100%" height="100%"><circle cx="60" cy="60" r="42" fill="#38bdf8" stroke="#0284c7" stroke-width="7"/></svg>` },
+        { n: 'Square', svg: `<svg viewBox="0 0 120 120" width="100%" height="100%"><rect x="25" y="25" width="70" height="70" rx="10" fill="#f472b6" stroke="#be185d" stroke-width="7"/></svg>` },
+        { n: 'Triangle', svg: `<svg viewBox="0 0 120 120" width="100%" height="100%"><polygon points="60,20 100,95 20,95" fill="#facc15" stroke="#b45309" stroke-width="7" stroke-linejoin="round"/></svg>` },
+        { n: 'Semi circle', svg: `<svg viewBox="0 0 120 120" width="100%" height="100%"><path d="M25 75 A35 35 0 0 1 95 75 Z" fill="#a78bfa" stroke="#7c3aed" stroke-width="7" stroke-linejoin="round"/></svg>` },
+        { n: 'Quarter circle', svg: `<svg viewBox="0 0 120 120" width="100%" height="100%"><path d="M30 90 L30 30 A60 60 0 0 1 90 90 Z" fill="#fb923c" stroke="#ea580c" stroke-width="7" stroke-linejoin="round"/></svg>` },
+        { n: 'Rectangle', svg: `<svg viewBox="0 0 120 120" width="100%" height="100%"><rect x="18" y="36" width="84" height="48" rx="9" fill="#34d399" stroke="#059669" stroke-width="7"/></svg>` }
+      ];
+      const target = shapes2D[rand(0, shapes2D.length - 1)];
+      const options = shuffle([target.n, ...shuffle(shapes2D.map(s => s.n).filter(n => n !== target.n)).slice(0, 3)]);
+      return {
+          q: `What is the name of this 2D shape?`,
+          speakText: `What is the name of this 2D shape?`,
+          icon: '🔺', tag: '2D Shapes',
+          vis: `<div style="display:flex; justify-content:center; padding:10px;"><div style="background:#fff; border:4px solid #cbd5e1; border-radius:24px; padding:26px; width:190px; height:190px; box-shadow:0 7px 0 #cbd5e1;">${target.svg}</div></div>`,
+          opts: options,
+          ans: target.n
+      };
+  }
+
   function placeValueQuestion(min, max) {
       let n = rand(min, max);
       if (n % 10 === 0) n += rand(1, 8);
@@ -1508,7 +1563,7 @@
               opts: numberOptions(wpAns, wpAns - 8, wpAns + 8),
               ans: String(wpAns)
           },
-          graphQuestionPals(),
+          shape3DQuestion(),
           {
               q: `Fill in the missing numbers: ${patternStart}, ${patternStart + patternStep}, ${patternStart + patternStep * 2}, ${Q_MARK}, ${Q_MARK}`,
               speakText: `Fill in the missing numbers.`,
