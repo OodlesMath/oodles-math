@@ -1,943 +1,1055 @@
-<!doctype html>
-<html lang="en">
- <head>
-  <link rel="stylesheet" href="../assets/brand.css">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fruit Math Adventure</title>
-  
-  <!-- FIX FONT: Font Poppins -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
 
-  <script src="/_sdk/element_sdk.js"></script>
-  <style>
-        body {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Poppins', sans-serif;
-            font-weight: 600;
-            /* Pastel rainbow background */
-            background: linear-gradient(180deg, #E0F7FA 0%, #E1F5FE 50%, #F3E5F5 100%);
-            background-attachment: fixed;
-            min-height: 100vh;
-            overflow-x: hidden;
-            user-select: none;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tens and Ones Free Style Board - Ver3</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tone.js for Audio -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Canvas Confetti for Fireworks -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <!-- Google Font 'Poppins' -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Responsive sizes for cubes */
+            --cube-size: 26px; 
+            --rod-width: calc(var(--cube-size) * 10);
         }
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 15px;
-            text-align: center;
+        @media (min-width: 768px) {
+            :root {
+                --cube-size: 32px;
+            }
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(45deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            touch-action: none;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             min-height: 100vh;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Floating Bubbles Effect */
+        .bubbles {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .bubble {
+            position: absolute;
+            bottom: -20px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            animation: rise 10s infinite ease-in;
+        }
+        @keyframes rise {
+            0% { bottom: -20px; transform: translateX(0); opacity: 0; }
+            50% { opacity: 1; }
+            100% { bottom: 1080px; transform: translateX(-200px); opacity: 0; }
+        }
+
+        /* Game Containers */
+        .game-wrapper {
+            max-width: 900px;
+            width: 95%;
+            max-height: 98vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            background-color: rgba(255, 255, 255, 0.95);
+            border: 4px solid #fff;
+            border-radius: 1.5rem;
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        #ball-sort-wrapper {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            border: 4px solid rgba(255,255,255,0.8);
+            min-height: 80vh;
             display: flex;
             flex-direction: column;
-            justify-content: center;
         }
 
-        .screen {
-            display: none;
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .screen.active {
-            display: block;
-        }
-
-        @keyframes popIn {
-            from { opacity: 0; transform: scale(0.8); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        .title {
-            font-size: 2.2rem;
-            color: #FF6B6B;
-            text-shadow: 2px 2px 0px white, 4px 4px 0px rgba(0,0,0,0.1);
-            margin: 10px 0 20px 0;
-            font-weight: 800;
+        /* Fun Text Gradient */
+        .kid-title {
+            background: linear-gradient(to right, #ff416c, #ff4b2b, #f6d365, #fda085);
+            -webkit-background-clip: text;
+            color: transparent;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
             letter-spacing: 1px;
         }
 
-        /* Cute Progress Bar */
-        .progress-container {
-            background: white;
-            padding: 8px;
-            border-radius: 50px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-        }
-        .progress-bar {
-            width: 100%;
-            height: 16px;
-            background: #F0F0F0;
-            border-radius: 10px;
-            overflow: hidden;
-            border: none;
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #FF9A9E 0%, #FECFEF 99%, #FECFEF 100%);
-            border-radius: 10px;
-            transition: width 0.5s cubic-bezier(0.4, 0.0, 0.2, 1);
-            width: 0%;
+        .ball-sort-title {
+            background: linear-gradient(to right, #f6d365, #fda085, #4facfe, #43e97b);
+            -webkit-background-clip: text;
+            color: transparent;
         }
 
-        /* Fruit Display Area */
-        .fruit-area {
-            background: white;
-            border-radius: 30px;
-            padding: 20px;
-            margin: 10px 0;
-            box-shadow: 0 10px 25px rgba(100, 181, 246, 0.2);
-            border: 4px solid white;
-            position: relative;
-            min-height: 200px;
+        /* -- Drag & Drop Area -- */
+        .tens-and-ones-frame {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border: 6px solid #8B5CF6;
+            border-radius: 16px;
+            background-color: #FDF4FF;
+            min-height: 180px; 
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+        }
+        
+        .dropzone {
+            min-height: 150px; 
+            padding: 12px;
             display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .fruit-group {
-            display: inline-flex;
             flex-wrap: wrap;
+            align-content: flex-start;
             justify-content: center;
-            align-items: center;
-            margin: 5px;
-            background: #F8F9FA;
-            border-radius: 20px;
-            padding: 10px;
-        }
-
-        .fruit-emoji {
-            font-size: 3rem; 
-            margin: 3px;
-            animation: float 3s ease-in-out infinite;
-            filter: drop-shadow(2px 2px 0px rgba(0,0,0,0.1));
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        
-        .fruit-emoji:hover {
-            transform: scale(1.2);
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
-        }
-
-        .plus-sign {
-            font-size: 3rem;
-            color: #4DB6AC;
-            margin: 0 10px;
-            font-weight: 800;
-        }
-
-        /* Number Bond */
-        .number-bond {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: 20px;
-            gap: 10px;
-        }
-        .bond-row {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-        }
-        .bond-circle {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: white;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
-        }
-        .bond-part { background: #4FC3F7; }
-        .bond-whole { background: #FFB74D; width: 80px; height: 80px; font-size: 2.2rem; }
-        .bond-lines {
-            width: 4px;
-            height: 20px;
-            background: #B0BEC5;
-            border-radius: 2px;
-        }
-        
-        /* Question & Audio */
-        .question-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin: 20px 0;
-        }
-
-        .question-text {
-            font-size: 1.4rem;
-            color: #455A64;
-            background: white;
-            padding: 15px 25px;
-            border-radius: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            flex: 1;
-            font-weight: 700;
-        }
-
-        .audio-icon {
-            background: #FFD54F;
-            color: white;
-            border: none;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            font-size: 1.5rem;
-            cursor: pointer;
-            box-shadow: 0 4px 0 #FFCA28;
-            transition: transform 0.1s;
-        }
-        .audio-icon:active { transform: translateY(4px); box-shadow: none; }
-
-        /* Answer Buttons */
-        .answer-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }
-
-        .answer-btn {
-            background: white;
-            color: #455A64;
-            border: 2px solid #ECEFF1;
-            padding: 15px 30px;
-            border-radius: 20px;
-            font-size: 2rem;
-            font-weight: 800;
-            cursor: pointer;
-            min-width: 90px;
-            box-shadow: 0 6px 0 #CFD8DC;
-            transition: all 0.1s;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .answer-btn:active {
-            transform: translateY(6px);
-            box-shadow: none;
-        }
-
-        .answer-btn.correct {
-            background: #66BB6A;
-            color: white;
-            border-color: #66BB6A;
-            box-shadow: 0 6px 0 #43A047;
-        }
-        
-        .answer-btn.incorrect {
-            background: #EF5350;
-            color: white;
-            border-color: #EF5350;
-            box-shadow: 0 6px 0 #E53935;
-            animation: shake 0.4s;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
-
-        .feedback {
-            font-size: 1.3rem;
-            font-weight: 700;
-            min-height: 40px;
-            margin-top: 10px;
-            color: #66BB6A;
-        }
-
-        .next-btn {
-            background: #29B6F6;
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            border-radius: 50px;
-            font-size: 1.5rem;
-            font-weight: 800;
-            cursor: pointer;
-            box-shadow: 0 6px 0 #0288D1;
-            transition: all 0.1s;
-            display: none;
-            margin-top: 10px;
-            font-family: 'Poppins', sans-serif;
-        }
-        .next-btn:active { transform: translateY(6px); box-shadow: none; }
-
-        /* --- BUTTERFLY GAME --- */
-        .butterfly-game-container {
-            background: linear-gradient(180deg, #81D4FA 0%, #B3E5FC 80%, #C8E6C9 80%, #A5D6A7 100%); /* Sky to Grass */
-            border-radius: 20px;
-            height: 400px;
+            gap: 6px;
             position: relative;
-            overflow: hidden;
-            border: 4px solid #4FC3F7;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
-            /* Custom cursor to look like a net target */
-            cursor: crosshair; 
+            transition: background-color 0.3s;
         }
         
-        /* Clouds */
-        .cloud {
-            position: absolute;
-            font-size: 3rem;
-            opacity: 0.8;
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-            animation: moveCloud 20s linear infinite;
-            z-index: 1;
+        .dropzone-tens {
+            border-right: 6px dashed #C4B5FD;
+            background-color: #F5F3FF;
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
         }
-        @keyframes moveCloud {
-            from { left: -100px; }
-            to { left: 100%; }
+        .dropzone-ones {
+            background-color: #EFF6FF;
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
         }
 
-        /* Flowers at the bottom */
-        .flower-bed {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 40px;
-            display: flex;
-            justify-content: space-around;
-            font-size: 1.5rem;
-            z-index: 2;
-            pointer-events: none;
-        }
-
-        /* Flying Butterfly */
-        .butterfly {
-            position: absolute;
-            width: 70px;
-            height: 70px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3.5rem;
+        /* -- 3D Realistic Unifix Cubes -- */
+        .cube {
             cursor: pointer;
             user-select: none;
-            z-index: 10;
-            /* Smooth movement */
-            transition: top 1.5s ease-in-out, left 1.5s ease-in-out;
+            border-radius: 6px;
+            transition: transform 0.1s ease-out;
+            touch-action: none;
         }
-
-        .butterfly-inner {
-            display: block;
-            animation: flutter 0.3s infinite alternate;
+        .cube:active {
+            transform: scale(1.1);
+            z-index: 50;
         }
-
-        @keyframes flutter {
-            0% { transform: scaleX(1) rotate(0deg); }
-            100% { transform: scaleX(0.6) rotate(10deg); }
-        }
-
-        .butterfly:active { transform: scale(0.9); }
         
-        .butterfly.caught {
-            pointer-events: none;
-            transition: none;
-            animation: netCatch 0.4s forwards;
+        .one-cube {
+            width: var(--cube-size); 
+            height: var(--cube-size);
+            background: radial-gradient(circle at 30% 30%, #60A5FA, #2563EB);
+            border: 2px solid #1E3A8A;
+            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3), 
+                        inset 2px 2px 4px rgba(255,255,255,0.5), 
+                        2px 2px 5px rgba(0,0,0,0.3);
+            border-radius: 4px;
         }
-        @keyframes netCatch {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(0.5) rotate(180deg); opacity: 0.8; }
-            100% { transform: scale(0); opacity: 0; }
-        }
-
-        .game-stats {
+        
+        .ten-rod {
+            width: var(--rod-width);
+            height: var(--cube-size);
+            background: radial-gradient(circle at 50% 30%, #F87171, #DC2626);
+            border: 2px solid #991B1B;
             display: flex;
-            justify-content: space-between;
-            background: rgba(255,255,255,0.9);
-            padding: 10px 20px;
-            border-radius: 15px;
-            margin-bottom: 10px;
-            font-weight: 800;
-            font-size: 1.2rem;
-            color: #0277BD;
+            flex-direction: row;
+            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3), 
+                        inset 2px 2px 4px rgba(255,255,255,0.4), 
+                        3px 3px 6px rgba(0,0,0,0.3);
+            border-radius: 4px;
+            overflow: hidden;
         }
-
-        .start-game-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
+        .ten-rod-segment {
+            width: var(--cube-size);
             height: 100%;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 20;
+            border-right: 1px solid rgba(153, 27, 27, 0.6);
+            border-left: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .ten-rod-segment:last-child { border-right: none; }
+        .ten-rod-segment:first-child { border-left: none; }
+
+        /* -- Playful Flashcard -- */
+        #flashcard-deck {
+            width: 100px; height: 120px; 
+            position: relative; cursor: pointer;
+            perspective: 1000px; margin: 0 auto;
+        }
+        .card-face {
+            position: absolute; width: 100%; height: 100%;
+            backface-visibility: hidden;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
             border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            border: 4px solid white;
+        }
+        .card-back {
+            background: repeating-linear-gradient(45deg, #A78BFA, #A78BFA 10px, #8B5CF6 10px, #8B5CF6 20px);
+            color: white; display: flex; align-items: center; justify-content: center;
+            font-size: 3.5rem; font-weight: 900;
+            text-shadow: 2px 2px 0px #5B21B6;
+            transform: rotateY(0deg);
+        }
+        .card-front {
+            background: #FFFBEB; color: #D97706; display: flex; align-items: center; justify-content: center;
+            font-size: 3.5rem; font-weight: 900;
+            transform: rotateY(180deg);
+            background-image: radial-gradient(#FDE68A 10%, transparent 10%);
+            background-size: 10px 10px;
+        }
+        #flashcard-deck.is-flipped .card-back { transform: rotateY(-180deg); }
+        #flashcard-deck.is-flipped .card-front { transform: rotateY(0deg); }
+        
+        /* -- Drag Clone -- */
+        .drag-clone {
+            position: absolute; pointer-events: none; z-index: 9999; opacity: 0.9;
+            transform: translate(-50%, -50%) scale(1.2);
+            filter: drop-shadow(0 10px 10px rgba(0,0,0,0.3));
+        }
+
+        /* Animations */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-8px) rotate(-1deg); } 
+            20%, 40%, 60%, 80% { transform: translateX(8px) rotate(1deg); }
+        }
+        .shake { animation: shake 0.5s ease-in-out; }
+
+        @keyframes bounce-in {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 1; }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+        .bounce-in { animation: bounce-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .chunky-btn {
+            transition: all 0.1s; border-bottom: 6px solid rgba(0,0,0,0.2);
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .chunky-btn:active:not(:disabled) {
+            transform: translateY(6px); border-bottom: 0px solid rgba(0,0,0,0.2); margin-top: 6px;
+        }
+
+        .speaker-btn { transition: all 0.1s; }
+        .speaker-btn:active { transform: scale(0.9); }
+
+        .col-header {
+            text-align: center; font-size: 1.5rem; font-weight: 900;
+            padding: 8px; border-radius: 8px; margin-bottom: 8px;
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
+        }
+
+        /* Switch Game Button */
+        .switch-game-btn {
+            position: fixed; top: 1rem; left: 1rem; z-index: 100;
+            background: white; padding: 10px 20px; border-radius: 30px;
+            font-weight: 800; color: #4b5563; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 2px solid #e5e7eb; cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .switch-game-btn:hover { transform: scale(1.05); }
+
+        /* Ball Sort Specifics */
+        .bs-tube {
+            width: 60px; height: 200px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 4px solid rgba(255,255,255,0.7);
+            border-top: none; border-radius: 0 0 30px 30px;
+            display: flex; flex-direction: column-reverse;
+            align-items: center; padding-bottom: 5px; gap: 4px;
+            cursor: pointer; position: relative;
+            box-shadow: inset 0 -10px 20px rgba(0,0,0,0.05);
+        }
+        .bs-ball {
+            width: 44px; height: 44px; border-radius: 50%;
+            box-shadow: inset -5px -5px 10px rgba(0,0,0,0.2), inset 5px 5px 10px rgba(255,255,255,0.5), 0 4px 6px rgba(0,0,0,0.2);
+            transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .bs-tube.selected .bs-ball:last-child {
+            transform: translateY(-40px);
+            box-shadow: inset -5px -5px 10px rgba(0,0,0,0.2), inset 5px 5px 10px rgba(255,255,255,0.5), 0 15px 15px rgba(0,0,0,0.3);
         }
         
-        .start-btn {
-            background: #FF7043;
+        .bs-header-card {
+            background: white; border-radius: 20px; padding: 10px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05); margin-bottom: 40px;
+        }
+        .bs-stat { display: flex; flex-direction: column; align-items: center; margin: 0 10px; }
+        .bs-stat-label { font-size: 0.75rem; font-weight: 800; color: #9ca3af; text-transform: uppercase; }
+        .bs-stat-val { font-size: 1.5rem; font-weight: 900; color: #3b82f6; line-height: 1; }
+        
+        .bs-icon-btn {
+            width: 40px; height: 40px; border-radius: 12px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.2rem; cursor: pointer; transition: transform 0.1s;
+            border-bottom: 4px solid rgba(0,0,0,0.2);
             color: white;
-            font-size: 1.5rem;
-            padding: 15px 30px;
-            border-radius: 50px;
-            border: none;
-            font-weight: 800;
-            box-shadow: 0 6px 0 #D84315;
-            cursor: pointer;
-            font-family: 'Poppins', sans-serif;
         }
-        .start-btn:active { transform: translateY(6px); box-shadow: none; }
+        .bs-icon-btn:active { transform: translateY(4px); border-bottom-width: 0; }
 
-        /* --- FIREWORKS --- */
-        .firework {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            pointer-events: none;
-            animation: firework-explode 1s ease-out forwards;
-        }
-        @keyframes firework-explode {
-            0% { transform: translate(0, 0) scale(1); opacity: 1; }
-            100% { transform: translate(var(--dx), var(--dy)) scale(0.5); opacity: 0; }
+
+        /* Ver2 fix: keep only one game visible at a time.
+           Tailwind's .hidden can be overridden by #ball-sort-wrapper { display:flex; },
+           so this stronger rule prevents Tens & Ones and Ball Sort from appearing together. */
+        #tens-game-container.hidden,
+        #ball-sort-wrapper.hidden,
+        .game-wrapper.hidden {
+            display: none !important;
         }
 
-        /* Responsive */
-        @media (max-width: 600px) {
-            .title { font-size: 1.8rem; }
-            .fruit-emoji { font-size: 2.5rem; }
-            .plus-sign { font-size: 2rem; }
-            .butterfly-game-container { height: 300px; }
-        }
     </style>
- </head>
- <body>
-  <img src="../assets/logo-oodles-math.png" class="oodles-logo">
-  <div class="container">
-   
-   <!-- Question Screen -->
-   <div id="questionScreen" class="screen active">
-    <div class="progress-container">
-        <div class="progress-bar">
-            <div id="progressFill" class="progress-fill"></div>
-        </div>
-    </div>
-    
-    <h1 id="gameTitle" class="title">Fruit Math Adventure</h1>
-    
-    <div class="fruit-area">
-     <div id="fruitDisplay"></div>
-     
-     <div id="numberBond" class="number-bond" style="display: none;">
-      <div class="bond-row">
-       <div class="bond-circle bond-part" id="bondPart1">?</div>
-       <div class="bond-lines"></div>
-       <div class="bond-circle bond-part" id="bondPart2">?</div>
-      </div>
-      <div class="bond-lines" style="height: 10px; width: 40px; margin: -5px 0;"></div>
-      <div class="bond-row">
-       <div class="bond-circle bond-whole" id="bondWhole">?</div>
-      </div>
-     </div>
-    </div>
+</head>
+<body>
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- Decorative Background Bubbles -->
+    <div class="bubbles" id="bubbles"></div>
 
-    <div class="question-container">
-     <button class="audio-icon" onclick="playAudio()">🔊</button>
-     <div id="questionText" class="question-text">
-      How many apples?
-     </div>
-    </div>
+    <!-- Toggle Game Button -->
+    <button id="switch-game-btn" class="switch-game-btn">
+        🎮 Play Ball Sort
+    </button>
 
-    <div id="answerButtons" class="answer-buttons"></div>
-    <div id="feedback" class="feedback"></div>
-    <button id="nextBtn" class="next-btn" onclick="nextStep()">Next Step ➜</button>
-   </div>
-
-   <!-- Butterfly Game Screen -->
-   <div id="butterflyGameScreen" class="screen">
-    <h1 class="title">Break Time: Catch Butterflies! 🦋</h1>
-    
-    <div class="game-stats">
-        <span id="gameTimer">Time: 20s</span>
-        <span id="gameScore">Score: 0</span>
-    </div>
-
-    <div class="butterfly-game-container" id="butterflyGameArea">
-        <div class="cloud" style="top: 20px; animation-duration: 25s;">☁️</div>
-        <div class="cloud" style="top: 100px; left: 50%; animation-duration: 30s;">☁️</div>
+    <!-- ========================================== -->
+    <!--          GAME 1: TENS AND ONES             -->
+    <!-- ========================================== -->
+    <div id="tens-game-container" class="game-wrapper p-4 md:p-8">
         
-        <!-- Flowers for garden vibe -->
-        <div class="flower-bed">
-            <span>🌸</span><span>🌻</span><span>🌷</span><span>🌹</span><span>🌼</span><span>🌺</span>
+        <!-- Free Style Count Display -->
+        <div class="absolute top-4 right-4 bg-yellow-400 text-yellow-900 px-4 py-2 rounded-full font-black text-sm md:text-base shadow-lg border-2 border-yellow-200 z-10 flex items-center gap-2">
+            🔢 <span id="score">Tens: 0 | Ones: 0 | Total: 0</span>
         </div>
 
-        <div id="startOverlay" class="start-game-overlay">
-            <h2 style="color: white; margin-bottom: 20px; font-size: 1.5rem; text-align: center;">Use your net to<br>catch them! 🕸️</h2>
-            <button class="start-btn" onclick="startButterflyGameLogic()">Play Now! ▶️</button>
+        <div class="flex flex-col items-center pt-8 md:pt-0 mb-6">
+            <h1 class="text-3xl md:text-5xl font-black kid-title text-center mb-6">Tens & Ones Free Style</h1>
+            
+            <div class="flex justify-center items-center w-full">
+                <!-- Source Bank -->
+                <div class="flex flex-row items-center justify-center gap-6 p-4 md:p-6 bg-white border-2 border-blue-200 rounded-2xl shadow-sm relative w-full max-w-[520px] md:w-[520px] mx-auto">
+                    <div class="text-center flex flex-col items-center">
+                        <p class="font-bold text-sm text-red-500 mb-2">Ten Rod</p>
+                        <div id="source-ten-rod" class="cube ten-rod hover:scale-105" data-type="ten" title="Drag or tap to add a ten rod.">
+                            <script>for(let i = 0; i < 10; i++) document.write('<div class="ten-rod-segment"></div>');</script>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center flex flex-col items-center ml-4">
+                        <p class="font-bold text-sm text-blue-500 mb-2">One Cube</p>
+                        <div id="source-one-cube" class="cube one-cube hover:scale-105" data-type="one" title="Drag or tap to add a one cube."></div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <div id="gameResult" style="display: none; margin-top: 20px;">
-        <h2 style="color: #0277BD;">Time's up! You caught <span id="finalScore" style="color: #FF7043; font-size: 2rem;">0</span> butterflies!</h2>
-        <button class="next-btn" onclick="continueMainGame()" style="display: inline-block;">Continue Learning ➜</button>
-    </div>
-   </div>
+        <div class="w-full flex justify-center my-4 items-center gap-2">
+            <div class="bg-white bg-opacity-90 px-6 py-2 rounded-full shadow-sm border-2 border-purple-200 text-center flex items-center gap-2">
+                <p class="text-purple-600 font-bold text-sm md:text-base">
+                    ✨ Drag freely. Move a ten rod to ONES to break it. Move 10 ones to TENS to make a rod. 👇
+                </p>
+                <button id="speak-btn" class="speaker-btn ml-2 bg-blue-100 hover:bg-blue-200 p-2 rounded-full text-xl shadow-sm border border-blue-300" title="Listen to instruction">🔊</button>
+            </div>
+        </div>
 
-   <!-- Celebration Screen -->
-   <div id="celebrationScreen" class="screen" style="position: relative; overflow: hidden;">
-    <h1 class="title" style="color: #FFCA28; font-size: 3rem;">Mission Complete! 🏆</h1>
-    
-    <div style="font-size: 2rem; margin: 30px 0;">🎉 🎊 🎈</div>
-    
-    <div style="font-size: 1.5rem; color: #455A64; margin: 20px 0; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); z-index: 10; position: relative;">
-     You answered all questions correctly!<br>
-     <b>You are a Math Master!</b>
-    </div>
-    
-    <button class="next-btn" onclick="restartGame()" style="display: inline-block; background: #66BB6A; border-bottom-color: #43A047; z-index: 10; position: relative;">Play Again ↺</button>
-   </div>
-
-  </div>
-
-  <script>
-        // --- CONFIG ---
-        const fruits = ['🍎', '🍌', '🍊', '🍇', '🍓', '🍑', '🍐', '🥭'];
-        const fruitNames = {
-            '🍎': 'apples', '🍌': 'bananas', '🍊': 'oranges', 
-            '🍇': 'grapes', '🍓': 'strawberries', '🍑': 'peaches', 
-            '🍐': 'pears', '🥭': 'mangoes'
-        };
-
-        // Math Game State
-        let currentQuestion = 0;
-        let currentStep = 0; 
-        let totalQuestions = 3; 
-        let questions = [];
+        <!-- Working Area -->
+        <div class="w-full">
+            <div class="tens-and-ones-frame">
+                <div class="flex flex-col border-r-4 border-dashed border-purple-300">
+                    <div class="col-header text-red-600 bg-red-100 mx-2 mt-2">TENS</div>
+                    <div id="tens-column" class="dropzone dropzone-tens flex-grow"></div>
+                </div>
+                <div class="flex flex-col">
+                    <div class="col-header text-blue-600 bg-blue-100 mx-2 mt-2">ONES</div>
+                    <div id="ones-column" class="dropzone dropzone-ones flex-grow"></div>
+                </div>
+            </div>
+        </div>
         
-        // Butterfly Game State
-        let butterflyScore = 0;
-        let timeLeft = 20; 
-        let gameInterval;
-        let spawnInterval;
-        let isGameRunning = false;
+        <div class="flex justify-center items-center gap-4 mt-8">
+            <button id="reset-board-button" class="chunky-btn px-8 py-3 bg-gray-300 text-gray-700 text-lg font-bold rounded-2xl hover:bg-gray-400">CLEAR BOARD</button>
+        </div>
+    </div>
 
-        // Butterfly Emojis & Friends (Butterflies, Bee, Ladybug)
-        const butterflies = ['🦋', '🐝', '🐞']; 
-        // We will rotate hues for '🦋' to make different colored butterflies
 
-        // --- MATH GAME INIT ---
-        function initGame() {
-            generateQuestions();
-            showQuestion();
+    <!-- ========================================== -->
+    <!--          GAME 2: BALL SORT                 -->
+    <!-- ========================================== -->
+    <div id="ball-sort-wrapper" class="game-wrapper p-4 md:p-8 hidden">
+        
+        <!-- Top Bar -->
+        <div class="bs-header-card w-full mt-8 md:mt-0">
+            <div class="flex">
+                <div class="bs-stat"><span class="bs-stat-label">Level</span><span id="bs-level-display" class="bs-stat-val">1</span></div>
+                <div class="bs-stat"><span class="bs-stat-label">Score</span><span id="bs-score-display" class="bs-stat-val">0</span></div>
+                <div class="bs-stat"><span class="bs-stat-label">Moves</span><span id="bs-moves-display" class="bs-stat-val">0</span></div>
+            </div>
+            <div class="flex gap-2">
+                <button id="bs-sound-btn" class="bs-icon-btn bg-gray-300 text-gray-700" title="Toggle Sound">🔊</button>
+                <button id="bs-undo-btn" class="bs-icon-btn bg-blue-500" title="Undo Move">↩️</button>
+                <button id="bs-restart-btn" class="bs-icon-btn bg-red-500" title="Restart Level">🔄</button>
+            </div>
+        </div>
+
+        <!-- Tubes Container -->
+        <div id="bs-tubes-container" class="flex flex-wrap justify-center items-end gap-4 md:gap-8 flex-grow mt-10">
+            <!-- Tubes injected by JS -->
+        </div>
+
+        <!-- Start/Rules Overlay -->
+        <div id="bs-start-overlay" class="absolute inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex justify-center items-center z-50 rounded-[1.2rem]">
+            <div class="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center w-11/12 max-w-sm bounce-in text-center">
+                <h2 class="text-3xl md:text-4xl font-black ball-sort-title mb-2">Color Ball<br>Sort Adventure</h2>
+                <p class="text-gray-500 font-bold mb-4">Sort the balls by color!</p>
+                
+                <div class="flex gap-2 mb-6">
+                    <div class="bs-ball" style="background: radial-gradient(circle at 30% 30%, #ff6b6b, #c0392b);"></div>
+                    <div class="bs-ball" style="background: radial-gradient(circle at 30% 30%, #4facfe, #00f2fe);"></div>
+                    <div class="bs-ball" style="background: radial-gradient(circle at 30% 30%, #f6d365, #fda085);"></div>
+                </div>
+
+                <div class="bg-gray-100 rounded-xl p-4 text-left text-sm font-bold text-gray-600 mb-6 w-full">
+                    👉 Tap a tube.<br>
+                    👆 Move the top ball.<br>
+                    🎨 Match the same colors!
+                </div>
+
+                <button id="bs-start-btn" class="chunky-btn w-full py-4 bg-green-500 text-white text-xl font-black rounded-2xl hover:bg-green-600">
+                    START GAME
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Modals (Shared) -->
+    <div id="feedback-modal" class="hidden fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-[100]">
+        <div id="feedback-content" class="text-5xl md:text-7xl font-black text-white p-10 rounded-3xl border-8 shadow-2xl bounce-in flex flex-col items-center text-center"></div>
+    </div>
+    
+    <!-- Game Over Modal -->
+    <div id="game-over-modal" class="hidden fixed inset-0 bg-gradient-to-br from-blue-500 to-purple-600 flex flex-col items-center justify-center z-[100] p-4 text-center">
+        <h2 class="text-7xl md:text-9xl font-black text-white mb-4 bounce-in" style="text-shadow: 0 10px 20px rgba(0,0,0,0.3)">AMAZING!</h2>
+        <p class="text-3xl md:text-4xl font-bold text-blue-100 mb-8">Free style board is ready again!</p>
+        
+        <div class="bg-white p-8 rounded-3xl shadow-2xl border-8 border-yellow-400 mb-10 transform rotate-2">
+            <p class="text-2xl text-gray-500 font-bold mb-2">Your Board Total</p>
+            <p id="final-score" class="text-6xl md:text-8xl text-orange-500 font-black kid-title shadow-none">0</p>
+        </div>
+
+        <button id="play-again-button" class="chunky-btn px-10 py-4 bg-yellow-400 text-yellow-900 border-yellow-600 text-3xl font-black rounded-full shadow-xl hover:bg-yellow-300">
+            PLAY AGAIN 🚀
+        </button>
+    </div>
+
+    <script>
+        // --- Shared & Audio Setup ---
+        let audioInitialized = false;
+        let popSynth, winChime, wrongSynth, cardSynth, dragSynth, dropSynth, bigWinSynth, reverb;
+        let bsMuted = false;
+        
+        async function initAudio() {
+            if (!audioInitialized) {
+                await Tone.start();
+                audioInitialized = true;
+                reverb = new Tone.Reverb({ decay: 2.5, wet: 0.35 }).toDestination();
+                popSynth = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.1 }, volume: -5 }).connect(reverb);
+                winChime = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.05, decay: 0.2, sustain: 0.4, release: 1.5 }, volume: -5 }).connect(reverb);
+                wrongSynth = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.05, decay: 0.3, sustain: 0, release: 0.2 }, volume: -2 }).connect(reverb);
+                cardSynth = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.02, decay: 0.1, sustain: 0, release: 0.1 }, volume: -8 }).toDestination();
+                dragSynth = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.05, sustain: 0, release: 0.01 }, volume: -15 }).toDestination();
+                dropSynth = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 }, volume: -10 }).toDestination();
+                bigWinSynth = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.05, decay: 0.4, sustain: 0.5, release: 2.5 } }).connect(reverb);
+            }
+        }
+        
+        document.body.addEventListener('pointerdown', async () => { if(!audioInitialized) await initAudio(); }, { once: true });
+
+        // --- Game Switching Logic ---
+        const switchBtn = document.getElementById('switch-game-btn');
+        const tensGame = document.getElementById('tens-game-container');
+        const ballGame = document.getElementById('ball-sort-wrapper');
+        let currentActiveGame = 'tens'; // 'tens' or 'ball'
+
+        function switchToBallSort() {
+            if (currentActiveGame === 'ball') return;
+            tensGame.classList.add('hidden');
+            ballGame.classList.remove('hidden');
+            switchBtn.innerHTML = '🧊 Play Tens & Ones';
+            currentActiveGame = 'ball';
+            if (!bsInitialized) initBallSort(); 
         }
 
-        function generateQuestions() {
-            questions = [];
-            for (let i = 0; i < totalQuestions; i++) {
-                const fruit1 = fruits[Math.floor(Math.random() * fruits.length)];
-                let fruit2 = fruits[Math.floor(Math.random() * fruits.length)];
-                while (fruit2 === fruit1) fruit2 = fruits[Math.floor(Math.random() * fruits.length)];
-                
-                // Range 10-20
-                let count1 = Math.floor(Math.random() * 6) + 5; 
-                let count2 = Math.floor(Math.random() * 6) + 5;
-                
-                questions.push({
-                    fruit1, fruit2, count1, count2,
-                    total: count1 + count2
-                });
+        function switchToTens() {
+            if (currentActiveGame === 'tens') return;
+            ballGame.classList.add('hidden');
+            tensGame.classList.remove('hidden');
+            switchBtn.innerHTML = '🎮 Play Ball Sort';
+            currentActiveGame = 'tens';
+        }
+
+        switchBtn.addEventListener('click', () => {
+            if (currentActiveGame === 'tens') {
+                switchToBallSort();
+            } else {
+                switchToTens();
+            }
+            if(audioInitialized) popSynth.triggerAttackRelease("C5", "32n");
+        });
+
+        // ==========================================
+        //       GAME 1: TENS AND ONES LOGIC
+        // ==========================================
+        let score = 0, currentNumber = 0, cardDeck = [];
+        let isChecking = false, isDragging = false, hasMoved = false;
+        let tensDragEventsReady = false, tensUiListenersReady = false;
+        let startPos = { x: 0, y: 0 };
+        let dragClone = null, dragSourceType = '', dragOrigin = '', dragOriginEl = null;
+
+        const scoreEl = document.getElementById('score');
+        const tensColumn = document.getElementById('tens-column');
+        const onesColumn = document.getElementById('ones-column');
+        const feedbackModal = document.getElementById('feedback-modal');
+        const feedbackContent = document.getElementById('feedback-content');
+
+        function initTensGame() {
+            score = 0;
+            currentNumber = 0;
+            isChecking = false;
+            setupDragEvents();
+            resetBoard();
+            updateCounts();
+
+            if (!tensUiListenersReady) {
+                document.getElementById('reset-board-button').addEventListener('click', resetBoard);
+                document.getElementById('speak-btn').addEventListener('click', speakQuestion);
+                tensUiListenersReady = true;
             }
         }
 
-        function showQuestion() {
-            const question = questions[currentQuestion];
-            const progress = (currentQuestion / totalQuestions) * 100;
-            document.getElementById('progressFill').style.width = progress + '%';
-            
-            // Reset UI
-            document.getElementById('feedback').textContent = '';
-            document.getElementById('nextBtn').style.display = 'none';
-            document.getElementById('numberBond').style.display = 'none';
-            
-            showStep();
+        // Ver2 Free Style: no number deck, no fixed target, no checking.
+        function shuffleDeck() {
+            cardDeck = [];
         }
 
-        function showStep() {
-            const q = questions[currentQuestion];
-            const display = document.getElementById('fruitDisplay');
-            const text = document.getElementById('questionText');
+        function drawCard() {
+            // Kept as a safe no-op because Ball Sort can still call it when switching back.
+            updateCounts();
+        }
+
+        function speakQuestion() {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance('Free style mode. Drag freely. Move a ten rod to ones to break it into ten cubes. Move ten one cubes to tens to make one ten rod. Tap a piece to remove it.');
+            utterance.lang = 'en-US'; utterance.rate = 0.9; utterance.pitch = 1.2;
+            window.speechSynthesis.speak(utterance);
+        }
+        
+        function resetBoard() {
+            tensColumn.innerHTML = ''; onesColumn.innerHTML = '';
+            updateCounts();
+            if(audioInitialized && !isChecking) dropSynth.triggerAttackRelease("G2", "32n");
+        }
+
+        function updateCounts() {
+            const tenRods = tensGame.querySelectorAll('.ten-rod').length - 1; // subtract source rod
+            const oneCubes = tensGame.querySelectorAll('.one-cube').length - 1; // subtract source cube
+            const safeTens = Math.max(0, tenRods);
+            const safeOnes = Math.max(0, oneCubes);
+            const total = safeTens * 10 + safeOnes;
+            scoreEl.textContent = `Tens: ${safeTens} | Ones: ${safeOnes} | Total: ${total}`;
+            scoreEl.parentElement.classList.remove('bounce-in');
+            void scoreEl.parentElement.offsetWidth; 
+            scoreEl.parentElement.classList.add('bounce-in');
+        }
+
+        function updateScore() {
+            updateCounts();
+        }
+
+        // --- Drag & Drop for Tens & Ones (Including Regrouping) ---
+        function setupDragEvents() {
+            if (tensDragEventsReady) return;
+            tensDragEventsReady = true;
+            // Setup source banks
+            [document.getElementById('source-ten-rod'), document.getElementById('source-one-cube')].forEach(source => {
+                source.addEventListener('mousedown', startDrag);
+                source.addEventListener('touchstart', startDrag, { passive: false });
+            });
+            document.addEventListener('mousemove', dragMove);
+            document.addEventListener('touchmove', dragMove, { passive: false });
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchend', endDrag);
+        }
+
+        function attachDragToDropzoneCube(cube) {
+            cube.addEventListener('mousedown', startDrag);
+            cube.addEventListener('touchstart', startDrag, { passive: false });
+        }
+
+        function startDrag(e) {
+            if (currentActiveGame !== 'tens' || isChecking) return;
+            if (e.type === 'touchstart') e.preventDefault(); // Prevent scroll
             
-            let html = '';
-            let targetCount = 0;
-            let targetName = '';
+            isDragging = true; hasMoved = false;
+            startPos = getEventPosition(e);
+            dragOriginEl = e.currentTarget;
+            dragSourceType = dragOriginEl.dataset.type;
+            
+            if (dragOriginEl.closest('#tens-column')) dragOrigin = 'tens';
+            else if (dragOriginEl.closest('#ones-column')) dragOrigin = 'ones';
+            else dragOrigin = 'source';
 
-            if (currentStep === 0) {
-                // Step 1
-                for(let i=0; i<q.count1; i++) html += `<span class="fruit-emoji" onclick="speak('${fruitNames[q.fruit1]}')">${q.fruit1}</span>`;
-                display.innerHTML = `<div class="fruit-group">${html}</div>`;
-                targetCount = q.count1;
-                targetName = fruitNames[q.fruit1];
-                text.textContent = `How many ${targetName}?`;
+            // Clone for visuals
+            dragClone = dragOriginEl.cloneNode(true);
+            if (dragSourceType === 'ten') dragClone.innerHTML = dragOriginEl.innerHTML;
+            dragClone.classList.add('drag-clone');
+            document.body.appendChild(dragClone);
+            updateClonePosition(startPos.x, startPos.y);
 
-            } else if (currentStep === 1) {
-                // Step 2
-                for(let i=0; i<q.count2; i++) html += `<span class="fruit-emoji" onclick="speak('${fruitNames[q.fruit2]}')">${q.fruit2}</span>`;
-                display.innerHTML = `<div class="fruit-group">${html}</div>`;
-                targetCount = q.count2;
-                targetName = fruitNames[q.fruit2];
-                text.textContent = `How many ${targetName}?`;
+            dragOriginEl.style.opacity = '0.3'; // dim original
+            if(audioInitialized) dragSynth.triggerAttackRelease("C5", "32n");
+        }
 
-            } else if (currentStep === 2) {
-                // Step 3
-                let h1 = '', h2 = '';
-                for(let i=0; i<q.count1; i++) h1 += `<span class="fruit-emoji">${q.fruit1}</span>`;
-                for(let i=0; i<q.count2; i++) h2 += `<span class="fruit-emoji">${q.fruit2}</span>`;
-                
-                display.innerHTML = `
-                    <div class="fruit-group">${h1}</div>
-                    <div class="plus-sign">+</div>
-                    <div class="fruit-group">${h2}</div>
+        function dragMove(e) {
+            if (!isDragging || currentActiveGame !== 'tens') return;
+            if (e.type === 'touchmove') e.preventDefault();
+            const pos = getEventPosition(e);
+            if (!hasMoved && (Math.abs(pos.x - startPos.x) > 3 || Math.abs(pos.y - startPos.y) > 3)) hasMoved = true;
+            updateClonePosition(pos.x, pos.y);
+        }
+
+        function endDrag(e) {
+            if (!isDragging || currentActiveGame !== 'tens') return;
+            isDragging = false;
+            if(dragClone) { dragClone.style.display = 'none'; document.body.removeChild(dragClone); dragClone = null; }
+            if(dragOriginEl) dragOriginEl.style.opacity = '1';
+
+            const pos = getEventPosition(e);
+            const dropTarget = document.elementFromPoint(pos.x, pos.y);
+
+            // Handle Click (No movement)
+            if (!hasMoved) {
+                if (dragOrigin === 'source') {
+                    placeCube(dragSourceType);
+                } else {
+                    // Click inside board -> remove piece for quick teacher control
+                    dragOriginEl.style.transform = 'scale(0)';
+                    setTimeout(() => {
+                        dragOriginEl.remove();
+                        updateCounts();
+                    }, 100);
+                    if(audioInitialized) dropSynth.triggerAttackRelease("G2", "16n");
+                }
+                return;
+            }
+
+            if (!dropTarget) { if(audioInitialized) dropSynth.triggerAttackRelease("C3", "16n"); return; }
+            const isTensDrop = tensColumn.contains(dropTarget) || tensColumn === dropTarget;
+            const isOnesDrop = onesColumn.contains(dropTarget) || onesColumn === dropTarget;
+            const destination = isTensDrop ? tensColumn : (isOnesDrop ? onesColumn : null);
+
+            if (!destination) {
+                if(audioInitialized) dropSynth.triggerAttackRelease("C3", "16n");
+                updateCounts();
+                return;
+            }
+
+            if (dragOrigin === 'source') {
+                // Free style: teacher can drop new ten rods or one cubes in either column.
+                placeCube(dragSourceType, false, destination);
+                return;
+            }
+
+            // Regrouping: ten rod -> ten one cubes when moved into ONES.
+            if (dragSourceType === 'ten' && isOnesDrop && dragOrigin !== 'ones') {
+                dragOriginEl.remove();
+                for (let i = 0; i < 10; i++) {
+                    setTimeout(() => placeCube('one', true, onesColumn), i * 30);
+                }
+                if(audioInitialized) winChime.triggerAttackRelease("C5", "8n");
+                onesColumn.classList.add('bg-green-100');
+                setTimeout(() => onesColumn.classList.remove('bg-green-100'), 300);
+                setTimeout(updateCounts, 360);
+                return;
+            }
+
+            // Regrouping: ten one cubes in ONES -> one ten rod in TENS.
+            if (dragSourceType === 'one' && dragOrigin === 'ones' && isTensDrop) {
+                const allOnes = Array.from(onesColumn.querySelectorAll('.one-cube'));
+                if (allOnes.length >= 10) {
+                    allOnes.slice(0, 10).forEach(piece => piece.remove());
+                    placeCube('ten', true, tensColumn);
+                    if(audioInitialized) winChime.triggerAttackRelease("E5", "8n");
+                    tensColumn.classList.add('bg-green-100');
+                    setTimeout(() => tensColumn.classList.remove('bg-green-100'), 300);
+                    updateCounts();
+                } else {
+                    if(audioInitialized) wrongSynth.triggerAttackRelease("D3", "8n");
+                    onesColumn.classList.add('bg-red-200');
+                    setTimeout(() => onesColumn.classList.remove('bg-red-200'), 300);
+                    updateCounts();
+                }
+                return;
+            }
+
+            // Otherwise, move existing pieces freely between columns or within the same column.
+            destination.appendChild(dragOriginEl);
+            dragOriginEl.classList.remove('bounce-in');
+            void dragOriginEl.offsetWidth;
+            dragOriginEl.classList.add('bounce-in');
+            updateCounts();
+            if(audioInitialized) dropSynth.triggerAttackRelease("C4", "16n");
+        }
+
+        function placeCube(type, skipSound = false, targetColumn = null) {
+            let newCube = document.getElementById(`source-${type === 'ten' ? 'ten-rod' : 'one-cube'}`).cloneNode(true);
+            newCube.id = ''; // remove id from clones
+            newCube.dataset.type = type;
+            newCube.style.opacity = '1';
+            newCube.style.transform = '';
+            if(type==='ten') newCube.innerHTML = document.getElementById('source-ten-rod').innerHTML;
+            
+            const destination = targetColumn || (type === 'ten' ? tensColumn : onesColumn);
+            destination.appendChild(newCube);
+            
+            newCube.classList.add('bounce-in');
+            attachDragToDropzoneCube(newCube);
+            updateCounts();
+
+            if(!skipSound && audioInitialized) {
+                if(type === 'ten') popSynth.triggerAttackRelease("G3", "8n");
+                else popSynth.triggerAttackRelease("C4", "8n");
+            }
+        }
+
+        function updateClonePosition(x, y) {
+            if (dragClone) { dragClone.style.left = `${x}px`; dragClone.style.top = `${y}px`; }
+        }
+        function getEventPosition(e) {
+            if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            if (e.changedTouches && e.changedTouches.length > 0) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+            return { x: e.clientX, y: e.clientY };
+        }
+
+        // --- Tens Validation ---
+        function handleSubmit() {
+            if (isChecking || !currentNumber) return;
+            const targetTens = Math.floor(currentNumber / 10);
+            const targetOnes = currentNumber % 10;
+            const placedTens = tensColumn.querySelectorAll('.ten-rod').length;
+            const placedOnes = onesColumn.querySelectorAll('.one-cube').length;
+            
+            if (placedTens === targetTens && placedOnes === targetOnes) handleCorrectAnswer();
+            else handleIncorrectAnswer();
+        }
+
+        function handleCorrectAnswer() {
+            isChecking = true;
+            if(audioInitialized) {
+                const now = Tone.now();
+                winChime.triggerAttackRelease("C5", "8n", now); winChime.triggerAttackRelease("E5", "8n", now + 0.1);
+                winChime.triggerAttackRelease("G5", "8n", now + 0.2); winChime.triggerAttackRelease("C6", "4n", now + 0.3);
+            }
+            shootConfetti();
+            
+            showFeedback("YAY! Correct! 🎉", "bg-green-500", "border-green-300", "text-green-500", () => {
+                feedbackModal.classList.add('hidden');
+                score += 10; updateScore(); 
+                isChecking = false; 
+                switchToBallSort();
+            });
+        }
+
+        function handleIncorrectAnswer() {
+            isChecking = true;
+            if(audioInitialized) {
+                const now = Tone.now();
+                wrongSynth.triggerAttackRelease("D3", "8n", now); wrongSynth.triggerAttackRelease("C#3", "4n", now + 0.15);
+            }
+            document.getElementById('tens-game-container').classList.add('shake');
+            showFeedback("Oops! Try Again! 🤔", "bg-red-500", "border-red-300");
+            setTimeout(() => {
+                document.getElementById('tens-game-container').classList.remove('shake');
+                feedbackModal.classList.add('hidden'); isChecking = false;
+            }, 1500);
+        }
+
+        function showFeedback(message, bgColor, borderColor, nextBtnTextColor = null, onNext = null) {
+            if (nextBtnTextColor && onNext) {
+                feedbackContent.innerHTML = `
+                    <div class="mb-6">${message}</div>
+                    <button id="feedback-next-btn" class="chunky-btn px-10 py-4 bg-white ${nextBtnTextColor} text-3xl md:text-4xl font-black rounded-full shadow-lg hover:scale-105 active:scale-95 transition-transform" style="text-shadow: none;">NEXT ➡️</button>
                 `;
-                
-                document.getElementById('numberBond').style.display = 'flex';
-                document.getElementById('bondPart1').textContent = q.count1;
-                document.getElementById('bondPart2').textContent = q.count2;
-                document.getElementById('bondWhole').textContent = '?';
-                
-                targetCount = q.total;
-                text.textContent = 'How many fruits altogether?';
+                document.getElementById('feedback-next-btn').addEventListener('click', onNext);
+            } else {
+                feedbackContent.innerHTML = message;
             }
-            
-            generateButtons(targetCount);
+            feedbackContent.className = `text-5xl md:text-7xl font-black text-white p-8 md:p-12 rounded-3xl border-8 shadow-2xl bounce-in flex flex-col items-center text-center ${bgColor} ${borderColor}`;
+            feedbackModal.classList.remove('hidden');
         }
 
-        function generateButtons(correct) {
-            const container = document.getElementById('answerButtons');
+        function shootConfetti() {
+            const end = Date.now() + 1000;
+            const colors = ['#ff9a9e', '#fecfef', '#a18cd1', '#fbc2eb', '#84fab0', '#8fd3f4', '#f6d365'];
+            (function frame() {
+                confetti({ particleCount: 6, angle: 60, spread: 60, origin: { x: 0, y: 0.7 }, colors: colors, zIndex: 10000 });
+                confetti({ particleCount: 6, angle: 120, spread: 60, origin: { x: 1, y: 0.7 }, colors: colors, zIndex: 10000 });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+
+        // ==========================================
+        //       GAME 2: BALL SORT LOGIC
+        // ==========================================
+        let bsInitialized = false;
+        let bsLevel = 1, bsScore = 0, bsMoves = 0;
+        let bsTubes = [], bsHistory = [];
+        let bsSelectedTubeIdx = null;
+
+        const ballColors = {
+            red: 'radial-gradient(circle at 30% 30%, #ff6b6b, #c0392b)',
+            blue: 'radial-gradient(circle at 30% 30%, #4facfe, #00f2fe)',
+            yellow: 'radial-gradient(circle at 30% 30%, #f6d365, #fda085)',
+            green: 'radial-gradient(circle at 30% 30%, #43e97b, #38f9d7)',
+            purple: 'radial-gradient(circle at 30% 30%, #a18cd1, #6b21a8)',
+            orange: 'radial-gradient(circle at 30% 30%, #fda085, #ea580c)'
+        };
+        const colorNames = Object.keys(ballColors);
+
+        function initBallSort() {
+            bsInitialized = true;
+            document.getElementById('bs-start-btn').addEventListener('click', () => {
+                document.getElementById('bs-start-overlay').classList.add('hidden');
+                if(audioInitialized && !bsMuted) popSynth.triggerAttackRelease("C5", "16n");
+                startBSLevel(bsLevel);
+            });
+            
+            document.getElementById('bs-sound-btn').addEventListener('click', (e) => {
+                bsMuted = !bsMuted;
+                e.currentTarget.innerHTML = bsMuted ? '🔇' : '🔊';
+            });
+            
+            document.getElementById('bs-undo-btn').addEventListener('click', () => {
+                if(bsHistory.length > 0) {
+                    bsTubes = bsHistory.pop();
+                    bsMoves++; updateBSStats(); renderBSTubes();
+                    if(audioInitialized && !bsMuted) dropSynth.triggerAttackRelease("E2", "16n");
+                }
+            });
+            
+            document.getElementById('bs-restart-btn').addEventListener('click', () => {
+                if(bsHistory.length > 0) {
+                    bsTubes = bsHistory[0]; // First state
+                    bsHistory = []; bsMoves = 0; bsSelectedTubeIdx = null;
+                    updateBSStats(); renderBSTubes();
+                    if(audioInitialized && !bsMuted) dragSynth.triggerAttackRelease("C3", "16n");
+                }
+            });
+        }
+
+        function generateBSLevelData(level) {
+            let numColors = Math.min(3 + Math.floor((level-1)/2), 6); 
+            let numTubes = numColors + 2; 
+            let usedColors = colorNames.slice(0, numColors);
+            
+            let solvedState = Array.from({length: numColors}, (_, i) => [usedColors[i], usedColors[i], usedColors[i], usedColors[i]]);
+            solvedState.push([], []); 
+            
+            let state = JSON.parse(JSON.stringify(solvedState));
+            // Backwards shuffle to guarantee solvable
+            let shuffleIter = 50 + level * 20;
+            for(let i=0; i<shuffleIter; i++) {
+                let from = Math.floor(Math.random() * numTubes);
+                let to = Math.floor(Math.random() * numTubes);
+                if(from !== to && state[from].length > 0 && state[to].length < 4) {
+                    state[to].push(state[from].pop());
+                }
+            }
+            return state;
+        }
+
+        function startBSLevel(level) {
+            bsTubes = generateBSLevelData(level);
+            // Ensure not instantly solved
+            while(checkBSWin()) bsTubes = generateBSLevelData(level);
+            
+            bsHistory = []; bsMoves = 0; bsSelectedTubeIdx = null;
+            updateBSStats(); renderBSTubes();
+        }
+
+        function updateBSStats() {
+            document.getElementById('bs-level-display').innerText = bsLevel;
+            document.getElementById('bs-score-display').innerText = bsScore;
+            document.getElementById('bs-moves-display').innerText = bsMoves;
+        }
+
+        function renderBSTubes() {
+            const container = document.getElementById('bs-tubes-container');
             container.innerHTML = '';
             
-            let opts = [correct];
-            while(opts.length < 3) {
-                let r = Math.floor(Math.random() * 20) + 5; 
-                if(!opts.includes(r) && r !== correct) opts.push(r);
-            }
-            opts.sort(() => Math.random() - 0.5);
-            
-            opts.forEach(num => {
-                const btn = document.createElement('button');
-                btn.className = 'answer-btn';
-                btn.textContent = num;
-                btn.onclick = () => checkAnswer(num, correct, btn);
-                container.appendChild(btn);
+            bsTubes.forEach((tube, idx) => {
+                const tubeEl = document.createElement('div');
+                tubeEl.className = `bs-tube ${bsSelectedTubeIdx === idx ? 'selected' : ''}`;
+                tubeEl.onclick = () => handleBSTubeClick(idx);
+                
+                // Render balls (Array is [bottom, ..., top], so render in order since flex-col-reverse)
+                tube.forEach(color => {
+                    const ballEl = document.createElement('div');
+                    ballEl.className = 'bs-ball';
+                    ballEl.style.background = ballColors[color];
+                    tubeEl.appendChild(ballEl);
+                });
+                container.appendChild(tubeEl);
             });
         }
 
-        function checkAnswer(selected, correct, btn) {
-            const feedback = document.getElementById('feedback');
-            const btns = document.querySelectorAll('.answer-btn');
-            
-            if(selected === correct) {
-                playSound('success');
-                btn.classList.add('correct');
-                btns.forEach(b => b.disabled = true);
-                feedback.textContent = 'Correct! You are amazing! 🎉';
-                
-                if(currentStep === 2) document.getElementById('bondWhole').textContent = correct;
-                
-                setTimeout(() => {
-                    if(currentStep < 2) {
-                        currentStep++;
-                        showStep();
+        function handleBSTubeClick(idx) {
+            if(bsSelectedTubeIdx === null) {
+                // Select
+                if(bsTubes[idx].length > 0) {
+                    bsSelectedTubeIdx = idx;
+                    renderBSTubes();
+                    if(audioInitialized && !bsMuted) popSynth.triggerAttackRelease("F4", "16n");
+                }
+            } else {
+                if(bsSelectedTubeIdx === idx) {
+                    // Deselect
+                    bsSelectedTubeIdx = null; renderBSTubes();
+                    if(audioInitialized && !bsMuted) dropSynth.triggerAttackRelease("C3", "16n");
+                } else {
+                    // Try to move
+                    const fromTube = bsTubes[bsSelectedTubeIdx];
+                    const toTube = bsTubes[idx];
+                    
+                    const canMove = toTube.length < 4 && 
+                                    (toTube.length === 0 || toTube[toTube.length-1] === fromTube[fromTube.length-1]);
+                    
+                    if(canMove) {
+                        bsHistory.push(JSON.parse(JSON.stringify(bsTubes)));
+                        toTube.push(fromTube.pop());
+                        bsMoves++; bsSelectedTubeIdx = null;
+                        updateBSStats(); renderBSTubes();
+                        if(audioInitialized && !bsMuted) popSynth.triggerAttackRelease("C5", "16n");
+                        
+                        // Check Win
+                        if(checkBSWin()) {
+                            setTimeout(handleBSWin, 300);
+                        }
                     } else {
-                        document.getElementById('nextBtn').style.display = 'inline-block';
+                        // Invalid Move
+                        bsSelectedTubeIdx = null; renderBSTubes();
+                        if(audioInitialized && !bsMuted) wrongSynth.triggerAttackRelease("D3", "8n");
+                        // shake target
+                        const targetEl = document.getElementById('bs-tubes-container').children[idx];
+                        targetEl.classList.add('shake');
+                        setTimeout(() => targetEl.classList.remove('shake'), 500);
                     }
-                }, 1000);
-            } else {
-                playSound('error');
-                btn.classList.add('incorrect');
-                feedback.textContent = 'Oops, try again!';
-                feedback.style.color = '#EF5350';
-                setTimeout(() => {
-                    btn.classList.remove('incorrect');
-                    feedback.textContent = '';
-                }, 1000);
-            }
-        }
-
-        function nextStep() {
-            currentQuestion++;
-            currentStep = 0;
-            
-            if(currentQuestion <= totalQuestions) {
-                // Switch to Butterfly Game
-                showScreen('butterflyGameScreen');
-                prepareButterflyGame();
-            } else {
-                showCelebration();
-            }
-        }
-
-        function continueMainGame() {
-            if(currentQuestion < totalQuestions) {
-                showScreen('questionScreen');
-                showQuestion();
-            } else {
-                showCelebration();
-            }
-        }
-
-        // --- BUTTERFLY GAME LOGIC ---
-        
-        function prepareButterflyGame() {
-            document.getElementById('startOverlay').style.display = 'flex';
-            document.getElementById('gameResult').style.display = 'none';
-            document.getElementById('gameTimer').textContent = "Time: 20s"; 
-            document.getElementById('gameScore').textContent = "Score: 0";
-            
-            const area = document.getElementById('butterflyGameArea');
-            const oldButterflies = area.querySelectorAll('.butterfly');
-            oldButterflies.forEach(b => b.remove());
-        }
-
-        function startButterflyGameLogic() {
-            document.getElementById('startOverlay').style.display = 'none';
-            butterflyScore = 0;
-            timeLeft = 20; 
-            isGameRunning = true;
-            document.getElementById('gameScore').textContent = "Score: 0";
-            
-            gameInterval = setInterval(() => {
-                timeLeft--;
-                document.getElementById('gameTimer').textContent = `Time: ${timeLeft}s`;
-                if(timeLeft <= 0) endGame();
-            }, 1000);
-
-            spawnInterval = setInterval(spawnButterfly, 800); 
-        }
-
-        function spawnButterfly() {
-            if(!isGameRunning) return;
-            
-            const area = document.getElementById('butterflyGameArea');
-            const bDiv = document.createElement('div');
-            bDiv.className = 'butterfly';
-            
-            const span = document.createElement('span');
-            span.className = 'butterfly-inner';
-            
-            // Random type
-            const type = butterflies[Math.floor(Math.random() * butterflies.length)];
-            span.textContent = type;
-            
-            // Random color for butterfly type
-            if(type === '🦋') {
-                const hue = Math.floor(Math.random() * 360);
-                span.style.filter = `hue-rotate(${hue}deg)`;
-            }
-            
-            bDiv.appendChild(span);
-            
-            const maxLeft = area.offsetWidth - 70;
-            const maxTop = area.offsetHeight - 70; // Stay above flowers mostly
-            
-            bDiv.style.left = Math.random() * maxLeft + 'px';
-            bDiv.style.top = Math.random() * (maxTop - 40) + 'px';
-            
-            bDiv.onclick = (e) => catchButterfly(e, bDiv);
-            area.appendChild(bDiv);
-
-            // Move logic
-            const moveInterval = setInterval(() => {
-                if(!isGameRunning || bDiv.classList.contains('caught')) {
-                    clearInterval(moveInterval);
-                    return;
                 }
-                const newLeft = Math.random() * maxLeft;
-                const newTop = Math.random() * (maxTop - 40);
-                bDiv.style.left = newLeft + 'px';
-                bDiv.style.top = newTop + 'px';
-            }, 1000);
-            
-            // Disappear logic
-            setTimeout(() => {
-                if(bDiv.parentNode && !bDiv.classList.contains('caught')) {
-                    bDiv.style.opacity = '0';
-                    setTimeout(() => { 
-                        bDiv.remove(); 
-                        clearInterval(moveInterval);
-                    }, 500);
-                }
-            }, 3000);
-        }
-
-        function catchButterfly(e, el) {
-            if(!isGameRunning || el.classList.contains('caught')) return;
-            e.stopPropagation();
-            
-            // Net swish sound
-            playSound('swish');
-            
-            butterflyScore++;
-            document.getElementById('gameScore').textContent = `Score: ${butterflyScore}`;
-            
-            el.classList.add('caught');
-            setTimeout(() => el.remove(), 400);
-        }
-
-        function endGame() {
-            isGameRunning = false;
-            clearInterval(gameInterval);
-            clearInterval(spawnInterval);
-            
-            document.getElementById('finalScore').textContent = butterflyScore;
-            document.getElementById('gameResult').style.display = 'block';
-            playSound('success');
-        }
-
-        // --- FIREWORKS ---
-        
-        function showCelebration() {
-            showScreen('celebrationScreen');
-            startFireworks();
-        }
-
-        function startFireworks() {
-            const colors = ['#FF6B6B', '#FFD93D', '#6BCB77', '#4D96FF', '#F473B9'];
-            const container = document.getElementById('celebrationScreen');
-            
-            const fireworkInterval = setInterval(() => {
-                if(!container.classList.contains('active')) {
-                    clearInterval(fireworkInterval);
-                    return;
-                }
-                
-                const x = Math.random() * 100 + '%';
-                const y = Math.random() * 60 + 10 + '%';
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                
-                createExplosion(container, x, y, color);
-            }, 500);
-        }
-
-        function createExplosion(container, x, y, color) {
-            const particles = 20;
-            for(let i=0; i<particles; i++) {
-                const p = document.createElement('div');
-                p.className = 'firework';
-                p.style.left = x;
-                p.style.top = y;
-                p.style.backgroundColor = color;
-                
-                const angle = (Math.PI * 2 * i) / particles;
-                const velocity = 100 + Math.random() * 100;
-                const dx = Math.cos(angle) * velocity + 'px';
-                const dy = Math.sin(angle) * velocity + 'px';
-                
-                p.style.setProperty('--dx', dx);
-                p.style.setProperty('--dy', dy);
-                
-                container.appendChild(p);
-                setTimeout(() => p.remove(), 1000);
             }
-            playSound('pop'); 
         }
 
-
-        // --- COMMON SYSTEM ---
-
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => {
-                s.classList.remove('active');
+        function checkBSWin() {
+            // All tubes must be either empty or have 4 of the same color
+            return bsTubes.every(tube => {
+                if(tube.length === 0) return true;
+                if(tube.length !== 4) return false;
+                const firstColor = tube[0];
+                return tube.every(c => c === firstColor);
             });
-            document.getElementById(id).classList.add('active');
         }
 
-        function restartGame() {
-            currentQuestion = 0;
-            currentStep = 0;
-            showScreen('questionScreen');
-            initGame();
-        }
-
-        // Audio
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        function playSound(type) {
-            if(audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-
-            if(type === 'success') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(500, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 0.1);
-                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.5);
-            } else if(type === 'error') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.2);
-                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.3);
-            } else if(type === 'pop') {
-                // Short pop
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.1);
-            } else if (type === 'swish') {
-                // Net swish effect (noise-like)
-                // Web Audio noise is complex, using simple low sine swipe
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.15);
-                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.15);
+        function handleBSWin() {
+            if(audioInitialized && !bsMuted) {
+                const now = Tone.now();
+                winChime.triggerAttackRelease("C5", "8n", now); winChime.triggerAttackRelease("E5", "8n", now+0.1);
+                winChime.triggerAttackRelease("G5", "4n", now+0.2);
             }
+            shootConfetti();
+            bsScore += (100 - bsMoves * 2 > 10 ? 100 - bsMoves * 2 : 10);
+            updateBSStats();
+            
+            showFeedback("Level Complete! 🌟", "bg-blue-500", "border-blue-300", "text-blue-500", () => {
+                feedbackModal.classList.add('hidden');
+                bsLevel++; startBSLevel(bsLevel);
+                
+                // After clearing ball sort level, switch back to tens & ones
+                switchToTens();
+                drawCard();
+            });
         }
 
-        function playAudio() {
-            const text = document.getElementById('questionText').textContent;
-            speak(text);
-        }
-
-        function speak(text) {
-            if('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const u = new SpeechSynthesisUtterance(text);
-                u.lang = 'en-US'; 
-                u.rate = 0.9;
-                window.speechSynthesis.speak(u);
+        // --- GAME OVER & FIREWORKS ---
+        function showGameEnd() {
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('game-over-modal').classList.remove('hidden');
+            
+            if(audioInitialized) {
+                const now = Tone.now();
+                bigWinSynth.triggerAttackRelease(["C4", "E4", "G4"], "8n", now);
+                bigWinSynth.triggerAttackRelease(["E4", "G4", "C5"], "8n", now + 0.2);
+                bigWinSynth.triggerAttackRelease(["G4", "C5", "E5"], "8n", now + 0.4);
+                bigWinSynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "1m", now + 0.6);
             }
+            fireworksSequence();
         }
 
-        // Start
-        initGame();
-  </script>
- </body>
+        function fireworksSequence() {
+            const duration = 6 * 1000;
+            const animationEnd = Date.now() + duration;
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 10000 };
+
+            function randomInRange(min, max) { return Math.random() * (max - min) + min; }
+
+            const interval = setInterval(function() {
+                const timeLeft = animationEnd - Date.now();
+                if (timeLeft <= 0) return clearInterval(interval);
+
+                const particleCount = 60 * (timeLeft / duration);
+                
+                confetti(Object.assign({}, defaults, { 
+                    particleCount, 
+                    origin: { x: randomInRange(0.1, 0.9), y: Math.random() - 0.2 },
+                    colors: ['#ff4b2b', '#f6d365', '#84fab0', '#8fd3f4', '#a18cd1']
+                }));
+            }, 300);
+        }
+
+        // Init Everything on Load
+        document.addEventListener('DOMContentLoaded', () => {
+            initTensGame();
+            
+            // Add listener to play again button
+            document.getElementById('play-again-button').addEventListener('click', () => {
+                document.getElementById('game-over-modal').classList.add('hidden');
+                initTensGame(); // Restart main game
+            });
+        });
+
+    </script>
+</body>
 </html>
