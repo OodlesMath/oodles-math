@@ -4,7 +4,7 @@
   <link rel="stylesheet" href="../assets/brand.css">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Pikachu Run Adventure v3</title>
+  <title>Pikachu Run Adventure v5</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -539,9 +539,6 @@
   <canvas id="confetti-canvas"></canvas>
 
   <script>
-    // =========================
-    // BGTemplate-style background
-    // =========================
     const backgroundCanvas = document.getElementById('backgroundCanvas');
     const bgCtx = backgroundCanvas.getContext('2d', { alpha: false });
 
@@ -564,11 +561,12 @@
       bgTrees = [];
       bgFlowers = [];
 
-      for (let i = 0; i < 8; i++) {
+      // Giảm mây đi 50% (còn 4) và làm nhỏ lại
+      for (let i = 0; i < 4; i++) {
         clouds.push({
           x: Math.random() * canvasWidth,
           y: Math.random() * (canvasHeight * 0.42),
-          size: 30 + Math.random() * 50,
+          size: 15 + Math.random() * 25,
           speed: Math.random() * 0.18 + 0.08
         });
       }
@@ -581,13 +579,14 @@
         });
       }
 
+      // Giảm hoa đi 20% (còn khoảng 22) và làm nhỏ lại
       const flowerColors = ['#ff4b4b', '#ffc800', '#ce82ff', '#ffffff', '#1cb0f6'];
-      for (let i = 0; i < 28; i++) {
+      for (let i = 0; i < 22; i++) {
         bgFlowers.push({
           x: Math.random() * canvasWidth,
           y: canvasHeight * 0.8 + Math.random() * (canvasHeight * 0.18),
           color: flowerColors[Math.floor(Math.random() * flowerColors.length)],
-          scale: 0.45 + Math.random() * 0.85
+          scale: 0.3 + Math.random() * 0.5
         });
       }
     }
@@ -719,9 +718,6 @@
     resizeBackgroundCanvas();
     requestAnimationFrame(backgroundAnimationLoop);
 
-    // =========================
-    // Sound effects
-    // =========================
     const SoundFX = {
       ctx: null,
       ensure() {
@@ -757,9 +753,6 @@
       }
     };
 
-    // =========================
-    // Confetti system
-    // =========================
     class ConfettiSystem {
       constructor() {
         this.canvas = document.getElementById('confetti-canvas');
@@ -813,9 +806,6 @@
     }
     const confetti = new ConfettiSystem();
 
-    // =========================
-    // Canvas drawing helpers
-    // =========================
     function roundedRect(ctx, x, y, w, h, r) {
       const radius = Math.min(r, w / 2, h / 2);
       ctx.beginPath();
@@ -852,10 +842,6 @@
       ctx.closePath();
     }
 
-    // =========================
-    // Pikachu Redesign v3
-    // Dựa trên reference: béo tròn, đuôi răng cưa sắc nét, mặt xinh, chân trước liền thân, dáng chạy gallop 4 nhịp
-    // =========================
     function drawPikachu(ctx, x, y, scale, frame, isJumping) {
       // Chu kì chạy 4 nhịp (0 -> 1 -> 0 -> -1) cho dáng gallop
       const cycle = isJumping ? 0 : Math.sin(frame * 0.28); 
@@ -984,7 +970,7 @@
       ctx.lineTo(2, 6);
       ctx.lineTo(4, -2);
       fillStroke(yellowDark);
-      // Xoá viền tiếp giáp với thân
+      // Xoá viền tiếp tiếp giáp với thân
       ctx.fillStyle = yellowDark;
       ctx.fillRect(-6, -4, 10, 4);
       ctx.restore();
@@ -1302,7 +1288,6 @@
           ctx.beginPath(); ctx.moveTo(r * 0.12, -r * 0.60); ctx.lineTo(r * 0.26, -r * 0.78); ctx.stroke();
         }
 
-        // Outline, band and button.
         ctx.strokeStyle = '#111111';
         ctx.lineWidth = 4;
         ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke();
@@ -1359,12 +1344,19 @@
         this.sparkles = [];
         this.score = 0;
         this.coinsEarned = 0;
-        this.highScore = Number(localStorage.getItem('pikachuRunBestCoins') || 0);
+        
+        // Cập nhật try-catch để sửa lỗi bảo mật (SecurityError) trên môi trường khép kín
+        this.highScore = 0;
+        try {
+          this.highScore = Number(localStorage.getItem('pikachuRunBestCoins') || 0);
+        } catch (e) {
+          console.warn('Quyền truy cập localStorage bị từ chối trong môi trường này.');
+        }
+
         this.isGameOver = false;
         this.isRunning = false;
         this.frameCount = 0;
         this.animationFrameId = null;
-        this.lastScoreSound = 0;
 
         this.scoreDisplay = document.getElementById('score-display');
         this.highScoreDisplay = document.getElementById('high-score-display');
@@ -1383,7 +1375,7 @@
         this.floorY = this.canvas.height * 0.705;
         const s = Math.min(1.1, Math.max(0.72, this.canvas.width / 1050));
         this.player.scale = s;
-        // Adjusted hitboxes for the new compact, rounder Pikachu
+        // Hitbox được cấu hình theo kích thước chuẩn của bản v3
         this.player.width = 90 * s;
         this.player.height = 76 * s;
         this.player.x = Math.max(72, Math.min(150, this.canvas.width * 0.16));
@@ -1437,7 +1429,6 @@
         this.sparkles = [];
         this.score = 0;
         this.coinsEarned = 0;
-        this.lastScoreSound = 0;
         this.isGameOver = false;
         this.isRunning = true;
         this.frameCount = 0;
@@ -1500,7 +1491,6 @@
         this.score = this.coinsEarned;
         this.scoreDisplay.textContent = this.coinsEarned.toString();
 
-        // Jump physics
         this.player.y += this.player.vy;
         this.player.vy += this.config.GRAVITY;
         const restY = this.floorY - this.player.height;
@@ -1510,15 +1500,12 @@
           this.player.jumping = false;
         }
 
-        // Spawn obstacles
         const spawnRate = Math.max(82, Math.floor(168 - this.config.SPEED * 8));
         if (this.frameCount > 60 && this.frameCount % spawnRate === 0) this.spawnObstacle();
 
-        // Spawn shiny coins
         const coinRate = Math.max(54, Math.floor(102 - this.config.SPEED * 4));
         if (this.frameCount > 35 && this.frameCount % coinRate === 0) this.spawnCoins();
 
-        // Hitbox cho form dáng Pikachu lùn và mập mạp hơn
         const sCoin = this.player.scale;
         const pxCoin = this.player.x + 12 * sCoin;
         const pyCoin = this.player.y + 16 * sCoin;
@@ -1554,7 +1541,6 @@
         });
         this.coins = this.coins.filter(coin => !coin.collected && coin.x > -80);
 
-        // Update obstacles
         this.obstacles.forEach(obstacle => {
           obstacle.x -= this.config.SPEED;
           const s = this.player.scale;
@@ -1574,7 +1560,6 @@
         });
         this.obstacles = this.obstacles.filter(obstacle => obstacle.x > -120);
 
-        // Sparkles
         this.sparkles.forEach(p => {
           p.x += p.vx - this.config.SPEED * 0.35;
           p.y += p.vy;
@@ -1602,7 +1587,12 @@
         this.summary.style.display = 'block';
         if (intScore > this.highScore) {
           this.highScore = intScore;
-          localStorage.setItem('pikachuRunBestCoins', String(intScore));
+          // An toàn bắt lỗi localStorage
+          try {
+            localStorage.setItem('pikachuRunBestCoins', String(intScore));
+          } catch (e) {
+            console.warn('Không thể lưu điểm cao do giới hạn bảo mật của trình duyệt.');
+          }
           this.highScoreDisplay.textContent = intScore.toString();
         }
       }
@@ -1640,7 +1630,7 @@
         this.obstacles.forEach(obstacle => drawObstacle(ctx, obstacle, this.floorY, this.frameCount));
         this.coins.forEach(coin => drawCoin(ctx, coin, this.frameCount));
 
-        // Player shadow - adjusted for rounder body
+        // Player shadow adjusted for v3 body proportion
         const s = this.player.scale;
         const air = Math.max(0, (this.floorY - this.player.height) - this.player.y);
         const shadowScale = Math.max(0.42, 1 - air / 220);
@@ -1660,9 +1650,6 @@
       }
     }
 
-    // =========================
-    // UI wiring
-    // =========================
     const runner = new Runner('#canvas-container');
     const setupScreen = document.getElementById('setup-screen');
     const gameScreen = document.getElementById('game-screen');
