@@ -4,7 +4,7 @@
   <link rel="stylesheet" href="../assets/brand.css">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Pikachu Run Adventure v5</title>
+  <title>Pikachu Run Adventure v7</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -547,6 +547,8 @@
     let clouds = [];
     let bgTrees = [];
     let bgFlowers = [];
+    let bgButterflies = []; // Thêm mảng bướm
+    let bgFrameCount = 0;
 
     function resizeBackgroundCanvas() {
       canvasWidth = window.innerWidth;
@@ -560,8 +562,8 @@
       clouds = [];
       bgTrees = [];
       bgFlowers = [];
+      bgButterflies = [];
 
-      // Giảm mây đi 50% (còn 4) và làm nhỏ lại
       for (let i = 0; i < 4; i++) {
         clouds.push({
           x: Math.random() * canvasWidth,
@@ -579,7 +581,6 @@
         });
       }
 
-      // Giảm hoa đi 20% (còn khoảng 22) và làm nhỏ lại
       const flowerColors = ['#ff4b4b', '#ffc800', '#ce82ff', '#ffffff', '#1cb0f6'];
       for (let i = 0; i < 22; i++) {
         bgFlowers.push({
@@ -589,14 +590,41 @@
           scale: 0.3 + Math.random() * 0.5
         });
       }
+
+      // Khởi tạo Bướm bay lượn
+      const butterflyColors = ['#ff7e67', '#ff6bda', '#6be0ff', '#fcd34d', '#a78bfa'];
+      for (let i = 0; i < 6; i++) {
+        bgButterflies.push({
+          x: Math.random() * canvasWidth,
+          y: canvasHeight * 0.3 + Math.random() * (canvasHeight * 0.4),
+          color: butterflyColors[Math.floor(Math.random() * butterflyColors.length)],
+          scale: 0.18 + Math.random() * 0.2,
+          speedX: -(0.5 + Math.random() * 1.5), // Bay từ phải qua trái
+          speedY: Math.random() * 0.4 - 0.2,
+          flapSpeed: 0.15 + Math.random() * 0.15,
+          flapPhase: Math.random() * Math.PI * 2
+        });
+      }
     }
 
     function updateBackground() {
+      bgFrameCount++;
       clouds.forEach(cloud => {
         cloud.x -= cloud.speed;
         if (cloud.x + cloud.size * 2 < 0) {
           cloud.x = canvasWidth + cloud.size * 2;
           cloud.y = Math.random() * (canvasHeight * 0.42);
+        }
+      });
+
+      // Cập nhật vị trí bướm
+      bgButterflies.forEach(bf => {
+        bf.x += bf.speedX;
+        bf.y += bf.speedY + Math.sin(bgFrameCount * 0.05 + bf.flapPhase) * 0.5; // Bay lượn dập dờn
+        bf.flapPhase += bf.flapSpeed; // Nhịp vỗ cánh
+        if (bf.x < -50) { // Bay khuất thì spawn lại bên phải
+          bf.x = canvasWidth + 50;
+          bf.y = canvasHeight * 0.3 + Math.random() * (canvasHeight * 0.4);
         }
       });
     }
@@ -648,6 +676,47 @@
       bgCtx.beginPath();
       bgCtx.arc(0, 0, 6, 0, Math.PI * 2);
       bgCtx.fill();
+
+      bgCtx.restore();
+    }
+
+    function drawButterfly(bf) {
+      bgCtx.save();
+      bgCtx.translate(bf.x, bf.y);
+      bgCtx.scale(bf.scale, bf.scale);
+
+      // Hiệu ứng vỗ cánh (co giãn trục X)
+      const flap = Math.abs(Math.cos(bf.flapPhase));
+      bgCtx.scale(flap, 1);
+
+      bgCtx.fillStyle = bf.color;
+      bgCtx.beginPath();
+      // Cánh trên phải
+      bgCtx.moveTo(0, 0);
+      bgCtx.bezierCurveTo(20, -30, 40, -10, 15, 10);
+      // Cánh dưới phải
+      bgCtx.bezierCurveTo(25, 30, 5, 25, 0, 5);
+      // Cánh dưới trái
+      bgCtx.bezierCurveTo(-5, 25, -25, 30, -15, 10);
+      // Cánh trên trái
+      bgCtx.bezierCurveTo(-40, -10, -20, -30, 0, 0);
+      bgCtx.fill();
+
+      // Thân bướm
+      bgCtx.fillStyle = '#1e293b';
+      bgCtx.beginPath();
+      bgCtx.ellipse(0, 5, 3, 12, 0, 0, Math.PI * 2);
+      bgCtx.fill();
+      
+      // Râu bướm
+      bgCtx.strokeStyle = '#1e293b';
+      bgCtx.lineWidth = 1.5;
+      bgCtx.beginPath();
+      bgCtx.moveTo(0, -5);
+      bgCtx.quadraticCurveTo(5, -15, 10, -12);
+      bgCtx.moveTo(0, -5);
+      bgCtx.quadraticCurveTo(-5, -15, -10, -12);
+      bgCtx.stroke();
 
       bgCtx.restore();
     }
@@ -706,6 +775,7 @@
       bgCtx.stroke();
 
       bgFlowers.forEach(drawFlower);
+      bgButterflies.forEach(drawButterfly); // Vẽ bướm
     }
 
     function backgroundAnimationLoop() {
@@ -842,300 +912,291 @@
       ctx.closePath();
     }
 
+    /* ========================================================
+       PIKACHU REDESIGN V7 (Cat-like Gallop + Visible Tail)
+       ======================================================== */
     function drawPikachu(ctx, x, y, scale, frame, isJumping) {
-      // Chu kì chạy 4 nhịp (0 -> 1 -> 0 -> -1) cho dáng gallop
-      const cycle = isJumping ? 0 : Math.sin(frame * 0.28); 
-      const cycleCos = isJumping ? 0 : Math.cos(frame * 0.28); // Dùng cho chân lệch pha
-
-      // Tính toán dáng chạy:
-      // Ở reference, dáng chạy là: co gập người -> vươn dài ra phía trước.
-      // Chúng ta mô phỏng độ vươn (stretch) và độ gập (squash)
-      const stretch = isJumping ? 1.1 : 1.0 + cycle * 0.08; 
-      const squash = isJumping ? 0.95 : 1.0 - cycle * 0.05;
-      const bodyAngle = isJumping ? -0.15 : cycle * -0.06;
+      // Rotary Gallop Logic (Mèo chạy nước rút)
+      // Chu kì chạy: co lại (gather) -> vươn ra (stretch)
+      const runCycle = frame * 0.4;
       
-      const bounce = isJumping ? -18 : Math.abs(cycle) * -3;
-      const tailAngle = isJumping ? 0.2 : cycleCos * 0.1;
-      const earTilt = isJumping ? -0.1 : cycleCos * 0.05;
+      // Các góc quay của tứ chi luân phiên nhau tạo cảm giác phóng tới
+      const frRot = isJumping ? -0.5 : Math.sin(runCycle) * 0.7 - 0.1;       // Front Right
+      const flRot = isJumping ? -0.3 : Math.sin(runCycle - 0.6) * 0.7 - 0.1; // Front Left
+      const brRot = isJumping ? 0.3 : Math.sin(runCycle + Math.PI) * 0.6 + 0.1; // Back Right
+      const blRot = isJumping ? 0.5 : Math.sin(runCycle + Math.PI - 0.6) * 0.6 + 0.1; // Back Left
+
+      // Nhịp nhún: 2 nhún mỗi chu kì bước (đặc trưng của gallop)
+      const bounce = isJumping ? -18 : Math.cos(runCycle * 2) * 4 - 2;
+      
+      // Độ vươn cơ thể: vươn dài khi vươn chân, co lại khi gập chân
+      const stretch = isJumping ? 1.05 : 1 + Math.sin(runCycle) * 0.08;
+      const squash = isJumping ? 0.95 : 1 / stretch;
+      
+      // Thân hình nghiêng theo đà vươn
+      const bodyTilt = isJumping ? -0.15 : Math.cos(runCycle) * 0.05;
 
       ctx.save();
       ctx.translate(x, y + bounce);
-      
-      // Pivot quay ở giữa ngực
-      ctx.translate(60 * scale, 50 * scale);
-      ctx.rotate(bodyAngle);
-      // Co giãn cơ thể tạo cảm giác vươn dài khi sải bước
-      ctx.scale(scale * stretch, scale * squash);
-      ctx.translate(-60, -50);
-      
+      ctx.scale(scale, scale);
+
+      // Pivot around center of the body
+      ctx.translate(55, 45);
+      ctx.rotate(bodyTilt);
+      ctx.scale(stretch, squash); // Áp dụng độ vươn (Stretch & Squash)
+      ctx.translate(-55, -45);
+
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
 
-      const outline = '#1a1a1a';
-      const yellow = '#ffd659';       // Màu vàng ấm chuẩn
-      const yellowDark = '#eeb636';   // Vàng sậm đổ bóng
-      const brown = '#8e562d';        // Nâu đuôi/sọc lưng
-      const red = '#ef4444';          // Má đỏ
+      // Colors matching the anime reference
+      const yellow = '#f7d02c';
+      const yellowDark = '#d8ab14';
+      const brown = '#8e562d';
+      const red = '#e3350d';
       const black = '#111111';
       const white = '#ffffff';
+      const outline = '#2d2d2d'; 
 
-      // Hàm vẽ outline + fill chuẩn
-      function fillStroke(fillColor, strokeWidth = 3.5) {
+      function fillAndStroke(fillColor, lineWidth = 3) {
         ctx.fillStyle = fillColor;
         ctx.fill();
-        ctx.lineWidth = strokeWidth / stretch; // Bù trừ scale
+        ctx.lineWidth = lineWidth / stretch; // Chống méo nét viền khi co giãn
         ctx.strokeStyle = outline;
         ctx.stroke();
       }
 
-      // --- 1. ĐUÔI RĂNG CƯA CHUẨN ---
+      /* 1. TAIL (Đuôi - Lộ hẳn ra ngoài, dài và đẹp) */
+      const tailAngle = isJumping ? 0.1 : Math.cos(runCycle) * 0.1;
       ctx.save();
-      ctx.translate(28, 48); // Điểm gắn đuôi vào mông
+      // Gắn đuôi lùi hẳn ra sau và lên cao hơn để không bị thân lấp mất
+      ctx.translate(12, 42); 
       ctx.rotate(tailAngle);
       
+      // Vẽ đường zigzag đuôi to và vươn dài
       ctx.beginPath();
       ctx.moveTo(0, 0);
-      // Gốc đuôi
-      ctx.lineTo(-4, -8);
-      ctx.lineTo(-12, -8);
-      ctx.lineTo(-10, -22);
-      ctx.lineTo(-24, -22);
-      ctx.lineTo(-20, -40);
-      ctx.lineTo(-40, -40);
-      ctx.lineTo(-34, -68);
-      ctx.lineTo(-14, -68);
-      ctx.lineTo(-18, -48);
-      ctx.lineTo(2, -48);
-      ctx.lineTo(-2, -30);
-      ctx.lineTo(12, -30);
-      ctx.lineTo(8, -16);
-      ctx.lineTo(18, -16);
-      ctx.lineTo(14, 0);
+      ctx.lineTo(-8, -10);
+      ctx.lineTo(-18, -8);
+      ctx.lineTo(-12, -26);
+      ctx.lineTo(-32, -24);
+      ctx.lineTo(-24, -46);
+      ctx.lineTo(-48, -42);
+      ctx.lineTo(-40, -70); // Chóp đuôi cao nhất
+      ctx.lineTo(-15, -64); // Chóp đuôi góc phải
+      ctx.lineTo(-22, -40);
+      ctx.lineTo(2, -46);
+      ctx.lineTo(-4, -24);
+      ctx.lineTo(16, -28);
+      ctx.lineTo(12, -10);
+      ctx.lineTo(22, -12);
+      ctx.lineTo(18, 0);
       ctx.closePath();
-      
-      fillStroke(yellow);
+      fillAndStroke(yellow);
 
       // Mảng nâu ở gốc đuôi
       ctx.beginPath();
       ctx.moveTo(0, 0);
-      ctx.lineTo(-4, -8);
-      ctx.lineTo(-12, -8);
-      ctx.lineTo(-10, -18); // Cắt ngang
-      ctx.lineTo(10, -18);
-      ctx.lineTo(14, 0);
+      ctx.lineTo(-8, -10);
+      ctx.lineTo(-18, -8);
+      ctx.lineTo(-12, -26);
+      ctx.lineTo(0, -24); // Cắt ngang
+      ctx.lineTo(16, -28);
+      ctx.lineTo(12, -10);
+      ctx.lineTo(22, -12);
+      ctx.lineTo(18, 0);
       ctx.closePath();
       ctx.fillStyle = brown;
       ctx.fill();
-      
+
       // Viền đè lên mảng nâu cho sắc nét
       ctx.beginPath();
-      ctx.moveTo(-10, -18);
-      ctx.lineTo(10, -18);
-      ctx.lineWidth = 3.5 / stretch;
+      ctx.moveTo(-12, -26);
+      ctx.lineTo(0, -24);
+      ctx.lineTo(16, -28);
+      ctx.lineWidth = 3 / stretch;
       ctx.strokeStyle = outline;
       ctx.stroke();
-      
       ctx.restore();
 
-      // --- 2. TAI XA (Tai trái) ---
+      /* 2. BACK EAR (Tai Xa) */
+      const earTilt = Math.sin(runCycle) * 0.05;
       ctx.save();
-      ctx.translate(65, 26);
-      ctx.rotate(-0.8 + earTilt);
+      ctx.translate(65, 18);
+      ctx.rotate(-0.9 + earTilt);
       ctx.beginPath();
       ctx.moveTo(0, 0);
-      ctx.quadraticCurveTo(-6, -15, -4, -30);
-      ctx.quadraticCurveTo(8, -25, 6, 0);
-      fillStroke(yellowDark);
-      
-      // Chóp đen tai xa
+      ctx.quadraticCurveTo(-8, -18, -6, -35);
+      ctx.quadraticCurveTo(10, -30, 8, 0);
+      fillAndStroke(yellowDark);
+
+      // Chóp đen
       ctx.beginPath();
-      ctx.moveTo(-4.5, -20);
-      ctx.quadraticCurveTo(-4, -30, -4, -30);
-      ctx.quadraticCurveTo(8, -25, 6, -18);
-      ctx.lineTo(-4.5, -20);
+      ctx.moveTo(-6.5, -24);
+      ctx.quadraticCurveTo(-6, -35, -6, -35);
+      ctx.quadraticCurveTo(10, -30, 7.5, -20);
+      ctx.closePath();
       ctx.fillStyle = black;
       ctx.fill();
       ctx.restore();
 
-      // --- 3. CHÂN SAU XA (Chân trái) ---
-      // Dáng chạy: Chân đung đưa luân phiên
-      const backLegFarRot = isJumping ? 0.3 : cycleCos * 0.4 - 0.2;
+      /* 3. BACK LEGS (Chân Xa) */
+      // Chân sau xa (đạp đất)
       ctx.save();
-      ctx.translate(35, 64);
-      ctx.rotate(backLegFarRot);
+      ctx.translate(35, 60);
+      ctx.rotate(blRot);
       ctx.beginPath();
-      ctx.moveTo(-6, -2);
-      ctx.quadraticCurveTo(-10, 10, -12, 14);
-      ctx.lineTo(-4, 15);
-      ctx.lineTo(2, 6);
-      ctx.lineTo(4, -2);
-      fillStroke(yellowDark);
-      // Xoá viền tiếp tiếp giáp với thân
+      ctx.moveTo(-5, -5);
+      ctx.quadraticCurveTo(-12, 10, -8, 24);
+      ctx.lineTo(6, 24);
+      ctx.quadraticCurveTo(8, 10, 5, -5);
+      fillAndStroke(yellowDark);
       ctx.fillStyle = yellowDark;
-      ctx.fillRect(-6, -4, 10, 4);
+      ctx.fillRect(-4, -6, 8, 6); // Erase join
       ctx.restore();
 
-      // --- 4. THÂN HÌNH BÉO TRÒN LỤC LĂNG ---
-      // Dựa theo ảnh tham khảo, Pikachu có lưng cong tròn, bụng xệ mập mạp và trán phẳng
-      ctx.beginPath();
-      ctx.moveTo(35, 30); // Giữa lưng
-      ctx.bezierCurveTo(48, 20, 60, 20, 72, 26); // Đầu và trán
-      ctx.bezierCurveTo(84, 28, 92, 36, 94, 46); // Mõm và má
-      ctx.bezierCurveTo(92, 60, 80, 68, 65, 72); // Cổ và ngực (Bụng dưới)
-      ctx.bezierCurveTo(50, 76, 35, 76, 25, 68); // Bụng xệ tròn
-      ctx.bezierCurveTo(15, 60, 16, 42, 22, 34); // Mông tròn
-      ctx.bezierCurveTo(26, 30, 30, 31, 35, 30); // Vòng về lưng
-      fillStroke(yellow);
-
-      // Vằn lưng (Nâu)
+      // Chân trước xa (vươn tới)
       ctx.save();
-      // Clip theo viền lưng để không bị lem
-      ctx.beginPath();
-      ctx.moveTo(35, 30);
-      ctx.bezierCurveTo(48, 20, 60, 20, 72, 26);
-      ctx.bezierCurveTo(84, 28, 92, 36, 94, 46);
-      ctx.bezierCurveTo(92, 60, 80, 68, 65, 72);
-      ctx.bezierCurveTo(50, 76, 35, 76, 25, 68);
-      ctx.bezierCurveTo(15, 60, 16, 42, 22, 34);
-      ctx.bezierCurveTo(26, 30, 30, 31, 35, 30);
-      ctx.clip();
-
-      ctx.fillStyle = brown;
-      // Vằn 1
-      ctx.beginPath();
-      ctx.moveTo(30, 28);
-      ctx.lineTo(25, 42);
-      ctx.lineTo(32, 45);
-      ctx.lineTo(38, 28);
-      ctx.fill();
-      // Vằn 2
-      ctx.beginPath();
-      ctx.moveTo(42, 24);
-      ctx.lineTo(40, 38);
-      ctx.lineTo(48, 40);
-      ctx.lineTo(50, 24);
-      ctx.fill();
-      ctx.restore();
-
-      // --- 5. KHUÔN MẶT DỄ THƯƠNG (GIỐNG REF) ---
-      // Mắt (Đen to, có lông mi nhỏ xíu xíu)
-      ctx.fillStyle = black;
-      ctx.beginPath();
-      ctx.arc(84, 38, 4, 0, Math.PI * 2);
-      ctx.fill();
-      // Lông mi góc trên
-      ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.moveTo(82, 35); ctx.lineTo(80, 33); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(85, 34); ctx.lineTo(84, 32); ctx.stroke();
-      
-      // Đốm sáng mắt
-      ctx.fillStyle = white;
-      ctx.beginPath();
-      ctx.arc(83.2, 36.5, 1.4, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Mũi (Chấm nhỏ cong)
-      ctx.fillStyle = black;
-      ctx.beginPath();
-      ctx.ellipse(94, 42, 1.2, 0.8, 0.4, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Má đỏ (Tròn, rõ nét)
-      ctx.beginPath();
-      ctx.arc(76, 46, 5.5, 0, Math.PI * 2);
-      fillStroke(red, 1.5);
-
-      // Miệng vểnh cười duyên
-      ctx.strokeStyle = black;
-      ctx.lineWidth = 1.8 / stretch;
-      ctx.beginPath();
-      ctx.moveTo(88, 46);
-      ctx.quadraticCurveTo(91, 49, 93.5, 46);
-      ctx.stroke();
-
-      // --- 6. TAI GẦN (Tai phải) ---
-      ctx.save();
-      ctx.translate(72, 28);
-      ctx.rotate(-0.3 + earTilt * 1.5);
+      ctx.translate(72, 60);
+      ctx.rotate(flRot);
       ctx.beginPath();
       ctx.moveTo(-4, 0);
-      ctx.quadraticCurveTo(-6, -18, -2, -32);
-      ctx.quadraticCurveTo(8, -26, 6, 0);
-      fillStroke(yellow);
-      
-      // Chóp đen tai gần
+      ctx.quadraticCurveTo(-8, 12, -4, 20);
+      ctx.lineTo(6, 20);
+      ctx.lineTo(5, 0);
+      fillAndStroke(yellowDark);
+      ctx.restore();
+
+
+      /* 4. MAIN BODY & HEAD */
+      // Thân hình liền một khối, bụng tròn, trán cao, mõm nhô
       ctx.beginPath();
-      ctx.moveTo(-3.5, -22);
-      ctx.quadraticCurveTo(-2, -32, -2, -32);
-      ctx.quadraticCurveTo(8, -26, 5.5, -17);
-      ctx.lineTo(-3.5, -22);
+      ctx.moveTo(35, 28); 
+      ctx.bezierCurveTo(45, 18, 58, 16, 70, 20); // Trán cao
+      ctx.bezierCurveTo(85, 22, 94, 30, 96, 40); // Mõm nhô ra
+      ctx.bezierCurveTo(94, 52, 85, 64, 75, 68); // Ngực
+      ctx.bezierCurveTo(60, 75, 40, 75, 28, 65); // Bụng xệ tròn
+      ctx.bezierCurveTo(16, 55, 16, 40, 24, 32); // Mông
+      ctx.bezierCurveTo(28, 28, 32, 29, 35, 28); // Connect back
+      fillAndStroke(yellow);
+
+      // Stripes trên lưng (Nâu)
+      ctx.save();
+      ctx.clip(); // Keep stripes within body bounds
+      ctx.fillStyle = brown;
+      ctx.beginPath();
+      ctx.moveTo(25, 25); ctx.lineTo(20, 40); ctx.lineTo(28, 42); ctx.lineTo(35, 25); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(38, 20); ctx.lineTo(34, 38); ctx.lineTo(44, 40); ctx.lineTo(50, 20); ctx.fill();
+      ctx.restore();
+
+
+      /* 5. FACE DETAILS */
+      // Mắt có đốm sáng
+      ctx.fillStyle = black;
+      ctx.beginPath(); ctx.arc(80, 36, 4.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = white;
+      ctx.beginPath(); ctx.arc(78.5, 34.5, 1.8, 0, Math.PI * 2); ctx.fill();
+
+      // Mũi nhỏ xíu
+      ctx.fillStyle = black;
+      ctx.beginPath(); ctx.arc(92, 40, 1.2, 0, Math.PI * 2); ctx.fill();
+
+      // Má đỏ to rực
+      ctx.beginPath();
+      ctx.arc(68, 46, 6, 0, Math.PI * 2);
+      fillAndStroke(red, 2);
+
+      // Miệng mở mỉm cười đáng yêu
+      ctx.fillStyle = '#cc5656'; 
+      ctx.beginPath();
+      ctx.moveTo(85, 44);
+      ctx.quadraticCurveTo(88, 52, 92, 43); 
+      ctx.closePath();
+      fillAndStroke('#cc5656', 2);
+      ctx.strokeStyle = black;
+      ctx.lineWidth = 2 / stretch;
+      ctx.beginPath();
+      ctx.moveTo(85, 44);
+      ctx.quadraticCurveTo(88, 42, 92, 43);
+      ctx.stroke();
+
+
+      /* 6. FRONT EAR (Tai Gần) */
+      ctx.save();
+      ctx.translate(76, 22);
+      ctx.rotate(-0.3 + earTilt * 1.5);
+      ctx.beginPath();
+      ctx.moveTo(-5, 0);
+      ctx.quadraticCurveTo(-8, -20, -4, -38);
+      ctx.quadraticCurveTo(10, -32, 7, 0);
+      fillAndStroke(yellow);
+
+      // Chóp đen
+      ctx.beginPath();
+      ctx.moveTo(-4.5, -26);
+      ctx.quadraticCurveTo(-4, -38, -4, -38);
+      ctx.quadraticCurveTo(10, -32, 6.5, -20);
+      ctx.closePath();
       ctx.fillStyle = black;
       ctx.fill();
-      // Xoá viền dính đầu
+      
+      // Xoá viền gắn vào đầu
       ctx.fillStyle = yellow;
-      ctx.fillRect(-3, -2, 8, 4);
+      ctx.fillRect(-4, -2, 10, 5);
       ctx.restore();
 
-      // --- 7. CHÂN TRƯỚC (Liền khối với thân) ---
-      // Dựa theo ảnh ref, chân trước hơi mập và đưa ra phía trước
-      const frontLegRot = isJumping ? -0.4 : cycle * 0.5 - 0.2;
+
+      /* 7. FRONT LEGS (Chân Gần) */
+      // Chân sau gần (Đùi ếch)
       ctx.save();
-      ctx.translate(68, 65);
-      ctx.rotate(frontLegRot);
+      ctx.translate(32, 60);
+      ctx.rotate(brRot);
+      
+      // Thigh
       ctx.beginPath();
-      ctx.moveTo(-8, -4);
-      ctx.quadraticCurveTo(-10, 10, -5, 18);
-      ctx.lineTo(4, 18);
-      ctx.quadraticCurveTo(6, 10, 8, -4);
-      fillStroke(yellow);
+      ctx.ellipse(-2, 0, 12, 14, 0.3, 0, Math.PI * 2);
+      fillAndStroke(yellow);
       
-      // Xoá viền để tạo cảm giác chân mọc ra từ thân (rất quan trọng)
+      // Foot
+      ctx.beginPath();
+      ctx.moveTo(-6, 8);
+      ctx.lineTo(-8, 22);
+      ctx.lineTo(8, 22);
+      ctx.lineTo(6, 8);
+      fillAndStroke(yellow);
+      
+      // Erase joins
       ctx.fillStyle = yellow;
-      ctx.fillRect(-7, -6, 14, 8);
+      ctx.fillRect(-6, 6, 14, 6); // foot to thigh
+      ctx.fillRect(-8, -10, 15, 12); // thigh to body
       
-      // Ngón chân bé xíu
+      // Toes
       ctx.strokeStyle = outline;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.moveTo(-2, 18); ctx.lineTo(-2, 14); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(1, 18); ctx.lineTo(1, 14); ctx.stroke();
+      ctx.lineWidth = 1.5 / stretch;
+      ctx.beginPath(); ctx.moveTo(-2, 22); ctx.lineTo(-3, 16); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(4, 22); ctx.lineTo(3, 16); ctx.stroke();
       ctx.restore();
 
-      // --- 8. CHÂN SAU GẦN (Chân phải) ---
-      // Dáng đùi ếch to béo
-      const backLegRot = isJumping ? -0.2 : cycleCos * -0.5 - 0.1;
+      // Chân trước gần (Vươn tay)
       ctx.save();
-      ctx.translate(34, 62);
-      ctx.rotate(backLegRot);
+      ctx.translate(68, 62);
+      ctx.rotate(frRot);
       
-      // Khối đùi mập
       ctx.beginPath();
-      ctx.ellipse(-2, 2, 12, 14, 0.4, 0, Math.PI * 2);
-      fillStroke(yellow);
-
-      // Bàn chân vươn ra
-      ctx.beginPath();
-      ctx.moveTo(-4, 10);
-      ctx.lineTo(-6, 22);
-      ctx.lineTo(6, 24);
-      ctx.lineTo(8, 12);
-      fillStroke(yellow);
-
-      // Xoá viền nối đùi và bàn chân
+      ctx.moveTo(-6, -4);
+      ctx.quadraticCurveTo(-10, 10, -5, 20);
+      ctx.lineTo(5, 20);
+      ctx.quadraticCurveTo(8, 10, 6, -4);
+      fillAndStroke(yellow);
+      
+      // Seamless body join
       ctx.fillStyle = yellow;
-      ctx.beginPath();
-      ctx.moveTo(-3, 11);
-      ctx.lineTo(7, 13);
-      ctx.lineTo(3, 16);
-      ctx.lineTo(-1, 16);
-      ctx.fill();
-
-      // Xoá viền đùi dính vào bụng
-      ctx.fillRect(-8, -10, 16, 12);
-
-      // Ngón chân
-      ctx.beginPath(); ctx.moveTo(-2, 23); ctx.lineTo(-3, 18); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(2, 24); ctx.lineTo(1, 19); ctx.stroke();
-
+      ctx.fillRect(-6, -6, 12, 10);
+      
+      // Toes
+      ctx.beginPath(); ctx.moveTo(-1, 20); ctx.lineTo(-1, 15); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(3, 20); ctx.lineTo(3, 15); ctx.stroke();
       ctx.restore();
 
       ctx.restore();
@@ -1345,12 +1406,11 @@
         this.score = 0;
         this.coinsEarned = 0;
         
-        // Cập nhật try-catch để sửa lỗi bảo mật (SecurityError) trên môi trường khép kín
         this.highScore = 0;
         try {
           this.highScore = Number(localStorage.getItem('pikachuRunBestCoins') || 0);
         } catch (e) {
-          console.warn('Quyền truy cập localStorage bị từ chối trong môi trường này.');
+          console.warn('Local storage disabled.');
         }
 
         this.isGameOver = false;
@@ -1375,9 +1435,9 @@
         this.floorY = this.canvas.height * 0.705;
         const s = Math.min(1.1, Math.max(0.72, this.canvas.width / 1050));
         this.player.scale = s;
-        // Hitbox được cấu hình theo kích thước chuẩn của bản v3
-        this.player.width = 90 * s;
-        this.player.height = 76 * s;
+        // Tinh chỉnh hitbox ăn nhập với dáng chạy chồm ra phía trước
+        this.player.width = 100 * s;
+        this.player.height = 70 * s;
         this.player.x = Math.max(72, Math.min(150, this.canvas.width * 0.16));
         if (!this.player.jumping) this.player.y = this.floorY - this.player.height;
         this.draw();
@@ -1507,9 +1567,9 @@
         if (this.frameCount > 35 && this.frameCount % coinRate === 0) this.spawnCoins();
 
         const sCoin = this.player.scale;
-        const pxCoin = this.player.x + 12 * sCoin;
+        const pxCoin = this.player.x + 8 * sCoin;
         const pyCoin = this.player.y + 16 * sCoin;
-        const pwCoin = 72 * sCoin;
+        const pwCoin = 88 * sCoin;
         const phCoin = 56 * sCoin;
         
         this.coins.forEach(coin => {
@@ -1546,7 +1606,7 @@
           const s = this.player.scale;
           const px = this.player.x + 12 * s;
           const py = this.player.y + 16 * s;
-          const pw = 70 * s;
+          const pw = 78 * s;
           const ph = 54 * s;
 
           const ox = obstacle.x + obstacle.w * 0.14;
@@ -1587,11 +1647,10 @@
         this.summary.style.display = 'block';
         if (intScore > this.highScore) {
           this.highScore = intScore;
-          // An toàn bắt lỗi localStorage
           try {
             localStorage.setItem('pikachuRunBestCoins', String(intScore));
           } catch (e) {
-            console.warn('Không thể lưu điểm cao do giới hạn bảo mật của trình duyệt.');
+            console.warn('LocalStorage error');
           }
           this.highScoreDisplay.textContent = intScore.toString();
         }
@@ -1630,13 +1689,15 @@
         this.obstacles.forEach(obstacle => drawObstacle(ctx, obstacle, this.floorY, this.frameCount));
         this.coins.forEach(coin => drawCoin(ctx, coin, this.frameCount));
 
-        // Player shadow adjusted for v3 body proportion
+        // Player shadow adjusted for anime body proportion
         const s = this.player.scale;
         const air = Math.max(0, (this.floorY - this.player.height) - this.player.y);
         const shadowScale = Math.max(0.42, 1 - air / 220);
         ctx.fillStyle = 'rgba(0,0,0,0.20)';
         ctx.beginPath();
-        ctx.ellipse(this.player.x + 48 * s, this.floorY + 6, 34 * s * shadowScale, 6.5 * s * shadowScale, 0, 0, Math.PI * 2);
+        // Bóng đổ di chuyển theo đà vươn của cơ thể
+        const stretchOffset = (1 + Math.sin(this.frameCount * 0.4) * 0.08) * 10;
+        ctx.ellipse(this.player.x + 55 * s + (this.player.jumping ? 0 : stretchOffset), this.floorY + 6, 38 * s * shadowScale, 6.5 * s * shadowScale, 0, 0, Math.PI * 2);
         ctx.fill();
 
         drawPikachu(ctx, this.player.x, this.player.y, this.player.scale, this.frameCount, this.player.jumping);
