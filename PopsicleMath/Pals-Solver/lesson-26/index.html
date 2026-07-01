@@ -1,16 +1,21 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Place Value Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Place Value Game - Light UI Ver4</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         /* Custom styles to match the React app feel */
         body {
+            font-family: 'Poppins', sans-serif;
             touch-action: none; /* Prevent scrolling/zooming gestures globally to help with drag */
             user-select: none;
             -webkit-user-select: none;
@@ -186,6 +191,10 @@
         let tens = 0;
         let ones = 0;
         let isRegroupingDrag = false;
+        let isPieceDrag = false;
+        let activePieceType = null;
+        let pieceDragStart = { x: 0, y: 0 };
+        let pieceDragMoved = false;
         let dragPos = { x: 0, y: 0 };
         let notificationTimeout = null;
 
@@ -200,6 +209,7 @@
         
         const onesContainer = document.getElementById('ones-container');
         const onesZero = document.getElementById('ones-zero');
+        const onesColumn = onesContainer.parentElement;
         
         const notificationContainer = document.getElementById('notification-container');
         
@@ -207,6 +217,7 @@
         const regroupDragHandle = document.getElementById('regroup-drag-handle');
         const dragPreview = document.getElementById('drag-preview');
         const dragPreviewRod = document.getElementById('drag-preview-rod');
+        const dragPreviewBox = dragPreview.firstElementChild;
 
         const btnRemoveTen = document.getElementById('btn-remove-ten');
         const btnRemoveOne = document.getElementById('btn-remove-one');
@@ -218,8 +229,10 @@
         
         function createTenRodElement() {
             const wrapper = document.createElement('div');
-            wrapper.className = "flex flex-col sm:flex-row gap-[1px] cursor-pointer hover:brightness-110 active:scale-95 transition-transform";
-            wrapper.onclick = removeTen;
+            wrapper.className = "flex flex-col sm:flex-row gap-[1px] cursor-grab active:cursor-grabbing hover:brightness-110 active:scale-95 transition-transform";
+            wrapper.setAttribute('aria-label', 'Ten rod. Drag to Ones to break into 10 cubes. Tap to remove.');
+            wrapper.addEventListener('mousedown', (e) => startPieceDrag(e, 'ten'));
+            wrapper.addEventListener('touchstart', (e) => startPieceDrag(e, 'ten'), { passive: false });
 
             const inner = document.createElement('div');
             inner.className = "flex gap-[1px]";
@@ -235,8 +248,10 @@
 
         function createOneCubeElement() {
             const el = document.createElement('div');
-            el.className = "w-3 h-3 sm:w-5 sm:h-5 rounded-[2px] shadow-sm bg-amber-400 border border-amber-500 cursor-pointer hover:brightness-110 active:scale-95 transition-transform";
-            el.onclick = removeOne;
+            el.className = "w-3 h-3 sm:w-5 sm:h-5 rounded-[2px] shadow-sm bg-amber-400 border border-amber-500 cursor-grab active:cursor-grabbing hover:brightness-110 active:scale-95 transition-transform";
+            el.setAttribute('aria-label', 'One cube. Drag to Tens when there are 10 ones to make one ten. Tap to remove.');
+            el.addEventListener('mousedown', (e) => startPieceDrag(e, 'one'));
+            el.addEventListener('touchstart', (e) => startPieceDrag(e, 'one'), { passive: false });
             return el;
         }
 
@@ -276,10 +291,16 @@
             }
 
             // Drag State Visuals
-            if (isRegroupingDrag) {
+            if (isRegroupingDrag || (isPieceDrag && activePieceType === 'one')) {
                 tensColumn.classList.add('bg-sky-100/80', 'ring-inset', 'ring-4', 'ring-sky-300');
             } else {
                 tensColumn.classList.remove('bg-sky-100/80', 'ring-inset', 'ring-4', 'ring-sky-300');
+            }
+
+            if (isPieceDrag && activePieceType === 'ten') {
+                onesColumn.classList.add('bg-amber-100/80', 'ring-inset', 'ring-4', 'ring-amber-300');
+            } else {
+                onesColumn.classList.remove('bg-amber-100/80', 'ring-inset', 'ring-4', 'ring-amber-300');
             }
         }
 
@@ -394,21 +415,117 @@
             updateUI();
         }
 
-        // --- Regrouping (Drag & Drop) ---
+        
+        // --- Direct Piece Drag & Drop ---
 
-        function startDrag(e) {
-            e.preventDefault();
-            isRegroupingDrag = true;
-            
-            // Populate Drag Preview if empty
-            if (dragPreviewRod.children.length === 0) {
+        function getClientPosition(e) {
+            if (e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+            if (e.changedTouches && e.changedTouches.length > 0) {
+                return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+            }
+            return { x: e.clientX, y: e.clientY };
+        }
+
+        function fillDragPreview(type) {
+            dragPreviewRod.innerHTML = '';
+            if (type === 'ten') {
+                dragPreviewBox.className = "bg-sky-600/90 p-2 rounded-lg shadow-2xl scale-110 border-2 border-white";
+                dragPreviewRod.className = "flex gap-[1px]";
                 for (let i = 0; i < 10; i++) {
                     const d = document.createElement('div');
                     d.className = "w-3 h-3 sm:w-5 sm:h-5 bg-sky-600 border border-sky-700 shadow-sm rounded-[1px]";
                     dragPreviewRod.appendChild(d);
                 }
+            } else {
+                dragPreviewBox.className = "bg-amber-500/90 p-2 rounded-lg shadow-2xl scale-110 border-2 border-white";
+                dragPreviewRod.className = "grid grid-cols-5 gap-1";
+                const cubeCount = Math.min(10, Math.max(1, ones));
+                for (let i = 0; i < cubeCount; i++) {
+                    const d = document.createElement('div');
+                    d.className = "w-3 h-3 sm:w-5 sm:h-5 bg-amber-400 border border-amber-500 shadow-sm rounded-[2px]";
+                    dragPreviewRod.appendChild(d);
+                }
+            }
+        }
+
+        function startPieceDrag(e, type) {
+            if (isRegroupingDrag) return;
+            e.preventDefault();
+            isPieceDrag = true;
+            activePieceType = type;
+            pieceDragMoved = false;
+            pieceDragStart = getClientPosition(e);
+            fillDragPreview(type);
+        }
+
+        function movePieceDrag(e) {
+            if (!isPieceDrag) return;
+            e.preventDefault();
+            const pos = getClientPosition(e);
+            const movedDistance = Math.hypot(pos.x - pieceDragStart.x, pos.y - pieceDragStart.y);
+            if (movedDistance > 5) {
+                pieceDragMoved = true;
+                dragPreview.classList.remove('hidden');
+                dragPreview.style.left = pos.x + 'px';
+                dragPreview.style.top = pos.y + 'px';
+                updateUI();
+            }
+        }
+
+        function endPieceDrag(e) {
+            if (!isPieceDrag) return;
+            const pos = getClientPosition(e);
+            const type = activePieceType;
+            isPieceDrag = false;
+            activePieceType = null;
+            dragPreview.classList.add('hidden');
+
+            if (!pieceDragMoved) {
+                if (type === 'ten') removeTen();
+                if (type === 'one') removeOne();
+                updateUI();
+                return;
             }
 
+            const tensRect = tensColumn.getBoundingClientRect();
+            const onesRect = onesColumn.getBoundingClientRect();
+            const droppedInTens = pos.x >= tensRect.left && pos.x <= tensRect.right && pos.y >= tensRect.top && pos.y <= tensRect.bottom;
+            const droppedInOnes = pos.x >= onesRect.left && pos.x <= onesRect.right && pos.y >= onesRect.top && pos.y <= onesRect.bottom;
+
+            if (type === 'ten' && droppedInOnes) {
+                if (ones + 10 <= MAX_ONES) {
+                    playSound('magic');
+                    tens--;
+                    ones += 10;
+                    showNotification("Broke 1 ten into 10 ones!");
+                } else {
+                    showNotification("Too many ones!");
+                }
+            } else if (type === 'one' && droppedInTens) {
+                if (ones >= 10 && tens < MAX_TENS) {
+                    playSound('magic');
+                    ones -= 10;
+                    tens++;
+                    showNotification("Grouped 10 ones into 1 ten!");
+                } else if (ones < 10) {
+                    showNotification("Need 10 ones!");
+                } else {
+                    showNotification("Board full!");
+                }
+            }
+            updateUI();
+        }
+
+// --- Regrouping (Drag & Drop) ---
+
+        function startDrag(e) {
+            e.preventDefault();
+            isRegroupingDrag = true;
+            
+            // Populate Drag Preview as a ten rod
+            fillDragPreview('ten');
             dragPreview.classList.remove('hidden');
             moveDrag(e);
             updateUI(); // To highlight column
@@ -454,11 +571,11 @@
         regroupDragHandle.addEventListener('mousedown', startDrag);
         regroupDragHandle.addEventListener('touchstart', startDrag, { passive: false });
 
-        window.addEventListener('mousemove', moveDrag);
-        window.addEventListener('touchmove', moveDrag, { passive: false });
+        window.addEventListener('mousemove', (e) => { moveDrag(e); movePieceDrag(e); });
+        window.addEventListener('touchmove', (e) => { moveDrag(e); movePieceDrag(e); }, { passive: false });
 
-        window.addEventListener('mouseup', endDrag);
-        window.addEventListener('touchend', endDrag);
+        window.addEventListener('mouseup', (e) => { endDrag(e); endPieceDrag(e); });
+        window.addEventListener('touchend', (e) => { endDrag(e); endPieceDrag(e); });
 
         // --- Init ---
         
