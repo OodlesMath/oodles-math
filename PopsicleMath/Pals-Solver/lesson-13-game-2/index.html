@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Balance Scale Math Ver 2</title>
+    
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            blue: '#1CB0F6',
+                            blueDark: '#1899D6',
+                            cyan: '#00C2FF',
+                            cyanDark: '#0099CC',
+                            green: '#58CC02',
+                            greenDark: '#46A302',
+                            yellow: '#FFC800',
+                            yellowDark: '#E5B400',
+                            red: '#FF4B4B',
+                            pink: '#FF71C6',
+                            pinkDark: '#E566B2',
+                            purple: '#CE82FF',
+                            wood: '#A0522D',
+                            woodDark: '#8B4513'
+                        }
+                    },
+                    animation: {
+                        'pop-in': 'popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                    },
+                    keyframes: {
+                        popIn: {
+                            '0%': { transform: 'scale(0.5)', opacity: '0' },
+                            '100%': { transform: 'scale(1)', opacity: '1' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+            touch-action: none; /* Prevents scroll while dragging */
+        }
+
+        /* Background Canvas */
+        #backgroundCanvas {
+            display: block;
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1; 
+            pointer-events: none;
+        }
+
+        /* 3D Buttons */
+        .btn-3d {
+            border-bottom-width: 6px;
+            transition: transform 0.1s, border-bottom-width 0.1s;
+        }
+        .btn-3d:active:not(:disabled) {
+            border-bottom-width: 0px;
+            transform: translateY(6px);
+        }
+
+        /* Draggable Number Blocks */
+        .math-block {
+            width: 75px;
+            height: 85px;
+            border-radius: 14px;
+            background-color: #00C2FF;
+            border: 3px solid #0099CC;
+            border-bottom-width: 6px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            touch-action: none;
+            z-index: 50;
+            transition: transform 0.1s, box-shadow 0.1s;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.15);
+        }
+        .math-block:hover { transform: scale(1.05); }
+        .math-block:active { transform: scale(1.1) rotate(-5deg); border-bottom-width: 2px; }
+        
+        .is-dragging {
+            position: absolute !important;
+            opacity: 0.95;
+            transform: scale(1.2) rotate(-5deg) !important;
+            z-index: 9999 !important;
+            pointer-events: none;
+            margin: 0 !important;
+            box-shadow: 0 15px 25px rgba(0,0,0,0.3) !important;
+        }
+
+        .dropzone {
+            width: 80px;
+            height: 90px;
+            border: 4px dashed rgba(255,255,255,0.7);
+            border-radius: 14px;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .dropzone.active {
+            border-color: #FFC800;
+            background: rgba(255, 200, 0, 0.3);
+            transform: scale(1.1);
+        }
+
+        /* Scale Smooth Animations */
+        #scale-beam, .scale-pan {
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Tinh chỉnh các chấm Dot (đẹp, nổi bật) */
+        .dots-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 4px;
+            width: 85%;
+            margin-top: 4px;
+        }
+        .dot {
+            width: 8px;
+            height: 8px;
+            background-color: white;
+            border-radius: 50%;
+            /* Hiệu ứng bóng khối 3D cho bi */
+            box-shadow: inset -1px -1px 2px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.4);
+        }
+
+        @media (min-width: 768px) {
+            .math-block { width: 90px; height: 105px; }
+            .dropzone { width: 95px; height: 110px; }
+            .dot { width: 10px; height: 10px; }
+        }
+    </style>
+</head>
+<body class="w-full h-screen flex flex-col relative text-gray-800">
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- CANVAS BACKGROUND -->
+    <canvas id="backgroundCanvas" aria-label="Sunny outdoor background"></canvas>
+
+    <!-- SETUP SCREEN -->
+    <div id="setup-screen" class="absolute inset-0 z-50 bg-white/20 backdrop-blur-md flex flex-col items-center justify-center p-4">
+        <div class="bg-white/95 p-8 md:p-10 rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.2)] w-full max-w-md text-center border-b-[8px] border-brand-green z-10 relative">
+            <h1 class="text-4xl md:text-[2.8rem] font-black text-brand-green mb-4 tracking-tight leading-tight drop-shadow-sm">Balance<br><span class="text-brand-yellowDark">Scale Math</span></h1>
+            <p class="text-gray-500 mb-6 font-bold text-lg md:text-xl">Learn addition & subtraction!</p>
+            
+            <!-- Range Selector (20, 30, 50) -->
+            <div class="mb-8 bg-gray-100 p-4 rounded-3xl border-2 border-gray-200">
+                <p class="text-gray-600 font-bold mb-3 uppercase tracking-wider text-sm">Select Numbers Up To:</p>
+                <div class="flex gap-2 justify-center">
+                    <button class="range-btn btn-3d bg-brand-cyan border-brand-cyanDark text-white px-3 md:px-5 py-2 md:py-3 rounded-2xl font-black text-xl" data-range="20">20</button>
+                    <button class="range-btn btn-3d bg-gray-300 border-gray-400 text-gray-600 px-3 md:px-5 py-2 md:py-3 rounded-2xl font-black text-xl" data-range="30">30</button>
+                    <button class="range-btn btn-3d bg-gray-300 border-gray-400 text-gray-600 px-3 md:px-5 py-2 md:py-3 rounded-2xl font-black text-xl" data-range="50">50</button>
+                </div>
+            </div>
+
+            <button id="btn-start" class="btn-3d w-full bg-brand-cyan border-brand-cyanDark text-white text-2xl md:text-3xl font-black py-4 md:py-5 rounded-2xl uppercase tracking-wider">
+                START GAME
+            </button>
+        </div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="game-screen" class="hidden absolute inset-0 z-40 flex flex-col bg-transparent overflow-hidden">
+        
+        <!-- HEADER -->
+        <div class="absolute top-4 left-4 z-30 flex gap-3 pointer-events-auto">
+            <div class="bg-white/90 backdrop-blur text-brand-blue font-black px-4 py-2 rounded-2xl shadow-md border-b-4 border-gray-200 text-lg md:text-xl">
+                Q: <span id="ui-qnum">1</span>/10
+            </div>
+            <div class="bg-white/90 backdrop-blur text-brand-yellow font-black px-4 py-2 rounded-2xl shadow-md border-b-4 border-gray-200 text-lg md:text-xl">
+                ⭐ <span id="ui-score">0</span>
+            </div>
+        </div>
+
+        <!-- INSTRUCTION BUBBLE & NEXT BUTTON -->
+        <div class="w-full flex justify-center mt-20 md:mt-16 z-30 pointer-events-none px-4">
+            <div class="bg-white/95 backdrop-blur-md rounded-[2rem] p-3 md:p-4 shadow-xl border-b-4 border-gray-200 flex items-center justify-center gap-4 pointer-events-auto w-auto max-w-[95%] border-2 border-white transition-all">
+                <div id="ui-instruction" class="text-lg md:text-2xl font-black text-gray-700 ml-2 md:ml-4 leading-tight whitespace-nowrap transition-all">
+                    Balance the scale!
+                </div>
+                <button id="btn-tts" class="btn-3d flex-shrink-0 w-12 h-12 md:w-14 md:h-14 bg-brand-pink border-brand-pinkDark rounded-full flex items-center justify-center text-white outline-none">
+                    <svg class="w-6 h-6 md:w-7 md:h-7" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                    </svg>
+                </button>
+                <!-- Nút Next hiển thị sau khi trả lời đúng -->
+                <button id="btn-next" class="hidden btn-3d flex-shrink-0 bg-brand-green border-brand-greenDark text-white font-black text-xl md:text-2xl px-6 py-2 md:py-3 rounded-xl ml-2 uppercase animate-pulse">
+                    Next ➔
+                </button>
+            </div>
+        </div>
+
+        <!-- BALANCE SCALE SCENE -->
+        <div class="flex-1 relative flex flex-col justify-end items-center pb-[20vh] z-20 pointer-events-none">
+            
+            <div class="relative w-full max-w-[600px] h-[300px] md:h-[400px] flex justify-center items-end pointer-events-auto">
+                
+                <!-- Central Base/Pivot -->
+                <div class="absolute bottom-0 w-16 md:w-20 h-40 md:h-56 bg-brand-woodDark rounded-t-[3rem] shadow-xl z-0 flex justify-center">
+                    <div class="absolute bottom-0 w-32 md:w-40 h-8 bg-brand-wood rounded-t-xl border-b-4 border-amber-900 shadow-md"></div>
+                    <div class="absolute top-4 w-6 h-6 rounded-full bg-gray-300 border-4 border-gray-500 shadow-inner z-30"></div>
+                </div>
+
+                <!-- The Beam (Rotates) -->
+                <div id="scale-beam" class="absolute bottom-[140px] md:bottom-[205px] w-[85%] md:w-[90%] h-4 md:h-6 bg-brand-wood rounded-full origin-center z-10 shadow-lg flex justify-between px-2 md:px-4" style="transform: rotate(-12deg);">
+                    
+                    <!-- Left Hook & Pan -->
+                    <div id="pan-left" class="scale-pan relative w-0 h-0 origin-top z-20" style="transform: rotate(12deg);">
+                        <div class="absolute -left-12 top-0 w-[100px] h-[100px] md:w-[130px] md:h-[130px]">
+                            <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                <line x1="50" y1="0" x2="10" y2="100" stroke="#718096" stroke-width="2" />
+                                <line x1="50" y1="0" x2="90" y2="100" stroke="#718096" stroke-width="2" />
+                            </svg>
+                        </div>
+                        <div class="absolute -left-[56px] md:-left-[75px] top-[95px] md:top-[125px] w-[112px] md:w-[150px] h-8 md:h-10 bg-gradient-to-b from-gray-300 to-gray-400 rounded-b-full border-t-4 border-gray-400 shadow-lg flex justify-center items-end pb-1">
+                            <div id="left-content" class="absolute bottom-4 flex gap-2 justify-center items-end">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Hook & Pan -->
+                    <div id="pan-right" class="scale-pan relative w-0 h-0 origin-top z-20" style="transform: rotate(12deg);">
+                        <div class="absolute -left-12 top-0 w-[100px] h-[100px] md:w-[130px] md:h-[130px]">
+                            <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                <line x1="50" y1="0" x2="10" y2="100" stroke="#718096" stroke-width="2" />
+                                <line x1="50" y1="0" x2="90" y2="100" stroke="#718096" stroke-width="2" />
+                            </svg>
+                        </div>
+                        <div class="absolute -left-[56px] md:-left-[75px] top-[95px] md:top-[125px] w-[112px] md:w-[150px] h-8 md:h-10 bg-gradient-to-b from-gray-300 to-gray-400 rounded-b-full border-t-4 border-gray-400 shadow-lg flex justify-center items-end pb-1">
+                            <div id="right-content" class="absolute bottom-4 flex gap-2 md:gap-3 justify-center items-end">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- DOCK: DRAGGABLE CHOICES -->
+        <div class="absolute bottom-0 w-full bg-white/60 backdrop-blur-lg shadow-[0_-10px_30px_rgba(0,0,0,0.1)] p-4 md:p-6 z-40 border-t-4 border-white flex justify-center pointer-events-auto">
+            <div id="ui-choices" class="flex gap-4 md:gap-8 justify-center items-center w-full max-w-3xl min-h-[90px] md:min-h-[120px]">
+                <!-- Blocks populated by JS -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- END SCREEN -->
+    <div id="end-screen" class="hidden absolute inset-0 z-50 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center p-4 overflow-hidden pointer-events-auto">
+        <canvas id="confetti" class="absolute inset-0 pointer-events-none z-[9999]"></canvas>
+        
+        <div class="bg-white p-10 md:p-14 rounded-[3rem] shadow-[0_25px_60px_rgba(0,0,0,0.5)] w-full max-w-lg text-center border-b-[10px] border-brand-cyan z-10 relative">
+            <h1 class="text-5xl md:text-6xl font-black text-brand-cyanDark mb-4 tracking-tight">Great Job!</h1>
+            <div class="text-[5rem] md:text-[6rem] mb-6 drop-shadow-lg leading-none animate-bounce" id="ui-stars">⭐⭐⭐</div>
+            <div class="text-2xl md:text-3xl font-black text-gray-400 mb-10 uppercase tracking-widest">
+                Score <br><span id="ui-final-score" class="text-brand-green text-7xl md:text-8xl drop-shadow-sm mt-2 block">10/10</span>
+            </div>
+            <button id="btn-replay" class="btn-3d w-full bg-brand-pink border-brand-pinkDark text-white text-3xl md:text-4xl font-black py-4 md:py-5 rounded-2xl uppercase tracking-wider">
+                PLAY AGAIN
+            </button>
+        </div>
+    </div>
+
+    <!-- ======================= JAVASCRIPT ======================= -->
+    <script>
+        /** CANVAS BACKGROUND SYSTEM **/
+        (() => {
+            const bgCanvas = document.getElementById('backgroundCanvas');
+            const bgCtx = bgCanvas.getContext('2d', { alpha: false });
+
+            let bgWidth = 0; let bgHeight = 0;
+            let bgClouds = []; let bgTrees = []; let bgFlowers = []; let bgButterflies = [];
+            const flowerColors = ['#ff4b4b', '#ffc800', '#ce82ff', '#ffffff', '#1cb0f6', '#ff8fab'];
+
+            function resizeBackgroundCanvas() {
+                const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+                bgWidth = window.innerWidth; bgHeight = window.innerHeight;
+                bgCanvas.width = Math.floor(bgWidth * dpr); bgCanvas.height = Math.floor(bgHeight * dpr);
+                bgCanvas.style.width = bgWidth + 'px'; bgCanvas.style.height = bgHeight + 'px';
+                bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                generateBackgroundEnvironment();
+            }
+
+            function generateBackgroundEnvironment() {
+                bgClouds = []; bgTrees = []; bgFlowers = []; bgButterflies = [];
+                const cloudCount = bgWidth < 600 ? 3 : 5;
+                for (let i = 0; i < cloudCount; i++) {
+                    bgClouds.push({ x: Math.random() * bgWidth, y: bgHeight * (0.05 + Math.random() * 0.3), size: 28 + Math.random() * (bgWidth < 600 ? 34 : 52), speed: Math.random() * 0.16 + 0.05, opacity: 0.72 + Math.random() * 0.24 });
+                }
+                const treeCount = bgWidth < 600 ? 6 : 11;
+                for (let i = 0; i < treeCount; i++) {
+                    bgTrees.push({ x: (i / Math.max(1, treeCount - 1)) * bgWidth + (Math.random() * 70 - 35), y: bgHeight * (0.55 + Math.random() * 0.05), scale: 0.48 + Math.random() * 0.56 });
+                }
+                const flowerCount = bgWidth < 600 ? 10 : 18;
+                for (let i = 0; i < flowerCount; i++) {
+                    bgFlowers.push({ x: Math.random() * bgWidth, y: bgHeight * 0.65 + Math.random() * (bgHeight * 0.15), color: flowerColors[Math.floor(Math.random() * flowerColors.length)], scale: 0.42 + Math.random() * 0.42, sway: Math.random() * Math.PI * 2, petals: Math.random() > 0.45 ? 6 : 5 });
+                }
+                for (let i = 0; i < 4; i++) {
+                    bgButterflies.push({ x: Math.random() * bgWidth, y: bgHeight * (0.28 + Math.random() * 0.24), size: 5 + Math.random() * 4, speed: 0.18 + Math.random() * 0.18, phase: Math.random() * Math.PI * 2, color: ['#ff6b9d', '#ffd93d', '#9b5de5', '#00bbf9'][i % 4] });
+                }
+            }
+
+            function updateBackground() {
+                bgClouds.forEach(cloud => {
+                    cloud.x -= cloud.speed;
+                    if (cloud.x + cloud.size * 2.4 < 0) { cloud.x = bgWidth + cloud.size * 2.4; cloud.y = bgHeight * (0.05 + Math.random() * 0.3); }
+                });
+                bgButterflies.forEach(b => {
+                    b.x += b.speed; b.phase += 0.08;
+                    if (b.x > bgWidth + 30) { b.x = -30; b.y = bgHeight * (0.28 + Math.random() * 0.24); }
+                });
+            }
+
+            function drawBackground(time = 0) {
+                const skyGradient = bgCtx.createLinearGradient(0, 0, 0, bgHeight * 0.72);
+                skyGradient.addColorStop(0, '#7dd3fc'); skyGradient.addColorStop(0.62, '#bae6fd'); skyGradient.addColorStop(1, '#e0f8ff');
+                bgCtx.fillStyle = skyGradient; bgCtx.fillRect(0, 0, bgWidth, bgHeight);
+
+                const sx = Math.min(90, bgWidth * 0.12); const sy = Math.min(92, bgHeight * 0.13); const sr = Math.max(35, Math.min(bgWidth, bgHeight) * 0.055);
+                bgCtx.save(); bgCtx.translate(sx, sy);
+                bgCtx.fillStyle = 'rgba(255, 213, 82, 0.22)'; bgCtx.beginPath(); bgCtx.arc(0, 0, sr * 1.75, 0, Math.PI * 2); bgCtx.fill();
+                bgCtx.fillStyle = '#FFD369'; bgCtx.beginPath(); bgCtx.arc(0, 0, sr, 0, Math.PI * 2); bgCtx.fill();
+                bgCtx.fillStyle = '#D35400'; bgCtx.beginPath(); bgCtx.arc(-sr * 0.32, -sr * 0.1, sr * 0.08, 0, Math.PI * 2); bgCtx.arc(sr * 0.32, -sr * 0.1, sr * 0.08, 0, Math.PI * 2); bgCtx.fill();
+                bgCtx.strokeStyle = '#D35400'; bgCtx.lineWidth = Math.max(3, sr * 0.07); bgCtx.lineCap = 'round';
+                bgCtx.beginPath(); bgCtx.arc(0, sr * 0.12, sr * 0.36, 0.15 * Math.PI, 0.85 * Math.PI); bgCtx.stroke();
+                bgCtx.restore();
+
+                bgCtx.save(); bgCtx.translate(bgWidth * 0.5, bgHeight * 0.65); bgCtx.lineWidth = Math.max(16, Math.min(35, bgWidth * 0.025)); bgCtx.lineCap = 'round';
+                const rainbowColors = ['#ff4b4b', '#ff9900', '#ffc800', '#58cc02', '#1cb0f6', '#ce82ff'];
+                const baseRadius = Math.min(bgWidth * 0.48, bgHeight * 0.55, 700);
+                for (let i = 0; i < rainbowColors.length; i++) {
+                    bgCtx.strokeStyle = rainbowColors[i]; bgCtx.globalAlpha = 0.85; bgCtx.beginPath(); bgCtx.arc(0, 0, baseRadius - i * bgCtx.lineWidth, Math.PI, 0); bgCtx.stroke();
+                }
+                bgCtx.restore();
+
+                bgClouds.forEach(c => {
+                    bgCtx.save(); bgCtx.globalAlpha = c.opacity; bgCtx.fillStyle = '#ffffff'; bgCtx.beginPath();
+                    bgCtx.arc(c.x, c.y, c.size, 0, Math.PI * 2); bgCtx.arc(c.x + c.size * 0.82, c.y + c.size * 0.2, c.size * 0.72, 0, Math.PI * 2);
+                    bgCtx.arc(c.x - c.size * 0.85, c.y + c.size * 0.22, c.size * 0.68, 0, Math.PI * 2); bgCtx.arc(c.x + c.size * 0.15, c.y - c.size * 0.28, c.size * 0.72, 0, Math.PI * 2);
+                    bgCtx.fill(); bgCtx.restore();
+                });
+
+                bgButterflies.forEach(b => {
+                    const y = b.y + Math.sin(b.phase) * 10;
+                    bgCtx.save(); bgCtx.translate(b.x, y); bgCtx.fillStyle = b.color; bgCtx.globalAlpha = 0.88;
+                    bgCtx.beginPath(); bgCtx.ellipse(-b.size, 0, b.size, b.size * 1.35, Math.sin(b.phase) * 0.5, 0, Math.PI * 2);
+                    bgCtx.ellipse(b.size, 0, b.size, b.size * 1.35, -Math.sin(b.phase) * 0.5, 0, Math.PI * 2); bgCtx.fill();
+                    bgCtx.strokeStyle = '#334155'; bgCtx.lineWidth = 1.4; bgCtx.beginPath(); bgCtx.moveTo(0, -b.size * 1.1); bgCtx.lineTo(0, b.size * 1.2); bgCtx.stroke();
+                    bgCtx.restore();
+                });
+
+                bgCtx.fillStyle = '#65a30d'; bgCtx.beginPath(); bgCtx.moveTo(0, bgHeight); bgCtx.lineTo(0, bgHeight * 0.60);
+                for (let x = 0; x <= bgWidth + 280; x += 280) bgCtx.quadraticCurveTo(x - 140, bgHeight * 0.50, x, bgHeight * 0.60);
+                bgCtx.lineTo(bgWidth, bgHeight); bgCtx.fill();
+
+                bgTrees.forEach(t => {
+                    bgCtx.save(); bgCtx.translate(t.x, t.y); bgCtx.scale(t.scale, t.scale);
+                    bgCtx.fillStyle = '#8B5A2B'; bgCtx.fillRect(-9, 0, 18, 56);
+                    bgCtx.fillStyle = '#4ade80'; bgCtx.beginPath(); bgCtx.arc(0, -24, 38, 0, Math.PI * 2); bgCtx.arc(-25, -12, 29, 0, Math.PI * 2); bgCtx.arc(24, -10, 30, 0, Math.PI * 2); bgCtx.fill();
+                    bgCtx.fillStyle = 'rgba(255,255,255,0.28)'; bgCtx.beginPath(); bgCtx.arc(-12, -34, 12, 0, Math.PI * 2); bgCtx.fill(); bgCtx.restore();
+                });
+
+                bgCtx.fillStyle = '#58cc02'; bgCtx.beginPath(); bgCtx.moveTo(0, bgHeight); bgCtx.lineTo(0, bgHeight * 0.65);
+                bgCtx.quadraticCurveTo(bgWidth * 0.5, bgHeight * 0.58, bgWidth, bgHeight * 0.65); bgCtx.lineTo(bgWidth, bgHeight); bgCtx.fill();
+                bgCtx.strokeStyle = '#84cc16'; bgCtx.lineWidth = Math.max(10, Math.min(18, bgWidth * 0.014)); bgCtx.lineCap = 'round';
+                bgCtx.beginPath(); bgCtx.moveTo(-20, bgHeight * 0.65); bgCtx.quadraticCurveTo(bgWidth * 0.5, bgHeight * 0.58, bgWidth + 20, bgHeight * 0.65); bgCtx.stroke();
+
+                bgFlowers.forEach(f => {
+                    bgCtx.save(); const sway = Math.sin(time * 0.0015 + f.sway) * 1.4; bgCtx.translate(f.x + sway, f.y); bgCtx.scale(f.scale, f.scale);
+                    bgCtx.strokeStyle = '#259a3f'; bgCtx.lineWidth = 2.4; bgCtx.lineCap = 'round'; bgCtx.beginPath(); bgCtx.moveTo(0, 5); bgCtx.quadraticCurveTo(2, 14, 0, 23); bgCtx.stroke();
+                    bgCtx.fillStyle = '#55d85a'; bgCtx.beginPath(); bgCtx.ellipse(-6, 15, 4, 8, -0.8, 0, Math.PI * 2); bgCtx.ellipse(6, 18, 4, 8, 0.75, 0, Math.PI * 2); bgCtx.fill();
+                    const pCount = f.petals || 6; bgCtx.fillStyle = f.color;
+                    for (let p = 0; p < pCount; p++) { bgCtx.save(); bgCtx.rotate((Math.PI * 2 * p) / pCount); bgCtx.beginPath(); bgCtx.ellipse(0, -9, 5.2, 9.5, 0, 0, Math.PI * 2); bgCtx.fill(); bgCtx.restore(); }
+                    bgCtx.fillStyle = '#ffe066'; bgCtx.beginPath(); bgCtx.arc(0, 0, 5, 0, Math.PI * 2); bgCtx.fill(); bgCtx.strokeStyle = 'rgba(154,103,0,0.28)'; bgCtx.lineWidth = 1; bgCtx.stroke(); bgCtx.restore();
+                });
+            }
+
+            function backgroundAnimationLoop(time) {
+                updateBackground(); drawBackground(time); requestAnimationFrame(backgroundAnimationLoop);
+            }
+
+            window.addEventListener('resize', resizeBackgroundCanvas); resizeBackgroundCanvas(); requestAnimationFrame(backgroundAnimationLoop);
+        })();
+
+        /** AUDIO SYSTEM **/
+        const AudioSys = {
+            ctx: null,
+            init: function() {
+                if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+            },
+            playTone: function(freq, type, duration, vol=0.1) {
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
+                    osc.type = type; osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(vol, this.ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                    osc.connect(gain); gain.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + duration);
+                } catch(e) {}
+            },
+            pop: () => AudioSys.playTone(500, 'sine', 0.1, 0.1),
+            correct: () => { AudioSys.playTone(600, 'sine', 0.1); setTimeout(() => AudioSys.playTone(900, 'sine', 0.3), 100); },
+            wrong: () => { AudioSys.playTone(200, 'sawtooth', 0.3, 0.1); },
+            win: () => { [500, 600, 700, 800, 1200].forEach((f, i) => setTimeout(() => AudioSys.playTone(f, 'square', 0.15), i*150)); }
+        };
+
+        const speak = (text) => {
+            if (!window.speechSynthesis) return; 
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text); 
+            utterance.rate = 0.85; utterance.pitch = 1.2; 
+            window.speechSynthesis.speak(utterance);
+        };
+
+        /** LOGIC TRÒ CHƠI **/
+        const state = { 
+            qNum: 0, 
+            score: 0, 
+            totalQ: 10, 
+            currentQ: null, 
+            dragTaskDone: false, 
+            firstTry: true, 
+            usedQuestions: new Set(),
+            maxRange: 20,
+            speechText: ""
+        };
+
+        const ui = { 
+            qnum: document.getElementById('ui-qnum'), 
+            score: document.getElementById('ui-score'), 
+            instruction: document.getElementById('ui-instruction'), 
+            leftContent: document.getElementById('left-content'), 
+            rightContent: document.getElementById('right-content'), 
+            choices: document.getElementById('ui-choices'),
+            beam: document.getElementById('scale-beam'),
+            panLeft: document.getElementById('pan-left'),
+            panRight: document.getElementById('pan-right'),
+            btnNext: document.getElementById('btn-next'),
+            btnTts: document.getElementById('btn-tts')
+        };
+
+        const blockColors = ['#FF4B4B', '#00C2FF', '#58CC02', '#FFC800', '#CE82FF'];
+
+        // Xử lý bộ chọn Range
+        document.querySelectorAll('.range-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.range-btn').forEach(b => {
+                    b.classList.remove('bg-brand-cyan', 'border-brand-cyanDark', 'text-white');
+                    b.classList.add('bg-gray-300', 'border-gray-400', 'text-gray-600');
+                });
+                e.target.classList.remove('bg-gray-300', 'border-gray-400', 'text-gray-600');
+                e.target.classList.add('bg-brand-cyan', 'border-brand-cyanDark', 'text-white');
+                state.maxRange = parseInt(e.target.getAttribute('data-range'));
+            });
+        });
+
+        function generateQuestion() {
+            let a, missing, total, type, signature; let attempts = 0;
+            // Xen kẽ cộng, trừ
+            type = (state.qNum % 2 === 1) ? 'add' : 'sub'; 
+            
+            do {
+                // Để biểu diễn được bằng dấu chấm đẹp mắt trên các khối,
+                // chúng ta giới hạn số còn thiếu (missing block) ở mức tối đa là 15
+                missing = Math.floor(Math.random() * Math.min(15, state.maxRange - 5)) + 1; 
+                a = Math.floor(Math.random() * (state.maxRange - missing - 1)) + 1;
+                total = a + missing; 
+                
+                // Swap places sometimes for addition
+                if(type === 'add' && Math.random() > 0.5) {
+                    let temp = a; a = missing; missing = temp;
+                }
+                
+                signature = `${type}_${a}_${missing}`; attempts++;
+            } while (state.usedQuestions.has(signature) && attempts < 100);
+            
+            state.usedQuestions.add(signature); 
+            return { type, a, missing, total };
+        }
+
+        function generateChoices(correct) {
+            let choices = new Set([correct]);
+            while(choices.size < 4) {
+                let offset = Math.floor(Math.random() * 7) - 3; 
+                if(offset === 0) continue;
+                let wrong = correct + offset;
+                // Giữ cho các đáp án sai nằm trong khoảng hợp lý
+                if (wrong >= 1 && wrong <= 20) choices.add(wrong);
+            }
+            return Array.from(choices).sort(() => Math.random() - 0.5);
+        }
+
+        function createPictorialBlock(num, isDraggable = false, colorIndex = 0) {
+            const color = blockColors[colorIndex % blockColors.length];
+            const dragClass = isDraggable ? 'draggable' : '';
+            
+            let dotsHtml = '';
+            for(let i=0; i<num; i++) {
+                dotsHtml += `<div class="dot"></div>`;
+            }
+
+            const el = document.createElement('div');
+            el.className = `math-block ${dragClass}`;
+            el.style.backgroundColor = color;
+            el.style.borderColor = darkenColor(color, 40);
+            el.dataset.val = num;
+            
+            el.innerHTML = `
+                <div class="text-[1.7rem] md:text-[2.2rem] font-black leading-none drop-shadow-sm">${num}</div>
+                <div class="dots-grid">${dotsHtml}</div>
+            `;
+            
+            if(isDraggable) setupDraggable(el);
+            return el;
+        }
+
+        function darkenColor(hex, percent) {
+            let r = parseInt(hex.substring(1,3), 16);
+            let g = parseInt(hex.substring(3,5), 16);
+            let b = parseInt(hex.substring(5,7), 16);
+            r = Math.max(0, r - percent); g = Math.max(0, g - percent); b = Math.max(0, b - percent);
+            return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+        }
+
+        function setScaleUnbalanced() {
+            ui.beam.style.transform = 'rotate(-12deg)';
+            ui.panLeft.style.transform = 'rotate(12deg)';
+            ui.panRight.style.transform = 'rotate(12deg)';
+        }
+
+        function setScaleBalanced() {
+            ui.beam.style.transform = 'rotate(0deg)';
+            ui.panLeft.style.transform = 'rotate(0deg)';
+            ui.panRight.style.transform = 'rotate(0deg)';
+        }
+
+        function loadQuestion() {
+            if (state.qNum >= state.totalQ) return endGame();
+            state.qNum++; state.firstTry = true; state.dragTaskDone = false; state.currentQ = generateQuestion();
+            const q = state.currentQ;
+
+            ui.qnum.textContent = state.qNum; 
+            
+            // Reset Giao diện
+            ui.btnNext.classList.add('hidden');
+            ui.instruction.className = "text-lg md:text-2xl font-black text-gray-700 ml-2 md:ml-4 leading-tight whitespace-nowrap transition-all";
+            const initInst = "Balance the scale!";
+            ui.instruction.innerHTML = initInst;
+            state.speechText = initInst;
+            speak(initInst);
+
+            setScaleUnbalanced();
+            
+            // Clear content
+            ui.leftContent.innerHTML = ''; ui.rightContent.innerHTML = ''; ui.choices.innerHTML = '';
+            
+            // Left Pan always has TOTAL
+            ui.leftContent.appendChild(createPictorialBlock(q.total, false, 2));
+
+            // Right Pan has 'a' and dropzone
+            ui.rightContent.appendChild(createPictorialBlock(q.a, false, 0));
+            const dropzone = document.createElement('div');
+            dropzone.className = 'dropzone'; dropzone.id = 'target-dropzone';
+            ui.rightContent.appendChild(dropzone);
+
+            // Populate choices
+            const choices = generateChoices(q.missing);
+            choices.forEach((val, i) => {
+                ui.choices.appendChild(createPictorialBlock(val, true, i+1));
+            });
+        }
+
+        function handleCorrect(droppedBlock) {
+            state.dragTaskDone = true;
+            AudioSys.correct();
+            if (state.firstTry) { state.score++; ui.score.textContent = state.score; }
+            
+            // Place block cleanly
+            const dropzone = document.getElementById('target-dropzone');
+            if(dropzone) {
+                dropzone.classList.remove('active', 'border-dashed');
+                dropzone.style.border = 'none'; dropzone.style.background = 'transparent';
+                droppedBlock.classList.remove('draggable'); droppedBlock.style.transform = 'none';
+                dropzone.appendChild(droppedBlock);
+            }
+
+            // Hide other choices
+            ui.choices.innerHTML = '';
+
+            // Balance animation
+            setScaleBalanced();
+
+            // Prepare Equation
+            const q = state.currentQ;
+            let eqHtml = ""; let speechString = "";
+            
+            if (q.type === 'add') {
+                eqHtml = `<span class="text-brand-cyanDark">${q.a}</span> <span class="text-gray-400">+</span> <span class="text-brand-cyanDark">${q.missing}</span> <span class="text-gray-400">=</span> <span class="text-brand-green">${q.total}</span>`;
+                speechString = `${q.a} plus ${q.missing} equals ${q.total}`;
+            } else {
+                eqHtml = `<span class="text-brand-cyanDark">${q.total}</span> <span class="text-gray-400">-</span> <span class="text-brand-cyanDark">${q.missing}</span> <span class="text-gray-400">=</span> <span class="text-brand-green">${q.a}</span>`;
+                speechString = `${q.total} minus ${q.missing} equals ${q.a}`;
+            }
+            
+            // Show Equation and Next button
+            setTimeout(() => {
+                ui.instruction.innerHTML = eqHtml;
+                ui.instruction.className = "text-3xl md:text-[2.5rem] font-black text-gray-700 ml-2 md:ml-4 leading-tight whitespace-nowrap drop-shadow-sm flex items-center gap-2 md:gap-3 transition-all";
+                state.speechText = speechString;
+                speak(speechString);
+                
+                ui.btnNext.classList.remove('hidden');
+            }, 800);
+        }
+
+        function handleWrong(droppedBlock) {
+            AudioSys.wrong();
+            state.firstTry = false;
+            
+            // Return to dock
+            ui.choices.appendChild(droppedBlock);
+            
+            let oldText = ui.instruction.innerHTML;
+            ui.instruction.innerHTML = `<span class="text-brand-red">Try again!</span>`;
+            speak("Try again!");
+            
+            setTimeout(() => { 
+                ui.instruction.innerHTML = oldText;
+            }, 1200);
+        }
+
+        /** KÉO THẢ VÀ CLICK-TO-MOVE **/
+        let activeDrag = null; let startX=0, startY=0, initLeft=0, initTop=0;
+        
+        function setupDraggable(el) {
+            el.addEventListener('pointerdown', e => {
+                if (!el.classList.contains('draggable') || state.dragTaskDone) return;
+                activeDrag = el; AudioSys.init();
+                
+                const rect = el.getBoundingClientRect(); 
+                initLeft = rect.left; initTop = rect.top; 
+                startX = e.clientX; startY = e.clientY;
+                
+                el.dataset.moved = 'false';
+
+                document.body.appendChild(el); 
+                el.classList.add('is-dragging'); 
+                el.style.left = initLeft + 'px'; el.style.top = initTop + 'px';
+                el.setPointerCapture(e.pointerId);
+                
+                const dropzone = document.getElementById('target-dropzone');
+                if(dropzone) dropzone.classList.add('active');
+            });
+        }
+
+        document.body.addEventListener('pointermove', e => {
+            if (!activeDrag) return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+                activeDrag.dataset.moved = 'true';
+            }
+            activeDrag.style.left = (initLeft + dx) + 'px';
+            activeDrag.style.top = (initTop + dy) + 'px';
+        });
+
+        document.body.addEventListener('pointerup', e => {
+            if (!activeDrag) return;
+            activeDrag.releasePointerCapture(e.pointerId); 
+            activeDrag.classList.remove('is-dragging');
+            activeDrag.style.position = ''; activeDrag.style.left = ''; activeDrag.style.top = '';
+            
+            const dropzone = document.getElementById('target-dropzone');
+            if(dropzone) dropzone.classList.remove('active');
+
+            const droppedVal = parseInt(activeDrag.dataset.val);
+            const isTap = activeDrag.dataset.moved !== 'true';
+
+            if (isTap) {
+                // HÀNH ĐỘNG CLICK / TAP
+                if (droppedVal === state.currentQ.missing) {
+                    handleCorrect(activeDrag);
+                } else {
+                    handleWrong(activeDrag);
+                }
+            } else {
+                // HÀNH ĐỘNG KÉO THẢ (DRAG)
+                activeDrag.style.display = 'none'; 
+                const elemBelow = document.elementFromPoint(e.clientX, e.clientY); 
+                activeDrag.style.display = 'flex';
+                
+                const targetZone = elemBelow ? elemBelow.closest('.dropzone') : null;
+
+                if (targetZone) {
+                    if (droppedVal === state.currentQ.missing) {
+                        handleCorrect(activeDrag);
+                    } else {
+                        handleWrong(activeDrag);
+                    }
+                } else { 
+                    ui.choices.appendChild(activeDrag); 
+                }
+            }
+            activeDrag = null;
+        });
+
+        // Event Listeners
+        document.getElementById('btn-start').onclick = () => { 
+            AudioSys.init(); 
+            document.getElementById('setup-screen').classList.add('hidden'); 
+            document.getElementById('game-screen').classList.remove('hidden'); 
+            state.score = 0; state.qNum = 0; ui.score.textContent = 0; 
+            loadQuestion(); 
+        };
+        document.getElementById('btn-tts').onclick = () => { speak(state.speechText); };
+        
+        ui.btnNext.onclick = () => {
+            AudioSys.pop();
+            loadQuestion();
+        };
+
+        document.getElementById('btn-replay').onclick = () => { 
+            document.getElementById('end-screen').classList.add('hidden'); 
+            document.getElementById('setup-screen').classList.remove('hidden'); 
+            state.usedQuestions.clear(); 
+        };
+
+        function endGame() {
+            document.getElementById('game-screen').classList.add('hidden'); 
+            document.getElementById('end-screen').classList.remove('hidden'); 
+            AudioSys.win();
+            document.getElementById('ui-final-score').textContent = `${state.score}/${state.totalQ}`;
+            document.getElementById('ui-stars').textContent = state.score >= 9 ? '⭐⭐⭐' : state.score >= 6 ? '⭐⭐' : state.score >= 3 ? '⭐' : '🌱';
+            startConfetti();
+        }
+
+        /** CONFETTI **/
+        let confettiCtx; let confettiParticles = []; let confettiLoop;
+        function startConfetti() {
+            const canvas = document.getElementById('confetti'); canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            confettiCtx = canvas.getContext('2d'); confettiParticles = [];
+            const colors = ['#1CB0F6', '#58CC02', '#FFC800', '#FF4B4B', '#CE82FF'];
+            for(let i=0; i<200; i++) confettiParticles.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height - canvas.height, w: Math.random() * 15 + 10, h: Math.random() * 15 + 10, color: colors[Math.floor(Math.random() * colors.length)], vy: Math.random() * 6 + 3, vx: Math.random() * 6 - 3, rot: Math.random() * 360, rotSpeed: Math.random() * 15 - 7 });
+            cancelAnimationFrame(confettiLoop); requestAnimationFrame(drawConfetti);
+        }
+        function drawConfetti() {
+            if (document.getElementById('end-screen').classList.contains('hidden')) return;
+            confettiCtx.clearRect(0, 0, confettiCtx.canvas.width, confettiCtx.canvas.height);
+            confettiParticles.forEach(p => { p.y += p.vy; p.x += p.vx; p.rot += p.rotSpeed; if (p.y > confettiCtx.canvas.height) { p.y = -20; p.x = Math.random() * confettiCtx.canvas.width; }
+                confettiCtx.save(); confettiCtx.translate(p.x, p.y); confettiCtx.rotate(p.rot * Math.PI / 180); confettiCtx.fillStyle = p.color; confettiCtx.fillRect(-p.w/2, -p.h/2, p.w, p.h); confettiCtx.restore(); });
+            confettiLoop = requestAnimationFrame(drawConfetti);
+        }
+        window.addEventListener('resize', () => { if (!document.getElementById('end-screen').classList.contains('hidden')) { const canvas = document.getElementById('confetti'); canvas.width = window.innerWidth; canvas.height = window.innerHeight; } });
+    </script>
+</body>
+</html>
