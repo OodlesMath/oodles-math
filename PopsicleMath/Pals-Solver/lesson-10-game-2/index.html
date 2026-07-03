@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Zootopia Math Bus Ver 7</title>
+    
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            blue: '#1CB0F6',
+                            blueDark: '#1899D6',
+                            cyan: '#00C2FF',
+                            cyanDark: '#0099CC',
+                            green: '#58CC02',
+                            greenDark: '#46A302',
+                            yellow: '#FFC800',
+                            yellowDark: '#E5B400',
+                            red: '#FF4B4B',
+                            pink: '#FF71C6',
+                            pinkDark: '#E566B2'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+            touch-action: none;
+        }
+
+        /* Background Canvas */
+        #backgroundCanvas {
+            display: block;
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1; 
+            pointer-events: none;
+        }
+
+        /* Nút nhấn 3D */
+        .btn-3d {
+            border-bottom-width: 6px;
+            transition: transform 0.1s, border-bottom-width 0.1s;
+        }
+        .btn-3d:active:not(:disabled) {
+            border-bottom-width: 0px;
+            transform: translateY(6px);
+        }
+
+        .btn-answer {
+            background-color: #00C2FF;
+            border: 3px solid #0099CC;
+            border-bottom-width: 8px;
+            color: white;
+            transition: all 0.1s;
+        }
+        .btn-answer:active:not(:disabled) {
+            border-bottom-width: 0px;
+            transform: translateY(8px);
+        }
+        .btn-answer.correct { background-color: #58CC02; border-color: #46A302; }
+        .btn-answer.wrong { background-color: #FF4B4B; border-color: #E54343; }
+
+        /* Icon Animal */
+        .student-icon {
+            cursor: pointer; 
+            touch-action: none;
+            z-index: 50;
+            transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            filter: drop-shadow(0 4px 4px rgba(0,0,0,0.25));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .student-icon:hover { transform: scale(1.15); }
+        .student-icon:active { transform: scale(1.25) rotate(-5deg); }
+        
+        .is-dragging {
+            position: absolute !important;
+            opacity: 0.95;
+            transform: scale(1.2) rotate(-10deg) !important;
+            z-index: 9999 !important;
+            pointer-events: none;
+            margin: 0 !important;
+            filter: drop-shadow(0 15px 12px rgba(0,0,0,0.3));
+        }
+
+        .dropzone-active {
+            border-color: #58CC02 !important;
+            background-color: rgba(88, 204, 2, 0.3) !important;
+            box-shadow: 0 0 20px rgba(88, 204, 2, 0.5) inset;
+        }
+    </style>
+</head>
+<body class="w-full h-screen flex flex-col relative text-gray-800">
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- CANVAS BACKGROUND -->
+    <canvas id="backgroundCanvas" aria-label="Zootopia background"></canvas>
+
+    <!-- START SCREEN -->
+    <div id="setup-screen" class="absolute inset-0 z-50 bg-white/20 backdrop-blur-sm flex flex-col items-center justify-center p-4">
+        <div class="bg-white/95 p-8 md:p-10 rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] w-full max-w-md text-center border-b-[8px] border-brand-cyan z-10 relative">
+            <h1 class="text-4xl md:text-[2.8rem] font-black text-brand-blue mb-2 tracking-tight leading-tight">Zootopia <br>Math Bus</h1>
+            <p class="text-gray-500 mb-6 font-bold text-lg md:text-xl mt-2">Addition & Subtraction</p>
+            
+            <div class="mb-8 bg-gray-100 p-4 rounded-3xl border-2 border-gray-200">
+                <p class="text-gray-600 font-bold mb-3 uppercase tracking-wider text-sm">Select Numbers Up To:</p>
+                <div class="flex gap-2 justify-center">
+                    <button class="range-btn btn-3d bg-brand-cyan border-brand-cyanDark text-white px-3 md:px-5 py-2 md:py-3 rounded-2xl font-black text-xl" data-range="20">20</button>
+                    <button class="range-btn btn-3d bg-gray-300 border-gray-400 text-gray-600 px-3 md:px-5 py-2 md:py-3 rounded-2xl font-black text-xl" data-range="30">30</button>
+                    <button class="range-btn btn-3d bg-gray-300 border-gray-400 text-gray-600 px-3 md:px-5 py-2 md:py-3 rounded-2xl font-black text-xl" data-range="50">50</button>
+                </div>
+            </div>
+
+            <button id="btn-start" class="btn-3d w-full bg-brand-green border-brand-greenDark text-white text-2xl md:text-3xl font-black py-4 rounded-2xl uppercase tracking-wider">
+                START GAME
+            </button>
+        </div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="game-screen" class="hidden absolute inset-0 z-40 flex flex-col bg-transparent overflow-hidden">
+        
+        <!-- HEADER -->
+        <div class="absolute top-4 left-4 z-30 flex gap-3 pointer-events-auto">
+            <div class="bg-white text-brand-blue font-black px-4 py-2 rounded-2xl shadow-md border-b-4 border-gray-200 text-lg md:text-xl">
+                Q: <span id="ui-qnum">1</span>/10
+            </div>
+            <div class="bg-white text-brand-yellow font-black px-4 py-2 rounded-2xl shadow-md border-b-4 border-gray-200 text-lg md:text-xl">
+                ⭐ <span id="ui-score">0</span>
+            </div>
+        </div>
+
+        <!-- INSTRUCTION BUBBLE (Tự động thu gọn ôm sát nội dung nhờ w-auto) -->
+        <div class="w-full flex justify-center mt-20 md:mt-16 z-30 pointer-events-none px-4">
+            <div class="bg-white/95 backdrop-blur-md rounded-[2rem] p-3 md:p-4 shadow-xl border-b-4 border-gray-200 flex items-center justify-center gap-4 pointer-events-auto w-auto max-w-[95%] border-2 border-white">
+                <div id="ui-instruction" class="text-xl md:text-3xl font-black text-gray-700 ml-2 md:ml-4 leading-tight whitespace-nowrap">
+                    Loading...
+                </div>
+                <button id="btn-tts" class="btn-3d flex-shrink-0 w-12 h-12 md:w-16 md:h-16 bg-brand-cyan border-brand-cyanDark rounded-full flex items-center justify-center text-white outline-none">
+                    <svg class="w-6 h-6 md:w-8 md:h-8" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- MẶT ĐƯỜNG -->
+        <div id="ground-layer" class="absolute bottom-0 left-0 w-full h-[15vh] md:h-[18vh] bg-gray-500/90 backdrop-blur-sm border-t-[8px] border-gray-600 z-10 pointer-events-none flex flex-col justify-center">
+            <div class="w-full border-b-[8px] md:border-b-[10px] border-dashed border-white opacity-60"></div>
+        </div>
+
+        <!-- LỚP SCENE (Bus & Trạm chờ) -->
+        <div id="scene-layer" class="absolute bottom-[12vh] md:bottom-[15vh] left-0 w-full flex justify-center z-20 pointer-events-none">
+            <div class="w-full max-w-6xl flex flex-row items-end justify-between px-2 md:px-8 pointer-events-auto gap-2 md:gap-8">
+                
+                <!-- XE BUS -->
+                <div class="relative w-[58%] md:w-[50%] max-w-[550px] aspect-[16/10] bg-gradient-to-b from-[#FFEA00] to-[#FFC300] rounded-t-[2rem] md:rounded-t-[3rem] rounded-bl-xl md:rounded-bl-2xl rounded-br-[2.5rem] md:rounded-br-[3.5rem] border-4 border-[#C79C00] shadow-[0_20px_40px_rgba(0,0,0,0.4)] flex flex-col z-10 pb-4">
+                    <div class="absolute -top-3 left-[15%] w-[70%] h-4 bg-white/50 rounded-t-2xl z-0"></div>
+                    <div class="absolute top-2 md:top-3 right-4 md:right-6 w-3 h-3 md:w-5 md:h-5 bg-red-500 rounded-full shadow-[0_0_15px_#EF4444] border-2 border-red-800 animate-pulse z-10"></div>
+                    <div class="absolute top-2 md:top-3 left-4 md:left-6 w-3 h-3 md:w-5 md:h-5 bg-orange-500 rounded-full shadow-[0_0_15px_#F97316] border-2 border-orange-800 animate-pulse z-10"></div>
+                    
+                    <div class="absolute top-[48%] left-0 w-full h-1.5 md:h-3 bg-gray-900 shadow-sm z-0 opacity-80"></div>
+                    <div class="absolute top-[58%] left-0 w-full h-1 md:h-2 bg-gray-900 shadow-sm z-0 opacity-80"></div>
+                    <div class="absolute bottom-1 md:bottom-2 left-0 w-full h-2 md:h-4 bg-gray-800 z-0 opacity-15"></div>
+
+                    <div class="absolute top-[35%] -left-3 md:-left-5 w-8 h-8 md:w-14 md:h-14 bg-red-600 rounded-md transform rotate-12 border-[3px] border-white flex items-center justify-center z-20 shadow-md">
+                        <span class="text-white font-black text-[6px] md:text-[10px] transform -rotate-12">STOP</span>
+                    </div>
+
+                    <div class="absolute top-3 md:top-5 left-10 md:left-14 px-2 md:px-4 bg-gray-900 text-[#FFD500] font-black text-[7px] md:text-[12px] rounded border border-gray-700 tracking-[0.2em] shadow-inner z-10">ZOOTOPIA BUS</div>
+
+                    <!-- DROPZONE BUS -->
+                    <div class="relative w-[92%] mx-auto h-[55%] mt-8 md:mt-12 bg-[#D1F2FF] rounded-xl border-[4px] md:border-[6px] border-gray-500 p-1 md:p-2 shadow-inner overflow-hidden z-10 backdrop-blur-sm bg-opacity-95">
+                        <div class="absolute inset-0 flex justify-evenly pointer-events-none z-0 opacity-25">
+                            <div class="w-1.5 md:w-2 h-full bg-gray-700"></div>
+                            <div class="w-1.5 md:w-2 h-full bg-gray-700"></div>
+                            <div class="w-1.5 md:w-2 h-full bg-gray-700"></div>
+                        </div>
+                        <div id="dropzone-bus" class="w-full h-full relative z-10 flex flex-wrap content-center justify-center gap-1 md:gap-2"></div>
+                    </div>
+
+                    <div class="absolute -bottom-5 md:-bottom-8 left-[15%] w-10 h-10 md:w-16 md:h-16 bg-gray-900 rounded-full border-[3px] md:border-[6px] border-gray-300 shadow-xl flex items-center justify-center z-20"><div class="w-4 h-4 md:w-6 md:h-6 bg-gray-300 rounded-full border-2 border-gray-600 shadow-inner flex items-center justify-center"><div class="w-1 h-1 md:w-2 md:h-2 bg-gray-800 rounded-full"></div></div></div>
+                    <div class="absolute -bottom-5 md:-bottom-8 right-[15%] w-10 h-10 md:w-16 md:h-16 bg-gray-900 rounded-full border-[3px] md:border-[6px] border-gray-300 shadow-xl flex items-center justify-center z-20"><div class="w-4 h-4 md:w-6 md:h-6 bg-gray-300 rounded-full border-2 border-gray-600 shadow-inner flex items-center justify-center"><div class="w-1 h-1 md:w-2 md:h-2 bg-gray-800 rounded-full"></div></div></div>
+                </div>
+
+                <!-- TRẠM CHỜ -->
+                <div class="relative w-[40%] md:w-[45%] max-w-[400px] flex flex-col items-center justify-end z-10">
+                    <div class="absolute bottom-0 flex flex-col items-center drop-shadow-xl z-0 pb-1">
+                        <div class="w-[50px] md:w-[80px] h-[50px] md:h-[80px] bg-[#FFD500] border-4 border-gray-800 rounded-lg flex items-center justify-center font-black text-[10px] md:text-[14px] text-center leading-tight shadow-md text-gray-900">BUS<br>STOP</div>
+                        <div class="w-2 md:w-3 h-28 md:h-44 bg-gray-400 border-x-2 border-gray-600"></div>
+                        <div class="w-10 md:w-16 h-2 md:h-3 bg-gray-700 rounded-t-lg shadow-md"></div>
+                    </div>
+                    <div id="dropzone-stop" class="relative w-[95%] md:w-[90%] min-h-[90px] md:min-h-[160px] bg-white/60 backdrop-blur-md rounded-2xl md:rounded-[2.5rem] border-4 border-dashed border-gray-500 p-2 md:p-3 flex flex-wrap content-center justify-center gap-1 md:gap-2 transition-colors shadow-[0_10px_20px_rgba(0,0,0,0.1)] z-10 mb-5 md:mb-8"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BẢNG ĐÁP ÁN (Gọn gàng chỉ có 4 đáp án) -->
+        <div id="panel-answer" class="absolute bottom-0 w-full bg-gradient-to-b from-[#FFF2F2] to-[#FFE6E6] shadow-[0_-20px_50px_rgba(0,0,0,0.25)] p-4 md:p-6 z-40 transform translate-y-full transition-transform duration-500 rounded-t-[2rem] md:rounded-t-[2.5rem] border-t-[6px] border-[#FFB8B8]">
+            <div class="max-w-4xl mx-auto flex flex-col items-center">
+                <!-- Khối Đáp án -->
+                <div id="ui-choices" class="grid grid-cols-4 gap-3 md:gap-6 w-full px-2 max-w-3xl mt-2 md:mt-4 mb-2 md:mb-4">
+                    <!-- Buttons -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MÀN HÌNH KẾT THÚC -->
+    <div id="end-screen" class="hidden absolute inset-0 z-50 bg-black/40 backdrop-blur-sm flex flex-col items-center justify-center p-4 overflow-hidden">
+        <canvas id="confetti" class="absolute inset-0 pointer-events-none z-[9999]"></canvas>
+        
+        <div class="bg-white p-10 md:p-14 rounded-[3rem] shadow-[0_25px_60px_rgba(0,0,0,0.5)] w-full max-w-lg text-center border-b-[10px] border-brand-cyan z-10 relative">
+            <h1 class="text-5xl md:text-6xl font-black text-brand-cyanDark mb-4 tracking-tight">Great Job!</h1>
+            <div class="text-[5rem] md:text-[6rem] mb-6 drop-shadow-lg leading-none animate-bounce" id="ui-stars">⭐⭐⭐</div>
+            <div class="text-2xl md:text-3xl font-black text-gray-400 mb-10 uppercase tracking-widest">
+                Score <br><span id="ui-final-score" class="text-brand-green text-7xl md:text-8xl drop-shadow-sm mt-2 block">10/10</span>
+            </div>
+            <button id="btn-replay" class="btn-3d w-full bg-brand-pink border-brand-pinkDark text-white text-3xl md:text-4xl font-black py-4 md:py-5 rounded-2xl uppercase tracking-wider">
+                PLAY AGAIN
+            </button>
+        </div>
+    </div>
+
+    <!-- ======================= JAVASCRIPT ======================= -->
+    <script>
+        /** CANVAS BACKGROUND SYSTEM **/
+        (() => {
+            const bgCanvas = document.getElementById('backgroundCanvas');
+            const bgCtx = bgCanvas.getContext('2d', { alpha: false });
+
+            let bgWidth = 0; let bgHeight = 0;
+            let bgClouds = []; let bgTrees = []; let bgFlowers = []; let bgButterflies = [];
+
+            const flowerColors = ['#ff4b4b', '#ffc800', '#ce82ff', '#ffffff', '#1cb0f6', '#ff8fab'];
+
+            function resizeBackgroundCanvas() {
+                const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+                bgWidth = window.innerWidth; bgHeight = window.innerHeight;
+                bgCanvas.width = Math.floor(bgWidth * dpr); bgCanvas.height = Math.floor(bgHeight * dpr);
+                bgCanvas.style.width = bgWidth + 'px'; bgCanvas.style.height = bgHeight + 'px';
+                bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                generateBackgroundEnvironment();
+            }
+
+            function generateBackgroundEnvironment() {
+                bgClouds = []; bgTrees = []; bgFlowers = []; bgButterflies = [];
+                const cloudCount = bgWidth < 600 ? 3 : 5;
+                for (let i = 0; i < cloudCount; i++) {
+                    bgClouds.push({ x: Math.random() * bgWidth, y: bgHeight * (0.05 + Math.random() * 0.3), size: 28 + Math.random() * (bgWidth < 600 ? 34 : 52), speed: Math.random() * 0.16 + 0.05, opacity: 0.72 + Math.random() * 0.24 });
+                }
+                const treeCount = bgWidth < 600 ? 6 : 11;
+                for (let i = 0; i < treeCount; i++) {
+                    bgTrees.push({ x: (i / Math.max(1, treeCount - 1)) * bgWidth + (Math.random() * 70 - 35), y: bgHeight * (0.55 + Math.random() * 0.05), scale: 0.48 + Math.random() * 0.56 });
+                }
+                const flowerCount = bgWidth < 600 ? 10 : 18;
+                for (let i = 0; i < flowerCount; i++) {
+                    bgFlowers.push({ x: Math.random() * bgWidth, y: bgHeight * 0.65 + Math.random() * (bgHeight * 0.15), color: flowerColors[Math.floor(Math.random() * flowerColors.length)], scale: 0.42 + Math.random() * 0.42, sway: Math.random() * Math.PI * 2, petals: Math.random() > 0.45 ? 6 : 5 });
+                }
+                for (let i = 0; i < 4; i++) {
+                    bgButterflies.push({ x: Math.random() * bgWidth, y: bgHeight * (0.28 + Math.random() * 0.24), size: 5 + Math.random() * 4, speed: 0.18 + Math.random() * 0.18, phase: Math.random() * Math.PI * 2, color: ['#ff6b9d', '#ffd93d', '#9b5de5', '#00bbf9'][i % 4] });
+                }
+            }
+
+            function updateBackground() {
+                bgClouds.forEach(cloud => {
+                    cloud.x -= cloud.speed;
+                    if (cloud.x + cloud.size * 2.4 < 0) { cloud.x = bgWidth + cloud.size * 2.4; cloud.y = bgHeight * (0.05 + Math.random() * 0.3); }
+                });
+                bgButterflies.forEach(b => {
+                    b.x += b.speed; b.phase += 0.08;
+                    if (b.x > bgWidth + 30) { b.x = -30; b.y = bgHeight * (0.28 + Math.random() * 0.24); }
+                });
+            }
+
+            function drawBackground(time = 0) {
+                const skyGradient = bgCtx.createLinearGradient(0, 0, 0, bgHeight * 0.72);
+                skyGradient.addColorStop(0, '#7dd3fc'); skyGradient.addColorStop(0.62, '#bae6fd'); skyGradient.addColorStop(1, '#e0f8ff');
+                bgCtx.fillStyle = skyGradient; bgCtx.fillRect(0, 0, bgWidth, bgHeight);
+
+                const sx = Math.min(90, bgWidth * 0.12); const sy = Math.min(92, bgHeight * 0.13); const sr = Math.max(35, Math.min(bgWidth, bgHeight) * 0.055);
+                bgCtx.save(); bgCtx.translate(sx, sy);
+                bgCtx.fillStyle = 'rgba(255, 213, 82, 0.22)'; bgCtx.beginPath(); bgCtx.arc(0, 0, sr * 1.75, 0, Math.PI * 2); bgCtx.fill();
+                bgCtx.fillStyle = '#FFD369'; bgCtx.beginPath(); bgCtx.arc(0, 0, sr, 0, Math.PI * 2); bgCtx.fill();
+                bgCtx.fillStyle = '#D35400'; bgCtx.beginPath(); bgCtx.arc(-sr * 0.32, -sr * 0.1, sr * 0.08, 0, Math.PI * 2); bgCtx.arc(sr * 0.32, -sr * 0.1, sr * 0.08, 0, Math.PI * 2); bgCtx.fill();
+                bgCtx.strokeStyle = '#D35400'; bgCtx.lineWidth = Math.max(3, sr * 0.07); bgCtx.lineCap = 'round';
+                bgCtx.beginPath(); bgCtx.arc(0, sr * 0.12, sr * 0.36, 0.15 * Math.PI, 0.85 * Math.PI); bgCtx.stroke();
+                bgCtx.restore();
+
+                bgCtx.save(); bgCtx.translate(bgWidth * 0.5, bgHeight * 0.65); bgCtx.lineWidth = Math.max(16, Math.min(35, bgWidth * 0.025)); bgCtx.lineCap = 'round';
+                const rainbowColors = ['#ff4b4b', '#ff9900', '#ffc800', '#58cc02', '#1cb0f6', '#ce82ff'];
+                const baseRadius = Math.min(bgWidth * 0.48, bgHeight * 0.55, 700);
+                for (let i = 0; i < rainbowColors.length; i++) {
+                    bgCtx.strokeStyle = rainbowColors[i]; bgCtx.globalAlpha = 0.85; bgCtx.beginPath(); bgCtx.arc(0, 0, baseRadius - i * bgCtx.lineWidth, Math.PI, 0); bgCtx.stroke();
+                }
+                bgCtx.restore();
+
+                bgClouds.forEach(c => {
+                    bgCtx.save(); bgCtx.globalAlpha = c.opacity; bgCtx.fillStyle = '#ffffff'; bgCtx.beginPath();
+                    bgCtx.arc(c.x, c.y, c.size, 0, Math.PI * 2); bgCtx.arc(c.x + c.size * 0.82, c.y + c.size * 0.2, c.size * 0.72, 0, Math.PI * 2);
+                    bgCtx.arc(c.x - c.size * 0.85, c.y + c.size * 0.22, c.size * 0.68, 0, Math.PI * 2); bgCtx.arc(c.x + c.size * 0.15, c.y - c.size * 0.28, c.size * 0.72, 0, Math.PI * 2);
+                    bgCtx.fill(); bgCtx.restore();
+                });
+
+                bgButterflies.forEach(b => {
+                    const y = b.y + Math.sin(b.phase) * 10;
+                    bgCtx.save(); bgCtx.translate(b.x, y); bgCtx.fillStyle = b.color; bgCtx.globalAlpha = 0.88;
+                    bgCtx.beginPath(); bgCtx.ellipse(-b.size, 0, b.size, b.size * 1.35, Math.sin(b.phase) * 0.5, 0, Math.PI * 2);
+                    bgCtx.ellipse(b.size, 0, b.size, b.size * 1.35, -Math.sin(b.phase) * 0.5, 0, Math.PI * 2); bgCtx.fill();
+                    bgCtx.strokeStyle = '#334155'; bgCtx.lineWidth = 1.4; bgCtx.beginPath(); bgCtx.moveTo(0, -b.size * 1.1); bgCtx.lineTo(0, b.size * 1.2); bgCtx.stroke();
+                    bgCtx.restore();
+                });
+
+                bgCtx.fillStyle = '#65a30d'; bgCtx.beginPath(); bgCtx.moveTo(0, bgHeight); bgCtx.lineTo(0, bgHeight * 0.60);
+                for (let x = 0; x <= bgWidth + 280; x += 280) bgCtx.quadraticCurveTo(x - 140, bgHeight * 0.50, x, bgHeight * 0.60);
+                bgCtx.lineTo(bgWidth, bgHeight); bgCtx.fill();
+
+                bgTrees.forEach(t => {
+                    bgCtx.save(); bgCtx.translate(t.x, t.y); bgCtx.scale(t.scale, t.scale);
+                    bgCtx.fillStyle = '#8B5A2B'; bgCtx.fillRect(-9, 0, 18, 56);
+                    bgCtx.fillStyle = '#4ade80'; bgCtx.beginPath(); bgCtx.arc(0, -24, 38, 0, Math.PI * 2); bgCtx.arc(-25, -12, 29, 0, Math.PI * 2); bgCtx.arc(24, -10, 30, 0, Math.PI * 2); bgCtx.fill();
+                    bgCtx.fillStyle = 'rgba(255,255,255,0.28)'; bgCtx.beginPath(); bgCtx.arc(-12, -34, 12, 0, Math.PI * 2); bgCtx.fill(); bgCtx.restore();
+                });
+
+                bgCtx.fillStyle = '#58cc02'; bgCtx.beginPath(); bgCtx.moveTo(0, bgHeight); bgCtx.lineTo(0, bgHeight * 0.65);
+                bgCtx.quadraticCurveTo(bgWidth * 0.5, bgHeight * 0.58, bgWidth, bgHeight * 0.65); bgCtx.lineTo(bgWidth, bgHeight); bgCtx.fill();
+                bgCtx.strokeStyle = '#84cc16'; bgCtx.lineWidth = Math.max(10, Math.min(18, bgWidth * 0.014)); bgCtx.lineCap = 'round';
+                bgCtx.beginPath(); bgCtx.moveTo(-20, bgHeight * 0.65); bgCtx.quadraticCurveTo(bgWidth * 0.5, bgHeight * 0.58, bgWidth + 20, bgHeight * 0.65); bgCtx.stroke();
+
+                bgFlowers.forEach(f => {
+                    bgCtx.save(); const sway = Math.sin(time * 0.0015 + f.sway) * 1.4; bgCtx.translate(f.x + sway, f.y); bgCtx.scale(f.scale, f.scale);
+                    bgCtx.strokeStyle = '#259a3f'; bgCtx.lineWidth = 2.4; bgCtx.lineCap = 'round'; bgCtx.beginPath(); bgCtx.moveTo(0, 5); bgCtx.quadraticCurveTo(2, 14, 0, 23); bgCtx.stroke();
+                    bgCtx.fillStyle = '#55d85a'; bgCtx.beginPath(); bgCtx.ellipse(-6, 15, 4, 8, -0.8, 0, Math.PI * 2); bgCtx.ellipse(6, 18, 4, 8, 0.75, 0, Math.PI * 2); bgCtx.fill();
+                    const pCount = f.petals || 6; bgCtx.fillStyle = f.color;
+                    for (let p = 0; p < pCount; p++) { bgCtx.save(); bgCtx.rotate((Math.PI * 2 * p) / pCount); bgCtx.beginPath(); bgCtx.ellipse(0, -9, 5.2, 9.5, 0, 0, Math.PI * 2); bgCtx.fill(); bgCtx.restore(); }
+                    bgCtx.fillStyle = '#ffe066'; bgCtx.beginPath(); bgCtx.arc(0, 0, 5, 0, Math.PI * 2); bgCtx.fill(); bgCtx.strokeStyle = 'rgba(154,103,0,0.28)'; bgCtx.lineWidth = 1; bgCtx.stroke(); bgCtx.restore();
+                });
+            }
+
+            function backgroundAnimationLoop(time) {
+                updateBackground(); drawBackground(time); requestAnimationFrame(backgroundAnimationLoop);
+            }
+
+            window.addEventListener('resize', resizeBackgroundCanvas); resizeBackgroundCanvas(); requestAnimationFrame(backgroundAnimationLoop);
+        })();
+
+        /** Zootopia Styled Animal Icons **/
+        const animalSvgs = [
+            `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md"><ellipse cx="32" cy="20" rx="12" ry="35" fill="#90A4AE" transform="rotate(-15 32 20)"/><ellipse cx="68" cy="20" rx="12" ry="35" fill="#90A4AE" transform="rotate(15 68 20)"/><ellipse cx="32" cy="20" rx="6" ry="25" fill="#F48FB1" transform="rotate(-15 32 20)"/><ellipse cx="68" cy="20" rx="6" ry="25" fill="#F48FB1" transform="rotate(15 68 20)"/><circle cx="50" cy="65" r="35" fill="#B0BEC5"/><circle cx="35" cy="55" r="6" fill="#7E57C2"/><circle cx="65" cy="55" r="6" fill="#7E57C2"/><circle cx="50" cy="65" r="4.5" fill="#F06292"/><path d="M 50 69 L 50 75 M 40 75 Q 50 82 60 75" fill="none" stroke="#3E2723" stroke-width="3" stroke-linecap="round"/></svg>`,
+            `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md"><polygon points="10,35 30,5 45,25" fill="#F57C00"/><polygon points="90,35 70,5 55,25" fill="#F57C00"/><circle cx="50" cy="55" r="40" fill="#FF9800"/><path d="M 10 55 Q 50 95 90 55 Q 50 100 10 55 Z" fill="#FFE0B2"/><circle cx="35" cy="48" r="5" fill="#2E7D32"/><circle cx="65" cy="48" r="5" fill="#2E7D32"/><ellipse cx="50" cy="65" rx="7" ry="5" fill="#3E2723"/><path d="M 40 72 Q 50 80 60 72" fill="none" stroke="#3E2723" stroke-width="3" stroke-linecap="round"/></svg>`,
+            `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md"><circle cx="50" cy="55" r="40" fill="#A1887F"/><path d="M 15 50 Q 50 30 85 50 Q 80 80 50 85 Q 20 80 15 50 Z" fill="#D7CCC8"/><path d="M 25 50 Q 35 45 45 50 Q 35 55 25 50 Z" fill="#795548"/><path d="M 75 50 Q 65 45 55 50 Q 65 55 75 50 Z" fill="#795548"/><circle cx="35" cy="50" r="4" fill="#3E2723"/><circle cx="65" cy="50" r="4" fill="#3E2723"/><ellipse cx="50" cy="65" rx="6" ry="4" fill="#5D4037"/><path d="M 35 75 Q 50 85 65 75" fill="none" stroke="#3E2723" stroke-width="3" stroke-linecap="round"/></svg>`,
+            `<svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md"><circle cx="25" cy="25" r="12" fill="#FFB300"/><circle cx="75" cy="25" r="12" fill="#FFB300"/><circle cx="50" cy="55" r="42" fill="#FFCA28"/><circle cx="50" cy="68" r="20" fill="#FFE082"/><circle cx="20" cy="50" r="3" fill="#3E2723"/><circle cx="28" cy="62" r="2.5" fill="#3E2723"/><circle cx="22" cy="70" r="3" fill="#3E2723"/><circle cx="80" cy="50" r="3" fill="#3E2723"/><circle cx="72" cy="62" r="2.5" fill="#3E2723"/><circle cx="78" cy="70" r="3" fill="#3E2723"/><circle cx="35" cy="48" r="5" fill="#3E2723"/><circle cx="65" cy="48" r="5" fill="#3E2723"/><ellipse cx="50" cy="62" rx="6" ry="4" fill="#3E2723"/><path d="M 50 66 L 50 72 M 40 72 Q 50 78 60 72" fill="none" stroke="#3E2723" stroke-width="3" stroke-linecap="round"/></svg>`
+        ];
+
+        /** ÂM THANH & GIỌNG ĐỌC **/
+        const AudioSys = {
+            ctx: null,
+            init: function() {
+                if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+            },
+            playTone: function(freq, type, duration, vol=0.1) {
+                if (!this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain();
+                    osc.type = type; osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(vol, this.ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                    osc.connect(gain); gain.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime + duration);
+                } catch(e) {}
+            },
+            pop: () => AudioSys.playTone(600, 'sine', 0.1, 0.1),
+            correct: () => { AudioSys.playTone(500, 'sine', 0.1); setTimeout(() => AudioSys.playTone(800, 'sine', 0.2), 100); },
+            wrong: () => { AudioSys.playTone(250, 'sawtooth', 0.2); setTimeout(() => AudioSys.playTone(200, 'sawtooth', 0.3), 150); },
+            win: () => { [500, 600, 700, 800, 1200].forEach((f, i) => setTimeout(() => AudioSys.playTone(f, 'square', 0.15), i*150)); }
+        };
+
+        const speak = (text) => {
+            if (!window.speechSynthesis) return; window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text); utterance.rate = 0.85; utterance.pitch = 1.3; 
+            window.speechSynthesis.speak(utterance);
+        };
+
+        /** LOGIC TRÒ CHƠI **/
+        const state = { qNum: 0, score: 0, totalQ: 10, currentQ: null, dragTaskDone: false, firstTry: true, usedQuestions: new Set(), maxRange: 20, speechText: "" };
+
+        const screens = { setup: document.getElementById('setup-screen'), game: document.getElementById('game-screen'), end: document.getElementById('end-screen') };
+        const ui = { qnum: document.getElementById('ui-qnum'), score: document.getElementById('ui-score'), instruction: document.getElementById('ui-instruction'), busZone: document.getElementById('dropzone-bus'), stopZone: document.getElementById('dropzone-stop'), panel: document.getElementById('panel-answer'), choices: document.getElementById('ui-choices') };
+
+        document.querySelectorAll('.range-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.range-btn').forEach(b => {
+                    b.classList.remove('bg-brand-cyan', 'border-brand-cyanDark', 'text-white');
+                    b.classList.add('bg-gray-300', 'border-gray-400', 'text-gray-600');
+                });
+                e.target.classList.remove('bg-gray-300', 'border-gray-400', 'text-gray-600');
+                e.target.classList.add('bg-brand-cyan', 'border-brand-cyanDark', 'text-white');
+                state.maxRange = parseInt(e.target.getAttribute('data-range'));
+            });
+        });
+
+        function generateQuestion() {
+            let a, b, answer, type; let signature; let attempts = 0;
+            type = (state.qNum % 2 === 1) ? 'add' : 'sub'; 
+            do {
+                if (type === 'add') {
+                    answer = Math.floor(Math.random() * (state.maxRange - 4)) + 5; 
+                    a = Math.floor(Math.random() * (answer - 1)) + 1; b = answer - a;
+                } else {
+                    a = Math.floor(Math.random() * (state.maxRange - 5)) + 6; 
+                    b = Math.floor(Math.random() * (a - 1)) + 1; answer = a - b;
+                }
+                signature = `${a}${type}${b}`; attempts++;
+            } while (state.usedQuestions.has(signature) && attempts < 100);
+            state.usedQuestions.add(signature); return { type, a, b, answer };
+        }
+
+        function generateChoices(correct) {
+            let choices = new Set([correct]);
+            while(choices.size < 4) {
+                let offset = Math.floor(Math.random() * 11) - 5; 
+                if(offset === 0) continue;
+                let wrong = correct + offset;
+                if (wrong >= 0 && wrong <= state.maxRange + 5) choices.add(wrong);
+            }
+            return Array.from(choices).sort(() => Math.random() - 0.5);
+        }
+
+        function renderStudents(container, count, draggable) {
+            container.innerHTML = '';
+            let iconClass = 'w-[45px] h-[45px] md:w-[50px] md:h-[50px]';
+            if (count > 30) iconClass = 'w-[25px] h-[25px] md:w-[32px] md:h-[32px]';
+            else if (count > 15) iconClass = 'w-[35px] h-[35px] md:w-[42px] md:h-[42px]';
+
+            for(let i=0; i<count; i++) {
+                const el = document.createElement('div');
+                el.className = `student-icon ${iconClass} ${draggable ? 'draggable animate-pulse' : ''}`;
+                el.innerHTML = animalSvgs[Math.floor(Math.random() * animalSvgs.length)];
+                if(draggable) setupDraggable(el);
+                container.appendChild(el);
+            }
+        }
+
+        function loadQuestion() {
+            if (state.qNum >= state.totalQ) return endGame();
+            state.qNum++; state.firstTry = true; state.dragTaskDone = false; state.currentQ = generateQuestion();
+            const q = state.currentQ;
+
+            ui.qnum.textContent = state.qNum; ui.panel.style.transform = 'translateY(100%)'; 
+            
+            let text = "";
+            if (q.type === 'add') {
+                renderStudents(ui.busZone, q.a, false); renderStudents(ui.stopZone, q.b, true);
+                text = `Drag ${q.b} animals onto the bus.`;
+            } else {
+                renderStudents(ui.busZone, q.a, true); renderStudents(ui.stopZone, 0, false);
+                text = `Drag ${q.b} animals off the bus.`;
+            }
+            
+            ui.instruction.innerHTML = text; 
+            state.speechText = text;
+            speak(text);
+        }
+
+        function checkDragTask() {
+            const q = state.currentQ; let isComplete = false;
+            if (q.type === 'add') {
+                if (ui.busZone.children.length === (q.a + q.b) && ui.stopZone.children.length === 0) isComplete = true;
+            } else {
+                if (ui.stopZone.children.length === q.b && ui.busZone.children.length === (q.a - q.b)) isComplete = true;
+            }
+
+            if (isComplete && !state.dragTaskDone) {
+                state.dragTaskDone = true;
+                document.querySelectorAll('.draggable').forEach(el => el.classList.remove('draggable', 'animate-pulse'));
+                
+                const sign = q.type === 'add' ? '+' : '-';
+                
+                // Hiển thị phép tính ở khối phía trên
+                ui.instruction.innerHTML = `
+                    <div class="flex items-center gap-2 md:gap-4 text-4xl md:text-5xl drop-shadow-sm font-black text-center justify-center">
+                        <span class="text-brand-cyanDark">${q.a}</span> 
+                        <span class="text-gray-400">${sign}</span> 
+                        <span class="text-brand-yellowDark">${q.b}</span> 
+                        <span class="text-gray-400">=</span> 
+                        <span class="text-gray-300">?</span>
+                    </div>
+                `;
+                
+                ui.choices.innerHTML = '';
+                generateChoices(q.answer).forEach(val => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-answer btn-3d w-full py-3 md:py-4 rounded-xl text-3xl md:text-4xl font-black shadow-sm';
+                    btn.textContent = val;
+                    btn.onclick = () => handleAnswer(btn, val);
+                    ui.choices.appendChild(btn);
+                });
+
+                // Đổi câu nói thành định dạng toán học Tiếng Anh chuẩn xác
+                const operationText = q.type === 'add' ? 'plus' : 'minus';
+                state.speechText = `${q.a} ${operationText} ${q.b} equals what?`;
+                speak(state.speechText);
+                
+                ui.panel.style.transform = 'translateY(0)';
+            }
+        }
+
+        function handleAnswer(btn, val) {
+            const isCorrect = (val === state.currentQ.answer);
+            const allBtns = document.querySelectorAll('.btn-answer');
+            allBtns.forEach(b => b.disabled = true);
+
+            if (isCorrect) {
+                btn.classList.add('correct'); AudioSys.correct();
+                ui.instruction.innerHTML = ui.instruction.innerHTML.replace('<span class="text-gray-300">?</span>', `<span class="text-brand-green">${val}</span>`);
+                if (state.firstTry) { state.score++; ui.score.textContent = state.score; }
+                setTimeout(() => { loadQuestion(); }, 1500);
+            } else {
+                btn.classList.add('wrong'); AudioSys.wrong(); state.firstTry = false;
+                
+                // Backup câu hỏi cũ để nháy báo sai xong khôi phục lại
+                let oldHTML = ui.instruction.innerHTML;
+                ui.instruction.innerHTML = `<span class="text-brand-red">Try again!</span>`;
+                speak("Try again!");
+                
+                setTimeout(() => { 
+                    ui.instruction.innerHTML = oldHTML;
+                    btn.classList.remove('wrong'); 
+                    allBtns.forEach(b => b.disabled = false); 
+                }, 1000);
+            }
+        }
+
+        /** KÉO THẢ VÀ CLICK-TO-MOVE **/
+        let activeDrag = null; let startX=0, startY=0, initLeft=0, initTop=0;
+        
+        function setupDraggable(el) {
+            el.addEventListener('pointerdown', e => {
+                if (!el.classList.contains('draggable') || state.dragTaskDone) return;
+                if (state.currentQ.type === 'add' && el.parentElement === ui.busZone) return;
+                if (state.currentQ.type === 'sub' && el.parentElement === ui.stopZone) return;
+
+                activeDrag = el; AudioSys.init(); el.classList.remove('animate-pulse');
+                const rect = el.getBoundingClientRect(); initLeft = rect.left; initTop = rect.top; startX = e.clientX; startY = e.clientY;
+                
+                el.dataset.moved = 'false';
+
+                document.body.appendChild(el); el.classList.add('is-dragging'); el.style.left = initLeft + 'px'; el.style.top = initTop + 'px';
+                el.setPointerCapture(e.pointerId);
+                if(state.currentQ.type === 'add') ui.busZone.classList.add('dropzone-active');
+                if(state.currentQ.type === 'sub') ui.stopZone.classList.add('dropzone-active');
+            });
+        }
+
+        document.body.addEventListener('pointermove', e => {
+            if (!activeDrag) return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+                activeDrag.dataset.moved = 'true';
+            }
+            activeDrag.style.left = (initLeft + dx) + 'px';
+            activeDrag.style.top = (initTop + dy) + 'px';
+        });
+
+        document.body.addEventListener('pointerup', e => {
+            if (!activeDrag) return;
+            activeDrag.releasePointerCapture(e.pointerId); activeDrag.classList.remove('is-dragging');
+            activeDrag.style.position = ''; activeDrag.style.left = ''; activeDrag.style.top = '';
+            ui.busZone.classList.remove('dropzone-active'); ui.stopZone.classList.remove('dropzone-active');
+
+            const q = state.currentQ;
+            let isTap = activeDrag.dataset.moved !== 'true';
+
+            if (isTap) {
+                if (q.type === 'add') {
+                    ui.busZone.appendChild(activeDrag);
+                } else {
+                    ui.stopZone.appendChild(activeDrag);
+                }
+                AudioSys.pop(); 
+                checkDragTask();
+            } else {
+                activeDrag.style.display = 'none'; const elemBelow = document.elementFromPoint(e.clientX, e.clientY); activeDrag.style.display = 'flex';
+                const targetZone = elemBelow ? elemBelow.closest('#dropzone-bus, #dropzone-stop') : null;
+                
+                let isValid = false;
+                if (targetZone) {
+                    if (q.type === 'add' && targetZone.id === 'dropzone-bus') isValid = true;
+                    if (q.type === 'sub' && targetZone.id === 'dropzone-stop') isValid = true;
+                }
+
+                if (isValid) { 
+                    targetZone.appendChild(activeDrag); AudioSys.pop(); checkDragTask(); 
+                } else { 
+                    activeDrag.classList.add('animate-pulse'); 
+                    if (q.type === 'add') ui.stopZone.appendChild(activeDrag); else ui.busZone.appendChild(activeDrag); 
+                }
+            }
+            activeDrag = null;
+        });
+
+        document.getElementById('btn-start').onclick = () => { AudioSys.init(); screens.setup.classList.add('hidden'); screens.game.classList.remove('hidden'); state.score = 0; state.qNum = 0; ui.score.textContent = 0; loadQuestion(); };
+        document.getElementById('btn-tts').onclick = () => { speak(state.speechText); };
+        document.getElementById('btn-replay').onclick = () => { screens.end.classList.add('hidden'); screens.setup.classList.remove('hidden'); state.usedQuestions.clear(); };
+
+        function endGame() {
+            screens.game.classList.add('hidden'); screens.end.classList.remove('hidden'); AudioSys.win();
+            document.getElementById('ui-final-score').textContent = `${state.score}/${state.totalQ}`;
+            document.getElementById('ui-stars').textContent = state.score >= 9 ? '⭐⭐⭐' : state.score >= 6 ? '⭐⭐' : state.score >= 3 ? '⭐' : '🌱';
+            startConfetti();
+        }
+
+        /** CONFETTI **/
+        let confettiCtx; let confettiParticles = []; let confettiLoop;
+        function startConfetti() {
+            const canvas = document.getElementById('confetti'); canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            confettiCtx = canvas.getContext('2d'); confettiParticles = [];
+            const colors = ['#1CB0F6', '#58CC02', '#FFC800', '#FF4B4B', '#FF71C6'];
+            for(let i=0; i<200; i++) confettiParticles.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height - canvas.height, w: Math.random() * 15 + 10, h: Math.random() * 15 + 10, color: colors[Math.floor(Math.random() * colors.length)], vy: Math.random() * 6 + 3, vx: Math.random() * 6 - 3, rot: Math.random() * 360, rotSpeed: Math.random() * 15 - 7 });
+            cancelAnimationFrame(confettiLoop); requestAnimationFrame(drawConfetti);
+        }
+        function drawConfetti() {
+            if (screens.end.classList.contains('hidden')) return;
+            confettiCtx.clearRect(0, 0, confettiCtx.canvas.width, confettiCtx.canvas.height);
+            confettiParticles.forEach(p => { p.y += p.vy; p.x += p.vx; p.rot += p.rotSpeed; if (p.y > confettiCtx.canvas.height) { p.y = -20; p.x = Math.random() * confettiCtx.canvas.width; }
+                confettiCtx.save(); confettiCtx.translate(p.x, p.y); confettiCtx.rotate(p.rot * Math.PI / 180); confettiCtx.fillStyle = p.color; confettiCtx.fillRect(-p.w/2, -p.h/2, p.w, p.h); confettiCtx.restore(); });
+            confettiLoop = requestAnimationFrame(drawConfetti);
+        }
+        window.addEventListener('resize', () => { if (!screens.end.classList.contains('hidden')) { const canvas = document.getElementById('confetti'); canvas.width = window.innerWidth; canvas.height = window.innerHeight; } });
+    </script>
+</body>
+</html>
