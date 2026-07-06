@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Toy Shop Math Ver 3</title>
+    <title>Toy Shop Math Ver 4</title>
     
     <!-- Google Fonts: Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -183,7 +184,7 @@
             border-color: #FFC800 !important;
         }
 
-        /* Cải tiến Dots (Chấm) */
+        /* Dots Styling */
         .dots-grid {
             display: flex;
             flex-wrap: wrap;
@@ -191,7 +192,7 @@
             align-content: flex-start;
             gap: 3px;
             width: 100%;
-            max-width: 55px; /* Giới hạn độ rộng để wrap thành 2 hàng cho $10 */
+            max-width: 55px; /* Wrap exactly 5x2 for $10 */
             margin-top: 6px;
         }
         .dot {
@@ -202,7 +203,7 @@
             box-shadow: inset -1px -1px 2px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.4);
         }
 
-        /* Cross Out Animation cho Phép trừ */
+        /* Cross Out Animation */
         .bill.crossed {
             filter: grayscale(100%) opacity(0.6);
             pointer-events: none;
@@ -228,7 +229,7 @@
     </style>
 </head>
 <body class="w-full h-screen flex flex-col relative text-gray-800">
-
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
     <!-- CANVAS BACKGROUND -->
     <canvas id="backgroundCanvas" aria-label="Sunny outdoor background"></canvas>
 
@@ -311,7 +312,7 @@
             <!-- Content injected by JS based on phase -->
         </div>
 
-        <!-- BOTTOM PANEL (Answers or Next Button) -->
+        <!-- BOTTOM PANEL (Answers) -->
         <div id="panel-bottom" class="absolute bottom-0 w-full bg-white/90 backdrop-blur-lg shadow-[0_-20px_50px_rgba(0,0,0,0.15)] p-4 md:p-6 z-40 transform translate-y-full transition-transform duration-500 rounded-t-[2rem] md:rounded-t-[3rem] border-t-[8px] border-gray-100 flex flex-col items-center pointer-events-auto">
             
             <div id="ui-choices" class="grid grid-cols-4 gap-3 md:gap-6 w-full max-w-4xl">
@@ -891,6 +892,45 @@
             });
         }
 
+        function addBillToZone(zone, val, isSource = false, extraClasses = "") {
+            const temp = document.createElement('div');
+            temp.innerHTML = createBillHTML(val, isSource, extraClasses).trim();
+            const billEl = temp.firstElementChild;
+            if (!isSource) {
+                billEl.classList.add('draggable');
+                billEl.dataset.wasPlaced = 'true';
+                setupDraggables(billEl);
+            }
+            zone.appendChild(billEl);
+            return billEl;
+        }
+
+        function executeMake10(zOnes, zTens, activeDragItem) {
+            addBillToZone(zTens, 10, false);
+            let removed = 0;
+            
+            // Lấy các bills không phải là nút gộp và sắp xếp lớn nhất trước
+            const onesBills = Array.from(zOnes.querySelectorAll('.bill:not(.bundle-btn)'))
+                                   .sort((a,b) => parseInt(b.dataset.val) - parseInt(a.dataset.val));
+            
+            for(let b of onesBills) {
+                if (removed < 10) {
+                    removed += parseInt(b.dataset.val);
+                    b.remove();
+                }
+            }
+            
+            // Thối lại tiền dư nếu lỡ rút quá $10 (vd rút $5, $5, $2 = $12 -> thối $2)
+            if (removed > 10) {
+                const change = removed - 10;
+                const changeBills = getOptimalBills(change);
+                changeBills.forEach(v => addBillToZone(zOnes, v, false));
+            }
+            
+            if (activeDragItem) activeDragItem.remove();
+            AudioSys.pop();
+        }
+
         document.body.addEventListener('pointermove', e => {
             if (!activeDrag) return;
             const dx = e.clientX - startX;
@@ -923,14 +963,8 @@
                 // HÀNH ĐỘNG CLICK / TAP (Auto-move)
                 if (isTap) {
                     if (isBundle) {
-                        // Gộp $10
-                        zTens.appendChild(createBillHTML(10, false));
-                        zOnes.innerHTML = '';
-                        let newSum = getZoneSum(zOnes) - 10; // actually previous sum - 10
-                        // Reconstruct ones safely
-                        activeDrag.remove();
-                        AudioSys.pop();
-                        // Trừ DOM thủ công
+                        // Gọi hàm dùng chung cho thao tác gộp $10
+                        executeMake10(zOnes, zTens, activeDrag);
                     } else if (activeDrag.dataset.wasPlaced === 'true') {
                         // Click vào tờ tiền ĐÃ ĐẶT -> Xóa đi (sửa sai)
                         activeDrag.remove();
@@ -947,23 +981,8 @@
                 else {
                     if (targetZone) {
                         if (isBundle && targetZone.id === 'zone-tens') {
-                            zTens.innerHTML += createBillHTML(10, false);
-                            // Xóa các bill lẻ trong Ones để bù trừ 10
-                            let removed = 0;
-                            const onesBills = Array.from(zOnes.querySelectorAll('.bill:not(.bundle-btn)')).sort((a,b) => parseInt(b.dataset.val) - parseInt(a.dataset.val));
-                            for(let b of onesBills) {
-                                if (removed < 10) {
-                                    removed += parseInt(b.dataset.val);
-                                    b.remove();
-                                }
-                            }
-                            // Nếu removed > 10 (vd 5,5,2 tháo 5,5 vừa đẹp. Nếu lỡ 5,2,2,2 = 11, tháo hết 11 trả lại 1)
-                            if (removed > 10) {
-                                zOnes.innerHTML += createBillHTML(removed - 10, false);
-                            }
-                            activeDrag.remove();
-                            setupDraggables(); // Gắn event cho DOM mới
-                            AudioSys.pop();
+                            // Gọi hàm dùng chung cho thao tác gộp $10
+                            executeMake10(zOnes, zTens, activeDrag);
                         } else if (!isBundle) {
                             if (val === 10 && targetZone.id === 'zone-tens') { targetZone.appendChild(activeDrag); activeDrag.dataset.wasPlaced = 'true'; AudioSys.pop(); }
                             else if (val < 10 && targetZone.id === 'zone-ones') { targetZone.appendChild(activeDrag); activeDrag.dataset.wasPlaced = 'true'; AudioSys.pop(); }
@@ -972,14 +991,6 @@
                     } else activeDrag.remove();
                 }
 
-                // Gắn lại event cho bill mới thêm bằng innerHTML
-                document.querySelectorAll('#zone-tens .bill, #zone-ones .bill').forEach(b => {
-                    if (!b.classList.contains('draggable')) {
-                        b.classList.add('draggable');
-                        b.dataset.wasPlaced = 'true';
-                        setupDraggables(b);
-                    }
-                });
                 checkAddProgress();
 
             } else {
