@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Animal Feeding Division - Ver 7</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Duolingo-inspired Color Palette */
+            --primary: #1cb0f6;
+            --primary-shadow: #1899d6;
+            --success: #58cc02;
+            --success-shadow: #58a700;
+            --danger: #ff4b4b;
+            --danger-shadow: #ea2b2b;
+            --warning: #ffc800;
+            --warning-shadow: #e5b400;
+            --text-main: #3c3c3c;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --border-color: #e5e5e5;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+            user-select: none; 
+            -webkit-tap-highlight-color: transparent;
+            margin: 0; padding: 0;
+        }
+
+        body {
+            background: linear-gradient(180deg, #60c5ff 0%, #b5e8ff 50%, #8ced72 50%, #55c72a 100%);
+            color: var(--text-main);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Scenery Elements */
+        .scenery { position: absolute; pointer-events: none; z-index: 0; }
+        .sun { top: 5%; left: 5%; font-size: clamp(4rem, 10vw, 6rem); text-shadow: 0 0 20px #ffc800; }
+        .cloud-1 { top: 15%; left: 30%; font-size: clamp(3rem, 8vw, 5rem); opacity: 0.9; }
+        .cloud-2 { top: 10%; left: 60%; font-size: clamp(2.5rem, 7vw, 4.5rem); opacity: 0.8; }
+        
+        .rainbow {
+            top: 5%; left: 20%; width: 300px; height: 150px;
+            border-radius: 300px 300px 0 0;
+            box-shadow: 
+                inset 0 15px 0 #ff4b4b, inset 0 30px 0 #ff9000, 
+                inset 0 45px 0 #ffc800, inset 0 60px 0 #58cc02, 
+                inset 0 75px 0 #1cb0f6, inset 0 90px 0 #ce82ff;
+            opacity: 0.4;
+        }
+        .tree-1 { bottom: 35%; left: 5%; font-size: clamp(4rem, 12vw, 7rem); }
+        .tree-2 { bottom: 40%; right: 10%; font-size: clamp(3.5rem, 10vw, 6rem); }
+        .flower-1 { bottom: 15%; left: 15%; font-size: clamp(2rem, 6vw, 3.5rem); }
+        .flower-2 { bottom: 10%; right: 20%; font-size: clamp(2.5rem, 7vw, 4rem); }
+        .flower-3 { bottom: 25%; left: 75%; font-size: clamp(1.5rem, 5vw, 2.5rem); }
+
+        /* Main Game Container */
+        #game-wrapper {
+            position: relative;
+            z-index: 10;
+            width: 96vw;
+            max-width: 900px;
+            height: 96vh;
+            max-height: 850px;
+            background: var(--card-bg);
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(8px);
+            border: 4px solid white;
+            padding: 1.5vh 2vw;
+            transition: all 0.3s;
+        }
+
+        .screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            animation: fadeIn 0.3s ease-out;
+        }
+        .hidden { display: none !important; }
+
+        /* Typography */
+        h1 {
+            font-size: clamp(2.2rem, 5vw, 3.5rem);
+            color: var(--primary);
+            text-align: center;
+            text-shadow: 2px 2px 0px white;
+            margin-bottom: 1vh;
+            font-weight: 800;
+        }
+        .subtitle {
+            font-size: clamp(1.1rem, 3vw, 1.6rem);
+            color: #ff9000;
+            font-weight: 700;
+            margin-bottom: 3vh;
+            text-shadow: 1px 1px 0px white;
+        }
+
+        /* Buttons */
+        .btn {
+            border: none; border-radius: 16px;
+            padding: 1.2vh 2vw;
+            font-size: clamp(1rem, 3vw, 1.4rem);
+            font-weight: 700; cursor: pointer;
+            text-align: center; color: white;
+            transition: transform 0.1s, box-shadow 0.1s;
+            margin: 1vh 0; width: 100%; max-width: 320px;
+        }
+        .btn:active { transform: translateY(4px); }
+        .btn-green { background-color: var(--success); box-shadow: 0 6px 0 var(--success-shadow); }
+        .btn-blue { background-color: var(--primary); box-shadow: 0 6px 0 var(--primary-shadow); }
+        .btn-yellow { background-color: var(--warning); box-shadow: 0 6px 0 var(--warning-shadow); color: #8a6a00; }
+        .btn-red { background-color: var(--danger); box-shadow: 0 6px 0 var(--danger-shadow); }
+        
+        .btn-icon {
+            background: none; border: none; font-size: clamp(1.4rem, 4vw, 2.2rem);
+            cursor: pointer; padding: 5px; text-shadow: 0 2px 2px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        .btn-icon:active { transform: scale(0.85); }
+
+        /* Layout Areas */
+        .question-header {
+            background: white; border: 3px solid var(--border-color);
+            border-radius: 16px; padding: 1vh 2vw;
+            width: 100%; display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 4px 0 var(--border-color); flex-shrink: 0;
+            margin-bottom: 1.5vh;
+        }
+        .question-text {
+            font-size: clamp(1rem, 3vw, 1.3rem); font-weight: 700; color: #2a2a2a; flex-grow: 1; line-height: 1.4;
+        }
+        .question-text span { color: var(--primary); font-size: 1.2em; }
+
+        /* Block chứa trái cây */
+        #food-source-wrapper {
+            width: 98%; max-width: 750px; margin: 0 auto;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden; flex-shrink: 0;
+        }
+        #food-source-area {
+            width: 100%; min-height: 9vh;
+            background: rgba(255, 255, 255, 0.95); border: 3px dashed var(--primary-shadow);
+            border-radius: 20px; padding: 12px;
+            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center;
+            margin-bottom: 1.5vh;
+        }
+        .collapsed {
+            opacity: 0; margin-bottom: 0 !important; max-height: 0 !important; transform: scaleY(0.5); border-width: 0px !important; padding: 0 !important;
+        }
+
+        #game-workspace {
+            flex-grow: 1; width: 100%; display: flex; flex-direction: column;
+            justify-content: center; overflow: hidden;
+        }
+
+        /* KHU VỰC THÚ - Tối đa 5 Block mỗi hàng ngang, kích thước đồng đều */
+        #animals-area {
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            align-content: center;
+            flex-wrap: wrap; 
+            gap: 12px; 
+            max-width: 740px; /* Vừa đủ cho 5 block */
+            margin: 0 auto;
+            width: 100%; 
+            flex-grow: 1;
+            padding: 5px;
+            overflow: visible; 
+            transition: all 0.3s;
+        }
+
+        /* Abstract Equation Area */
+        #equation-area {
+            width: 100%; display: flex; flex-direction: column; align-items: center;
+            background: #fff9e6; border: 3px solid #ffd166; border-radius: 20px;
+            padding: 1.5vh 2vh; box-shadow: 0 5px 0 #ffd166;
+            animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin-top: auto; flex-shrink: 0;
+        }
+        .eq-row {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 1vh;
+        }
+        .eq-text { font-size: clamp(1.6rem, 5vw, 2.5rem); font-weight: 800; color: var(--primary); }
+        .options-row {
+            display: flex; flex-direction: row; justify-content: center; gap: 2vw; width: 100%;
+        }
+        .options-row .btn {
+            flex: 1; max-width: 80px; padding: 1.2vh 0; margin: 0;
+            font-size: clamp(1.2rem, 4vw, 1.8rem);
+        }
+        
+        #next-btn-container { 
+            margin-top: 1vh; width: 100%; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;
+        }
+
+        /* Game Elements & Prettier Icons */
+        .pretty-icon {
+            filter: drop-shadow(2px 3px 1px rgba(0,0,0,0.2)) saturate(1.2);
+        }
+
+        .food-item {
+            font-size: clamp(1.8rem, 5vw, 2.5rem); cursor: grab;
+            width: clamp(35px, 7vw, 50px); height: clamp(35px, 7vw, 50px);
+            display: flex; justify-content: center; align-items: center;
+            transition: transform 0.1s; touch-action: none;
+        }
+        .food-item:active { cursor: grabbing; transform: scale(1.15) rotate(-10deg); }
+        
+        /* THE ANIMAL CARD - Kích thước mặc định (1-5 thú) */
+        .animal-card {
+            background: white; border: 3px solid var(--border-color); border-radius: 20px;
+            width: clamp(100px, 18vw, 130px);
+            min-height: clamp(130px, 20vh, 165px); 
+            padding: 1vh 1vw; display: flex; flex-direction: column; align-items: center;
+            box-shadow: 0 5px 0 var(--border-color);
+            transition: all 0.3s; position: relative;
+        }
+        .animal-emoji { font-size: clamp(2.5rem, 8vw, 3.8rem); margin-bottom: 4px; transition: all 0.3s; }
+        
+        .animal-label {
+            background: #e8faff; 
+            border: 2px solid #bce3ff;
+            color: var(--primary-shadow);
+            padding: 4px 8px; border-radius: 12px;
+            font-size: clamp(0.75rem, 2vw, 0.9rem); font-weight: 700; 
+            margin-bottom: 6px; width: 100%; text-align: center; 
+            transition: all 0.15s;
+            cursor: pointer;
+            box-shadow: 0 2px 0 #bce3ff;
+        }
+        .animal-label:hover {
+            background: var(--primary); color: white; border-color: var(--primary-shadow);
+        }
+        .animal-label:active {
+            transform: scale(0.95) translateY(2px); box-shadow: 0 0 0 #bce3ff;
+        }
+
+        .food-bin {
+            flex-grow: 1; width: 100%; border-top: 2px dashed #ddd; padding-top: 6px;
+            display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 4px;
+        }
+        .food-bin .food-item {
+            width: clamp(22px, 4vw, 30px); height: clamp(22px, 4vw, 30px); font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+        }
+
+        /* --- COMPACT MODE: Tự động thu nhỏ khi có từ 6 thẻ trở lên --- */
+        #animals-area.compact-mode {
+            gap: 8px; 
+            max-width: 650px;
+        }
+        #animals-area.compact-mode .animal-card {
+            width: clamp(80px, 15vw, 110px);
+            min-height: clamp(100px, 15vh, 130px);
+            padding: 6px;
+            border-width: 2px;
+        }
+        #animals-area.compact-mode .animal-emoji {
+            font-size: clamp(2rem, 6vw, 2.8rem); margin-bottom: 2px;
+        }
+        #animals-area.compact-mode .animal-label {
+            font-size: clamp(0.65rem, 1.5vw, 0.75rem); padding: 2px 4px; margin-bottom: 4px; border-width: 1px;
+        }
+        #animals-area.compact-mode .food-bin {
+            padding-top: 4px; gap: 2px;
+        }
+        #animals-area.compact-mode .food-bin .food-item {
+            width: clamp(16px, 3vw, 24px); height: clamp(16px, 3vw, 24px); font-size: clamp(0.9rem, 2vw, 1.2rem);
+        }
+
+        /* States */
+        .animal-card.drag-over { border-color: var(--primary); transform: scale(1.05); }
+        .animal-card.locked { border-color: var(--success) !important; box-shadow: 0 5px 0 var(--success-shadow) !important; background: #f4ffe6; pointer-events: none; }
+        .animal-card.locked .animal-label { background: var(--success); color: white; border-color: var(--success-shadow); box-shadow: none; cursor: default; }
+
+        /* Mini-game: Night Sky Star Catching */
+        #screen-minigame {
+            background: radial-gradient(circle at center top, #0b2e59 0%, #010a18 100%); 
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            border-radius: 24px; overflow: hidden; z-index: 50; display: flex;
+            flex-direction: column; align-items: center; justify-content: center;
+        }
+        
+        .moon {
+            position: absolute; top: 10%; right: 10%; width: 80px; height: 80px;
+            background: #fff9d6; border-radius: 50%;
+            box-shadow: 0 0 40px #fff9d6, inset -10px -10px 0 rgba(0,0,0,0.1);
+            z-index: 51; pointer-events: none;
+        }
+
+        .minigame-header {
+            position: absolute; top: 5%; width: 100%; display: flex; justify-content: space-between;
+            padding: 0 5vw; z-index: 52; pointer-events: none;
+        }
+        .minigame-title { color: #fff; font-size: clamp(1.5rem, 5vw, 2.5rem); text-shadow: 0 0 10px #1cb0f6; font-weight: 800;}
+        .minigame-timer { color: #ffc800; font-size: clamp(1.5rem, 5vw, 2.5rem); font-weight: 800; text-shadow: 0 0 15px #ffc800; }
+        
+        .falling-star-svg {
+            position: absolute; width: clamp(40px, 10vw, 70px); height: clamp(40px, 10vw, 70px);
+            cursor: pointer; filter: drop-shadow(0 0 10px currentColor);
+            animation: fallAndSpin linear forwards; touch-action: manipulation;
+        }
+
+        .star-pop {
+            position: absolute; color: white; font-weight: bold; font-size: 2rem;
+            text-shadow: 0 0 10px #ffc800;
+            animation: popUp 0.8s ease-out forwards; pointer-events: none; z-index: 60;
+        }
+
+        /* Utilities & Animations */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fallAndSpin { 
+            0% { transform: translateY(-10vh) rotate(0deg); } 
+            100% { transform: translateY(110vh) rotate(360deg); } 
+        }
+        @keyframes popUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-40px) scale(1.5); opacity: 0; }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-10px); }
+            60% { transform: translateX(10px); }
+        }
+        .shake { animation: shake 0.35s; }
+        
+        .floating-heart {
+            position: absolute; font-size: 2rem; color: #ff4b4b;
+            animation: floatUp 1s ease-out forwards; pointer-events: none; z-index: 20;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-50px) scale(1.5); opacity: 0; }
+        }
+
+        .confetti {
+            position: fixed; top: -20px; width: 12px; height: 12px;
+            z-index: 9999; animation: fall linear forwards; pointer-events: none;
+        }
+
+        /* Top Progress */
+        .progress-container {
+            width: 100%; height: 12px; background: var(--border-color);
+            border-radius: 6px; margin-bottom: 1.5vh; overflow: hidden; flex-shrink: 0;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .progress-bar { height: 100%; background: var(--success); width: 0%; transition: width 0.4s ease-out; }
+    </style>
+</head>
+<body>
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- Beautiful Scenery Background -->
+    <div class="scenery rainbow"></div>
+    <div class="scenery sun">☀️</div>
+    <div class="scenery cloud-1">☁️</div>
+    <div class="scenery cloud-2">☁️</div>
+    <div class="scenery tree-1">🌲</div>
+    <div class="scenery tree-2">🌳</div>
+    <div class="scenery flower-1">🌷</div>
+    <div class="scenery flower-2">🌻</div>
+    <div class="scenery flower-3">🌼</div>
+
+    <div id="game-wrapper">
+        
+        <!-- START SCREEN -->
+        <div id="screen-start" class="screen">
+            <h1 style="margin-top: 5vh;">Animal Feeding</h1>
+            <p class="subtitle">Feed each animal equally! 🍎</p>
+            <div style="margin-top: auto; margin-bottom: auto; width: 100%; display: flex; flex-direction: column; align-items: center;">
+                <button class="btn btn-green" onclick="initGame('easy')">Play Easy</button>
+                <button class="btn btn-yellow" onclick="initGame('medium')">Play Medium</button>
+                <button class="btn btn-red" onclick="initGame('challenge')">Play Hard</button>
+            </div>
+        </div>
+
+        <!-- MAIN QUESTION SCREEN -->
+        <div id="screen-question" class="screen hidden">
+            <div class="progress-container"><div id="progress-bar" class="progress-bar"></div></div>
+            
+            <div class="question-header">
+                <div id="question-text" class="question-text"></div>
+                <button class="btn-icon" onclick="readMainQuestion()">🔊</button>
+            </div>
+            
+            <div id="food-source-wrapper">
+                <div id="food-source-area"></div>
+            </div>
+
+            <div id="game-workspace">
+                <div id="animals-area"></div>
+
+                <!-- Equation Area -->
+                <div id="equation-area" class="hidden">
+                    <div class="eq-row">
+                        <span id="eq-text" class="eq-text">20 ÷ 4 = ?</span>
+                        <button class="btn-icon" onclick="readEquation()">🔊</button>
+                    </div>
+                    <div id="options-row" class="options-row"></div>
+                    
+                    <!-- 2 Next Buttons -->
+                    <div id="next-btn-container" class="hidden">
+                        <button class="btn btn-yellow" style="max-width: 180px; font-size: 1.1rem; padding: 1vh 1vw;" onclick="startMiniGame()">⭐ Play Game</button>
+                        <button class="btn btn-green" style="max-width: 180px; font-size: 1.1rem; padding: 1vh 1vw;" onclick="skipToNext()">Next ➡️</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MINI GAME SCREEN -->
+        <div id="screen-minigame" class="screen hidden">
+            <div class="moon"></div>
+            <div class="minigame-header">
+                <div class="minigame-title">Catch the stars!</div>
+                <div class="minigame-timer" id="star-timer">15s</div>
+            </div>
+            <div id="star-container" style="width: 100%; height: 100%; position: relative;"></div>
+        </div>
+
+        <!-- END SCREEN -->
+        <div id="screen-end" class="screen hidden">
+            <h1 style="font-size: 3.5rem; margin-top: 10vh;">You Did It! 🏆</h1>
+            <h2 id="final-score" style="font-size: 3rem; color: var(--warning); margin: 20px 0; text-shadow: 2px 2px 0 #fff;">10/10</h2>
+            <p id="end-message" class="subtitle" style="font-size: 1.8rem;"></p>
+            <div style="margin-top: auto; margin-bottom: 5vh; width: 100%; display: flex; flex-direction: column; align-items: center;">
+                <button class="btn btn-green" onclick="location.reload()">Play Again 🔄</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- GAME STATE ---
+        let questions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let selectedFood = null;
+        let isEquationSolved = false;
+
+        const themes = [
+            { animal: "bunny", emojiA: "🐰", food: "carrots", emojiF: "🥕" },
+            { animal: "monkey", emojiA: "🐵", food: "bananas", emojiF: "🍌" },
+            { animal: "cat", emojiA: "🐱", food: "fish", emojiF: "🐟" },
+            { animal: "dog", emojiA: "🐶", food: "bones", emojiF: "🦴" },
+            { animal: "penguin", emojiA: "🐧", food: "apples", emojiF: "🍎" }
+        ];
+
+        const difficulties = {
+            easy: { max: 30, divs: [2, 3] },
+            medium: { max: 40, divs: [2, 3, 4] },
+            challenge: { max: 60, divs: [2, 3, 4, 5, 6] }
+        };
+
+        // --- AUDIO SYSTEM ---
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        function playTone(freq, type, duration) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        }
+        function playPop() { playTone(600, 'sine', 0.1); }
+        function playCorrect() { 
+            playTone(400, 'sine', 0.1); setTimeout(()=>playTone(600, 'sine', 0.2), 100); 
+        }
+        function playWrong() { playTone(250, 'sawtooth', 0.2); }
+        function playStar() { playTone(800, 'triangle', 0.1); setTimeout(()=>playTone(1200, 'triangle', 0.2), 100); }
+        function playLock() { playTone(500, 'sine', 0.1); setTimeout(()=>playTone(700, 'sine', 0.15), 100); }
+
+        // --- TTS SYSTEM ---
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.rate = 0.85; msg.pitch = 1.1; msg.lang = 'en-US';
+                window.speechSynthesis.speak(msg);
+            }
+        }
+        function readMainQuestion() {
+            const q = questions[currentIndex];
+            speakText(`There are ${q.total} ${q.theme.food}. Each ${q.theme.animal} needs ${q.divisor}. Let's feed them!`);
+        }
+        function readEquation() {
+            const q = questions[currentIndex];
+            if (isEquationSolved) {
+                speakText(`${q.total} divided by ${q.divisor} equals ${q.answer}.`);
+            } else {
+                speakText(`What is ${q.total} divided by ${q.divisor}?`);
+            }
+        }
+
+        // --- GAME LOGIC ---
+        function initGame(diff) {
+            document.getElementById('screen-start').classList.add('hidden');
+            setTimeout(() => {
+                initAudio();
+                speakText("Let's play!"); 
+                generateQuestionsAndStart(diff);
+            }, 50); 
+        }
+
+        function generateQuestionsAndStart(diff) {
+            questions = [];
+            const conf = difficulties[diff];
+            let allPossible = [];
+
+            // Thu thập tất cả các câu hỏi hợp lệ
+            for (let div of conf.divs) {
+                let maxMul = Math.floor(conf.max / div);
+                if (maxMul > 10) maxMul = 10; 
+                for (let mul = 2; mul <= maxMul; mul++) {
+                    allPossible.push({ total: div * mul, divisor: div, answer: mul });
+                }
+            }
+
+            // Xáo trộn ngẫu nhiên
+            allPossible.sort(() => Math.random() - 0.5);
+
+            for (let i = 0; i < 10; i++) {
+                let qTemplate = allPossible[i % allPossible.length];
+                questions.push({
+                    ...qTemplate,
+                    theme: themes[Math.floor(Math.random() * themes.length)]
+                });
+            }
+
+            questions.sort(() => Math.random() - 0.5);
+
+            score = 0; currentIndex = 0;
+            loadPhaseB();
+        }
+
+        function loadPhaseB() {
+            document.getElementById('screen-minigame').classList.add('hidden');
+            document.getElementById('screen-question').classList.remove('hidden');
+            document.getElementById('equation-area').classList.add('hidden');
+            document.getElementById('next-btn-container').classList.add('hidden');
+            
+            const wrapper = document.getElementById('food-source-wrapper');
+            wrapper.classList.remove('collapsed');
+            isEquationSolved = false; 
+            
+            const q = questions[currentIndex];
+            document.getElementById('progress-bar').style.width = `${(currentIndex/10)*100}%`;
+            
+            document.getElementById('question-text').innerHTML = 
+                `<span>${q.total}</span> ${q.theme.emojiF} | Each ${q.theme.emojiA} needs <span>${q.divisor}</span>`;
+            
+            const source = document.getElementById('food-source-area');
+            source.innerHTML = '';
+            for(let i=0; i<q.total; i++) {
+                const f = document.createElement('div');
+                f.className = 'food-item pretty-icon'; f.innerText = q.theme.emojiF;
+                f.id = 'food-'+i; f.draggable = true;
+                
+                f.ondragstart = (e) => { e.dataTransfer.setData('text', e.target.id); playPop(); };
+                f.onclick = (e) => { 
+                    if(selectedFood) selectedFood.style.transform = 'scale(1)';
+                    selectedFood = f; f.style.transform = 'scale(1.2) translateY(-5px)'; 
+                    playPop(); e.stopPropagation();
+                };
+                source.appendChild(f);
+            }
+
+            const area = document.getElementById('animals-area');
+            area.innerHTML = '';
+            
+            // Xử lý Giao diện thông minh: Thu nhỏ nếu >= 6 animals
+            if (q.answer >= 6) {
+                area.classList.add('compact-mode');
+            } else {
+                area.classList.remove('compact-mode');
+            }
+
+            renderNextAnimal();
+
+            setTimeout(readMainQuestion, 600);
+        }
+
+        function renderNextAnimal() {
+            const q = questions[currentIndex];
+            const area = document.getElementById('animals-area');
+            
+            const card = document.createElement('div');
+            card.className = 'animal-card';
+            card.innerHTML = `
+                <div class="animal-emoji pretty-icon">${q.theme.emojiA}</div>
+                <div class="animal-label" title="Click to auto-fill food!">Needs ${q.divisor}</div>
+                <div class="food-bin"></div>
+            `;
+            
+            // Xử lý kéo thả
+            card.ondragover = e => { e.preventDefault(); card.classList.add('drag-over'); };
+            card.ondragleave = e => card.classList.remove('drag-over');
+            card.ondrop = e => {
+                e.preventDefault(); card.classList.remove('drag-over');
+                const f = document.getElementById(e.dataTransfer.getData('text'));
+                if(f && !card.classList.contains('locked')) acceptFood(card, f);
+            };
+            
+            // Xử lý Click Đút ăn thủ công
+            card.onclick = (e) => {
+                if(e.target.classList.contains('animal-label')) return; 
+                
+                if(selectedFood && !card.classList.contains('locked')) {
+                    acceptFood(card, selectedFood);
+                    selectedFood = null;
+                }
+            };
+
+            // Click vào nút "Needs X" để Auto-fill
+            const labelBtn = card.querySelector('.animal-label');
+            labelBtn.onclick = (e) => {
+                e.stopPropagation();
+                autoFillFood(card);
+            };
+
+            area.appendChild(card);
+        }
+
+        function autoFillFood(card) {
+            if(card.classList.contains('locked')) return;
+
+            const q = questions[currentIndex];
+            const bin = card.querySelector('.food-bin');
+            const source = document.getElementById('food-source-area');
+            
+            const needed = q.divisor - bin.children.length;
+            
+            if (needed > 0 && source.children.length >= needed) {
+                for (let i = 0; i < needed; i++) {
+                    const food = source.children[0]; 
+                    bin.appendChild(food);
+                    food.style.transform = 'scale(1)';
+                }
+                playPop();
+                checkAndLockAnimal(card, q);
+            }
+        }
+
+        function acceptFood(card, foodElement) {
+            const q = questions[currentIndex];
+            const bin = card.querySelector('.food-bin');
+            bin.appendChild(foodElement);
+            foodElement.style.transform = 'scale(1)';
+            playPop();
+            checkAndLockAnimal(card, q);
+        }
+
+        function checkAndLockAnimal(card, q) {
+            const bin = card.querySelector('.food-bin');
+            const source = document.getElementById('food-source-area');
+            
+            if (source.children.length === 0) {
+                document.getElementById('food-source-wrapper').classList.add('collapsed');
+            }
+
+            if(bin.children.length === q.divisor) {
+                card.classList.add('locked');
+                card.querySelector('.animal-label').innerText = "Full!";
+                playLock();
+                
+                const heart = document.createElement('div');
+                heart.className = 'floating-heart'; heart.innerText = '❤️';
+                card.appendChild(heart);
+                setTimeout(()=>heart.remove(), 1000);
+
+                if(source.children.length > 0) {
+                    setTimeout(renderNextAnimal, 300);
+                } else {
+                    setTimeout(showEquationPhase, 700);
+                }
+            }
+        }
+
+        function showEquationPhase() {
+            playCorrect();
+            const q = questions[currentIndex];
+            const eqArea = document.getElementById('equation-area');
+            
+            document.getElementById('eq-text').innerText = `${q.total} ÷ ${q.divisor} = ?`;
+            
+            let opts = [q.answer];
+            
+            // SỬA LỖI ĐỨNG GAME: Lấy số ngẫu nhiên từ 1 tới 10, thay vì cộng trừ offset
+            while(opts.length < 4) {
+                let wrong = Math.floor(Math.random() * 10) + 1;
+                if(!opts.includes(wrong) && wrong !== q.answer) {
+                    opts.push(wrong); 
+                }
+            }
+            opts.sort(() => Math.random() - 0.5);
+
+            const row = document.getElementById('options-row');
+            row.innerHTML = '';
+            opts.forEach(val => {
+                const b = document.createElement('button');
+                b.className = 'btn btn-blue'; b.innerText = val;
+                b.onclick = () => checkAnswer(b, val);
+                row.appendChild(b);
+            });
+
+            eqArea.classList.remove('hidden');
+            setTimeout(readEquation, 300);
+        }
+
+        let attempt = 0;
+        function checkAnswer(btn, val) {
+            const q = questions[currentIndex];
+            if(val === q.answer) {
+                playCorrect();
+                isEquationSolved = true; 
+                btn.className = 'btn btn-green';
+                document.getElementById('eq-text').innerText = `${q.total} ÷ ${q.divisor} = ${q.answer}`;
+                
+                if(attempt === 0) score++;
+                
+                document.querySelectorAll('.options-row .btn').forEach(b => b.onclick = null);
+                document.getElementById('next-btn-container').classList.remove('hidden');
+                
+                setTimeout(readEquation, 200);
+                attempt = 0;
+            } else {
+                playWrong();
+                btn.className = 'btn btn-red shake';
+                setTimeout(() => btn.classList.remove('shake'), 400);
+                attempt++;
+            }
+        }
+
+        // --- NAVIGATION ---
+        function skipToNext() {
+            if(currentIndex >= 9) {
+                showEndScreen();
+            } else {
+                currentIndex++;
+                loadPhaseB();
+            }
+        }
+
+        // --- MINI GAME ---
+        let minigameTimer;
+        let starSpawnInterval;
+        
+        function startMiniGame() {
+            if(currentIndex >= 9) {
+                showEndScreen();
+                return;
+            }
+
+            document.getElementById('screen-question').classList.add('hidden');
+            const mg = document.getElementById('screen-minigame');
+            mg.classList.remove('hidden');
+            
+            const cont = document.getElementById('star-container');
+            cont.innerHTML = '';
+            
+            speakText("Catch the stars!");
+            
+            let timeLeft = 15;
+            document.getElementById('star-timer').innerText = timeLeft + "s";
+            
+            minigameTimer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('star-timer').innerText = timeLeft + "s";
+                if(timeLeft <= 0) {
+                    endMiniGameRound();
+                }
+            }, 1000);
+
+            starSpawnInterval = setInterval(() => {
+                if (cont.children.length > 8) return; 
+
+                const star = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                star.setAttribute("viewBox", "0 0 24 24");
+                star.setAttribute("class", "falling-star-svg");
+                star.innerHTML = `<path fill="currentColor" d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/>`;
+                
+                const colors = ['#FFD700', '#FF69B4', '#00FFFF', '#32CD32', '#FF4500'];
+                star.style.color = colors[Math.floor(Math.random()*colors.length)];
+                star.style.left = (Math.random() * 80 + 10) + 'vw';
+                star.style.animationDuration = (Math.random()*2 + 2.5) + 's'; 
+                
+                const catchStar = (e) => {
+                    e.preventDefault();
+                    if(star.style.opacity === '0') return;
+                    star.style.opacity = '0';
+                    playStar();
+                    
+                    const pop = document.createElement('div');
+                    pop.innerText = "+1";
+                    pop.className = "star-pop";
+                    pop.style.left = star.style.left;
+                    let touchY = e.touches ? e.touches[0].clientY : e.clientY;
+                    pop.style.top = touchY + 'px';
+                    document.getElementById('screen-minigame').appendChild(pop);
+                    setTimeout(() => pop.remove(), 800);
+
+                    setTimeout(() => star.remove(), 200);
+                };
+
+                star.onmousedown = catchStar;
+                star.ontouchstart = catchStar;
+                
+                cont.appendChild(star);
+                
+                setTimeout(()=>{
+                    if(star.parentNode) star.remove();
+                }, 5000);
+            }, 600);
+        }
+
+        function endMiniGameRound() {
+            clearInterval(minigameTimer);
+            clearInterval(starSpawnInterval);
+            currentIndex++;
+            loadPhaseB();
+        }
+
+        // --- END SCREEN ---
+        function showEndScreen() {
+            document.getElementById('screen-question').classList.add('hidden');
+            document.getElementById('screen-end').classList.remove('hidden');
+            
+            document.getElementById('final-score').innerText = `${score}/10`;
+            const msg = document.getElementById('end-message');
+            if(score >= 9) msg.innerText = "Amazing! 🌟";
+            else if(score >= 6) msg.innerText = "Great Job! 👍";
+            else msg.innerText = "Good try! Keep practicing! 💪";
+
+            for(let i=0; i<60; i++){
+                const c = document.createElement('div');
+                c.className = 'confetti';
+                const colors = ['#1cb0f6', '#58cc02', '#ff4b4b', '#ffc800', '#ce82ff'];
+                c.style.backgroundColor = colors[Math.floor(Math.random()*colors.length)];
+                c.style.left = Math.random()*100 + 'vw';
+                c.style.animationDuration = (Math.random()*2 + 2) + 's';
+                document.body.appendChild(c);
+            }
+        }
+    </script>
+</body>
+</html>
