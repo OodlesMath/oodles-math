@@ -4,7 +4,7 @@
     <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Animal Feeding Division - Ver 8</title>
+    <title>Animal Feeding Division - Ver 9</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -557,8 +557,18 @@
                 f.className = 'food-item pretty-icon'; f.innerText = q.theme.emojiF;
                 f.id = 'food-'+i; f.draggable = true;
                 
-                f.ondragstart = (e) => { e.dataTransfer.setData('text', e.target.id); playPop(); };
+                f.ondragstart = (e) => { 
+                    // Chống việc nắm kéo trái cây đã vô bụng
+                    if (f.parentNode.id !== 'food-source-area') {
+                        e.preventDefault();
+                        return;
+                    }
+                    e.dataTransfer.setData('text', e.target.id); 
+                    playPop(); 
+                };
                 f.onclick = (e) => { 
+                    // Chống việc chọn trái cây đã vô bụng
+                    if (f.parentNode.id !== 'food-source-area') return;
                     if(selectedFood) selectedFood.style.transform = 'scale(1)';
                     selectedFood = f; f.style.transform = 'scale(1.2) translateY(-5px)'; 
                     playPop(); e.stopPropagation();
@@ -600,16 +610,13 @@
             card.ondrop = e => {
                 e.preventDefault(); card.classList.remove('drag-over');
                 const f = document.getElementById(e.dataTransfer.getData('text'));
-                // Chỉ nhận thức ăn có thật trên DOM hiện tại (Chống ghost item kéo thả)
                 if(f && document.body.contains(f) && !card.classList.contains('locked')) acceptFood(card, f);
             };
             
             card.onclick = (e) => {
                 if(e.target.classList.contains('animal-label')) return; 
-                
                 if(selectedFood && !card.classList.contains('locked')) {
                     acceptFood(card, selectedFood);
-                    selectedFood = null;
                 }
             };
 
@@ -637,20 +644,36 @@
                     const food = source.children[0]; 
                     bin.appendChild(food);
                     food.style.transform = 'scale(1)';
+                    // Khóa thức ăn sau khi đã đút
+                    food.draggable = false;
+                    food.style.cursor = 'default';
                 }
+                
+                selectedFood = null; // NGĂN CHẶN BỘ NHỚ LỖI
                 playPop();
                 checkAndLockAnimal(card, q);
             }
         }
 
         function acceptFood(card, foodElement) {
-            // Chống lỗi "Trái cây ma" (Ghost item) trên MacOS do lag thao tác chạm
             if (!document.body.contains(foodElement)) return;
+            
+            // NGĂN CHẶN ĂN CẮP TỪ THÚ KHÁC
+            if (foodElement.parentNode.id !== 'food-source-area') {
+                selectedFood = null;
+                return;
+            }
 
             const q = questions[currentIndex];
             const bin = card.querySelector('.food-bin');
             bin.appendChild(foodElement);
             foodElement.style.transform = 'scale(1)';
+            
+            // Khóa thức ăn sau khi đã đút
+            foodElement.draggable = false;
+            foodElement.style.cursor = 'default';
+            selectedFood = null; // NGĂN CHẶN BỘ NHỚ LỖI
+
             playPop();
             checkAndLockAnimal(card, q);
         }
