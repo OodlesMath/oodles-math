@@ -317,30 +317,59 @@
         let animTimeouts = [];
 
         // --- Core Logic ---
-        function generateMathQuestion() {
+        function generateMathQuestion(qIndex) {
             const isAdd = Math.random() > 0.5;
+            const isHard = qIndex >= 8; // Câu hỏi 9 và 10 sẽ khó hơn
+
             if (isAdd) {
-                const a = Math.floor(Math.random() * 15) + 1;
-                const b = Math.floor(Math.random() * 15) + 1;
-                const maxC = 40 - a - b;
-                const c = Math.floor(Math.random() * Math.min(15, maxC)) + 1;
-                const total = a + b + c;
-                return { mode: 'add', a, b, c, total, answer: total };
+                if (!isHard) {
+                    // Dễ: 2 chữ số (10-20) + 1 chữ số (1-9) + 1 chữ số (1-9) => Dạng ab + c + d
+                    let a = Math.floor(Math.random() * 11) + 10; // 10 đến 20
+                    let b = Math.floor(Math.random() * 9) + 1;   // 1 đến 9
+                    let maxC = 40 - a - b;
+                    let c = Math.floor(Math.random() * Math.min(9, maxC)) + 1; // 1 đến 9
+                    let total = a + b + c;
+                    return { mode: 'add', a, b, c, total, answer: total };
+                } else {
+                    // Khó: 2 chữ số + 2 chữ số + 1 chữ số
+                    let a = Math.floor(Math.random() * 6) + 10; // 10 đến 15
+                    let b = Math.floor(Math.random() * 6) + 10; // 10 đến 15
+                    let maxC = 40 - a - b;
+                    let c = Math.floor(Math.random() * Math.min(9, maxC)) + 1;
+                    let total = a + b + c;
+                    return { mode: 'add', a, b, c, total, answer: total };
+                }
             } else {
-                const total = Math.floor(Math.random() * 31) + 10;
-                const a = Math.floor(Math.random() * (total - 2)) + 1;
-                const b = Math.floor(Math.random() * (total - a - 1)) + 1;
-                const c = total - a - b;
-                return { mode: 'sub', a, b, c, total, answer: c };
+                if (!isHard) {
+                    // Dễ: Tổng 2 chữ số (20-30) - 1 chữ số - 1 chữ số => Dạng ef - g - h
+                    let total = Math.floor(Math.random() * 11) + 20; // 20 đến 30
+                    let a = Math.floor(Math.random() * 9) + 1; // 1 đến 9
+                    let b = Math.floor(Math.random() * 9) + 1; // 1 đến 9
+                    let c = total - a - b;
+                    return { mode: 'sub', a, b, c, total, answer: c };
+                } else {
+                    // Khó: Tổng 2 chữ số (30-40) - 2 chữ số - 1 chữ số
+                    let total = Math.floor(Math.random() * 11) + 30; // 30 đến 40
+                    let a = Math.floor(Math.random() * 6) + 10; // 10 đến 15
+                    let b = Math.floor(Math.random() * 5) + 5;  // 5 đến 9
+                    
+                    // Trộn vị trí a, b cho phong phú
+                    if (Math.random() > 0.5) {
+                        let temp = a; a = b; b = temp;
+                    }
+                    
+                    let c = total - a - b;
+                    return { mode: 'sub', a, b, c, total, answer: c };
+                }
             }
         }
 
-        function getUniqueQuestion() {
+        function getUniqueQuestion(qIndex) {
             let q;
             let qStr;
             let attempts = 0;
             do {
-                q = generateMathQuestion();
+                q = generateMathQuestion(qIndex);
                 qStr = q.mode === 'add' ? `add_${q.a}_${q.b}_${q.c}` : `sub_${q.total}_${q.a}_${q.b}`;
                 attempts++;
             } while (history.has(qStr) && attempts < 100);
@@ -604,7 +633,8 @@
         };
 
         function startQuestion() {
-            nums = getUniqueQuestion();
+            // Sử dụng questionCount để kiểm soát độ khó
+            nums = getUniqueQuestion(questionCount);
             mode = nums.mode;
             options = generateOptions(nums.answer);
             selectedOption = null;
