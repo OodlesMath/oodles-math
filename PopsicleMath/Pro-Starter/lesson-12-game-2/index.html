@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Repeated Addition Jump - Ver1</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* ========================================================
+           GLOBAL CSS
+           ======================================================== */
+        :root {
+            --primary: #58cc02;
+            --primary-shadow: #58a700;
+            --secondary: #1cb0f6;
+            --secondary-shadow: #1899d6;
+            --warning: #ff4b4b;
+            --warning-shadow: #ea1515;
+            --neutral: #e5e5e5;
+            --neutral-shadow: #cecece;
+            --text-main: #4b4b4b;
+            --text-light: #afafaf;
+            --ans-bg: #1cb0f6;
+            --ans-shadow: #1899d6;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevent all scrolling */
+            user-select: none;
+            -webkit-user-select: none;
+            width: 100vw;
+            height: 100vh;
+            background-color: #7dd3fc; /* Fallback sky color */
+        }
+
+        /* --- GLOBAL ANIMATED BACKGROUND --- */
+        #backgroundCanvas {
+            display: block;
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none; /* Let clicks pass through to game */
+        }
+
+        /* --- MATH GAME UI --- */
+        #math-wrapper {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2vh 4vw;
+        }
+
+        #app-container {
+            width: 100%;
+            max-width: 650px;
+            height: 96vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            z-index: 20;
+        }
+
+        .btn-duo {
+            display: inline-flex; align-items: center; justify-content: center;
+            font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+            border-radius: 16px; padding: 12px 24px; cursor: pointer;
+            transition: all 0.1s ease; position: relative; top: 0;
+            text-align: center; border: none; outline: none;
+            filter: drop-shadow(0 2px 1px rgba(0,0,0,0.1));
+            font-size: clamp(1rem, 2.5vh, 1.25rem);
+        }
+        .btn-duo:active:not(:disabled) { top: 4px; box-shadow: none !important; filter: none; }
+        .btn-duo:disabled { opacity: 0.6; cursor: not-allowed; top: 4px; box-shadow: none !important; filter: none; }
+
+        .btn-green { background-color: var(--primary); color: white; box-shadow: 0 5px 0 var(--primary-shadow); }
+        .btn-blue { background-color: var(--secondary); color: white; box-shadow: 0 5px 0 var(--secondary-shadow); }
+        .btn-orange { background-color: #ff9600; color: white; box-shadow: 0 5px 0 #cc7800; }
+        
+        .btn-answer {
+            background-color: var(--ans-bg); color: white; border: 2px solid var(--ans-bg);
+            box-shadow: 0 6px 0 var(--ans-shadow); font-size: clamp(1.5rem, 4vh, 2rem);
+            padding: 1vh 0; border-radius: 20px;
+        }
+        .btn-answer:active:not(:disabled) { border-color: var(--ans-shadow); }
+
+        .game-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 28px;
+            border: 3px solid rgba(255, 255, 255, 1);
+            box-shadow: 0 10px 0 rgba(206, 206, 206, 0.5), 0 20px 40px rgba(0,0,0,0.2);
+            backdrop-filter: blur(8px);
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 3vh 4vw;
+            box-sizing: border-box;
+        }
+
+        .number-line-container {
+            position: relative;
+            width: 100%;
+            height: 18vh;
+            min-height: 120px;
+            margin: 2vh 0;
+        }
+
+        .number-line-base {
+            position: absolute; bottom: 25px; left: 5%; right: 5%;
+            height: 6px; background-color: var(--text-main); border-radius: 4px;
+        }
+
+        .tick-marks { position: absolute; bottom: 25px; left: 5%; width: 90%; height: 16px; }
+        .tick {
+            position: absolute; width: 4px; height: 16px;
+            background-color: var(--text-main); bottom: 0;
+            transform: translateX(-50%); border-radius: 2px;
+        }
+        .tick-label {
+            position: absolute; bottom: -30px; transform: translateX(-50%);
+            font-weight: 700; font-size: clamp(14px, 2vh, 18px); color: var(--text-light);
+        }
+        .tick-label.highlight {
+            color: var(--primary); font-size: clamp(18px, 2.5vh, 24px);
+            font-weight: 900; bottom: -35px; transition: all 0.3s;
+        }
+
+        .character-container {
+            position: absolute;
+            bottom: 30px; /* Sits exactly on the line */
+            width: clamp(60px, 10vh, 85px);
+            height: clamp(60px, 10vh, 85px);
+            transform: translateX(-50%);
+            transition: left 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 10;
+            filter: drop-shadow(0 6px 4px rgba(0,0,0,0.25));
+        }
+        
+        @keyframes jumpAnim {
+            0% { bottom: 30px; }
+            50% { bottom: 12vh; } 
+            100% { bottom: 30px; }
+        }
+        .character-container.jumping {
+            animation: jumpAnim 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .jump-svg {
+            position: absolute; top: 0; left: 5%; width: 90%; height: 100%;
+            pointer-events: none; overflow: visible;
+        }
+        
+        /* Updated Arrow Styles */
+        .arrow-path {
+            fill: none; stroke: var(--warning); stroke-width: 6; /* Red color */
+            stroke-linecap: round; stroke-dasharray: 1000; stroke-dashoffset: 1000;
+            animation: drawArrow 0.5s forwards ease-out;
+        }
+        .arrow-head { fill: var(--warning); opacity: 0; animation: fadeIn 0.1s forwards 0.4s; } /* Red color */
+        
+        @keyframes drawArrow { to { stroke-dashoffset: 0; } }
+        @keyframes fadeIn { to { opacity: 1; } }
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+        
+        .speaker-icon { cursor: pointer; transition: transform 0.1s; filter: drop-shadow(0 2px 1px rgba(0,0,0,0.15)); }
+        .speaker-icon:active { transform: scale(0.9); filter: none; }
+        .icon-3d { filter: drop-shadow(0 3px 1px rgba(0,0,0,0.15)); }
+
+        #confetti-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 9999; overflow: hidden;
+        }
+        .confetti {
+            position: absolute; width: 14px; height: 14px;
+            animation: fall linear forwards; border-radius: 3px;
+        }
+        @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
+
+        /* ========================================================
+           PIKACHU GAME CSS
+           ======================================================== */
+        #pikachu-wrapper {
+            position: absolute; inset: 0; z-index: 20; width: 100%; height: 100%;
+        }
+        .hidden-screen { display: none !important; }
+        #setup-screen { width: 100%; height: 100vh; overflow-y: auto; padding-bottom: 34px; position: relative; z-index: 21; }
+        
+        .topbar { width: min(1060px, calc(100% - 28px)); min-height: 82px; margin: 18px auto 0; padding: 14px 18px; background: rgba(255, 255, 255, 0.9); border: 4px solid rgba(255, 255, 255, 0.95); border-radius: 28px; box-shadow: 0 10px 0 rgba(24, 153, 214, 0.22), 0 22px 45px rgba(22, 82, 121, 0.16); display: flex; align-items: center; justify-content: space-between; gap: 16px; backdrop-filter: blur(8px); }
+        .brand { display: flex; align-items: center; gap: 12px; animation: mascot-float 3s ease-in-out infinite; }
+        .brand-icon { width: 58px; height: 58px; border-radius: 19px; background: linear-gradient(180deg, #ff4b4b 0%, #dc2626 100%); box-shadow: 0 7px 0 #b91c1c; color: white; display: grid; place-items: center; font-weight: 900; font-size: 32px; text-shadow: 0 3px 0 rgba(0,0,0,0.18); border: 3px solid #ffffff; }
+        .brand-title { font-size: clamp(1.45rem, 3.5vw, 2.25rem); font-weight: 900; line-height: 1; letter-spacing: -0.04em; white-space: nowrap; color: var(--text-main); }
+        .brand-title span:first-child { color: var(--warning); } .brand-title span:last-child { color: var(--secondary); }
+        .top-pill { background: #fff7c2; color: #b77900; border: 3px solid #ffdf58; border-radius: 999px; padding: 10px 18px; font-size: 0.9rem; font-weight: 900; letter-spacing: 0.04em; box-shadow: 0 5px 0 #efd04f; white-space: nowrap; }
+        .setup-main { width: min(900px, calc(100% - 28px)); margin: 34px auto 0; display: flex; flex-direction: column; align-items: center; gap: 28px; }
+        .setup-grid { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+        .pk-card { position: relative; overflow: hidden; background: rgba(255, 255, 255, 0.94); border: 4px solid rgba(255,255,255,0.98); border-radius: 34px; box-shadow: 0 12px 0 rgba(255,255,255,0.55), 0 24px 50px rgba(22, 82, 121, 0.16); padding: 28px; min-height: 270px; backdrop-filter: blur(8px); }
+        .pk-card::before { content: ""; position: absolute; top: -42px; right: -42px; width: 155px; height: 155px; border-radius: 50%; background: rgba(28, 176, 246, 0.12); }
+        .pk-card h2 { margin: 0 0 26px; font-size: 1.55rem; font-weight: 900; color: #34445e; display: flex; align-items: center; gap: 12px; }
+        .slider-row { margin-top: 22px; }
+        .label-line { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; font-size: 0.85rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; }
+        .label-line.blue { color: var(--secondary); } .label-line.green { color: var(--primary); }
+        .value-badge { background: #eff8ff; border-radius: 12px; padding: 6px 12px; box-shadow: inset 0 -3px 0 rgba(28,176,246,0.1); min-width: 64px; text-align: center; color: var(--text-main); }
+        input[type="range"] { width: 100%; height: 14px; border-radius: 999px; accent-color: var(--primary); outline: none; cursor: pointer; }
+        .score-card { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .score-card .crown { font-size: 5rem; line-height: 1; filter: drop-shadow(0 7px 0 rgba(211, 166, 0, 0.25)); margin-bottom: 12px; }
+        .small-label { font-size: 0.82rem; font-weight: 900; color: #6b7280; text-transform: uppercase; letter-spacing: 0.12em; }
+        #high-score-display { color: #ffc800; font-size: clamp(4rem, 12vw, 6.2rem); line-height: 0.95; font-weight: 900; letter-spacing: -0.07em; text-shadow: 0 6px 0 rgba(211, 166, 0, 0.24); margin-top: 6px; }
+        .play-button, .modal-button { border: 0; border-radius: 28px; font-family: inherit; font-weight: 900; cursor: pointer; text-transform: uppercase; letter-spacing: 0.08em; transition: transform .12s ease, box-shadow .12s ease, filter .12s ease; -webkit-tap-highlight-color: transparent; }
+        .play-button { width: min(480px, 100%); padding: 22px 24px; background: var(--primary); color: white; box-shadow: 0 9px 0 var(--primary-shadow), 0 20px 40px rgba(88, 204, 2, 0.28); font-size: clamp(1.25rem, 4vw, 2rem); display: flex; align-items: center; justify-content: center; gap: 14px; }
+        .play-button:hover { transform: translateY(-2px) scale(1.015); filter: brightness(1.02); } .play-button:active, .modal-button:active { transform: translateY(7px); box-shadow: 0 0 0 transparent !important; }
+        .teacher-note { background: rgba(255,255,255,0.82); border: 3px solid rgba(255,255,255,0.95); border-radius: 18px; padding: 10px 16px; font-size: 0.78rem; font-weight: 800; color: #48708f; text-align: center; box-shadow: 0 6px 0 rgba(255,255,255,0.35); }
+        
+        #game-screen { position: fixed; inset: 0; z-index: 25; background: transparent; }
+        #canvas-container, #gameCanvas { width: 100%; height: 100%; display: block; }
+        #gameCanvas { position: absolute; inset: 0; background: transparent; }
+        
+        .score-badge { position: absolute; top: 20px; left: 22px; z-index: 30; display: flex; align-items: center; gap: 10px; min-width: 148px; justify-content: center; padding: 12px 18px; background: rgba(255, 253, 231, 0.94); border: 4px solid rgba(255,255,255,1); border-radius: 24px; box-shadow: 0 8px 0 rgba(211, 166, 0, 0.30), 0 18px 35px rgba(22, 82, 121, 0.18); font-size: clamp(1.3rem, 4vw, 2rem); font-weight: 900; color: #d3a600; text-shadow: 0 2px 0 white; }
+        .coin-mini { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 32% 25%, #fff8b0 0 18%, #ffc800 19% 65%, #d3a600 66% 100%); border: 3px solid #9a6700; box-shadow: inset -4px -5px 0 rgba(154,103,0,0.20), 0 3px 0 rgba(154,103,0,0.28); color: #9a6700; font-size: 18px; font-weight: 900; line-height: 1; }
+        .instruction-bar { position: absolute; bottom: 34px; left: 50%; transform: translateX(-50%); z-index: 30; width: min(720px, calc(100% - 24px)); background: var(--secondary); border-radius: 28px; padding: 13px 20px; text-align: center; color: white; font-weight: 900; font-size: clamp(0.95rem, 3.4vw, 1.22rem); box-shadow: 0 8px 0 var(--secondary-shadow), 0 18px 38px rgba(24,153,214,0.28); pointer-events: none; transition: opacity .45s ease; }
+        .key-hint { background: white; color: var(--secondary); padding: 4px 14px; border-radius: 13px; margin: 0 5px; font-size: 0.95em; box-shadow: 0 4px 0 #d7effc; display: inline-block; transform: translateY(-2px); }
+        #game-summary { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 50; width: min(440px, calc(100% - 28px)); background: white; padding: 28px 30px 30px; border-radius: 34px; text-align: center; border: 5px solid #ffffff; box-shadow: 0 14px 0 rgba(255,255,255,0.45), 0 28px 65px rgba(16, 38, 70, 0.28); }
+        .summary-icon { font-size: 4.8rem; line-height: 1; margin-bottom: 10px; }
+        #game-summary h3 { margin: 0; color: var(--secondary); font-size: clamp(2rem, 7vw, 3rem); line-height: 1; font-weight: 900; letter-spacing: -0.05em; }
+        #game-summary p { margin: 10px 0 20px; color: #6b7280; font-size: 0.92rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; }
+        .final-score-box { background: #f6f9fc; border: 3px solid #edf2f7; border-radius: 24px; padding: 18px; margin-bottom: 20px; }
+        #final-score { color: #ffc800; font-size: 4rem; font-weight: 900; line-height: 1; text-shadow: 0 5px 0 rgba(211, 166, 0, 0.18); }
+        .modal-stack { display: grid; gap: 12px; }
+        .modal-button { width: 100%; padding: 15px 18px; font-size: 1.05rem; }
+        .modal-button.primary { background: var(--primary); color: white; box-shadow: 0 7px 0 var(--primary-shadow); }
+        .modal-button.secondary { background: #e5e7eb; color: #4b5563; box-shadow: 0 7px 0 #cfd5dd; }
+        #pikachu-confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
+        @keyframes mascot-float { 0%, 100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-8px) rotate(1deg); } }
+
+        @media (max-width: 760px) {
+            .topbar { margin-top: 12px; min-height: 74px; } .top-pill { display: none; }
+            .setup-main { margin-top: 20px; gap: 20px; } .setup-grid { grid-template-columns: 1fr; gap: 18px; }
+            .pk-card { min-height: 0; padding: 22px; border-radius: 28px; }
+            .score-card .crown { font-size: 3.8rem; } .instruction-bar { bottom: 24px; } .score-badge { top: 14px; left: 14px; }
+        }
+    </style>
+</head>
+<body>
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- GLOBAL ANIMATED BACKGROUND -->
+    <canvas id="backgroundCanvas" aria-label="Colorful sky background"></canvas>
+
+    <!-- ==========================================
+         MATH GAME WRAPPER 
+         ========================================== -->
+    <div id="math-wrapper">
+        <div id="app-container">
+            
+            <!-- START SCREEN -->
+            <div id="screen-start" class="text-center w-full flex flex-col justify-center items-center h-full">
+                <div class="mb-6 flex flex-col items-center">
+                    <div style="width: 120px; height: 120px; margin-bottom: 10px;" id="start-character-container">
+                        <!-- Bunny SVG cloned here -->
+                    </div>
+                    <h1 class="text-4xl md:text-5xl font-extrabold text-green-500 mb-2 icon-3d" style="text-shadow: 2px 2px 0 white;">Repeated Addition</h1>
+                    <p class="text-xl md:text-2xl font-bold text-gray-700 icon-3d" style="text-shadow: 1px 1px 0 white;">Jump forward to multiply!</p>
+                </div>
+                
+                <div class="game-card max-w-md mx-auto flex-grow-0">
+                    <h2 class="text-2xl font-bold mb-4 text-blue-500 text-center">Choose Difficulty:</h2>
+                    <div class="flex flex-col gap-4">
+                        <button class="btn-duo btn-green" onclick="startMathGame('easy')">Easy (Totals up to 12)</button>
+                        <button class="btn-duo btn-blue" onclick="startMathGame('medium')">Medium (Totals up to 24)</button>
+                        <button class="btn-duo btn-orange" onclick="startMathGame('challenge')">Challenge (Totals up to 36)</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GAMEPLAY SCREEN -->
+            <div id="screen-game" class="hidden w-full h-full flex flex-col justify-center">
+                <!-- Progress Bar -->
+                <div class="w-full bg-white rounded-full h-4 mb-4 relative overflow-hidden border-2 border-gray-200 shadow-sm flex-shrink-0">
+                    <div id="progress-bar" class="bg-green-500 h-full rounded-full transition-all duration-300 shadow-sm" style="width: 0%"></div>
+                </div>
+
+                <div class="game-card relative h-full max-h-[80vh]">
+                    
+                    <!-- Header Area -->
+                    <div class="flex flex-col items-center flex-shrink-0">
+                        <div class="flex items-center justify-center gap-4 mb-1">
+                            <h2 id="question-text" class="text-4xl md:text-5xl font-extrabold text-gray-800 icon-3d">3 × 4 = ?</h2>
+                            <div class="speaker-icon text-3xl bg-blue-100 p-2 rounded-full text-blue-500" onclick="readQuestion()">🔊</div>
+                        </div>
+                        <p id="instruction-text" class="text-center text-xl font-bold text-blue-500 h-8 icon-3d">Jump forward by 4 each time.</p>
+                    </div>
+
+                    <!-- Number Line Area -->
+                    <div class="number-line-container flex-shrink-0">
+                        <div class="number-line-base"></div>
+                        <div id="tick-container" class="tick-marks"></div>
+                        <svg id="svg-layer" class="jump-svg" viewBox="0 0 1000 180" preserveAspectRatio="none"></svg>
+                        
+                        <!-- Beautiful Bunny SVG Character -->
+                        <div id="character" class="character-container">
+                            <svg viewBox="0 0 200 200" width="100%" height="100%" overflow="visible">
+                                <g transform="translate(0, 10)">
+                                    <!-- Back Ear -->
+                                    <g transform="translate(140, 50) rotate(15)">
+                                        <ellipse cx="0" cy="0" rx="14" ry="42" fill="#E5AE78" stroke="#8c5836" stroke-width="3"/>
+                                        <ellipse cx="0" cy="0" rx="7" ry="32" fill="#FFA5A5"/>
+                                    </g>
+                                    <!-- Tail -->
+                                    <circle cx="160" cy="140" r="16" fill="#FFFFFF" stroke="#8c5836" stroke-width="3"/>
+                                    <!-- Body -->
+                                    <path d="M 60 120 C 40 180, 150 180, 150 120 C 150 90, 70 90, 60 120 Z" fill="#E5AE78" stroke="#8c5836" stroke-width="3"/>
+                                    <path d="M 80 130 C 70 165, 130 165, 130 130 C 130 110, 90 110, 80 130 Z" fill="#FFFFFF"/>
+                                    <!-- Front Ear -->
+                                    <g transform="translate(70, 40) rotate(-10)">
+                                        <ellipse cx="0" cy="0" rx="16" ry="45" fill="#E5AE78" stroke="#8c5836" stroke-width="3"/>
+                                        <ellipse cx="0" cy="0" rx="8" ry="34" fill="#FFA5A5"/>
+                                    </g>
+                                    <!-- Head -->
+                                    <ellipse cx="100" cy="100" rx="46" ry="40" fill="#E5AE78" stroke="#8c5836" stroke-width="3"/>
+                                    <ellipse cx="100" cy="104" rx="43" ry="34" fill="#E5AE78" /> <!-- Cover inner border -->
+                                    <!-- Cheeks -->
+                                    <circle cx="65" cy="112" r="10" fill="#FF8989" opacity="0.6"/>
+                                    <circle cx="135" cy="112" r="10" fill="#FF8989" opacity="0.6"/>
+                                    <!-- Eyes -->
+                                    <ellipse cx="78" cy="95" rx="7" ry="11" fill="#3A2318"/>
+                                    <circle cx="80" cy="90" r="3" fill="#FFFFFF"/>
+                                    <ellipse cx="122" cy="95" rx="7" ry="11" fill="#3A2318"/>
+                                    <circle cx="124" cy="90" r="3" fill="#FFFFFF"/>
+                                    <!-- Nose & Mouth -->
+                                    <path d="M 96 108 Q 100 112 104 108" stroke="#3A2318" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                                    <path d="M 100 110 L 100 118 M 100 118 Q 92 122 88 116 M 100 118 Q 108 122 112 116" stroke="#3A2318" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                                    <!-- Paws (Front) -->
+                                    <g transform="translate(75, 145) rotate(30)"><ellipse cx="0" cy="0" rx="12" ry="16" fill="#E5AE78" stroke="#8c5836" stroke-width="3"/></g>
+                                    <g transform="translate(125, 145) rotate(-30)"><ellipse cx="0" cy="0" rx="12" ry="16" fill="#E5AE78" stroke="#8c5836" stroke-width="3"/></g>
+                                    <!-- Feet -->
+                                    <ellipse cx="80" cy="172" rx="18" ry="10" fill="#E5AE78" stroke="#8c5836" stroke-width="3"/>
+                                    <ellipse cx="120" cy="172" rx="18" ry="10" fill="#E5AE78" stroke="#8c5836" stroke-width="3"/>
+                                </g>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Actions Area -->
+                    <div id="action-area" class="mt-4 text-center flex-grow flex flex-col items-center justify-center">
+                        
+                        <!-- Jump Phase -->
+                        <div id="jump-phase" class="flex flex-col items-center w-full">
+                            <button id="btn-jump" class="btn-duo btn-blue text-2xl py-4 w-full max-w-sm" onclick="makeJump()">JUMP!</button>
+                            <div class="mt-4 flex justify-between w-full max-w-sm px-4">
+                                <button class="text-gray-400 font-bold hover:text-gray-600" onclick="resetCurrentJumps()">🔄 Reset</button>
+                                <p id="jump-counter" class="text-xl font-bold text-gray-500 icon-3d">0 jumps</p>
+                            </div>
+                        </div>
+
+                        <!-- Answer Phase -->
+                        <div id="answer-phase" class="hidden w-full flex flex-col items-center">
+                            <div id="feedback-message" class="text-2xl font-extrabold text-green-500 mb-4 icon-3d"></div>
+                            
+                            <!-- Answer Grid -->
+                            <div id="answer-grid" class="grid grid-cols-2 gap-4 w-full max-w-sm mb-4">
+                                <!-- Generated buttons -->
+                            </div>
+
+                            <!-- Post Answer Actions (Next / Play Game) -->
+                            <div id="post-answer-actions" class="hidden w-full max-w-sm flex-col gap-3">
+                                <button class="btn-duo btn-green w-full text-xl py-3" onclick="nextQuestion()">Next Question ➡️</button>
+                                <button class="btn-duo btn-orange w-full text-xl py-3" onclick="startBonusGame()">Play Bonus Game 🎮</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- END SCREEN -->
+            <div id="screen-end" class="hidden text-center w-full flex flex-col justify-center items-center h-full">
+                <h1 class="text-5xl font-extrabold text-green-500 mb-4 icon-3d" style="text-shadow: 2px 2px 0 white;">Lesson Complete!</h1>
+                <div class="game-card max-w-sm mx-auto mb-8 flex-grow-0 p-8">
+                    <p class="text-xl font-bold text-gray-500 mb-2">Your Score</p>
+                    <p id="final-score-text" class="text-6xl font-extrabold text-blue-500 mb-4 icon-3d">10/10</p>
+                    <p id="final-message" class="text-2xl font-bold text-orange-500 icon-3d mb-6">Amazing jumping! 🌟</p>
+                    
+                    <div class="flex flex-col gap-4">
+                        <button class="btn-duo btn-orange text-xl w-full" onclick="startBonusGame()">Play Bonus Game 🎮</button>
+                        <button class="btn-duo btn-blue text-lg w-full" onclick="playMathAgain()">🔄 Play Again</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    
+    <!-- Confetti for Math Game -->
+    <div id="confetti-container" class="hidden"></div>
+
+
+    <!-- ==========================================
+         PIKACHU GAME WRAPPER (Hidden initially)
+         ========================================== -->
+    <div id="pikachu-wrapper" class="hidden-screen">
+        <section id="setup-screen" class="screen-layer">
+            <header class="topbar">
+                <div class="brand">
+                    <div class="brand-icon">P</div>
+                    <div class="brand-title"><span>PIKACHU</span> <span>RUN</span></div>
+                </div>
+                <div class="top-pill">JUMP, RUN & HAVE FUN! ⭐</div>
+            </header>
+            <main class="setup-main">
+                <div class="setup-grid">
+                    <div class="pk-card">
+                        <h2><span>⚙️</span> Game Setup</h2>
+                        <form id="settings-form">
+                            <div class="slider-row">
+                                <div class="label-line blue"><label for="speedRange">Run Speed</label><span id="speed-val" class="value-badge">5.5</span></div>
+                                <input id="speedRange" type="range" name="SPEED" min="3.5" max="9" step="0.5" value="5.5" />
+                            </div>
+                            <div class="slider-row">
+                                <div class="label-line green"><label for="jumpRange">Jump Power</label><span id="jump-val" class="value-badge">16.0</span></div>
+                                <input id="jumpRange" type="range" name="INITIAL_JUMP_VELOCITY" min="12" max="20" step="0.5" value="16" />
+                            </div>
+                        </form>
+                    </div>
+                    <div class="pk-card score-card">
+                        <div class="crown">👑</div>
+                        <div class="small-label">Best Coins</div>
+                        <div id="high-score-display">0</div>
+                    </div>
+                </div>
+                <button id="play-now-btn" class="play-button" type="button">PLAY NOW <span>🚀</span></button>
+                <div class="teacher-note">Press SPACE on a keyboard, or tap the screen on a tablet.</div>
+                
+                <!-- Back to Math Game Button -->
+                <button class="btn-duo btn-orange mt-4" onclick="exitBonusGame()">⬅️ Back to Math</button>
+            </main>
+        </section>
+
+        <section id="game-screen" class="hidden-screen">
+            <div id="canvas-container"></div>
+            <div class="score-badge"><span class="coin-mini">C</span><span id="score-display">0</span></div>
+            <div id="floating-instruction" class="instruction-bar">Press <span class="key-hint">SPACE</span> or <span class="key-hint">TAP</span> to Jump!</div>
+            
+            <div id="game-summary" role="dialog">
+                <div class="summary-icon">🎉</div>
+                <h3>GREAT JOB!</h3>
+                <p>You are a super runner!</p>
+                <div class="final-score-box">
+                    <div class="small-label">Your Coins</div>
+                    <div id="final-score">0</div>
+                </div>
+                <div class="modal-stack">
+                    <button id="restart-btn" class="modal-button primary" type="button">PLAY AGAIN 🎉</button>
+                    <!-- Return to Math Game directly -->
+                    <button id="home-btn" class="modal-button secondary" type="button">⬅️ BACK TO MATH</button>
+                </div>
+            </div>
+        </section>
+        <canvas id="pikachu-confetti"></canvas>
+    </div>
+
+    <!-- ========================================================
+         JAVASCRIPT
+         ======================================================== -->
+    <script>
+        // --------------------------------------------------------
+        // 0. GLOBAL CANVAS BACKGROUND
+        // --------------------------------------------------------
+        const backgroundCanvas = document.getElementById('backgroundCanvas');
+        const bgCtx = backgroundCanvas.getContext('2d', { alpha: false });
+        let canvasWidth = 0; let canvasHeight = 0;
+        let clouds = []; let bgTrees = []; let bgFlowers = []; let bgButterflies = [];
+        let bgFrameCount = 0; let pkBgAnimId = null;
+
+        function resizeBackgroundCanvas() {
+            canvasWidth = window.innerWidth; canvasHeight = window.innerHeight;
+            backgroundCanvas.width = canvasWidth; backgroundCanvas.height = canvasHeight;
+            generateEnvironment();
+        }
+
+        function generateEnvironment() {
+            clouds = []; bgTrees = []; bgFlowers = []; bgButterflies = [];
+            for (let i = 0; i < 4; i++) clouds.push({ x: Math.random() * canvasWidth, y: Math.random() * (canvasHeight * 0.42), size: 15 + Math.random() * 25, speed: Math.random() * 0.18 + 0.08 });
+            for (let i = 0; i < 10; i++) bgTrees.push({ x: Math.random() * canvasWidth, y: canvasHeight * 0.65 + (Math.random() * 20 - 10), scale: 0.5 + Math.random() * 0.5 });
+            const flowerColors = ['#ff4b4b', '#ffc800', '#ce82ff', '#ffffff', '#1cb0f6'];
+            for (let i = 0; i < 22; i++) bgFlowers.push({ x: Math.random() * canvasWidth, y: canvasHeight * 0.8 + Math.random() * (canvasHeight * 0.18), color: flowerColors[Math.floor(Math.random() * flowerColors.length)], scale: 0.3 + Math.random() * 0.5 });
+            const butterflyColors = ['#ff7e67', '#ff6bda', '#6be0ff', '#fcd34d', '#a78bfa'];
+            for (let i = 0; i < 6; i++) bgButterflies.push({ x: Math.random() * canvasWidth, y: canvasHeight * 0.3 + Math.random() * (canvasHeight * 0.4), color: butterflyColors[Math.floor(Math.random() * butterflyColors.length)], scale: 0.18 + Math.random() * 0.2, speedX: -(0.5 + Math.random() * 1.5), speedY: Math.random() * 0.4 - 0.2, flapSpeed: 0.15 + Math.random() * 0.15, flapPhase: Math.random() * Math.PI * 2 });
+        }
+
+        function updateBackground() {
+            bgFrameCount++;
+            clouds.forEach(cloud => { cloud.x -= cloud.speed; if (cloud.x + cloud.size * 2 < 0) { cloud.x = canvasWidth + cloud.size * 2; cloud.y = Math.random() * (canvasHeight * 0.42); } });
+            bgButterflies.forEach(bf => {
+                bf.x += bf.speedX; bf.y += bf.speedY + Math.sin(bgFrameCount * 0.05 + bf.flapPhase) * 0.5; bf.flapPhase += bf.flapSpeed;
+                if (bf.x < -50) { bf.x = canvasWidth + 50; bf.y = canvasHeight * 0.3 + Math.random() * (canvasHeight * 0.4); }
+            });
+        }
+
+        function drawCloud(cloud) { bgCtx.beginPath(); bgCtx.arc(cloud.x, cloud.y, cloud.size, 0, Math.PI * 2); bgCtx.arc(cloud.x + cloud.size * 0.8, cloud.y + cloud.size * 0.2, cloud.size * 0.7, 0, Math.PI * 2); bgCtx.arc(cloud.x - cloud.size * 0.8, cloud.y + cloud.size * 0.2, cloud.size * 0.7, 0, Math.PI * 2); bgCtx.fill(); }
+        function drawTree(tree) { bgCtx.save(); bgCtx.translate(tree.x, tree.y); bgCtx.scale(tree.scale, tree.scale); bgCtx.fillStyle = '#78350f'; bgCtx.fillRect(-10, 0, 20, 60); bgCtx.fillStyle = '#4ade80'; bgCtx.beginPath(); bgCtx.arc(0, -20, 40, 0, Math.PI * 2); bgCtx.fill(); bgCtx.beginPath(); bgCtx.arc(-25, -10, 30, 0, Math.PI * 2); bgCtx.fill(); bgCtx.beginPath(); bgCtx.arc(25, -10, 30, 0, Math.PI * 2); bgCtx.fill(); bgCtx.restore(); }
+        function drawFlower(flower) { bgCtx.save(); bgCtx.translate(flower.x, flower.y); bgCtx.scale(flower.scale, flower.scale); bgCtx.fillStyle = flower.color; for (let petal = 0; petal < 5; petal++) { bgCtx.rotate((Math.PI * 2) / 5); bgCtx.beginPath(); bgCtx.ellipse(0, -10, 6, 12, 0, 0, Math.PI * 2); bgCtx.fill(); } bgCtx.fillStyle = '#ffc800'; bgCtx.beginPath(); bgCtx.arc(0, 0, 6, 0, Math.PI * 2); bgCtx.fill(); bgCtx.restore(); }
+        function drawButterfly(bf) { bgCtx.save(); bgCtx.translate(bf.x, bf.y); bgCtx.scale(bf.scale, bf.scale); const flap = Math.abs(Math.cos(bf.flapPhase)); bgCtx.scale(flap, 1); bgCtx.fillStyle = bf.color; bgCtx.beginPath(); bgCtx.moveTo(0, 0); bgCtx.bezierCurveTo(20, -30, 40, -10, 15, 10); bgCtx.bezierCurveTo(25, 30, 5, 25, 0, 5); bgCtx.bezierCurveTo(-5, 25, -25, 30, -15, 10); bgCtx.bezierCurveTo(-40, -10, -20, -30, 0, 0); bgCtx.fill(); bgCtx.fillStyle = '#1e293b'; bgCtx.beginPath(); bgCtx.ellipse(0, 5, 3, 12, 0, 0, Math.PI * 2); bgCtx.fill(); bgCtx.strokeStyle = '#1e293b'; bgCtx.lineWidth = 1.5; bgCtx.beginPath(); bgCtx.moveTo(0, -5); bgCtx.quadraticCurveTo(5, -15, 10, -12); bgCtx.moveTo(0, -5); bgCtx.quadraticCurveTo(-5, -15, -10, -12); bgCtx.stroke(); bgCtx.restore(); }
+        
+        function drawBackground() {
+            const skyGradient = bgCtx.createLinearGradient(0, 0, 0, canvasHeight * 0.7);
+            skyGradient.addColorStop(0, '#7dd3fc'); skyGradient.addColorStop(1, '#bae6fd');
+            bgCtx.fillStyle = skyGradient; bgCtx.fillRect(0, 0, canvasWidth, canvasHeight);
+            
+            bgCtx.save(); bgCtx.translate(canvasWidth / 2, canvasHeight * 0.7); bgCtx.lineWidth = Math.min(20, canvasWidth * 0.015); bgCtx.lineCap = 'round';
+            const rainbowColors = ['#ff4b4b', '#ff9900', '#ffc800', '#58cc02', '#1cb0f6', '#ce82ff'];
+            const baseRadius = Math.min(canvasWidth * 0.3, 400);
+            for (let i = 0; i < rainbowColors.length; i++) { bgCtx.strokeStyle = rainbowColors[i]; bgCtx.beginPath(); bgCtx.arc(0, 0, Math.max(0.1, baseRadius - i * bgCtx.lineWidth), Math.PI, 0); bgCtx.stroke(); } bgCtx.restore();
+            
+            bgCtx.fillStyle = 'rgba(255, 255, 255, 0.95)'; clouds.forEach(drawCloud);
+            
+            bgCtx.fillStyle = '#65a30d'; bgCtx.beginPath(); bgCtx.moveTo(0, canvasHeight); bgCtx.lineTo(0, canvasHeight * 0.65); for (let x = 0; x <= canvasWidth + 300; x += 300) { bgCtx.quadraticCurveTo(x - 150, canvasHeight * 0.55, x, canvasHeight * 0.65); } bgCtx.lineTo(canvasWidth, canvasHeight); bgCtx.fill();
+            bgTrees.forEach(drawTree);
+            bgCtx.fillStyle = '#58cc02'; bgCtx.beginPath(); bgCtx.moveTo(0, canvasHeight); bgCtx.lineTo(0, canvasHeight * 0.7); bgCtx.quadraticCurveTo(canvasWidth / 2, canvasHeight * 0.65, canvasWidth, canvasHeight * 0.7); bgCtx.lineTo(canvasWidth, canvasHeight); bgCtx.fill();
+            bgCtx.strokeStyle = '#84cc16'; bgCtx.lineWidth = 15; bgCtx.lineCap = 'round'; bgCtx.beginPath(); bgCtx.moveTo(-20, canvasHeight * 0.7); bgCtx.quadraticCurveTo(canvasWidth / 2, canvasHeight * 0.65, canvasWidth + 20, canvasHeight * 0.7); bgCtx.stroke();
+            bgFlowers.forEach(drawFlower); bgButterflies.forEach(drawButterfly);
+        }
+
+        function backgroundAnimationLoop() {
+            updateBackground(); 
+            drawBackground();
+            pkBgAnimId = requestAnimationFrame(backgroundAnimationLoop);
+        }
+
+        // Initialize Global Canvas immediately
+        window.addEventListener('resize', resizeBackgroundCanvas);
+        resizeBackgroundCanvas();
+        backgroundAnimationLoop();
+
+        // --------------------------------------------------------
+        // 1. MATH GAME LOGIC (REPEATED ADDITION)
+        // --------------------------------------------------------
+        
+        // Clone bunny SVG to Start screen
+        document.getElementById('start-character-container').innerHTML = document.getElementById('character').innerHTML;
+
+        const mathAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const MathSound = {
+            playTone: function(freq, type, duration, vol=0.1) {
+                if(mathAudioCtx.state === 'suspended') mathAudioCtx.resume();
+                const osc = mathAudioCtx.createOscillator();
+                const gain = mathAudioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, mathAudioCtx.currentTime);
+                osc.connect(gain); gain.connect(mathAudioCtx.destination);
+                osc.start();
+                gain.gain.setValueAtTime(vol, mathAudioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, mathAudioCtx.currentTime + duration);
+                osc.stop(mathAudioCtx.currentTime + duration);
+            },
+            jump: function() { this.playTone(350, 'sine', 0.1, 0.3); setTimeout(() => this.playTone(450, 'sine', 0.15, 0.3), 50); },
+            correct: function() { this.playTone(523.25, 'triangle', 0.1, 0.3); setTimeout(() => this.playTone(659.25, 'triangle', 0.1, 0.3), 100); setTimeout(() => this.playTone(783.99, 'triangle', 0.3, 0.3), 200); },
+            wrong: function() { this.playTone(300, 'sawtooth', 0.2, 0.2); setTimeout(() => this.playTone(250, 'sawtooth', 0.3, 0.2), 150); },
+            reachZero: function() { this.playTone(659.25, 'sine', 0.1, 0.3); setTimeout(() => this.playTone(783.99, 'sine', 0.1, 0.3), 100); setTimeout(() => this.playTone(1046.50, 'sine', 0.2, 0.3), 200); }
+        };
+
+        const config = {
+            easy: { maxProduct: 12, factors: [2, 3] },
+            medium: { maxProduct: 24, factors: [2, 3, 4, 6] },
+            challenge: { maxProduct: 36, factors: [2, 3, 4, 5, 6] }
+        };
+
+        let mathState = {
+            difficulty: 'easy', questions: [], currentQuestionIndex: 0, score: 0,
+            currentPos: 0, jumpsMade: 0, hasAttemptedAnswer: false, isQuestionAnswered: false
+        };
+
+        const mEls = {
+            start: document.getElementById('screen-start'), game: document.getElementById('screen-game'), end: document.getElementById('screen-end'),
+            qText: document.getElementById('question-text'), instText: document.getElementById('instruction-text'),
+            tickContainer: document.getElementById('tick-container'), svgLayer: document.getElementById('svg-layer'),
+            char: document.getElementById('character'), jumpPhase: document.getElementById('jump-phase'),
+            ansPhase: document.getElementById('answer-phase'), jumpCounter: document.getElementById('jump-counter'),
+            btnJump: document.getElementById('btn-jump'), ansGrid: document.getElementById('answer-grid'),
+            fbMsg: document.getElementById('feedback-message'), progBar: document.getElementById('progress-bar'),
+            postAnsActions: document.getElementById('post-answer-actions')
+        };
+
+        function showMathScreen(screenName) {
+            ['start', 'game', 'end'].forEach(s => mEls[s].classList.add('hidden'));
+            mEls[screenName].classList.remove('hidden');
+        }
+
+        function generateQuestions(diff) {
+            const settings = config[diff];
+            const qSet = new Set(); const questions = [];
+            let attempts = 0;
+            while(questions.length < 10) { 
+                attempts++;
+                const multiplicand = settings.factors[Math.floor(Math.random() * settings.factors.length)];
+                const maxMultiplier = Math.floor(settings.maxProduct / multiplicand);
+                if (maxMultiplier < 2) continue;
+                
+                let multiplier = Math.floor(Math.random() * (maxMultiplier - 1)) + 2; // Từ 2 trở lên
+                
+                const answer = multiplier * multiplicand;
+                const qKey = `${multiplier}-${multiplicand}`;
+                
+                // Sửa lỗi đứng máy: Cho phép lặp lại câu hỏi nếu đã cạn kiệt tổ hợp unique
+                if(!qSet.has(qKey) || attempts > 50) {
+                    qSet.add(qKey);
+                    questions.push({ multiplier, multiplicand, answer });
+                    attempts = 0; // Reset lại bộ đếm
+                }
+            }
+            return questions;
+        }
+
+        function startMathGame(diff) {
+            if(mathAudioCtx.state === 'suspended') mathAudioCtx.resume();
+            mathState.difficulty = diff;
+            mathState.questions = generateQuestions(diff);
+            mathState.currentQuestionIndex = 0;
+            mathState.score = 0;
+            showMathScreen('game');
+            loadQuestion();
+        }
+
+        function playMathAgain() { startMathGame(mathState.difficulty); }
+
+        function loadQuestion() {
+            const q = mathState.questions[mathState.currentQuestionIndex];
+            mathState.currentPos = 0; // Addition starts at 0
+            mathState.jumpsMade = 0;
+            mathState.hasAttemptedAnswer = false;
+            mathState.isQuestionAnswered = false;
+
+            mEls.progBar.style.width = `${(mathState.currentQuestionIndex / 10) * 100}%`;
+            mEls.qText.innerText = `${q.multiplier} × ${q.multiplicand} = ?`;
+            mEls.instText.innerText = `Jump forward by ${q.multiplicand} each time.`;
+            mEls.jumpCounter.innerText = "0 jumps";
+            
+            mEls.jumpPhase.classList.remove('hidden');
+            mEls.ansPhase.classList.add('hidden');
+            mEls.btnJump.disabled = false;
+            
+            mEls.ansGrid.classList.remove('hidden');
+            mEls.postAnsActions.classList.add('hidden');
+            mEls.postAnsActions.classList.remove('flex');
+
+            renderNumberLine(q.answer);
+            updateCharacterVisual();
+            mEls.svgLayer.innerHTML = '';
+            
+            setTimeout(() => readQuestion(), 500);
+        }
+
+        function renderNumberLine(maxNum) {
+            mEls.tickContainer.innerHTML = '';
+            const q = mathState.questions[mathState.currentQuestionIndex];
+            for (let i = 0; i <= maxNum; i++) {
+                const percent = (i / maxNum) * 100;
+                const tick = document.createElement('div');
+                tick.className = 'tick'; tick.style.left = `${percent}%`; tick.id = `tick-${i}`;
+                if (i === 0 || i === maxNum || i % q.multiplicand === 0) {
+                    const label = document.createElement('div');
+                    label.className = 'tick-label'; label.innerText = i;
+                    tick.appendChild(label);
+                }
+                mEls.tickContainer.appendChild(tick);
+            }
+            highlightTick(0);
+        }
+
+        function highlightTick(num) {
+            document.querySelectorAll('.tick-label.highlight').forEach(el => el.classList.remove('highlight'));
+            const tick = document.getElementById(`tick-${num}`);
+            if(tick && tick.firstChild) tick.firstChild.classList.add('highlight');
+        }
+
+        function updateCharacterVisual() {
+            const q = mathState.questions[mathState.currentQuestionIndex];
+            const percent = (mathState.currentPos / q.answer) * 100;
+            mEls.char.style.left = `${percent}%`;
+        }
+
+        function makeJump() {
+            const q = mathState.questions[mathState.currentQuestionIndex];
+            if (mathState.jumpsMade >= q.multiplier) return; // Prevent jumping past target count
+            
+            const startPos = mathState.currentPos;
+            const endPos = mathState.currentPos + q.multiplicand; // Forward jump
+            
+            mathState.currentPos = endPos;
+            mathState.jumpsMade++;
+            MathSound.jump();
+            
+            mEls.char.classList.add('jumping');
+            setTimeout(() => mEls.char.classList.remove('jumping'), 500);
+
+            updateCharacterVisual();
+            highlightTick(endPos);
+            mEls.jumpCounter.innerText = `${mathState.jumpsMade} jumps`;
+            
+            drawArrow(startPos, endPos, q.answer);
+
+            if (mathState.jumpsMade === q.multiplier) {
+                mEls.btnJump.disabled = true;
+                setTimeout(triggerAnswerPhase, 600);
+            }
+        }
+
+        function drawArrow(startVal, endVal, maxVal) {
+            const startX = (startVal / maxVal) * 1000;
+            const endX = (endVal / maxVal) * 1000;
+            const midX = (startX + endX) / 2;
+            const distance = Math.abs(startX - endX);
+            
+            const startY = 140; const endY = 140; 
+            const controlY = startY - Math.min(130, Math.max(50, distance * 0.60));
+
+            const pathStr = `M ${startX} ${startY} Q ${midX} ${controlY} ${endX} ${endY}`;
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("d", pathStr); path.setAttribute("class", "arrow-path");
+            
+            const head = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            // Flipped to point to the right
+            head.setAttribute("points", `${endX},${endY} ${endX-16},${endY-16} ${endX-24},${endY-6}`);
+            head.setAttribute("class", "arrow-head");
+
+            mEls.svgLayer.appendChild(path); mEls.svgLayer.appendChild(head);
+        }
+
+        function resetCurrentJumps() {
+            if (!mEls.ansPhase.classList.contains('hidden')) return;
+            const q = mathState.questions[mathState.currentQuestionIndex];
+            mathState.currentPos = 0; // Addition resets to 0
+            mathState.jumpsMade = 0;
+            updateCharacterVisual();
+            highlightTick(0);
+            mEls.svgLayer.innerHTML = '';
+            mEls.jumpCounter.innerText = "0 jumps";
+            mEls.btnJump.disabled = false;
+        }
+
+        function triggerAnswerPhase() {
+            MathSound.reachZero();
+            const q = mathState.questions[mathState.currentQuestionIndex];
+            mEls.jumpPhase.classList.add('hidden');
+            mEls.ansPhase.classList.remove('hidden');
+            mEls.fbMsg.innerText = `Great job! You made ${q.multiplier} jumps.`;
+            generateAnswerButtons(q);
+        }
+
+        function generateAnswerButtons(q) {
+            mEls.ansGrid.innerHTML = '';
+            const correctAns = q.answer;
+            let options = new Set([correctAns]);
+            while(options.size < 4) {
+                let offset = Math.floor(Math.random() * 5) - 2;
+                if (offset === 0) offset = 3;
+                let wrong = correctAns + offset;
+                if (wrong > 0 && wrong !== correctAns) options.add(wrong);
+            }
+
+            const shuffled = Array.from(options).sort(() => Math.random() - 0.5);
+            shuffled.forEach(ans => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-duo btn-answer';
+                btn.innerText = ans;
+                btn.onclick = () => checkAnswer(ans, btn);
+                mEls.ansGrid.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selected, btnElement) {
+            const q = mathState.questions[mathState.currentQuestionIndex];
+            const buttons = mEls.ansGrid.querySelectorAll('button');
+
+            if (selected === q.answer) {
+                MathSound.correct();
+                buttons.forEach(b => b.disabled = true);
+                btnElement.classList.replace('btn-answer', 'btn-green');
+                mEls.fbMsg.innerText = `Correct! 🎉`;
+                
+                mEls.qText.innerText = `${q.multiplier} × ${q.multiplicand} = ${q.answer}`;
+                mathState.isQuestionAnswered = true; 
+                
+                fireMathConfetti();
+                if (!mathState.hasAttemptedAnswer) mathState.score++;
+                
+                setTimeout(() => {
+                    mEls.ansGrid.classList.add('hidden');
+                    mEls.postAnsActions.classList.remove('hidden');
+                    mEls.postAnsActions.classList.add('flex');
+                }, 800);
+
+            } else {
+                MathSound.wrong();
+                mathState.hasAttemptedAnswer = true;
+                
+                btnElement.style.backgroundColor = 'var(--warning)';
+                btnElement.style.borderColor = 'var(--warning)';
+                btnElement.style.boxShadow = '0 6px 0 var(--warning-shadow)';
+                btnElement.classList.add('shake');
+                
+                setTimeout(() => btnElement.classList.remove('shake'), 500);
+            }
+        }
+
+        function nextQuestion() {
+            mathState.currentQuestionIndex++;
+            if (mathState.currentQuestionIndex < 10) {
+                loadQuestion();
+            } else {
+                endMathGame();
+            }
+        }
+
+        function readQuestion() {
+            const q = mathState.questions[mathState.currentQuestionIndex];
+            
+            const textToSpeak = mathState.isQuestionAnswered
+                ? `${q.multiplier} times ${q.multiplicand} equals ${q.answer}`
+                : `${q.multiplier} times ${q.multiplicand} equals what?`;
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance(textToSpeak);
+                msg.rate = 0.85; msg.pitch = 1.1; msg.lang = 'en-US';
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        function fireMathConfetti() {
+            const container = document.getElementById('confetti-container');
+            container.classList.remove('hidden'); container.innerHTML = '';
+            const colors = ['#58cc02', '#1cb0f6', '#ff4b4b', '#ffc800', '#ce82ff'];
+            for (let i = 0; i < 60; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'confetti';
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
+                conf.style.animationDelay = (Math.random() * 0.5) + 's';
+                container.appendChild(conf);
+            }
+            setTimeout(() => { container.classList.add('hidden'); container.innerHTML = ''; }, 4000);
+        }
+
+        function endMathGame() {
+            showMathScreen('end');
+            mEls.progBar.style.width = '100%';
+            document.getElementById('final-score-text').innerText = `${mathState.score}/10`;
+            const msgEl = document.getElementById('final-message');
+            if (mathState.score >= 9) { msgEl.innerText = "Amazing jumping! 🌟"; msgEl.className = "text-3xl font-extrabold text-green-500 icon-3d mb-6"; }
+            else if (mathState.score >= 6) { msgEl.innerText = "Great work! 👍"; msgEl.className = "text-3xl font-extrabold text-blue-500 icon-3d mb-6"; }
+            else { msgEl.innerText = "Good try! Let’s practice again! 💪"; msgEl.className = "text-3xl font-extrabold text-orange-500 icon-3d mb-6"; }
+            fireMathConfetti();
+        }
+
+        // --------------------------------------------------------
+        // 2. PIKACHU GAME INTEGRATION
+        // --------------------------------------------------------
+        
+        let pkRunner = null;
+        let isPikachuInited = false;
+
+        function startBonusGame() {
+            document.getElementById('math-wrapper').style.display = 'none';
+            document.getElementById('pikachu-wrapper').classList.remove('hidden-screen');
+            document.body.classList.add('pikachu-mode'); 
+            
+            if (!isPikachuInited) {
+                initPikachuGame();
+                isPikachuInited = true;
+            }
+        }
+
+        function exitBonusGame() {
+            if (pkRunner) pkRunner.stop();
+            document.getElementById('pikachu-wrapper').classList.add('hidden-screen');
+            document.getElementById('math-wrapper').style.display = 'flex';
+            document.body.classList.remove('pikachu-mode');
+        }
+
+        const PkSoundFX = {
+            ctx: null,
+            ensure() {
+                if (!this.ctx) { const AudioContext = window.AudioContext || window.webkitAudioContext; if (AudioContext) this.ctx = new AudioContext(); }
+                if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+            },
+            beep(freq, duration, type, gain, delay = 0) {
+                this.ensure(); if (!this.ctx) return; const now = this.ctx.currentTime + delay; const osc = this.ctx.createOscillator(); const vol = this.ctx.createGain();
+                osc.type = type; osc.frequency.setValueAtTime(freq, now); vol.gain.setValueAtTime(0.0001, now); vol.gain.exponentialRampToValueAtTime(gain, now + 0.015); vol.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+                osc.connect(vol); vol.connect(this.ctx.destination); osc.start(now); osc.stop(now + duration + 0.02);
+            },
+            jump() { this.beep(420, 0.09, 'triangle', 0.09); this.beep(650, 0.08, 'triangle', 0.06, 0.07); },
+            score() { this.beep(880, 0.09, 'sine', 0.05); },
+            fail() { this.beep(150, 0.25, 'sawtooth', 0.08); this.beep(90, 0.25, 'sawtooth', 0.05, 0.12); },
+            win() { this.beep(523.25, 0.12, 'triangle', 0.06, 0); this.beep(659.25, 0.12, 'triangle', 0.06, 0.13); this.beep(783.99, 0.18, 'triangle', 0.06, 0.26); }
+        };
+
+        class PkConfettiSystem {
+            constructor() { this.canvas = document.getElementById('pikachu-confetti'); this.ctx = this.canvas.getContext('2d'); this.particles = []; this.colors = ['#58cc02', '#1cb0f6', '#ff4b4b', '#ffc800', '#ce82ff']; this.resize(); window.addEventListener('resize', () => this.resize()); this.animate(); }
+            resize() { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; }
+            burst() { for (let i = 0; i < 180; i++) { this.particles.push({ x: this.canvas.width / 2, y: this.canvas.height / 2 + 80, r: Math.random() * 7 + 4, dx: Math.random() * 18 - 9, dy: Math.random() * -18 - 5, color: this.colors[Math.floor(Math.random() * this.colors.length)], tilt: Math.random() * 10, tiltAngleInc: (Math.random() * 0.07) + 0.05, tiltAngle: 0 }); } }
+            animate() { requestAnimationFrame(() => this.animate()); this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); for (let i = 0; i < this.particles.length; i++) { const p = this.particles[i]; p.tiltAngle += p.tiltAngleInc; p.dy += 0.22; p.x += p.dx + Math.sin(p.tiltAngle) * 1.4; p.y += p.dy; this.ctx.beginPath(); this.ctx.lineWidth = p.r; this.ctx.strokeStyle = p.color; this.ctx.moveTo(p.x + p.tilt + p.r, p.y); this.ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r); this.ctx.stroke(); if (p.y > this.canvas.height + 40) { this.particles.splice(i, 1); i--; } } }
+        }
+
+        // --- Core Draw Helpers ---
+        function roundedRect(ctx, x, y, w, h, r) { const radius = Math.min(r, w / 2, h / 2); ctx.beginPath(); ctx.moveTo(x + radius, y); ctx.lineTo(x + w - radius, y); ctx.quadraticCurveTo(x + w, y, x + w, y + radius); ctx.lineTo(x + w, y + h - radius); ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h); ctx.lineTo(x + radius, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - radius); ctx.lineTo(x, y + radius); ctx.quadraticCurveTo(x, y, x + radius, y); ctx.closePath(); }
+        function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) { let rot = Math.PI / 2 * 3; let x = cx; let y = cy; const step = Math.PI / spikes; ctx.beginPath(); ctx.moveTo(cx, cy - outerRadius); for (let i = 0; i < spikes; i++) { x = cx + Math.cos(rot) * outerRadius; y = cy + Math.sin(rot) * outerRadius; ctx.lineTo(x, y); rot += step; x = cx + Math.cos(rot) * innerRadius; y = cy + Math.sin(rot) * innerRadius; ctx.lineTo(x, y); rot += step; } ctx.lineTo(cx, cy - outerRadius); ctx.closePath(); }
+        
+        function drawPikachu(ctx, x, y, scale, frame, isJumping) {
+            const runCycle = frame * 0.4;
+            const frRot = isJumping ? -0.5 : Math.sin(runCycle) * 0.7 - 0.1; const flRot = isJumping ? -0.3 : Math.sin(runCycle - 0.6) * 0.7 - 0.1; const brRot = isJumping ? 0.3 : Math.sin(runCycle + Math.PI) * 0.6 + 0.1; const blRot = isJumping ? 0.5 : Math.sin(runCycle + Math.PI - 0.6) * 0.6 + 0.1;
+            const bounce = isJumping ? -18 : Math.cos(runCycle * 2) * 4 - 2;
+            const stretch = isJumping ? 1.05 : 1 + Math.sin(runCycle) * 0.08; const squash = isJumping ? 0.95 : 1 / stretch;
+            const bodyTilt = isJumping ? -0.15 : Math.cos(runCycle) * 0.05;
+            ctx.save(); ctx.translate(x, y + bounce); ctx.scale(scale, scale); ctx.translate(55, 45); ctx.rotate(bodyTilt); ctx.scale(stretch, squash); ctx.translate(-55, -45);
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            const yellow = '#f7d02c', yellowDark = '#d8ab14', brown = '#8e562d', red = '#e3350d', black = '#111111', white = '#ffffff', outline = '#2d2d2d';
+            function fillAndStroke(fillColor, lineWidth = 3) { ctx.fillStyle = fillColor; ctx.fill(); ctx.lineWidth = lineWidth / stretch; ctx.strokeStyle = outline; ctx.stroke(); }
+            
+            // Tail
+            const tailAngle = isJumping ? 0.1 : Math.cos(runCycle) * 0.1; ctx.save(); ctx.translate(12, 42); ctx.rotate(tailAngle);
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-8, -10); ctx.lineTo(-18, -8); ctx.lineTo(-12, -26); ctx.lineTo(-32, -24); ctx.lineTo(-24, -46); ctx.lineTo(-48, -42); ctx.lineTo(-40, -70); ctx.lineTo(-15, -64); ctx.lineTo(-22, -40); ctx.lineTo(2, -46); ctx.lineTo(-4, -24); ctx.lineTo(16, -28); ctx.lineTo(12, -10); ctx.lineTo(22, -12); ctx.lineTo(18, 0); ctx.closePath(); fillAndStroke(yellow);
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-8, -10); ctx.lineTo(-18, -8); ctx.lineTo(-12, -26); ctx.lineTo(0, -24); ctx.lineTo(16, -28); ctx.lineTo(12, -10); ctx.lineTo(22, -12); ctx.lineTo(18, 0); ctx.closePath(); ctx.fillStyle = brown; ctx.fill();
+            ctx.beginPath(); ctx.moveTo(-12, -26); ctx.lineTo(0, -24); ctx.lineTo(16, -28); ctx.lineWidth = 3 / stretch; ctx.strokeStyle = outline; ctx.stroke(); ctx.restore();
+            
+            // Back Ear & Legs
+            const earTilt = Math.sin(runCycle) * 0.05; ctx.save(); ctx.translate(65, 18); ctx.rotate(-0.9 + earTilt); ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(-8, -18, -6, -35); ctx.quadraticCurveTo(10, -30, 8, 0); fillAndStroke(yellowDark);
+            ctx.beginPath(); ctx.moveTo(-6.5, -24); ctx.quadraticCurveTo(-6, -35, -6, -35); ctx.quadraticCurveTo(10, -30, 7.5, -20); ctx.closePath(); ctx.fillStyle = black; ctx.fill(); ctx.restore();
+            ctx.save(); ctx.translate(35, 60); ctx.rotate(blRot); ctx.beginPath(); ctx.moveTo(-5, -5); ctx.quadraticCurveTo(-12, 10, -8, 24); ctx.lineTo(6, 24); ctx.quadraticCurveTo(8, 10, 5, -5); fillAndStroke(yellowDark); ctx.fillStyle = yellowDark; ctx.fillRect(-4, -6, 8, 6); ctx.restore();
+            ctx.save(); ctx.translate(72, 60); ctx.rotate(flRot); ctx.beginPath(); ctx.moveTo(-4, 0); ctx.quadraticCurveTo(-8, 12, -4, 20); ctx.lineTo(6, 20); ctx.lineTo(5, 0); fillAndStroke(yellowDark); ctx.restore();
+            
+            // Body
+            ctx.beginPath(); ctx.moveTo(35, 28); ctx.bezierCurveTo(45, 18, 58, 16, 70, 20); ctx.bezierCurveTo(85, 22, 94, 30, 96, 40); ctx.bezierCurveTo(94, 52, 85, 64, 75, 68); ctx.bezierCurveTo(60, 75, 40, 75, 28, 65); ctx.bezierCurveTo(16, 55, 16, 40, 24, 32); ctx.bezierCurveTo(28, 28, 32, 29, 35, 28); fillAndStroke(yellow);
+            ctx.save(); ctx.clip(); ctx.fillStyle = brown; ctx.beginPath(); ctx.moveTo(25, 25); ctx.lineTo(20, 40); ctx.lineTo(28, 42); ctx.lineTo(35, 25); ctx.fill(); ctx.beginPath(); ctx.moveTo(38, 20); ctx.lineTo(34, 38); ctx.lineTo(44, 40); ctx.lineTo(50, 20); ctx.fill(); ctx.restore();
+            
+            // Face
+            ctx.fillStyle = black; ctx.beginPath(); ctx.arc(80, 36, 4.5, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = white; ctx.beginPath(); ctx.arc(78.5, 34.5, 1.8, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = black; ctx.beginPath(); ctx.arc(92, 40, 1.2, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(68, 46, 6, 0, Math.PI * 2); fillAndStroke(red, 2);
+            ctx.fillStyle = '#cc5656'; ctx.beginPath(); ctx.moveTo(85, 44); ctx.quadraticCurveTo(88, 52, 92, 43); ctx.closePath(); fillAndStroke('#cc5656', 2); ctx.strokeStyle = black; ctx.lineWidth = 2 / stretch; ctx.beginPath(); ctx.moveTo(85, 44); ctx.quadraticCurveTo(88, 42, 92, 43); ctx.stroke();
+            
+            // Front Ear & Legs
+            ctx.save(); ctx.translate(76, 22); ctx.rotate(-0.3 + earTilt * 1.5); ctx.beginPath(); ctx.moveTo(-5, 0); ctx.quadraticCurveTo(-8, -20, -4, -38); ctx.quadraticCurveTo(10, -32, 7, 0); fillAndStroke(yellow);
+            ctx.beginPath(); ctx.moveTo(-4.5, -26); ctx.quadraticCurveTo(-4, -38, -4, -38); ctx.quadraticCurveTo(10, -32, 6.5, -20); ctx.closePath(); ctx.fillStyle = black; ctx.fill(); ctx.fillStyle = yellow; ctx.fillRect(-4, -2, 10, 5); ctx.restore();
+            ctx.save(); ctx.translate(32, 60); ctx.rotate(brRot); ctx.beginPath(); ctx.ellipse(-2, 0, 12, 14, 0.3, 0, Math.PI * 2); fillAndStroke(yellow); ctx.beginPath(); ctx.moveTo(-6, 8); ctx.lineTo(-8, 22); ctx.lineTo(8, 22); ctx.lineTo(6, 8); fillAndStroke(yellow); ctx.fillStyle = yellow; ctx.fillRect(-6, 6, 14, 6); ctx.fillRect(-8, -10, 15, 12); ctx.strokeStyle = outline; ctx.lineWidth = 1.5 / stretch; ctx.beginPath(); ctx.moveTo(-2, 22); ctx.lineTo(-3, 16); ctx.stroke(); ctx.beginPath(); ctx.moveTo(4, 22); ctx.lineTo(3, 16); ctx.stroke(); ctx.restore();
+            ctx.save(); ctx.translate(68, 62); ctx.rotate(frRot); ctx.beginPath(); ctx.moveTo(-6, -4); ctx.quadraticCurveTo(-10, 10, -5, 20); ctx.lineTo(5, 20); ctx.quadraticCurveTo(8, 10, 6, -4); fillAndStroke(yellow); ctx.fillStyle = yellow; ctx.fillRect(-6, -6, 12, 10); ctx.beginPath(); ctx.moveTo(-1, 20); ctx.lineTo(-1, 15); ctx.stroke(); ctx.beginPath(); ctx.moveTo(3, 20); ctx.lineTo(3, 15); ctx.stroke(); ctx.restore();
+            ctx.restore();
+        }
+
+        function drawCoin(ctx, coin, frame) { const spin = Math.max(0.25, Math.abs(Math.cos(frame * 0.14 + coin.phase))); const bob = Math.sin(frame * 0.08 + coin.phase) * 4; const r = coin.r; ctx.save(); ctx.translate(coin.x, coin.y + bob); ctx.scale(spin, 1); const goldGrad = ctx.createRadialGradient(-r * 0.35, -r * 0.35, r * 0.1, 0, 0, r); goldGrad.addColorStop(0, '#fff7a8'); goldGrad.addColorStop(0.48, '#ffc800'); goldGrad.addColorStop(1, '#d3a600'); ctx.fillStyle = goldGrad; ctx.strokeStyle = '#9a6700'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(-r * 0.15, -r * 0.1, r * 0.56, 2.5, 4.45); ctx.stroke(); ctx.strokeStyle = '#9a6700'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-r * 0.25, -r * 0.55); ctx.lineTo(-r * 0.25, r * 0.55); ctx.moveTo(r * 0.20, -r * 0.42); ctx.lineTo(r * 0.20, r * 0.42); ctx.stroke(); ctx.restore(); }
+        function drawObstacle(ctx, obstacle, floorY, frame) { const x = obstacle.x; const h = obstacle.h; const w = obstacle.w; const y = floorY - h; ctx.save(); ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.fillStyle = 'rgba(0,0,0,0.15)'; ctx.beginPath(); ctx.ellipse(x + w / 2, floorY + 8, w * 0.56, 8, 0, 0, Math.PI * 2); ctx.fill(); if (obstacle.type === 'pokeball') { const styles = [ { key: 'standard', top: '#f55353', bottom: '#ffffff', pattern: 'standard' }, { key: 'great', top: '#40bff4', bottom: '#ffffff', pattern: 'great' }, { key: 'ultra', top: '#f3d23c', bottom: '#ffffff', pattern: 'ultra' } ]; const style = styles[obstacle.ballStyle % 3]; const bob = Math.sin(frame * 0.08 + x * 0.02) * 2.5; ctx.save(); ctx.translate(x + w / 2, y + h / 2 + bob); const r = Math.min(w, h) * 0.48; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.clip(); ctx.fillStyle = style.top; ctx.fillRect(-r - 2, -r - 2, r * 2 + 4, r + 2); ctx.fillStyle = style.bottom; ctx.fillRect(-r - 2, 0, r * 2 + 4, r + 2); ctx.strokeStyle = '#111111'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(r, 0); ctx.stroke(); ctx.fillStyle = '#111111'; ctx.beginPath(); ctx.arc(0, 0, r * 0.34, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(0, 0, r * 0.22, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = '#d1d5db'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore(); } else if (obstacle.type === 'mushroom') { ctx.fillStyle = '#fff7d6'; ctx.strokeStyle = '#92400e'; ctx.lineWidth = 4; roundedRect(ctx, x + w * 0.36, y + h * 0.35, w * 0.28, h * 0.65, 10); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.ellipse(x + w / 2, y + h * 0.32, w * 0.5, h * 0.32, 0, Math.PI, Math.PI * 2); ctx.lineTo(x + w * 0.92, y + h * 0.32); ctx.quadraticCurveTo(x + w * 0.5, y + h * 0.58, x + w * 0.08, y + h * 0.32); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(x + w * 0.34, y + h * 0.27, w * 0.11, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(x + w * 0.62, y + h * 0.19, w * 0.09, 0, Math.PI * 2); ctx.fill(); } ctx.restore(); }
+
+        class Runner {
+            constructor(containerSelector) {
+                this.container = document.querySelector(containerSelector); this.canvas = document.createElement('canvas'); this.canvas.id = 'gameCanvas'; this.ctx = this.canvas.getContext('2d'); this.container.appendChild(this.canvas);
+                this.config = { SPEED: 5.5, GRAVITY: 0.72, INITIAL_JUMP_VELOCITY: 16 };
+                this.player = { x: 145, y: 0, vy: 0, jumping: false, scale: 1 };
+                this.obstacles = []; this.coins = []; this.sparkles = []; this.score = 0; this.coinsEarned = 0; this.highScore = 0;
+                try { this.highScore = Number(localStorage.getItem('pikachuRunBestCoins') || 0); } catch(e){}
+                this.isGameOver = false; this.isRunning = false; this.frameCount = 0; this.animationFrameId = null;
+                this.scoreDisplay = document.getElementById('score-display'); this.highScoreDisplay = document.getElementById('high-score-display'); this.highScoreDisplay.textContent = Math.floor(this.highScore); this.finalScoreDisplay = document.getElementById('final-score'); this.summary = document.getElementById('game-summary');
+                this.bindEvents(); this.resize(); window.addEventListener('resize', () => this.resize());
+            }
+            resize() { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; this.floorY = this.canvas.height * 0.705; const s = Math.min(1.1, Math.max(0.72, this.canvas.width / 1050)); this.player.scale = s; this.player.width = 100 * s; this.player.height = 70 * s; this.player.x = Math.max(72, Math.min(150, this.canvas.width * 0.16)); if (!this.player.jumping) this.player.y = this.floorY - this.player.height; this.draw(); }
+            bindEvents() { const handleInput = (e) => { if (document.getElementById('pikachu-wrapper').classList.contains('hidden-screen')) return; if (e && e.target && e.target.closest && e.target.closest('button')) return; if (e && e.type === 'keydown' && e.code !== 'Space' && e.code !== 'ArrowUp') return; if (e && e.type === 'keydown') e.preventDefault(); if (this.isGameOver || !this.isRunning) return; this.jump(); }; window.addEventListener('keydown', handleInput); this.canvas.addEventListener('mousedown', handleInput); this.canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleInput(e); }, { passive: false }); }
+            start() { PkSoundFX.ensure(); this.resize(); this.restart(); if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId); this.gameLoop(); const instruction = document.getElementById('floating-instruction'); instruction.style.opacity = '1'; clearTimeout(this.instructionTimer); this.instructionTimer = setTimeout(() => { instruction.style.opacity = '0'; }, 5200); }
+            stop() { this.isRunning = false; if (this.animationFrameId) cancelAnimationFrame(this.animationFrameId); this.animationFrameId = null; }
+            restart() { PkSoundFX.ensure(); this.summary.style.display = 'none'; this.player.y = this.floorY - this.player.height; this.player.vy = 0; this.player.jumping = false; this.obstacles = []; this.coins = []; this.sparkles = []; this.score = 0; this.coinsEarned = 0; this.isGameOver = false; this.isRunning = true; this.frameCount = 0; this.scoreDisplay.textContent = '0'; }
+            jump() { if (!this.player.jumping) { this.player.vy = -this.config.INITIAL_JUMP_VELOCITY; this.player.jumping = true; PkSoundFX.jump(); for (let i = 0; i < 8; i++) { this.sparkles.push({ x: this.player.x + 38 * this.player.scale, y: this.player.y + 62 * this.player.scale, vx: Math.random() * -2 - 0.5, vy: Math.random() * -2 - 0.5, life: 24, size: Math.random() * 4 + 3 }); } } }
+            spawnObstacle() { const type = Math.random() > 0.5 ? 'pokeball' : 'mushroom'; const s = this.player.scale; let w = 58 * s, h = 58 * s; if (type === 'pokeball') { w = 56 * s; h = 56 * s; } if (type === 'mushroom') { w = 62 * s; h = 58 * s; } this.obstacles.push({ x: this.canvas.width + 70, w, h, type, ballStyle: Math.floor(Math.random() * 3), passed: false }); }
+            spawnCoins() { const s = this.player.scale; const count = 3 + Math.floor(Math.random() * 3); const pattern = Math.random(); const startX = this.canvas.width + 70; for (let i = 0; i < count; i++) { let y = this.floorY - (88 + Math.random() * 55) * s; if (pattern > 0.66) y = this.floorY - (118 + Math.sin(i / Math.max(1, count - 1) * Math.PI) * 65) * s; if (pattern < 0.33) y = this.floorY - (82 + i * 20) * s; this.coins.push({ x: startX + i * 52 * s, y, r: 16 * s, phase: Math.random() * Math.PI * 2, collected: false }); } }
+            update() { if (!this.isRunning || this.isGameOver) return; this.frameCount++; this.score = this.coinsEarned; this.scoreDisplay.textContent = this.coinsEarned.toString(); this.player.y += this.player.vy; this.player.vy += this.config.GRAVITY; const restY = this.floorY - this.player.height; if (this.player.y >= restY) { this.player.y = restY; this.player.vy = 0; this.player.jumping = false; } const spawnRate = Math.max(82, Math.floor(168 - this.config.SPEED * 8)); if (this.frameCount > 60 && this.frameCount % spawnRate === 0) this.spawnObstacle(); const coinRate = Math.max(54, Math.floor(102 - this.config.SPEED * 4)); if (this.frameCount > 35 && this.frameCount % coinRate === 0) this.spawnCoins(); const sCoin = this.player.scale; const pxCoin = this.player.x + 8 * sCoin, pyCoin = this.player.y + 16 * sCoin, pwCoin = 88 * sCoin, phCoin = 56 * sCoin; this.coins.forEach(coin => { coin.x -= this.config.SPEED; if (!coin.collected) { const cx = coin.x - coin.r, cy = coin.y - coin.r, cw = coin.r * 2, ch = coin.r * 2; if (pxCoin < cx + cw && pxCoin + pwCoin > cx && pyCoin < cy + ch && pyCoin + phCoin > cy) { coin.collected = true; this.coinsEarned += 1; this.scoreDisplay.textContent = this.coinsEarned.toString(); PkSoundFX.score(); for (let i = 0; i < 10; i++) this.sparkles.push({ x: coin.x, y: coin.y, vx: Math.random() * 5 - 2.5, vy: Math.random() * -4 - 0.5, life: 24, size: Math.random() * 4 + 3, color: '#ffc800' }); } } }); this.coins = this.coins.filter(coin => !coin.collected && coin.x > -80); this.obstacles.forEach(obstacle => { obstacle.x -= this.config.SPEED; const s = this.player.scale, px = this.player.x + 12 * s, py = this.player.y + 16 * s, pw = 78 * s, ph = 54 * s, ox = obstacle.x + obstacle.w * 0.14, oy = this.floorY - obstacle.h + obstacle.h * 0.12, ow = obstacle.w * 0.72, oh = obstacle.h * 0.84; if (px < ox + ow && px + pw > ox && py < oy + oh && py + ph > oy) this.gameOver(); }); this.obstacles = this.obstacles.filter(obstacle => obstacle.x > -120); this.sparkles.forEach(p => { p.x += p.vx - this.config.SPEED * 0.35; p.y += p.vy; p.vy += 0.12; p.life--; }); this.sparkles = this.sparkles.filter(p => p.life > 0); }
+            gameOver() { if (this.isGameOver) return; this.isGameOver = true; this.isRunning = false; PkSoundFX.fail(); setTimeout(() => { PkSoundFX.win(); pkConfetti.burst(); this.showSummary(); }, 520); }
+            showSummary() { const intScore = this.coinsEarned; this.finalScoreDisplay.textContent = intScore.toString(); this.summary.style.display = 'block'; if (intScore > this.highScore) { this.highScore = intScore; try { localStorage.setItem('pikachuRunBestCoins', String(intScore)); } catch(e){} this.highScoreDisplay.textContent = intScore.toString(); } }
+            drawSparkles() { this.sparkles.forEach(p => { const alpha = Math.max(0, p.life / 24); this.ctx.save(); this.ctx.globalAlpha = alpha; this.ctx.fillStyle = p.color || '#ffc800'; drawStar(this.ctx, p.x, p.y, 5, p.size, p.size * 0.42); this.ctx.fill(); this.ctx.restore(); }); }
+            draw() { const ctx = this.ctx; ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); ctx.save(); ctx.globalAlpha = 0.18; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; for (let i = 0; i < 18; i++) { const x = ((i * 120 - (this.frameCount * this.config.SPEED * 0.7)) % (this.canvas.width + 120)) - 60; const y = this.floorY + 18 + (i % 3) * 22; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 34, y - 7); ctx.stroke(); } ctx.restore(); this.obstacles.forEach(obstacle => drawObstacle(ctx, obstacle, this.floorY, this.frameCount)); this.coins.forEach(coin => drawCoin(ctx, coin, this.frameCount)); const s = this.player.scale, air = Math.max(0, (this.floorY - this.player.height) - this.player.y), shadowScale = Math.max(0.42, 1 - air / 220); ctx.fillStyle = 'rgba(0,0,0,0.20)'; ctx.beginPath(); const stretchOffset = (1 + Math.sin(this.frameCount * 0.4) * 0.08) * 10; ctx.ellipse(this.player.x + 55 * s + (this.player.jumping ? 0 : stretchOffset), this.floorY + 6, 38 * s * shadowScale, 6.5 * s * shadowScale, 0, 0, Math.PI * 2); ctx.fill(); drawPikachu(ctx, this.player.x, this.player.y, this.player.scale, this.frameCount, this.player.jumping); this.drawSparkles(); }
+            gameLoop() { this.update(); this.draw(); this.animationFrameId = requestAnimationFrame(() => this.gameLoop()); }
+        }
+
+        let pkConfetti = null;
+
+        function initPikachuGame() {
+            pkConfetti = new PkConfettiSystem();
+            pkRunner = new Runner('#canvas-container');
+
+            const setupScreen = document.getElementById('setup-screen');
+            const gameScreen = document.getElementById('game-screen');
+            const playNowBtn = document.getElementById('play-now-btn');
+            const restartBtn = document.getElementById('restart-btn');
+            const homeBtn = document.getElementById('home-btn');
+            const form = document.getElementById('settings-form');
+            const speedVal = document.getElementById('speed-val');
+            const jumpVal = document.getElementById('jump-val');
+
+            function syncControls() { speedVal.textContent = Number(pkRunner.config.SPEED).toFixed(1); jumpVal.textContent = Number(pkRunner.config.INITIAL_JUMP_VELOCITY).toFixed(1); }
+            form.addEventListener('input', (e) => { const key = e.target.name; const value = Number(e.target.value); if (!Number.isNaN(value) && Object.prototype.hasOwnProperty.call(pkRunner.config, key)) { pkRunner.config[key] = value; syncControls(); } });
+            playNowBtn.addEventListener('click', () => { PkSoundFX.ensure(); setupScreen.classList.add('hidden-screen'); gameScreen.classList.remove('hidden-screen'); pkRunner.start(); });
+            restartBtn.addEventListener('click', () => { pkRunner.restart(); if (!pkRunner.animationFrameId) pkRunner.gameLoop(); });
+            
+            homeBtn.addEventListener('click', () => { 
+                pkRunner.stop(); 
+                gameScreen.classList.add('hidden-screen'); 
+                setupScreen.classList.remove('hidden-screen');
+                pkRunner.summary.style.display = 'none'; 
+                document.getElementById('floating-instruction').style.opacity = '1'; 
+                pkRunner.highScoreDisplay.textContent = Math.floor(pkRunner.highScore).toString(); 
+                
+                exitBonusGame();
+            });
+            syncControls();
+        }
+    </script>
+</body>
+</html>
