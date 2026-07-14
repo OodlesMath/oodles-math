@@ -1,1132 +1,879 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
- <head>
-   <link rel="stylesheet" href="../assets/brand.css">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Roll &amp; Subtract!</title>
-  <script src="/_sdk/element_sdk.js"></script>
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      box-sizing: border-box;
-      font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive, sans-serif;
-      background: linear-gradient(135deg, #FF6B9D 0%, #FFA07A 50%, #FFD93D 100%);
-      overflow-x: hidden;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    .game-wrapper {
-      width: 100%;
-      min-height: 100%;
-      padding: 15px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .game-header {
-      text-align: center;
-      margin-bottom: 15px;
-      width: 100%;
-    }
-
-    .game-title {
-      font-size: 40px;
-      font-weight: bold;
-      color: #fff;
-      text-shadow: 4px 4px 0px rgba(0,0,0,0.2);
-      margin: 0 0 10px 0;
-    }
-
-    .round-counter {
-      font-size: 20px;
-      color: #ffd700;
-      font-weight: bold;
-      text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
-    }
-
-    .game-container {
-      background: white;
-      border-radius: 25px;
-      padding: 20px;
-      max-width: 900px;
-      width: 100%;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-    }
-
-    .instruction-box {
-      background: linear-gradient(135deg, #A8E6CF 0%, #6BCF7F 100%);
-      padding: 15px;
-      border-radius: 15px;
-      text-align: center;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-
-    .instruction-text {
-      font-size: 20px;
-      color: white;
-      font-weight: bold;
-      margin: 0;
-      text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
-    }
-
-    .dice-container {
-      display: flex;
-      justify-content: center;
-      margin: 20px 0;
-      min-height: 100px;
-    }
-
-    .dice {
-      width: 90px;
-      height: 90px;
-      background: white;
-      border: 5px solid #333;
-      border-radius: 15px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 48px;
-      font-weight: bold;
-      color: #ff6b6b;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-      cursor: pointer;
-      transition: transform 0.3s ease;
-    }
-
-    .dice:hover {
-      transform: scale(1.05);
-    }
-
-    .dice.rolling {
-      animation: diceRoll 0.5s ease-in-out;
-    }
-
-    @keyframes diceRoll {
-      0%, 100% { transform: rotate(0deg); }
-      25% { transform: rotate(90deg) scale(1.1); }
-      50% { transform: rotate(180deg) scale(0.9); }
-      75% { transform: rotate(270deg) scale(1.1); }
-    }
-
-    .equation-box {
-      background: linear-gradient(135deg, #C7CEEA 0%, #FFB6D9 100%);
-      padding: 20px;
-      border-radius: 15px;
-      text-align: center;
-      margin: 20px 0;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }
-
-    .equation {
-      font-size: 36px;
-      font-weight: bold;
-      color: #333;
-      margin: 0;
-    }
-
-    .speaker-button {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border: none;
-      border-radius: 50%;
-      width: 35px;
-      height: 35px;
-      font-size: 18px;
-      cursor: pointer;
-      margin: 0;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-      transition: all 0.3s ease;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .speaker-button:hover {
-      transform: scale(1.1);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-    }
-
-    .speaker-button:active {
-      transform: scale(0.95);
-    }
-
-    .tens-frame-container {
-      margin: 25px auto;
-      max-width: 600px;
-    }
-
-    .tens-frame-title {
-      text-align: center;
-      font-size: 18px;
-      font-weight: bold;
-      color: #666;
-      margin-bottom: 15px;
-    }
-
-    .tens-frame {
-      display: grid;
-      grid-template-columns: repeat(10, 1fr);
-      gap: 5px;
-      background: #f0f0f0;
-      padding: 15px;
-      border-radius: 15px;
-      margin-bottom: 15px;
-    }
-
-    .tens-cell {
-      aspect-ratio: 1;
-      background: white;
-      border: 3px solid #333;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      transition: all 0.3s ease;
-    }
-
-    .tens-cell.filled {
-      background: #4CAF50;
-      transform: scale(1.1);
-    }
-
-    .tens-cell.crossed {
-      background: #ffebee;
-      position: relative;
-    }
-
-    .tens-cell.crossed::before,
-    .tens-cell.crossed::after {
-      content: '';
-      position: absolute;
-      width: 80%;
-      height: 3px;
-      background: #ff6b6b;
-      top: 50%;
-      left: 50%;
-    }
-
-    .tens-cell.crossed::before {
-      transform: translate(-50%, -50%) rotate(45deg);
-    }
-
-    .tens-cell.crossed::after {
-      transform: translate(-50%, -50%) rotate(-45deg);
-    }
-
-
-
-    .answer-options {
-      display: flex;
-      justify-content: center;
-      gap: 15px;
-      margin: 25px 0;
-      flex-wrap: wrap;
-    }
-
-    .answer-btn {
-      width: 85px;
-      height: 85px;
-      font-size: 36px;
-      font-weight: bold;
-      color: white;
-      background: linear-gradient(135deg, #FF6BCF 0%, #9D50FF 100%);
-      border: none;
-      border-radius: 15px;
-      cursor: pointer;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-      transition: all 0.3s ease;
-    }
-
-    .answer-btn:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 25px rgba(0,0,0,0.4);
-    }
-
-    .answer-btn.selected {
-      border: 5px solid #ffd700;
-      box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
-    }
-
-    .answer-btn.correct {
-      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-      animation: correctPulse 0.5s ease;
-    }
-
-    .answer-btn.wrong {
-      background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
-      animation: shake 0.5s ease;
-    }
-
-    @keyframes correctPulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.2); }
-    }
-
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-10px); }
-      75% { transform: translateX(10px); }
-    }
-
-    .action-button {
-      padding: 18px 35px;
-      font-size: 20px;
-      font-weight: bold;
-      color: white;
-      background: linear-gradient(135deg, #FFB347 0%, #FF6B6B 100%);
-      border: none;
-      border-radius: 50px;
-      cursor: pointer;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-      transition: all 0.3s ease;
-      display: block;
-      margin: 20px auto;
-    }
-
-    .action-button:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 25px rgba(0,0,0,0.4);
-    }
-
-    .action-button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .feedback-box {
-      text-align: center;
-      padding: 18px;
-      border-radius: 15px;
-      margin: 20px 0;
-      font-size: 24px;
-      font-weight: bold;
-      display: none;
-    }
-
-    .feedback-box.show {
-      display: block;
-    }
-
-    .feedback-box.correct {
-      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-      color: white;
-      animation: celebration 0.6s ease;
-    }
-
-    .feedback-box.wrong {
-      background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
-      color: white;
-    }
-
-    @keyframes celebration {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.1) rotate(2deg); }
-    }
-
-    .gift-selection {
-      text-align: center;
-      margin: 30px 0;
-      display: none;
-    }
-
-    .gift-selection.show {
-      display: block;
-    }
-
-    .gift-selection-title {
-      font-size: 24px;
-      font-weight: bold;
-      color: #333;
-      margin-bottom: 20px;
-    }
-
-    .gift-boxes {
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-
-    .gift-box {
-      width: 100px;
-      height: 100px;
-      cursor: pointer;
-      transition: transform 0.3s ease;
-      position: relative;
-    }
-
-    .gift-box:hover {
-      transform: scale(1.1) translateY(-5px);
-    }
-
-    .gift-box.opening {
-      animation: giftOpen 0.8s ease;
-    }
-
-    @keyframes giftOpen {
-      0% { transform: scale(1) rotate(0deg); }
-      50% { transform: scale(1.3) rotate(180deg); }
-      100% { transform: scale(0); }
-    }
-
-    .sticker-reveal {
-      font-size: 70px;
-      text-align: center;
-      margin: 20px 0;
-      display: none;
-      animation: stickerPop 0.5s ease;
-    }
-
-    .sticker-reveal.show {
-      display: block;
-    }
-
-    @keyframes stickerPop {
-      0% { transform: scale(0) rotate(0deg); }
-      50% { transform: scale(1.3) rotate(180deg); }
-      100% { transform: scale(1) rotate(360deg); }
-    }
-
-    .confetti {
-      position: fixed;
-      width: 10px;
-      height: 10px;
-      background: #f0f;
-      position: absolute;
-      animation: confettiFall 3s linear;
-    }
-
-    @keyframes confettiFall {
-      to {
-        transform: translateY(100%) rotate(360deg);
-        opacity: 0;
-      }
-    }
-
-    .game-complete {
-      text-align: center;
-      padding: 40px 20px;
-      display: none;
-    }
-
-    .game-complete.show {
-      display: block;
-    }
-
-    .complete-title {
-      font-size: 48px;
-      color: #ffd700;
-      font-weight: bold;
-      text-shadow: 3px 3px 0px rgba(0,0,0,0.3);
-      margin-bottom: 20px;
-    }
-
-    .complete-message {
-      font-size: 28px;
-      color: white;
-      font-weight: bold;
-      text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
-    }
-
-    @media (max-width: 600px) {
-      .game-wrapper {
-        padding: 10px;
-      }
-
-      .game-title {
-        font-size: 32px;
-      }
-
-      .round-counter {
-        font-size: 18px;
-      }
-
-      .equation {
-        font-size: 28px;
-      }
-
-      .instruction-text {
-        font-size: 18px;
-      }
-
-      .instruction-box {
-        flex-direction: row;
-        flex-wrap: wrap;
-      }
-
-      .speaker-button {
-        width: 30px;
-        height: 30px;
-        font-size: 16px;
-      }
-
-      .tens-frame {
-        gap: 3px;
-        padding: 10px;
-      }
-
-      .tens-cell {
-        font-size: 18px;
-        border: 2px solid #333;
-      }
-
-
-
-      .answer-btn {
-        width: 70px;
-        height: 70px;
-        font-size: 28px;
-      }
-
-      .action-button {
-        font-size: 18px;
-        padding: 15px 28px;
-      }
-
-      .gift-box {
-        width: 85px;
-        height: 85px;
-      }
-
-      .complete-title {
-        font-size: 36px;
-      }
-
-      .complete-message {
-        font-size: 22px;
-      }
-    }
-
-    @media (min-width: 601px) and (max-width: 900px) {
-      .game-title {
-        font-size: 36px;
-      }
-
-      .equation {
-        font-size: 32px;
-      }
-    }
-  </style>
-  <style>@view-transition { navigation: auto; }</style>
-  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
-  <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
- </head>
- <body>
-   <img src="../assets/logo-oodles-math.png" class="oodles-logo">
-  <div class="game-wrapper">
-   <div class="game-header">
-    <h1 class="game-title" id="gameTitle">Roll &amp; Subtract!</h1>
-    <div class="round-counter" id="roundCounter">
-     Round 1 of 10
-    </div>
-   </div>
-   <div class="game-container">
-    <div class="instruction-box">
-     <p class="instruction-text" id="instructionText">Count backward to find the answer!</p><button class="speaker-button" id="speakerButton" onclick="speakInstruction()" title="Listen to the instruction">🔊</button>
-    </div>
-    <div id="gameArea">
-     <div class="dice-container">
-      <div class="dice" id="dice">
-       🎲
-      </div>
-     </div><button class="action-button" id="rollButton">Roll the Dice!</button>
-     <div class="equation-box" id="equationBox" style="display: none;">
-      <p class="equation" id="equation">20 - ? = ?</p>
-     </div>
-     <div class="tens-frame-container" id="tensFrameContainer" style="display: none;">
-      <div class="tens-frame-title">
-       👇 Click the circles backward from 20! 👇
-      </div>
-      <div class="tens-frame" id="tensFrame1"></div>
-      <div class="tens-frame" id="tensFrame2"></div><button class="action-button" id="undoButton" style="display: none; margin-top: 15px; padding: 12px 25px; font-size: 16px;">↩️ Undo Last Click</button>
-     </div>
-     <div class="answer-options" id="answerOptions"></div>
-     <div class="feedback-box" id="feedbackBox"></div>
-     <div class="gift-selection" id="giftSelection">
-      <div class="gift-selection-title" id="chooseGiftText">
-       Choose your mystery gift!
-      </div>
-      <div class="gift-boxes" id="giftBoxes">
-       <div class="gift-box" onclick="openGiftBox(0)">
-        <svg viewbox="0 0 100 100" width="100%" height="100%"><rect x="10" y="40" width="80" height="50" fill="#ff6b6b" stroke="#333" stroke-width="2" /> <rect x="10" y="30" width="80" height="15" fill="#ffd700" stroke="#333" stroke-width="2" /> <rect x="45" y="30" width="10" height="60" fill="#ffd700" stroke="#333" stroke-width="2" /> <path d="M50 30 Q30 10 20 30" fill="none" stroke="#ffd700" stroke-width="4" /> <path d="M50 30 Q70 10 80 30" fill="none" stroke="#ffd700" stroke-width="4" />
-        </svg>
-       </div>
-       <div class="gift-box" onclick="openGiftBox(1)">
-        <svg viewbox="0 0 100 100" width="100%" height="100%"><rect x="10" y="40" width="80" height="50" fill="#4CAF50" stroke="#333" stroke-width="2" /> <rect x="10" y="30" width="80" height="15" fill="#FFD700" stroke="#333" stroke-width="2" /> <rect x="45" y="30" width="10" height="60" fill="#FFD700" stroke="#333" stroke-width="2" /> <path d="M50 30 Q30 10 20 30" fill="none" stroke="#FFD700" stroke-width="4" /> <path d="M50 30 Q70 10 80 30" fill="none" stroke="#FFD700" stroke-width="4" />
-        </svg>
-       </div>
-       <div class="gift-box" onclick="openGiftBox(2)">
-        <svg viewbox="0 0 100 100" width="100%" height="100%"><rect x="10" y="40" width="80" height="50" fill="#667eea" stroke="#333" stroke-width="2" /> <rect x="10" y="30" width="80" height="15" fill="#FFD700" stroke="#333" stroke-width="2" /> <rect x="45" y="30" width="10" height="60" fill="#FFD700" stroke="#333" stroke-width="2" /> <path d="M50 30 Q30 10 20 30" fill="none" stroke="#FFD700" stroke-width="4" /> <path d="M50 30 Q70 10 80 30" fill="none" stroke="#FFD700" stroke-width="4" />
-        </svg>
-       </div>
-      </div>
-     </div>
-     <div class="sticker-reveal" id="stickerReveal"></div><button class="action-button" id="nextButton" style="display: none;">Next Round!</button>
-    </div>
-    <div class="game-complete" id="gameComplete">
-     <div class="complete-title">
-      🎉 Game Complete! 🎉
-     </div>
-     <div class="complete-message" id="finalScore">
-      Score: 0/100
-     </div>
-     <div class="complete-message" style="margin-top: 20px; font-size: 20px;">
-      Your Collected Items:
-     </div>
-     <div class="sticker-reveal show" id="collectedItems"></div>
-    </div>
-   </div>
-  </div>
-  <script>
-    const defaultConfig = {
-      game_title: "Roll & Subtract!",
-      instruction_text: "Count backward to find the answer!",
-      roll_button_text: "Roll the Dice!",
-      choose_gift_text: "Choose your mystery gift!",
-      background_color: "#FF6B9D",
-      surface_color: "#ffffff",
-      text_color: "#333333",
-      primary_action_color: "#FFB347",
-      secondary_action_color: "#FF6B6B",
-      font_family: "Comic Sans MS",
-      font_size: 16
-    };
-
-    let currentRound = 1;
-    let diceValue = 0;
-    let correctAnswer = 0;
-    let selectedAnswer = null;
-    const totalRounds = 10;
-    let score = 0;
-    let collectedStickers = [];
-    const stickers = ["🌟", "⭐", "✨", "🎉", "🎊", "🏆", "🏆", "🌈", "🚀", "🎈", "🍭", "🎪", "🎨", "🚀", "🎯"];
-
-    async function onConfigChange(config) {
-      const fontFamily = config.font_family || defaultConfig.font_family;
-      const fontSize = config.font_size || defaultConfig.font_size;
-      const baseFontStack = 'cursive, sans-serif';
-
-      document.getElementById('gameTitle').textContent = config.game_title || defaultConfig.game_title;
-      document.getElementById('instructionText').textContent = config.instruction_text || defaultConfig.instruction_text;
-      document.getElementById('rollButton').textContent = config.roll_button_text || defaultConfig.roll_button_text;
-      document.getElementById('chooseGiftText').textContent = config.choose_gift_text || defaultConfig.choose_gift_text;
-
-      document.getElementById('gameTitle').style.fontFamily = `${fontFamily}, ${baseFontStack}`;
-      document.getElementById('instructionText').style.fontFamily = `${fontFamily}, ${baseFontStack}`;
-      document.querySelector('.equation').style.fontFamily = `${fontFamily}, ${baseFontStack}`;
-
-      document.getElementById('gameTitle').style.fontSize = `${fontSize * 2.5}px`;
-      document.getElementById('instructionText').style.fontSize = `${fontSize * 1.25}px`;
-      document.querySelector('.equation').style.fontSize = `${fontSize * 2.25}px`;
-      document.querySelector('.round-counter').style.fontSize = `${fontSize * 1.25}px`;
-
-      const backgroundColor = config.background_color || defaultConfig.background_color;
-      const surfaceColor = config.surface_color || defaultConfig.surface_color;
-      const textColor = config.text_color || defaultConfig.text_color;
-      const primaryActionColor = config.primary_action_color || defaultConfig.primary_action_color;
-      const secondaryActionColor = config.secondary_action_color || defaultConfig.secondary_action_color;
-
-      document.body.style.background = `linear-gradient(135deg, ${backgroundColor} 0%, ${secondaryActionColor} 100%)`;
-      document.querySelector('.game-container').style.background = surfaceColor;
-      document.querySelector('.equation').style.color = textColor;
-
-      const actionButtons = document.querySelectorAll('.action-button');
-      actionButtons.forEach(btn => {
-        btn.style.background = `linear-gradient(135deg, ${primaryActionColor} 0%, ${secondaryActionColor} 100%)`;
-      });
-    }
-
-    let clickedCells = 0;
-    let clickHistory = [];
-
-    function createTensFrame() {
-      const frame1 = document.getElementById('tensFrame1');
-      const frame2 = document.getElementById('tensFrame2');
-      frame1.innerHTML = '';
-      frame2.innerHTML = '';
-
-      for (let i = 0; i < 10; i++) {
-        const cell = document.createElement('div');
-        cell.className = 'tens-cell';
-        cell.id = `cell-${i}`;
-        cell.textContent = '⭕';
-        cell.style.cursor = 'pointer';
-        cell.onclick = () => handleCellClick(i);
-        frame1.appendChild(cell);
-      }
-
-      for (let i = 10; i < 20; i++) {
-        const cell = document.createElement('div');
-        cell.className = 'tens-cell';
-        cell.id = `cell-${i}`;
-        cell.textContent = '⭕';
-        cell.style.cursor = 'pointer';
-        cell.onclick = () => handleCellClick(i);
-        frame2.appendChild(cell);
-      }
-    }
-
-    function handleCellClick(cellIndex) {
-      const cell = document.getElementById(`cell-${cellIndex}`);
-      
-      if (cell.classList.contains('crossed')) {
-        return;
-      }
-
-      if (cellIndex !== 19 - clickedCells) {
-        const feedbackBox = document.getElementById('feedbackBox');
-        feedbackBox.textContent = '💡 Count backward from 20! Click the circles in order!';
-        feedbackBox.className = 'feedback-box wrong show';
-        playWrongSound();
-        setTimeout(() => feedbackBox.classList.remove('show'), 2000);
-        return;
-      }
-
-      playClickSound();
-      cell.classList.add('crossed');
-      cell.textContent = '❌';
-      clickedCells++;
-      clickHistory.push(cellIndex);
-
-      const undoButton = document.getElementById('undoButton');
-      undoButton.style.display = 'block';
-
-      if (clickedCells === diceValue) {
-        setTimeout(() => {
-          document.getElementById('answerOptions').style.display = 'flex';
-          undoButton.style.display = 'none';
-        }, 500);
-      }
-    }
-
-    function undoLastClick() {
-      if (clickHistory.length === 0) {
-        return;
-      }
-
-      const lastCellIndex = clickHistory.pop();
-      const cell = document.getElementById(`cell-${lastCellIndex}`);
-      
-      cell.classList.remove('crossed');
-      cell.textContent = '⭕';
-      clickedCells--;
-
-      if (clickHistory.length === 0) {
-        document.getElementById('undoButton').style.display = 'none';
-      }
-    }
-
-
-
-    // Audio context for sound effects
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-    function playSound(frequency, duration, type = 'sine', volume = 0.3) {
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.value = frequency;
-      oscillator.type = type;
-      
-      gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-      
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + duration);
-    }
-
-    function playClickSound() {
-      playSound(1200, 0.08, 'sine', 0.2);
-      setTimeout(() => playSound(1400, 0.05, 'sine', 0.15), 40);
-    }
-
-    function playCorrectSound() {
-      // Happy celebration melody
-      playSound(523.25, 0.15, 'sine', 0.4); // C5
-      setTimeout(() => playSound(659.25, 0.15, 'sine', 0.4), 120); // E5
-      setTimeout(() => playSound(783.99, 0.15, 'sine', 0.4), 240); // G5
-      setTimeout(() => playSound(1046.50, 0.25, 'sine', 0.5), 360); // C6
-    }
-
-    function playWrongSound() {
-      playSound(250, 0.15, 'sawtooth', 0.3);
-      setTimeout(() => playSound(200, 0.2, 'sawtooth', 0.3), 100);
-    }
-
-    function playDiceRollSound() {
-      // More realistic dice rolling sound
-      for (let i = 0; i < 12; i++) {
-        setTimeout(() => {
-          const freq = 150 + Math.random() * 300;
-          playSound(freq, 0.04, 'square', 0.15 + Math.random() * 0.15);
-        }, i * 40);
-      }
-    }
-
-    function playGiftSound() {
-      // Magical gift opening sound
-      playSound(800, 0.12, 'sine', 0.3);
-      setTimeout(() => playSound(1000, 0.12, 'sine', 0.3), 80);
-      setTimeout(() => playSound(1200, 0.12, 'sine', 0.35), 160);
-      setTimeout(() => playSound(1600, 0.2, 'sine', 0.4), 240);
-    }
-
-    function speakInstruction() {
-      const instructionText = document.getElementById('instructionText').textContent;
-      
-      const utterance = new SpeechSynthesisUtterance();
-      utterance.text = instructionText;
-      utterance.lang = 'en-US';
-      utterance.rate = 0.8;
-      utterance.pitch = 1.2;
-      
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utterance);
-    }
-
-    function rollDice() {
-      const dice = document.getElementById('dice');
-      const rollButton = document.getElementById('rollButton');
-      
-      dice.classList.add('rolling');
-      rollButton.disabled = true;
-      playDiceRollSound();
-
-      let rollCount = 0;
-      const rollInterval = setInterval(() => {
-        dice.textContent = Math.floor(Math.random() * 21);
-        rollCount++;
-
-        if (rollCount >= 10) {
-          clearInterval(rollInterval);
-          diceValue = Math.floor(Math.random() * 20) + 1;
-          dice.textContent = diceValue;
-          dice.classList.remove('rolling');
-          playSound(400, 0.2, 'sine');
-          
-          setTimeout(() => {
-            document.querySelector('.dice-container').style.display = 'none';
-            showEquation();
-          }, 500);
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Multiplication Arrays V7: Single Block UI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary: #1CB0F6;
+            --primary-shadow: #1899D6;
+            --success: #58CC02;
+            --success-shadow: #58A700;
+            --danger: #FF4B4B;
+            --danger-shadow: #EA2B2B;
+            --text-main: #4B4B4B;
         }
-      }, 100);
-    }
 
-    function showEquation() {
-      correctAnswer = 20 - diceValue;
-      clickedCells = 0;
-      clickHistory = [];
-      
-      document.getElementById('equationBox').style.display = 'block';
-      document.getElementById('equation').textContent = `20 - ${diceValue} = ?`;
-      document.getElementById('tensFrameContainer').style.display = 'block';
-      document.getElementById('undoButton').style.display = 'none';
-      
-      prepareTensFrame();
-      showAnswerOptions();
-      
-      document.getElementById('answerOptions').style.display = 'none';
-    }
-
-    function prepareTensFrame() {
-      for (let i = 0; i < 20; i++) {
-        const cell = document.getElementById(`cell-${i}`);
-        cell.classList.remove('crossed');
-        cell.classList.add('filled');
-        cell.textContent = '⭕';
-        cell.style.pointerEvents = 'auto';
-      }
-    }
-
-
-
-    function showAnswerOptions() {
-      const optionsContainer = document.getElementById('answerOptions');
-      optionsContainer.innerHTML = '';
-
-      const answers = [correctAnswer];
-      
-      while (answers.length < 3) {
-        const wrongAnswer = Math.floor(Math.random() * 21);
-        if (!answers.includes(wrongAnswer)) {
-          answers.push(wrongAnswer);
+        html, body {
+            height: 100%; width: 100%;
         }
-      }
 
-      answers.sort(() => Math.random() - 0.5);
-
-      answers.forEach(answer => {
-        const btn = document.createElement('button');
-        btn.className = 'answer-btn';
-        btn.textContent = answer;
-        btn.onclick = () => selectAnswer(answer, btn);
-        optionsContainer.appendChild(btn);
-      });
-    }
-
-    function selectAnswer(answer, btn) {
-      const allButtons = document.querySelectorAll('.answer-btn');
-      allButtons.forEach(b => {
-        b.classList.remove('selected');
-        b.disabled = true;
-      });
-
-      btn.classList.add('selected');
-      selectedAnswer = answer;
-      
-      checkAnswer();
-    }
-
-    const praises = [
-      '🎉 Excellent! You got it right! 🎉',
-      '⭐ Amazing! Perfect answer! ⭐',
-      '🌟 Wonderful! You are so smart! 🌟',
-      '🏆 Fantastic! Great job! 🏆',
-      '💫 Awesome! You are brilliant! 💫'
-    ];
-
-    function checkAnswer() {
-      if (selectedAnswer === null) {
-        return;
-      }
-
-      const feedbackBox = document.getElementById('feedbackBox');
-      const allButtons = document.querySelectorAll('.answer-btn');
-      
-      if (selectedAnswer === correctAnswer) {
-        score += 10;
-        playCorrectSound();
-
-        allButtons.forEach(btn => {
-          if (parseInt(btn.textContent) === correctAnswer) {
-            btn.classList.add('correct');
-          }
-        });
-
-        const randomPraise = praises[Math.floor(Math.random() * praises.length)];
-        feedbackBox.textContent = randomPraise;
-        feedbackBox.className = 'feedback-box correct show';
-        createConfetti();
-        
-        setTimeout(() => {
-          feedbackBox.classList.remove('show');
-          document.getElementById('giftSelection').classList.add('show');
-        }, 1500);
-      } else {
-        playWrongSound();
-        
-        allButtons.forEach(btn => {
-          if (parseInt(btn.textContent) === selectedAnswer) {
-            btn.classList.add('wrong');
-          } else {
-            btn.disabled = false;
-          }
-        });
-
-        feedbackBox.textContent = '💭 Try again! Count backward carefully! 💭';
-        feedbackBox.className = 'feedback-box wrong show';
-        
-        setTimeout(() => {
-          feedbackBox.classList.remove('show');
-          
-          allButtons.forEach(btn => {
-            btn.classList.remove('wrong');
-            btn.classList.remove('selected');
-            btn.disabled = false;
-          });
-          
-          selectedAnswer = null;
-        }, 2000);
-      }
-    }
-
-    function openGiftBox(boxIndex) {
-      const giftBoxes = document.querySelectorAll('.gift-box');
-      const selectedBox = giftBoxes[boxIndex];
-      
-      selectedBox.classList.add('opening');
-      playGiftSound();
-      
-      giftBoxes.forEach((box, index) => {
-        if (index !== boxIndex) {
-          box.style.opacity = '0.3';
-          box.style.pointerEvents = 'none';
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevent scrolling, always fit to screen */
+            touch-action: manipulation;
+            background-color: #87CEEB; 
         }
-      });
 
-      setTimeout(() => {
-        document.getElementById('giftSelection').classList.remove('show');
+        /* --- SCENERY BACKGROUND --- */
+        .scenery-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+            background: linear-gradient(180deg, #87CEEB 0%, #D4F0FF 70%); overflow: hidden;
+        }
+
+        /* Grass */
+        .scenery-bg::after {
+            content: ''; position: absolute; bottom: 0; left: -10%; width: 120%; height: 35%;
+            background: #58CC02; border-top: 12px solid #46A302;
+            border-radius: 50% 50% 0 0 / 40px 40px 0 0;
+        }
+
+        /* Clouds */
+        .cloud { position: absolute; background: white; border-radius: 50px; opacity: 0.9; }
+        .cloud::before, .cloud::after { content: ''; position: absolute; background: white; border-radius: 50%; }
+        .cloud-1 { top: 15%; left: 10%; width: 120px; height: 40px; }
+        .cloud-1::before { width: 60px; height: 60px; top: -30px; left: 15px; }
+        .cloud-1::after { width: 40px; height: 40px; top: -15px; left: 65px; }
+        .cloud-2 { top: 25%; right: 20%; width: 150px; height: 50px; opacity: 0.7;}
+        .cloud-2::before { width: 70px; height: 70px; top: -35px; left: 20px; }
+        .cloud-2::after { width: 50px; height: 50px; top: -20px; left: 80px; }
+        .cloud-3 { top: 5%; left: 45%; width: 100px; height: 30px; opacity: 0.6; transform: scale(0.8);}
+        .cloud-3::before { width: 50px; height: 50px; top: -25px; left: 10px; }
+        .cloud-3::after { width: 35px; height: 35px; top: -10px; left: 55px; }
+
+        /* Rainbow */
+        .rainbow-wrapper {
+            position: absolute; top: 0; left: 0; width: 300px; height: 300px;
+            overflow: hidden; pointer-events: none;
+        }
+        .rainbow-arc {
+            position: absolute; top: -100px; left: -100px; width: 200px; height: 200px;
+            border-radius: 50%; opacity: 0.85;
+            box-shadow: 
+                0 0 0 25px #FF4B4B,
+                0 0 0 50px #FF9600,
+                0 0 0 75px #FFC800,
+                0 0 0 100px #58CC02,
+                0 0 0 125px #1CB0F6;
+        }
+
+        /* Flowers */
+        .flower {
+            position: absolute; font-size: 24px; z-index: 1; user-select: none; pointer-events: none;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
+        }
+
+        /* --- UI COMPONENTS --- */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
+            border-radius: 32px; box-shadow: 0 12px 0 rgba(0,0,0,0.1), 0 4px 20px rgba(0,0,0,0.1);
+            padding: 16px 24px; width: 100%; display: flex; flex-direction: column; align-items: center;
+        }
+
+        .duo-btn {
+            background-color: var(--primary); color: white; border-radius: 16px;
+            font-weight: 800; font-size: 1.125rem;
+            text-transform: uppercase; letter-spacing: 0.5px; border: none;
+            cursor: pointer; box-shadow: 0 5px 0 var(--primary-shadow);
+            transition: transform 0.1s, box-shadow 0.1s; user-select: none;
+            display: inline-flex; align-items: center; justify-content: center; text-align: center;
+        }
+        .duo-btn:active { transform: translateY(5px); box-shadow: 0 0 0 transparent !important; }
+        .duo-btn.success { background-color: var(--success); box-shadow: 0 5px 0 var(--success-shadow); }
+        .duo-btn.danger { background-color: var(--danger); box-shadow: 0 5px 0 var(--danger-shadow); }
+        .duo-btn.disabled { background-color: #E5E5E5; color: #AFAFAF; box-shadow: 0 5px 0 #CFCFCF !important; pointer-events: none; }
+
+        .duo-select {
+            appearance: none; background-color: white; border: 2px solid #E5E5E5;
+            border-radius: 12px; padding: 12px 16px; font-family: 'Poppins', sans-serif;
+            font-weight: 700; color: var(--text-main); width: 100%; cursor: pointer; outline: none;
+        }
+
+        /* Screen Management */
+        .screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease-in-out; box-sizing: border-box; overflow-y: auto;
+        }
+        .screen.active { opacity: 1; pointer-events: auto; z-index: 10; }
         
-        const randomSticker = stickers[Math.floor(Math.random() * stickers.length)];
-        collectedStickers.push(randomSticker);
-        const stickerReveal = document.getElementById('stickerReveal');
-        stickerReveal.textContent = randomSticker;
-        stickerReveal.classList.add('show');
+        .main-container {
+            width: 100%; max-width: 900px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; margin: auto; padding: 10px 20px;
+            max-height: 100vh;
+        }
+
+        /* --- REALISTIC ARRAYS & DOTS --- */
+        .array-box {
+            background: white; border: 3px solid #E5E5E5; border-radius: 20px;
+            padding: 16px; display: inline-grid; gap: 8px; 
+            box-shadow: 0 4px 0 #D0D0D0; justify-content: center; align-items: center;
+        }
+        .dot {
+            width: clamp(20px, 4.5vw, 32px); 
+            height: clamp(20px, 4.5vw, 32px);
+            border-radius: 50%; background-color: var(--dot-color); position: relative;
+            box-shadow: inset -3px -4px 6px rgba(0,0,0,0.2), inset 2px 3px 5px rgba(255,255,255,0.4), 2px 3px 4px rgba(0,0,0,0.15);
+        }
+        .dot::after {
+            content: ''; position: absolute; top: 15%; left: 15%; width: 35%; height: 35%;
+            border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%);
+        }
+
+        /* Animations */
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .pop-in { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+        /* Formula Container & Inline TTS */
+        .formula-container {
+            display: flex; align-items: center; justify-content: center;
+            font-size: clamp(1.4rem, 4vw, 2.5rem); font-weight: 800; flex-wrap: wrap;
+            text-align: center; margin: 10px 0; min-height: 60px;
+            background: #F0F4F8; padding: 8px 16px; border-radius: 16px;
+            border: 2px dashed #CBD5E1; line-height: 1.3;
+        }
+        .math-text { white-space: nowrap; }
+        .blank-slot {
+            display: inline-block; min-width: 60px; border-bottom: 5px solid var(--text-main);
+            margin: 0 8px; text-align: center; color: var(--primary); padding-bottom: 2px;
+        }
         
-        setTimeout(() => {
-          stickerReveal.classList.remove('show');
-          nextRound();
-        }, 1500);
-      }, 800);
-    }
+        .inline-tts-btn {
+            background: var(--primary); border: none; cursor: pointer;
+            width: 40px; height: 40px; border-radius: 12px;
+            display: inline-flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 0 var(--primary-shadow);
+            transition: transform 0.1s, box-shadow 0.1s; margin-left: 8px;
+            vertical-align: middle;
+        }
+        .inline-tts-btn:active { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
+        .inline-tts-btn svg { width: 22px; height: 22px; fill: white; }
 
-    function createConfetti() {
-      const colors = ['#ff6b6b', '#ffd700', '#4CAF50', '#667eea', '#f093fb'];
-      
-      for (let i = 0; i < 50; i++) {
-        setTimeout(() => {
-          const confetti = document.createElement('div');
-          confetti.className = 'confetti';
-          confetti.style.left = Math.random() * 100 + '%';
-          confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
-          confetti.style.animationDelay = Math.random() * 0.5 + 's';
-          document.body.appendChild(confetti);
-          
-          setTimeout(() => confetti.remove(), 3000);
-        }, i * 30);
-      }
-    }
+        #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
+        
+        /* Minigame Overlays */
+        #mg-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; display: block; touch-action: none; }
+        .minigame-ui {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 30px; z-index: 11; pointer-events: none;
+            background: rgba(255,255,255,0.95); padding: 12px 32px; border-radius: 30px;
+            box-shadow: 0 6px 0 #E5E5E5, 0 10px 20px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- Scenery Background -->
+    <div class="scenery-bg">
+        <div class="rainbow-wrapper">
+            <div class="rainbow-arc"></div>
+        </div>
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+        <div class="cloud cloud-3"></div>
+        <!-- Flowers on Grass -->
+        <div class="flower" style="bottom: 10%; left: 10%; font-size: 26px;">🌸</div>
+        <div class="flower" style="bottom: 5%; left: 30%; font-size: 20px;">🌼</div>
+        <div class="flower" style="bottom: 12%; right: 15%; font-size: 30px;">🌺</div>
+        <div class="flower" style="bottom: 8%; right: 35%; font-size: 24px;">🌻</div>
+        <div class="flower" style="bottom: 18%; left: 50%; font-size: 22px;">🌸</div>
+        <div class="flower" style="bottom: 3%; left: 70%; font-size: 28px;">🌼</div>
+    </div>
 
-    function nextRound() {
-      currentRound++;
-      
-      if (currentRound > totalRounds) {
-        document.getElementById('gameArea').style.display = 'none';
-        document.getElementById('finalScore').textContent = `Score: ${score}/${totalRounds * 10}`;
-        document.getElementById('collectedItems').textContent = collectedStickers.join(' ');
-        document.getElementById('gameComplete').classList.add('show');
-        createConfetti();
-        return;
-      }
+    <!-- Confetti Overlay -->
+    <canvas id="confetti-canvas"></canvas>
 
-      document.getElementById('roundCounter').textContent = `Round ${currentRound} of ${totalRounds}`;
-      
-      document.getElementById('dice').textContent = '🎲';
-      document.querySelector('.dice-container').style.display = 'flex';
-      document.getElementById('equationBox').style.display = 'none';
-      document.getElementById('tensFrameContainer').style.display = 'none';
-      document.getElementById('undoButton').style.display = 'none';
-      document.getElementById('answerOptions').innerHTML = '';
-      document.getElementById('answerOptions').style.display = 'flex';
-      document.getElementById('feedbackBox').classList.remove('show');
-      document.getElementById('giftSelection').classList.remove('show');
-      document.getElementById('stickerReveal').classList.remove('show');
-      document.getElementById('nextButton').style.display = 'none';
-      document.getElementById('rollButton').style.display = 'block';
-      document.getElementById('rollButton').disabled = false;
+    <!-- Start Screen -->
+    <div id="start-screen" class="screen active">
+        <div class="main-container">
+            <div class="glass-panel" style="max-width: 500px; padding: 24px;">
+                <h1 class="text-4xl font-extrabold text-[#1CB0F6] mb-2 drop-shadow-sm text-center">Math Arrays</h1>
+                <p class="text-gray-500 font-bold mb-6 text-lg text-center">Which one is more or less?</p>
+                
+                <div class="space-y-4 w-full text-left">
+                    <div>
+                        <label class="block font-bold mb-2 text-gray-700">Multiplication Tables</label>
+                        <select id="setting-tables" class="duo-select">
+                            <option value="5">Tables 2 - 5</option>
+                            <option value="10">Tables 2 - 10</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-2 text-gray-700">Number of Questions</label>
+                        <select id="setting-questions" class="duo-select">
+                            <option value="5">5 Questions</option>
+                            <option value="10">10 Questions</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-2 text-gray-700">Question Type</label>
+                        <select id="setting-type" class="duo-select">
+                            <option value="mixed">Mixed (More & Less)</option>
+                            <option value="more">Find More</option>
+                            <option value="less">Find Less</option>
+                        </select>
+                    </div>
+                </div>
 
-      const giftBoxes = document.querySelectorAll('.gift-box');
-      giftBoxes.forEach(box => {
-        box.classList.remove('opening');
-        box.style.opacity = '1';
-        box.style.pointerEvents = 'auto';
-      });
-      
-      selectedAnswer = null;
-      clickedCells = 0;
-      clickHistory = [];
-    }
+                <button id="btn-start" class="duo-btn w-full mt-6 text-2xl py-4">START GAME</button>
+                
+                <div class="mt-4 text-base font-bold text-gray-400">
+                    High Score: <span id="display-highscore" class="text-[var(--primary)] text-xl">0</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    document.getElementById('rollButton').addEventListener('click', function() {
-      this.style.display = 'none';
-      rollDice();
-    });
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <div class="main-container">
+            <div class="glass-panel w-full relative">
+                
+                <!-- Internal Game Header (Moved inside main block) -->
+                <div class="w-full flex justify-between items-center mb-2 md:mb-4">
+                    <div class="font-bold text-sm md:text-base text-gray-500 bg-gray-100 px-3 py-1 md:px-4 md:py-1.5 rounded-xl border-2 border-gray-200">
+                        <span id="question-counter">1/5</span>
+                    </div>
+                    
+                    <div class="font-extrabold text-base md:text-lg text-[var(--primary)] shrink-0 bg-[#E1F3FE] px-3 py-1 md:px-4 md:py-1.5 rounded-xl border-2 border-[#BCE4FD]">
+                        <span id="current-score">0</span> <span class="text-xs md:text-sm text-[var(--primary-shadow)]">pts</span>
+                    </div>
+                </div>
 
-    document.getElementById('undoButton').addEventListener('click', undoLastClick);
-    document.getElementById('nextButton').addEventListener('click', nextRound);
+                <!-- Arrays Display -->
+                <div class="flex flex-row flex-wrap justify-center items-end gap-6 md:gap-16 mb-2 w-full pop-in" id="arrays-wrapper">
+                    <div class="flex flex-col items-center gap-2 md:gap-4">
+                        <div id="array-left" class="array-box"></div>
+                        <div id="label-left" class="font-bold text-xl md:text-2xl text-gray-400 opacity-0 transition-opacity"></div>
+                    </div>
+                    <div class="flex flex-col items-center gap-2 md:gap-4">
+                        <div id="array-right" class="array-box"></div>
+                        <div id="label-right" class="font-bold text-xl md:text-2xl text-gray-400 opacity-0 transition-opacity"></div>
+                    </div>
+                </div>
 
-    createTensFrame();
+                <!-- Question & Formula -->
+                <div id="formula-area" class="formula-container pop-in w-full">
+                    <!-- Content injected via JS -->
+                </div>
 
-    if (window.elementSdk) {
-      window.elementSdk.init({
-        defaultConfig,
-        onConfigChange,
-        mapToCapabilities: (config) => ({
-          recolorables: [
-            {
-              get: () => config.background_color || defaultConfig.background_color,
-              set: (value) => {
-                config.background_color = value;
-                window.elementSdk.setConfig({ background_color: value });
-              }
-            },
-            {
-              get: () => config.surface_color || defaultConfig.surface_color,
-              set: (value) => {
-                config.surface_color = value;
-                window.elementSdk.setConfig({ surface_color: value });
-              }
-            },
-            {
-              get: () => config.text_color || defaultConfig.text_color,
-              set: (value) => {
-                config.text_color = value;
-                window.elementSdk.setConfig({ text_color: value });
-              }
-            },
-            {
-              get: () => config.primary_action_color || defaultConfig.primary_action_color,
-              set: (value) => {
-                config.primary_action_color = value;
-                window.elementSdk.setConfig({ primary_action_color: value });
-              }
-            },
-            {
-              get: () => config.secondary_action_color || defaultConfig.secondary_action_color,
-              set: (value) => {
-                config.secondary_action_color = value;
-                window.elementSdk.setConfig({ secondary_action_color: value });
-              }
+                <!-- Answers: optimized to single row using grid-cols-4 -->
+                <div id="answers-grid" class="grid gap-2 md:gap-4 w-full max-w-xl mt-2 pop-in">
+                    <!-- Buttons injected via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Minigame Screen -->
+    <div id="minigame-screen" class="screen" style="background: transparent;">
+        <div class="minigame-ui">
+            <div class="text-2xl font-bold text-[var(--danger)]">Time: <span id="mg-time">20</span>s</div>
+            <div class="text-2xl font-bold text-[var(--primary)]">Score: <span id="mg-score">0</span></div>
+        </div>
+        <canvas id="mg-canvas"></canvas>
+    </div>
+
+    <!-- End Screen -->
+    <div id="end-screen" class="screen">
+        <div class="main-container">
+            <div class="glass-panel" style="max-width: 500px; padding: 24px;">
+                <h2 class="text-5xl font-extrabold text-[var(--success)] mb-4 drop-shadow-sm text-center">Awesome!</h2>
+                <p class="text-2xl font-bold text-gray-500 mb-8 text-center">You completed the lesson!</p>
+                
+                <div class="bg-gray-100 rounded-3xl p-6 mb-8 w-full border-4 border-white shadow-inner text-center">
+                    <div class="text-lg font-bold text-gray-400 uppercase tracking-wider mb-2">Total Score</div>
+                    <div id="final-score" class="text-7xl font-extrabold text-[var(--primary)] drop-shadow-md">0</div>
+                </div>
+
+                <button id="btn-restart" class="duo-btn w-full text-2xl py-4">PLAY AGAIN</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /** =========================================================================
+         * AUDIO SYNTHESIZER & TTS
+         * ========================================================================= */
+        const AudioSys = (function() {
+            let ctx = null;
+            
+            function init() {
+                if (!ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    ctx = new AudioContext();
+                }
+                if (ctx.state === 'suspended') ctx.resume();
             }
-          ],
-          borderables: [],
-          fontEditable: {
-            get: () => config.font_family || defaultConfig.font_family,
-            set: (value) => {
-              config.font_family = value;
-              window.elementSdk.setConfig({ font_family: value });
-            }
-          },
-          fontSizeable: {
-            get: () => config.font_size || defaultConfig.font_size,
-            set: (value) => {
-              config.font_size = value;
-              window.elementSdk.setConfig({ font_size: value });
-            }
-          }
-        }),
-        mapToEditPanelValues: (config) => new Map([
-          ["game_title", config.game_title || defaultConfig.game_title],
-          ["instruction_text", config.instruction_text || defaultConfig.instruction_text],
-          ["roll_button_text", config.roll_button_text || defaultConfig.roll_button_text],
-          ["choose_gift_text", config.choose_gift_text || defaultConfig.choose_gift_text]
-        ])
-      });
 
-      onConfigChange(window.elementSdk.config);
-    } else {
-      onConfigChange(defaultConfig);
-    }
-  </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b5e79e4f57e4625',t:'MTc2NzA2NTYxMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+            function playTone(freq, type, duration, vol=0.1) {
+                if(!ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                gain.gain.setValueAtTime(vol, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + duration);
+            }
+
+            return {
+                init,
+                correct: () => {
+                    init();
+                    playTone(523.25, 'sine', 0.1, 0.1); 
+                    setTimeout(() => playTone(659.25, 'sine', 0.2, 0.1), 100); 
+                },
+                wrong: () => {
+                    init();
+                    playTone(250, 'sawtooth', 0.2, 0.05);
+                    setTimeout(() => playTone(200, 'sawtooth', 0.3, 0.05), 100);
+                },
+                complete: () => {
+                    init();
+                    [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => {
+                        setTimeout(() => playTone(f, 'square', 0.15, 0.05), i * 120);
+                    });
+                },
+                pop: () => {
+                    init();
+                    playTone(800, 'sine', 0.05, 0.1);
+                },
+                tts: (text) => {
+                    if (!window.speechSynthesis) return;
+                    window.speechSynthesis.cancel();
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'en-US';
+                    utterance.rate = 0.85; 
+                    utterance.pitch = 1.1; 
+                    window.speechSynthesis.speak(utterance);
+                }
+            };
+        })();
+
+        /** =========================================================================
+         * CONFETTI SYSTEM (Z-INDEX 9999)
+         * ========================================================================= */
+        const Confetti = (function() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            let animationId = null;
+
+            function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+            window.addEventListener('resize', resize); resize();
+
+            class Particle {
+                constructor() {
+                    this.x = canvas.width / 2; this.y = canvas.height / 2;
+                    this.vx = (Math.random() - 0.5) * 25; this.vy = (Math.random() - 1) * 25 - 5;
+                    this.size = Math.random() * 12 + 6;
+                    this.color = ['#FF4B4B', '#FFC800', '#1CB0F6', '#FF9600', '#58CC02'][Math.floor(Math.random() * 5)];
+                    this.rotation = Math.random() * 360; this.rs = (Math.random() - 0.5) * 15;
+                }
+                update() {
+                    this.x += this.vx; this.y += this.vy; this.vy += 0.6; this.rotation += this.rs;
+                }
+                draw() {
+                    ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.rotation * Math.PI / 180);
+                    ctx.fillStyle = this.color; ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+                    ctx.restore();
+                }
+            }
+
+            function loop() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach((p, index) => {
+                    p.update(); p.draw();
+                    if (p.y > canvas.height + 50) particles.splice(index, 1);
+                });
+                if (particles.length > 0) animationId = requestAnimationFrame(loop);
+                else ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+
+            return {
+                fire: () => {
+                    if (animationId) cancelAnimationFrame(animationId);
+                    particles = []; for(let i = 0; i < 150; i++) particles.push(new Particle());
+                    loop();
+                }
+            };
+        })();
+
+        /** =========================================================================
+         * MINIGAME SYSTEM (DELTA-TIME PHYSICS)
+         * ========================================================================= */
+        const MiniGame = (function() {
+            const canvas = document.getElementById('mg-canvas');
+            const ctx = canvas.getContext('2d');
+            const timeEl = document.getElementById('mg-time');
+            const scoreEl = document.getElementById('mg-score');
+
+            let animationId;
+            let lastTime;
+            let timeRemaining = 20;
+            let balls = [];
+            let basket = {x: 0, y: 0, w: 120, h: 70}; 
+            let score = 0;
+            let isPlaying = false;
+            let onCompleteCallback = null;
+            let spawnTimer = 0;
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                basket.y = canvas.height - basket.h - 30; // 30px from bottom
+                if(!isPlaying) basket.x = canvas.width/2 - basket.w/2;
+            }
+            window.addEventListener('resize', resize);
+
+            function updateBasketPosition(clientX) {
+                basket.x = clientX - basket.w / 2;
+                if (basket.x < 0) basket.x = 0;
+                if (basket.x + basket.w > canvas.width) basket.x = canvas.width - basket.w;
+            }
+
+            // Mouse & Touch events
+            canvas.addEventListener('mousemove', e => updateBasketPosition(e.clientX));
+            canvas.addEventListener('touchmove', e => {
+                e.preventDefault(); // prevent scroll
+                updateBasketPosition(e.touches[0].clientX);
+            }, {passive: false});
+
+            function start(onComplete) {
+                resize();
+                onCompleteCallback = onComplete;
+                timeRemaining = 20;
+                score = 0;
+                balls = [];
+                isPlaying = true;
+                scoreEl.textContent = score;
+                timeEl.textContent = timeRemaining.toFixed(0);
+                lastTime = performance.now();
+                
+                screens.game.classList.remove('active');
+                screens['minigame-screen'] = document.getElementById('minigame-screen');
+                screens['minigame-screen'].classList.add('active');
+                
+                animationId = requestAnimationFrame(loop);
+            }
+
+            function spawnBall() {
+                const colors = ['#FF4B4B', '#FFC800', '#CE82FF', '#FF9600', '#00C2CB'];
+                const radius = 25; 
+                const x = Math.random() * (canvas.width - radius * 2) + radius;
+                balls.push({
+                    x, y: -radius, radius,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speed: Math.random() * 100 + 150 
+                });
+            }
+
+            function loop(currentTime) {
+                if (!isPlaying) return;
+                const dt = (currentTime - lastTime) / 1000; 
+                lastTime = currentTime;
+
+                timeRemaining -= dt;
+                timeEl.textContent = Math.ceil(Math.max(0, timeRemaining));
+
+                if (timeRemaining <= 0) {
+                    end();
+                    return;
+                }
+
+                // Spawn logic
+                spawnTimer -= dt;
+                if (spawnTimer <= 0) {
+                    spawnBall();
+                    spawnTimer = 0.5 + Math.random() * 0.5; 
+                }
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Update & Draw balls
+                for (let i = balls.length - 1; i >= 0; i--) {
+                    const b = balls[i];
+                    b.y += b.speed * dt; 
+
+                    // Draw Ball
+                    ctx.beginPath();
+                    ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = b.color;
+                    ctx.fill();
+                    // Ball Highlight
+                    ctx.beginPath();
+                    ctx.arc(b.x - b.radius*0.3, b.y - b.radius*0.3, b.radius*0.3, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                    ctx.fill();
+
+                    // Collision detection (Basket top rim)
+                    if (b.y + b.radius > basket.y && b.y < basket.y + basket.h) {
+                        if (b.x > basket.x && b.x < basket.x + basket.w) {
+                            score += 5;
+                            scoreEl.textContent = score;
+                            AudioSys.pop();
+                            balls.splice(i, 1);
+                            Confetti.fire();
+                            continue;
+                        }
+                    }
+
+                    // Remove if missed
+                    if (b.y - b.radius > canvas.height) {
+                        balls.splice(i, 1);
+                    }
+                }
+
+                // Draw Basket
+                ctx.fillStyle = '#FF9600'; 
+                ctx.beginPath();
+                ctx.moveTo(basket.x, basket.y);
+                ctx.lineTo(basket.x + basket.w, basket.y);
+                ctx.lineTo(basket.x + basket.w - 15, basket.y + basket.h);
+                ctx.lineTo(basket.x + 15, basket.y + basket.h);
+                ctx.fill();
+                // Bucket rim
+                ctx.fillStyle = '#D97706';
+                ctx.fillRect(basket.x - 5, basket.y, basket.w + 10, 10);
+
+                animationId = requestAnimationFrame(loop);
+            }
+
+            function end() {
+                isPlaying = false;
+                cancelAnimationFrame(animationId);
+                AudioSys.complete();
+                screens['minigame-screen'].classList.remove('active');
+                screens.game.classList.add('active');
+                if (onCompleteCallback) onCompleteCallback(score);
+            }
+
+            return { start };
+        })();
+
+        /** =========================================================================
+         * GAME LOGIC
+         * ========================================================================= */
+        const ARRAY_COLORS = ['#FF4B4B', '#FFC800', '#CE82FF', '#FF9600', '#00C2CB', '#58CC02'];
+        
+        const state = {
+            tablesMax: 5, totalQs: 5, qType: 'mixed', questions: [],
+            currentQIndex: 0, score: 0,
+            highScore: localStorage.getItem('mathArrayHighScoreV7') || 0,
+            step: 1, stepFailed: false, currentSpokenText: ""
+        };
+
+        const screens = {
+            start: document.getElementById('start-screen'),
+            game: document.getElementById('game-screen'),
+            end: document.getElementById('end-screen')
+        };
+        
+        const els = {
+            btnStart: document.getElementById('btn-start'),
+            btnRestart: document.getElementById('btn-restart'),
+            qCounter: document.getElementById('question-counter'),
+            score: document.getElementById('current-score'),
+            highScoreDisplay: document.getElementById('display-highscore'),
+            arrayLeft: document.getElementById('array-left'),
+            arrayRight: document.getElementById('array-right'),
+            labelLeft: document.getElementById('label-left'),
+            labelRight: document.getElementById('label-right'),
+            formulaArea: document.getElementById('formula-area'),
+            answersGrid: document.getElementById('answers-grid'),
+            finalScore: document.getElementById('final-score')
+        };
+
+        els.highScoreDisplay.textContent = state.highScore;
+
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        function generateQuestions() {
+            state.questions = [];
+            const generatedPairs = new Set();
+            while(state.questions.length < state.totalQs) {
+                const shareCols = Math.random() > 0.5;
+                let c1, r1, c2, r2;
+                let maxMultiplier = state.tablesMax;
+                if (shareCols) {
+                    c1 = c2 = Math.floor(Math.random() * (maxMultiplier - 1)) + 2;
+                    r1 = Math.floor(Math.random() * 9) + 2; r2 = Math.floor(Math.random() * 9) + 2;
+                    while(r1 === r2) r2 = Math.floor(Math.random() * 9) + 2;
+                } else {
+                    r1 = r2 = Math.floor(Math.random() * 9) + 2; 
+                    c1 = Math.floor(Math.random() * (maxMultiplier - 1)) + 2; c2 = Math.floor(Math.random() * (maxMultiplier - 1)) + 2;
+                    while(c1 === c2) c2 = Math.floor(Math.random() * (maxMultiplier - 1)) + 2;
+                }
+                const sig = `${c1}x${r1}-${c2}x${r2}`;
+                const reverseSig = `${c2}x${r2}-${c1}x${r1}`;
+                if (!generatedPairs.has(sig) && !generatedPairs.has(reverseSig)) {
+                    generatedPairs.add(sig);
+                    const shuffledColors = shuffle([...ARRAY_COLORS]);
+                    state.questions.push({
+                        left: { cols: c1, rows: r1, ans: c1 * r1, color: shuffledColors[0] },
+                        right: { cols: c2, rows: r2, ans: c2 * r2, color: shuffledColors[1] }
+                    });
+                }
+            }
+        }
+
+        function switchScreen(screenName) {
+            Object.values(screens).forEach(s => { if(s) s.classList.remove('active'); });
+            screens[screenName].classList.add('active');
+            window.scrollTo(0,0);
+        }
+
+        function startGame() {
+            AudioSys.init(); 
+            state.tablesMax = parseInt(document.getElementById('setting-tables').value);
+            state.totalQs = parseInt(document.getElementById('setting-questions').value);
+            state.qType = document.getElementById('setting-type').value;
+            state.score = 0; state.currentQIndex = 0;
+            els.score.textContent = '0';
+            generateQuestions();
+            switchScreen('game');
+            loadQuestion();
+        }
+
+        function drawArray(container, cols, rows, color) {
+            container.innerHTML = ''; container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            const total = cols * rows;
+            for(let i=0; i<total; i++) {
+                const dot = document.createElement('div'); dot.className = 'dot';
+                dot.style.setProperty('--dot-color', color); container.appendChild(dot);
+            }
+        }
+
+        function getDistractors(correct) {
+            const options = new Set([correct]);
+            while(options.size < 4) {
+                const offset = Math.floor(Math.random() * 4) + 1;
+                const sign = Math.random() > 0.5 ? 1 : -1;
+                const fake = correct + (offset * sign);
+                if(fake > 0 && fake !== correct) options.add(fake);
+            }
+            return shuffle(Array.from(options));
+        }
+
+        function triggerReplayAnimation(el) {
+            el.classList.remove('pop-in'); void el.offsetWidth; el.classList.add('pop-in');
+        }
+
+        function loadQuestion() {
+            const q = state.questions[state.currentQIndex];
+            state.step = 1; state.stepFailed = false;
+
+            // Streamlined Counter
+            els.qCounter.textContent = `${state.currentQIndex + 1}/${state.totalQs}`;
+
+            drawArray(els.arrayLeft, q.left.cols, q.left.rows, q.left.color);
+            drawArray(els.arrayRight, q.right.cols, q.right.rows, q.right.color);
+            
+            els.labelLeft.style.opacity = '0'; els.labelRight.style.opacity = '0';
+            triggerReplayAnimation(document.getElementById('arrays-wrapper'));
+            renderStep();
+        }
+
+        function createTTSButton() {
+            return `
+                <button class="inline-tts-btn" onclick="AudioSys.tts(state.currentSpokenText)" aria-label="Listen">
+                    <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                </button>
+            `;
+        }
+
+        function renderStep() {
+            const q = state.questions[state.currentQIndex];
+            let formulaHtml = "";
+            els.answersGrid.innerHTML = '';
+            els.answersGrid.className = 'grid gap-2 md:gap-4 w-full max-w-xl mt-2 pop-in';
+            state.stepFailed = false;
+
+            if (state.step === 1 || state.step === 2) {
+                els.answersGrid.classList.add('grid-cols-4');
+                const isLeft = state.step === 1;
+                const target = isLeft ? q.left : q.right;
+                
+                formulaHtml = `<span class="math-text">${target.cols} &times; ${target.rows} &nbsp;= </span><span class="blank-slot">?</span>`;
+                state.currentSpokenText = `What is ${target.cols} times ${target.rows}?`;
+                
+                const options = getDistractors(target.ans);
+                options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'duo-btn text-xl md:text-2xl py-2 md:py-3 px-1 w-full';
+                    btn.textContent = opt;
+                    btn.onclick = () => handleMathAnswer(btn, opt, target.ans);
+                    els.answersGrid.appendChild(btn);
+                });
+            }
+            else if (state.step === 3) {
+                els.answersGrid.classList.add('grid-cols-2');
+                
+                let askMore = state.qType === 'more' ? true : (state.qType === 'less' ? false : Math.random() > 0.5);
+                const leftStr = `${q.left.cols} &times; ${q.left.rows}`;
+                const rightStr = `${q.right.cols} &times; ${q.right.rows}`;
+                let correctAns;
+                
+                if (askMore) {
+                    if (q.left.ans > q.right.ans) {
+                        formulaHtml = `<span class="math-text">${leftStr}</span>&nbsp; is &nbsp;<span class="blank-slot" style="min-width: 120px;"></span>&nbsp; than &nbsp;<span class="math-text">${rightStr}</span>`;
+                        state.currentSpokenText = `${q.left.cols} times ${q.left.rows} is what than ${q.right.cols} times ${q.right.rows}? Choose more or less.`;
+                    } else {
+                        formulaHtml = `<span class="math-text">${rightStr}</span>&nbsp; is &nbsp;<span class="blank-slot" style="min-width: 120px;"></span>&nbsp; than &nbsp;<span class="math-text">${leftStr}</span>`;
+                        state.currentSpokenText = `${q.right.cols} times ${q.right.rows} is what than ${q.left.cols} times ${q.left.rows}? Choose more or less.`;
+                    }
+                    correctAns = 'MORE';
+                } else {
+                    if (q.left.ans < q.right.ans) {
+                        formulaHtml = `<span class="math-text">${leftStr}</span>&nbsp; is &nbsp;<span class="blank-slot" style="min-width: 120px;"></span>&nbsp; than &nbsp;<span class="math-text">${rightStr}</span>`;
+                        state.currentSpokenText = `${q.left.cols} times ${q.left.rows} is what than ${q.right.cols} times ${q.right.rows}? Choose more or less.`;
+                    } else {
+                        formulaHtml = `<span class="math-text">${rightStr}</span>&nbsp; is &nbsp;<span class="blank-slot" style="min-width: 120px;"></span>&nbsp; than &nbsp;<span class="math-text">${leftStr}</span>`;
+                        state.currentSpokenText = `${q.right.cols} times ${q.right.rows} is what than ${q.left.cols} times ${q.left.rows}? Choose more or less.`;
+                    }
+                    correctAns = 'LESS';
+                }
+
+                ['MORE', 'LESS'].forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'duo-btn text-2xl py-3 md:py-4 w-full';
+                    if(opt === 'MORE') btn.classList.add('!bg-[#CE82FF]', '!shadow-[0_5px_0_#A855F7]');
+                    if(opt === 'LESS') btn.classList.add('!bg-[#FF9600]', '!shadow-[0_5px_0_#D97706]');
+                    btn.textContent = opt;
+                    btn.onclick = () => handleCompareAnswer(btn, opt, correctAns);
+                    els.answersGrid.appendChild(btn);
+                });
+            }
+
+            els.formulaArea.innerHTML = formulaHtml + createTTSButton();
+            triggerReplayAnimation(els.formulaArea);
+            triggerReplayAnimation(els.answersGrid);
+
+            setTimeout(() => AudioSys.tts(state.currentSpokenText), 400);
+        }
+
+        function updateScore() {
+            if (!state.stepFailed) {
+                state.score += 10; els.score.textContent = state.score;
+            }
+        }
+
+        function disableAllButtons() {
+            Array.from(els.answersGrid.children).forEach(btn => btn.classList.add('disabled'));
+        }
+
+        function handleMathAnswer(btn, selected, correct) {
+            if (selected === correct) {
+                AudioSys.correct(); btn.classList.add('success');
+                disableAllButtons(); updateScore();
+                
+                const q = state.questions[state.currentQIndex];
+                if (state.step === 1) {
+                    els.labelLeft.innerHTML = `${q.left.cols} &times; ${q.left.rows} = <span class="text-[var(--success)]">${correct}</span>`;
+                    els.labelLeft.style.opacity = '1';
+                } else {
+                    els.labelRight.innerHTML = `${q.right.cols} &times; ${q.right.rows} = <span class="text-[var(--success)]">${correct}</span>`;
+                    els.labelRight.style.opacity = '1';
+                }
+
+                els.formulaArea.querySelector('.blank-slot').textContent = correct;
+                els.formulaArea.querySelector('.blank-slot').style.color = 'var(--success)';
+                els.formulaArea.querySelector('.blank-slot').style.borderColor = 'transparent';
+
+                setTimeout(() => { state.step++; renderStep(); }, 1000);
+            } else {
+                AudioSys.wrong(); state.stepFailed = true;
+                btn.classList.add('danger', 'shake');
+                setTimeout(() => btn.classList.remove('shake', 'danger'), 500);
+            }
+        }
+
+        function handleCompareAnswer(btn, selected, correct) {
+            if (selected === correct) {
+                AudioSys.complete(); Confetti.fire(); btn.classList.add('success');
+                btn.classList.remove('!bg-[#CE82FF]', '!shadow-[0_5px_0_#A855F7]', '!bg-[#FF9600]', '!shadow-[0_5px_0_#D97706]');
+                disableAllButtons(); updateScore();
+
+                els.formulaArea.querySelector('.blank-slot').textContent = correct;
+                els.formulaArea.querySelector('.blank-slot').style.color = 'var(--success)';
+                els.formulaArea.querySelector('.blank-slot').style.borderColor = 'transparent';
+
+                // Display NEXT / PLAY GAME options
+                setTimeout(() => {
+                    els.answersGrid.className = 'grid gap-2 md:gap-4 w-full max-w-xl mt-2 pop-in grid-cols-2';
+                    els.answersGrid.innerHTML = `
+                        <button class="duo-btn text-xl md:text-2xl py-3 md:py-4 !bg-[var(--success)] !shadow-[0_5px_0_var(--success-shadow)]" onclick="advanceQuestion()">NEXT</button>
+                        <button class="duo-btn text-xl md:text-2xl py-3 md:py-4 !bg-[#1CB0F6] !shadow-[0_5px_0_#1899D6]" onclick="launchMinigame()">PLAY GAME</button>
+                    `;
+                    triggerReplayAnimation(els.answersGrid);
+                }, 1000);
+            } else {
+                AudioSys.wrong(); state.stepFailed = true; 
+                btn.classList.add('danger', 'shake');
+                btn.classList.remove('!bg-[#CE82FF]', '!shadow-[0_5px_0_#A855F7]', '!bg-[#FF9600]', '!shadow-[0_5px_0_#D97706]');
+                setTimeout(() => btn.classList.remove('shake', 'danger'), 500);
+            }
+        }
+
+        window.advanceQuestion = function() {
+            state.currentQIndex++;
+            if (state.currentQIndex < state.totalQs) loadQuestion();
+            else endGame();
+        }
+
+        window.launchMinigame = function() {
+            MiniGame.start((miniScore) => {
+                state.score += miniScore;
+                els.score.textContent = state.score;
+                advanceQuestion();
+            });
+        }
+
+        function endGame() {
+            if (state.score > state.highScore) {
+                state.highScore = state.score;
+                localStorage.setItem('mathArrayHighScoreV7', state.highScore);
+                els.highScoreDisplay.textContent = state.highScore;
+            }
+            els.finalScore.textContent = state.score;
+            switchScreen('end');
+        }
+
+        els.btnStart.addEventListener('click', startGame);
+        els.btnRestart.addEventListener('click', () => { Confetti.fire(); switchScreen('start'); });
+
+    </script>
+</body>
 </html>
