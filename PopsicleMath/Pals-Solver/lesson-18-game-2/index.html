@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Picture Graph Detective - Ver 2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background: linear-gradient(180deg, #1CB0F6 0%, #8FE3FF 60%, #B2EDFF 100%); /* Bầu trời */
+            min-height: 100vh;
+            touch-action: manipulation;
+        }
+
+        /* --- BACKGROUND SCENERY (CSS ONLY) --- */
+        .scenery {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        /* Cầu vồng */
+        .rainbow {
+            position: absolute;
+            top: -10vh; left: -10vw;
+            width: 70vw; height: 70vw;
+            border-radius: 50%;
+            box-shadow: inset 0 0 0 20px rgba(255, 75, 75, 0.5), 
+                        inset 0 0 0 40px rgba(255, 144, 0, 0.5), 
+                        inset 0 0 0 60px rgba(255, 217, 0, 0.5), 
+                        inset 0 0 0 80px rgba(0, 225, 104, 0.5), 
+                        inset 0 0 0 100px rgba(0, 197, 255, 0.5);
+            opacity: 0.6;
+        }
+
+        /* Mây */
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+            opacity: 0.9;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+        }
+        .cloud::before, .cloud::after {
+            content: ''; position: absolute; background: white; border-radius: 50%;
+        }
+        .cloud1 { top: 10%; left: 20%; width: 120px; height: 40px; }
+        .cloud1::before { width: 60px; height: 60px; top: -30px; left: 15px; }
+        .cloud1::after { width: 40px; height: 40px; top: -20px; right: 15px; }
+        
+        .cloud2 { top: 25%; right: 25%; width: 150px; height: 50px; transform: scale(0.8); }
+        .cloud2::before { width: 70px; height: 70px; top: -40px; left: 20px; }
+        .cloud2::after { width: 50px; height: 50px; top: -25px; right: 20px; }
+
+        .cloud3 { top: 5%; left: 60%; width: 90px; height: 30px; transform: scale(0.6); opacity: 0.7;}
+        .cloud3::before { width: 40px; height: 40px; top: -20px; left: 10px; }
+        .cloud3::after { width: 30px; height: 30px; top: -15px; right: 10px; }
+
+        /* Thảm cỏ */
+        .grass {
+            position: absolute;
+            bottom: 0; left: 0; width: 100%; height: 25vh;
+            background: #58CC02;
+            border-top: 12px solid #46A302;
+            border-radius: 50% 50% 0 0 / 20px 20px 0 0;
+        }
+
+        /* Cây và Hoa (Dùng Emoji cho nhẹ) */
+        .nature-items {
+            position: absolute;
+            bottom: 5vh;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            font-size: 3rem;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.2));
+            z-index: 1;
+        }
+
+        /* --- GAME UI ELEMENTS --- */
+        .game-container {
+            position: relative;
+            z-index: 10; /* Nổi lên trên background */
+        }
+
+        /* Duolingo style cards */
+        .duo-card {
+            background-color: white;
+            border-radius: 1.5rem;
+            border: 2px solid #E5E5E5;
+            border-bottom: 8px solid #E5E5E5;
+            transition: transform 0.1s;
+        }
+
+        /* Text Stroke cho Title */
+        .text-stroke {
+            color: #FFFFFF;
+            text-shadow: 
+                -3px -3px 0 #1CB0F6,  
+                 3px -3px 0 #1CB0F6,
+                -3px  3px 0 #1CB0F6,
+                 3px  3px 0 #1CB0F6,
+                 0px  5px 0 #1899D6; /* 3D shadow */
+        }
+
+        /* Nút bấm 3D */
+        .btn-3d {
+            transition: all 0.1s;
+            border-bottom-width: 6px;
+        }
+        .btn-3d:active:not(:disabled) {
+            transform: translateY(6px);
+            border-bottom-width: 0px;
+            margin-bottom: 6px; /* Bù trừ layout */
+        }
+        .btn-3d:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* Style icon chân thực hơn */
+        .emoji-item {
+            display: inline-block;
+            animation: bounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-size: 2.5rem; /* Icon to hơn */
+            margin-right: 0.1rem;
+            filter: drop-shadow(0px 4px 2px rgba(0,0,0,0.25)); /* Đổ bóng 3D */
+            line-height: 1;
+        }
+
+        /* Icon loa */
+        .speaker-btn {
+            animation: pulseSpeaker 2s infinite;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .speaker-btn:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes bounceIn {
+            0% { opacity: 0; transform: scale(0.3); }
+            50% { opacity: 1; transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes pulseSpeaker {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); filter: brightness(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        .shake { animation: shake 0.4s ease-in-out; }
+
+        .pop { animation: pop 0.6s ease-out forwards; border-color: #58CC02 !important; }
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); background-color: #D7FFB8; }
+            100% { transform: scale(1); background-color: #ffffff; }
+        }
+
+        /* Canvas cho Confetti nằm trên cùng */
+        #confetti-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 99999;
+        }
+
+        /* Ẩn thanh cuộn nhưng vẫn cuộn được */
+        ::-webkit-scrollbar { height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cecece; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+    </style>
+</head>
+<body class="flex flex-col items-center py-4 px-2 md:px-8">
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- Cảnh vật Background (Chỉ trang trí, không nhận sự kiện click) -->
+    <div class="scenery">
+        <div class="rainbow"></div>
+        <div class="cloud cloud1"></div>
+        <div class="cloud cloud2"></div>
+        <div class="cloud cloud3"></div>
+        <div class="grass"></div>
+        <div class="nature-items">
+            <span>🌸</span><span>🌳</span><span>🌼</span><span>🌲</span><span>🌷</span><span>🌲</span><span>🌸</span>
+        </div>
+    </div>
+
+    <!-- Canvas chứa hiệu ứng pháo giấy -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Khung chính của Game (Nằm giữa màn hình) -->
+    <div class="game-container w-full max-w-6xl flex flex-col min-h-[90vh] justify-center items-center gap-4">
+        
+        <!-- Header: Controls (Góc trái) --- Góc phải để trống cho Logo -->
+        <header class="w-full flex justify-between items-start mb-2">
+            <!-- Khối điều khiển góc trái -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <div class="bg-white rounded-2xl px-4 py-2 border-2 border-gray-200 border-b-4 flex items-center shadow-sm">
+                    <span class="text-gray-500 font-bold text-lg mr-2">Round:</span> 
+                    <span id="round-display" class="text-[#1CB0F6] font-black text-xl">1/10</span>
+                </div>
+                <div class="bg-white rounded-2xl px-4 py-2 border-2 border-gray-200 border-b-4 flex items-center gap-2 shadow-sm">
+                    <span class="text-2xl drop-shadow-md">⭐</span>
+                    <span class="text-gray-500 font-bold text-lg">Score:</span>
+                    <span id="score-display" class="text-[#FFC800] font-black text-2xl">0</span>
+                </div>
+                <button onclick="initGame()" class="bg-[#FF4B4B] border-[#EA1515] text-white font-bold py-2 px-4 rounded-xl btn-3d text-sm w-max">
+                    Restart Game
+                </button>
+            </div>
+            
+            <!-- Khu vực góc phải để trống cho Logo -->
+            <div class="w-24 h-24 sm:w-32 sm:h-32"></div> 
+        </header>
+
+        <!-- Tiêu đề -->
+        <h1 class="text-4xl md:text-6xl font-black text-center mb-2 text-stroke tracking-wide">
+            Graph Detective 🔍
+        </h1>
+
+        <!-- Màn hình chính của Game -->
+        <main id="game-screen" class="w-full flex flex-col gap-4 items-center">
+            
+            <!-- Khung chứa Data Table và Picture Graph -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
+                
+                <!-- BẢNG DỮ LIỆU (Bên trái) -->
+                <div class="lg:col-span-4 duo-card p-4 md:p-6 flex flex-col">
+                    <h2 class="text-2xl font-black text-center text-[#CE82FF] mb-4 uppercase tracking-wider">📋 Data Table</h2>
+                    <div class="bg-[#F3F4F6] rounded-xl p-2 flex-grow border-2 border-[#E5E5E5]">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b-4 border-[#CE82FF]">
+                                    <th class="py-3 px-2 text-gray-700 font-bold text-xl">Item</th>
+                                    <th class="py-3 px-2 text-gray-700 font-bold text-xl text-center">Number</th>
+                                </tr>
+                            </thead>
+                            <tbody id="data-table-body">
+                                <!-- Render qua JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- BIỂU ĐỒ TRANH (Bên phải) -->
+                <div id="graph-container" class="lg:col-span-8 duo-card p-4 md:p-6 flex flex-col relative">
+                    <!-- Tiêu đề biểu đồ có nút loa (Audio Icon) -->
+                    <div class="flex items-center justify-center gap-3 mb-4 bg-[#DDF4FF] border-2 border-[#1CB0F6] rounded-2xl py-3 px-4">
+                        <h2 class="text-xl md:text-2xl font-black text-[#1CB0F6]">📊 Picture Graph (Find the mistake!)</h2>
+                        <button onclick="playInstructions()" class="speaker-btn bg-white rounded-full p-2 border-2 border-[#1CB0F6] shadow-sm flex items-center justify-center" title="Listen to question">
+                            <span class="text-2xl">🔊</span>
+                        </button>
+                    </div>
+                    
+                    <div class="overflow-x-auto pb-4 flex-grow">
+                        <table class="w-full min-w-[500px] border-separate border-spacing-y-3">
+                            <tbody id="picture-graph-body">
+                                <!-- Render qua JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Chú thích (Key) -->
+                    <div id="graph-key" class="mt-2 text-center bg-[#FFF1D0] border-2 border-[#FFC800] rounded-xl py-3 font-bold text-gray-700 text-lg md:text-xl shadow-sm">
+                        <!-- Render qua JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nút Kiểm Tra -->
+            <button id="check-btn" onclick="checkAnswer()" class="bg-[#58CC02] border-[#58A700] hover:bg-[#46A302] text-white text-3xl font-black py-4 px-12 rounded-2xl btn-3d mt-2 mb-10 w-full max-w-lg shadow-lg tracking-wider">
+                CHECK
+            </button>
+        </main>
+
+        <!-- Màn hình Kết Thúc -->
+        <main id="end-screen" class="hidden w-full max-w-2xl duo-card p-10 text-center flex flex-col items-center mt-10 shadow-2xl relative z-20">
+            <h2 class="text-6xl font-black text-[#FFC800] mb-4 drop-shadow-md text-stroke">Awesome! 🎉</h2>
+            <div class="text-3xl font-bold text-gray-700 mb-8 bg-[#F3F4F6] py-6 px-10 rounded-3xl border-4 border-[#E5E5E5] w-full">
+                Total Score
+                <span id="final-score" class="text-7xl text-[#FF4B4B] block mt-4 font-black drop-shadow-md">0</span>
+            </div>
+            <button onclick="initGame()" class="bg-[#1CB0F6] border-[#1899D6] hover:bg-[#1483B8] text-white text-3xl font-black py-5 px-12 rounded-2xl btn-3d w-full max-w-md tracking-wider shadow-lg">
+                PLAY AGAIN
+            </button>
+        </main>
+    </div>
+
+    <script>
+        // Dữ liệu các chủ đề (Emoji chuẩn đẹp, dễ nhìn)
+        const themes = [
+            { id: 'toys', name: 'Toys', unit: 'toy', items: [{name: "Bear", emoji: "🧸"}, {name: "Car", emoji: "🚗"}, {name: "Train", emoji: "🚂"}, {name: "Ball", emoji: "⚽"}] },
+            { id: 'fruits', name: 'Fruits', unit: 'fruit', items: [{name: "Apple", emoji: "🍎"}, {name: "Banana", emoji: "🍌"}, {name: "Grapes", emoji: "🍇"}, {name: "Orange", emoji: "🍊"}] },
+            { id: 'pets', name: 'Pets', unit: 'pet', items: [{name: "Dog", emoji: "🐶"}, {name: "Cat", emoji: "🐱"}, {name: "Mouse", emoji: "🐭"}, {name: "Pig", emoji: "🐷"}] },
+            { id: 'icecream', name: 'Ice Cream', unit: 'ice cream', items: [{name: "Vanilla", emoji: "🍦"}, {name: "Choco", emoji: "🍫"}, {name: "Strawberry", emoji: "🍓"}, {name: "Lollipop", emoji: "🍭"}] },
+            { id: 'fastfood', name: 'Food', unit: 'food', items: [{name: "Burger", emoji: "🍔"}, {name: "Pizza", emoji: "🍕"}, {name: "Hotdog", emoji: "🌭"}, {name: "Fries", emoji: "🍟"}] }
+        ];
+
+        // Biến trạng thái Game
+        const TOTAL_ROUNDS = 10;
+        let currentRound = 1;
+        let score = 0;
+        let firstTry = true;
+        let currentTheme = null;
+        let correctData = [];
+        let graphData = [];
+
+        // Web Audio API Context
+        let audioCtx;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function playSound(type) {
+            initAudio();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            if (type === 'ting') {
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'oops') {
+                oscillator.type = 'sawtooth';
+                oscillator.frequency.setValueAtTime(300, audioCtx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.3);
+                gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + 0.3);
+            }
+        }
+
+        // Text-to-Speech (Giọng đọc)
+        function playInstructions() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance("Look at the data table. Find and fix the mistake in the picture graph!");
+                msg.lang = 'en-US';
+                msg.rate = 0.85; // Đọc chậm cho bé dễ nghe
+                msg.pitch = 1.2; // Giọng hơi cao một chút cho vui nhộn
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        function initGame() {
+            currentRound = 1;
+            score = 0;
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            updateUI();
+            generateRound();
+        }
+
+        function generateRound() {
+            firstTry = true;
+            document.getElementById('graph-container').classList.remove('pop', 'shake');
+            document.getElementById('check-btn').disabled = false;
+            document.getElementById('check-btn').innerHTML = "CHECK";
+            document.getElementById('check-btn').className = "bg-[#58CC02] border-[#58A700] hover:bg-[#46A302] text-white text-3xl font-black py-4 px-12 rounded-2xl btn-3d mt-2 mb-10 w-full max-w-lg shadow-lg tracking-wider";
+
+            currentTheme = themes[Math.floor(Math.random() * themes.length)];
+
+            correctData = currentTheme.items.map(item => ({
+                name: item.name,
+                emoji: item.emoji,
+                count: Math.floor(Math.random() * 8) + 2 // Số lượng 2 -> 9
+            }));
+
+            graphData = JSON.parse(JSON.stringify(correctData));
+
+            // Tạo lỗi ngẫu nhiên
+            let mistakeType = Math.floor(Math.random() * 3); 
+            let rowA = Math.floor(Math.random() * 4);
+            let rowB = (rowA + 1 + Math.floor(Math.random() * 2)) % 4; 
+
+            switch(mistakeType) {
+                case 0: // Thừa
+                    if(graphData[rowA].count < 10) graphData[rowA].count++;
+                    else graphData[rowA].count--; 
+                    break;
+                case 1: // Thiếu
+                    if(graphData[rowA].count > 1) graphData[rowA].count--;
+                    else graphData[rowA].count++; 
+                    break;
+                case 2: // Sai chỗ
+                    if(graphData[rowA].count > 1 && graphData[rowB].count < 10) {
+                        graphData[rowA].count--;
+                        graphData[rowB].count++;
+                    } else { 
+                        graphData[rowA].count++;
+                    }
+                    break;
+            }
+
+            renderTable();
+            renderGraph();
+            
+            const sampleEmoji = currentTheme.items[0].emoji;
+            document.getElementById('graph-key').innerHTML = `Key: Each <span class="text-3xl align-middle mx-1 drop-shadow-md">${sampleEmoji}</span> stands for 1 ${currentTheme.unit}.`;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('data-table-body');
+            tbody.innerHTML = '';
+            correctData.forEach(item => {
+                tbody.innerHTML += `
+                    <tr class="border-b-2 border-gray-100 hover:bg-gray-50 transition-colors">
+                        <td class="py-3 px-2 font-black text-gray-600 flex items-center gap-3 text-lg md:text-xl">
+                            <span class="text-4xl drop-shadow-md">${item.emoji}</span> ${item.name}
+                        </td>
+                        <td class="py-3 px-2 text-center font-black text-3xl text-[#CE82FF]">${item.count}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderGraph() {
+            const tbody = document.getElementById('picture-graph-body');
+            tbody.innerHTML = '';
+            
+            graphData.forEach((item, index) => {
+                let emojisHTML = '';
+                for(let i=0; i < item.count; i++) {
+                    emojisHTML += `<span class="emoji-item">${item.emoji}</span>`;
+                }
+
+                tbody.innerHTML += `
+                    <tr class="bg-white rounded-2xl shadow-sm border-2 border-gray-100 flex flex-col sm:flex-row items-center p-3 mb-2">
+                        <!-- Label -->
+                        <td class="w-full sm:w-32 font-black text-gray-700 text-lg md:text-xl text-center sm:text-left mb-2 sm:mb-0 pb-2 sm:pb-0 border-b-2 sm:border-b-0 sm:border-r-2 border-gray-100 pr-2">
+                            ${item.name}
+                        </td>
+                        
+                        <!-- Emojis Container: flex-wrap và justify-start giúp luôn ép sát lề trái -->
+                        <td class="flex-grow flex flex-wrap justify-start items-center min-h-[4rem] px-4 w-full gap-y-2">
+                            ${emojisHTML}
+                        </td>
+
+                        <!-- Controls -->
+                        <td class="w-full sm:w-auto flex justify-center items-center gap-3 mt-3 sm:mt-0 pl-2 bg-gray-50 p-2 rounded-xl sm:bg-transparent">
+                            <button onclick="changeCount(${index}, -1)" class="w-12 h-12 rounded-full bg-[#FF4B4B] border-b-4 border-[#EA1515] text-white font-black text-3xl active:translate-y-1 active:border-b-0 transition-all flex items-center justify-center pb-1" title="Remove 1">-</button>
+                            <span class="w-8 text-center font-black text-gray-400 text-2xl select-none">${item.count}</span>
+                            <button onclick="changeCount(${index}, 1)" class="w-12 h-12 rounded-full bg-[#1CB0F6] border-b-4 border-[#1899D6] text-white font-black text-3xl active:translate-y-1 active:border-b-0 transition-all flex items-center justify-center pb-1" title="Add 1">+</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function changeCount(index, amount) {
+            let newCount = graphData[index].count + amount;
+            if(newCount >= 0 && newCount <= 12) {
+                graphData[index].count = newCount;
+                renderGraph();
+            }
+        }
+
+        function checkAnswer() {
+            const graphContainer = document.getElementById('graph-container');
+            const checkBtn = document.getElementById('check-btn');
+            
+            let isCorrect = true;
+            for(let i=0; i < correctData.length; i++) {
+                if(correctData[i].count !== graphData[i].count) {
+                    isCorrect = false;
+                    break;
+                }
+            }
+
+            if(isCorrect) {
+                playSound('ting');
+                fireConfetti();
+                
+                graphContainer.classList.add('pop');
+                checkBtn.disabled = true;
+                checkBtn.innerHTML = "AMAZING! 🌟";
+                
+                if(firstTry) {
+                    score += 15; // Tăng điểm cho hấp dẫn (10 điểm đúng + 5 điểm first try)
+                } else {
+                    score += 5; // Có thử lại thì ít điểm hơn
+                }
+                updateUI();
+
+                setTimeout(() => {
+                    graphContainer.classList.remove('pop');
+                    if(currentRound < TOTAL_ROUNDS) {
+                        currentRound++;
+                        updateUI();
+                        generateRound();
+                    } else {
+                        endGame();
+                    }
+                }, 2000);
+
+            } else {
+                playSound('oops');
+                firstTry = false;
+                
+                graphContainer.classList.add('shake');
+                checkBtn.innerHTML = "TRY AGAIN";
+                checkBtn.classList.replace('bg-[#58CC02]', 'bg-[#FF4B4B]');
+                checkBtn.classList.replace('border-[#58A700]', 'border-[#EA1515]');
+                
+                setTimeout(() => {
+                    graphContainer.classList.remove('shake');
+                    checkBtn.innerHTML = "CHECK";
+                    checkBtn.classList.replace('bg-[#FF4B4B]', 'bg-[#58CC02]');
+                    checkBtn.classList.replace('border-[#EA1515]', 'border-[#58A700]');
+                }, 1000);
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('round-display').innerText = `${currentRound}/${TOTAL_ROUNDS}`;
+            document.getElementById('score-display').innerText = score;
+        }
+
+        function endGame() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+            fireConfetti(); // Bắn pháo bông liên tục lúc kết thúc
+            setTimeout(fireConfetti, 1000);
+            setTimeout(fireConfetti, 2000);
+        }
+
+        // --- Hệ thống Confetti (Pháo giấy) ---
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let confettiActive = false;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function fireConfetti() {
+            confettiActive = true;
+            const colors = ['#1CB0F6', '#FF4B4B', '#FFC800', '#58CC02', '#CE82FF'];
+            
+            for(let i=0; i < 150; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height * 0.2 - 50, // Rơi từ trên cao xuống
+                    w: Math.random() * 12 + 6,
+                    h: Math.random() * 12 + 6,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speedX: Math.random() * 6 - 3,
+                    speedY: Math.random() * 4 + 3,
+                    rot: Math.random() * 360,
+                    rotSpeed: Math.random() * 10 - 5
+                });
+            }
+            if(particles.length <= 150) { // Chống lag nếu ấn nhiều lần
+                requestAnimationFrame(animateConfetti);
+            }
+        }
+
+        function animateConfetti() {
+            if(!confettiActive) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let activeParticles = 0;
+
+            particles.forEach(p => {
+                p.x += p.speedX;
+                p.y += p.speedY;
+                p.rot += p.rotSpeed;
+                
+                if(p.y < canvas.height) {
+                    activeParticles++;
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rot * Math.PI / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+                    ctx.restore();
+                }
+            });
+
+            if(activeParticles > 0) {
+                requestAnimationFrame(animateConfetti);
+            } else {
+                confettiActive = false;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles = [];
+            }
+        }
+
+        // Bắt đầu game
+        window.onload = initGame;
+
+    </script>
+</body>
+</html>
