@@ -4,7 +4,7 @@
     <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Number Fact Families V3</title>
+    <title>Number Fact Families Ver3</title>
     
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -22,8 +22,7 @@
             -webkit-user-select: none;
             -webkit-touch-callout: none;
             overflow-x: hidden;
-            /* Default attractive gradient background fallback */
-            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            background-color: #69d2ff; /* Fallback color for the sky */
         }
 
         /* Duolingo style 3D button effect classes used in Tailwind */
@@ -62,6 +61,28 @@
             animation: float 3s ease-in-out infinite;
         }
 
+
+
+        /* Tap Balloon bonus game */
+        @keyframes balloon-rise {
+            0% { transform: translate3d(0, 120px, 0) rotate(-4deg); }
+            50% { transform: translate3d(12px, -55vh, 0) rotate(4deg); }
+            100% { transform: translate3d(-8px, -125vh, 0) rotate(-3deg); }
+        }
+        @keyframes balloon-wobble {
+            0%, 100% { margin-left: -5px; }
+            50% { margin-left: 5px; }
+        }
+        .balloon-rise {
+            animation-name: balloon-rise;
+            animation-timing-function: linear;
+            animation-fill-mode: forwards;
+            will-change: transform;
+        }
+        .balloon-body {
+            animation: balloon-wobble 1.8s ease-in-out infinite;
+        }
+
         /* Custom scrollbar for mobile overflow */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -74,6 +95,263 @@
 
     <script type="text/babel">
         const { useState, useEffect, useCallback, useRef } = React;
+
+        // Beautiful SVG Landscape Components generated as React Components
+        const Tree = ({ x, y, scale = 1 }) => (
+            <g transform={`translate(${x}, ${y}) scale(${scale})`}>
+                <rect x="-15" y="0" width="30" height="300" fill="#a0522d" rx="5" />
+                <circle cx="-40" cy="20" r="70" fill="#388e3c" />
+                <circle cx="40" cy="20" r="70" fill="#388e3c" />
+                <circle cx="0" cy="-40" r="80" fill="#2e7d32" />
+                <circle cx="-25" cy="0" r="60" fill="#4caf50" />
+                <circle cx="25" cy="0" r="60" fill="#4caf50" />
+                <circle cx="0" cy="-20" r="70" fill="#66bb6a" />
+            </g>
+        );
+
+        const Flower = ({ x, y, color, centerColor, scale = 1 }) => (
+            <g transform={`translate(${x}, ${y}) scale(${scale})`}>
+                <rect x="-3" y="0" width="6" height="50" fill="#4caf50" rx="3" />
+                <path d="M 0 20 Q 15 20 20 5 Q 0 15 0 20 Z" fill="#4caf50" />
+                <path d="M 0 30 Q -15 30 -20 15 Q 0 25 0 30 Z" fill="#4caf50" />
+                <circle cx="-12" cy="-12" r="14" fill={color} />
+                <circle cx="12" cy="-12" r="14" fill={color} />
+                <circle cx="-12" cy="12" r="14" fill={color} />
+                <circle cx="12" cy="12" r="14" fill={color} />
+                <circle cx="0" cy="-18" r="14" fill={color} />
+                <circle cx="0" cy="18" r="14" fill={color} />
+                <circle cx="-18" cy="0" r="14" fill={color} />
+                <circle cx="18" cy="0" r="14" fill={color} />
+                <circle cx="0" cy="0" r="12" fill={centerColor} />
+            </g>
+        );
+
+        const Butterfly = ({ x, y, scale = 1, rotate = 0, color1, color2 }) => (
+            <g transform={`translate(${x}, ${y}) scale(${scale}) rotate(${rotate})`}>
+                <path d="M 0 0 C -30 -40 -60 0 0 40 C 60 0 30 -40 0 0 Z" fill={color1} />
+                <path d="M 0 0 C -25 -60 -60 -30 0 30 C 60 -30 25 -60 0 0 Z" fill={color2} />
+                <path d="M -2 -15 Q -10 -25 -15 -20" fill="none" stroke="#3c3c3c" strokeWidth="2" strokeLinecap="round" />
+                <path d="M 2 -15 Q 10 -25 15 -20" fill="none" stroke="#3c3c3c" strokeWidth="2" strokeLinecap="round" />
+                <ellipse cx="0" cy="0" rx="4" ry="18" fill="#3c3c3c" />
+                <circle cx="-25" cy="-20" r="4" fill="white" opacity="0.6"/>
+                <circle cx="25" cy="-20" r="4" fill="white" opacity="0.6"/>
+                <circle cx="-20" cy="15" r="3" fill="white" opacity="0.6"/>
+                <circle cx="20" cy="15" r="3" fill="white" opacity="0.6"/>
+            </g>
+        );
+
+        const GameBackground = ({ currentNumbers = [], showGameData = false }) => (
+            <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none bg-[#70d4ff]">
+                <svg
+                    className="absolute w-full h-full"
+                    preserveAspectRatio="xMidYMid slice"
+                    viewBox="0 0 1920 1080"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-label="Cartoon fact-family house with a red tiled roof, green garden, flowers, butterflies, trees, clouds, and a rainbow"
+                >
+                    <defs>
+                        <linearGradient id="factSky" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#55c8ff" />
+                            <stop offset="58%" stopColor="#bcecff" />
+                            <stop offset="100%" stopColor="#effbff" />
+                        </linearGradient>
+
+                        <linearGradient id="factGrass" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#79df35" />
+                            <stop offset="100%" stopColor="#43b81f" />
+                        </linearGradient>
+
+                        <linearGradient id="factWall" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#fff8df" />
+                            <stop offset="100%" stopColor="#f5dfb6" />
+                        </linearGradient>
+
+                        <linearGradient id="factRoof" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#ff5b4d" />
+                            <stop offset="100%" stopColor="#d8231d" />
+                        </linearGradient>
+
+                        <linearGradient id="factWindow" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#dff8ff" />
+                            <stop offset="100%" stopColor="#6cccf5" />
+                        </linearGradient>
+
+                        <filter id="softShadow" x="-30%" y="-30%" width="160%" height="170%">
+                            <feDropShadow dx="0" dy="12" stdDeviation="12" floodColor="#24506d" floodOpacity="0.22" />
+                        </filter>
+
+                        <filter id="smallShadow" x="-40%" y="-40%" width="180%" height="180%">
+                            <feDropShadow dx="0" dy="5" stdDeviation="4" floodColor="#243b53" floodOpacity="0.22" />
+                        </filter>
+                    </defs>
+
+                    {/* Sky */}
+                    <rect width="1920" height="1080" fill="url(#factSky)" />
+
+                    {/* Sun */}
+                    <g transform="translate(145 125)" filter="url(#smallShadow)">
+                        <circle r="72" fill="#ffd95a" opacity="0.28" />
+                        <circle r="50" fill="#ffd34d" />
+                        <circle cx="-17" cy="-8" r="5" fill="#b95d20" />
+                        <circle cx="17" cy="-8" r="5" fill="#b95d20" />
+                        <path d="M-20,15 Q0,34 20,15" fill="none" stroke="#b95d20" strokeWidth="5" strokeLinecap="round" />
+                    </g>
+
+                    {/* Rainbow */}
+                    <g transform="translate(1545 470) scale(1.2)" opacity="0.95">
+                        <path d="M-330,0 A330,330 0 0,1 330,0" fill="none" stroke="#ff4b4b" strokeWidth="31" />
+                        <path d="M-299,0 A299,299 0 0,1 299,0" fill="none" stroke="#ff9d3b" strokeWidth="31" />
+                        <path d="M-268,0 A268,268 0 0,1 268,0" fill="none" stroke="#ffd83d" strokeWidth="31" />
+                        <path d="M-237,0 A237,237 0 0,1 237,0" fill="none" stroke="#65d338" strokeWidth="31" />
+                        <path d="M-206,0 A206,206 0 0,1 206,0" fill="none" stroke="#3dbaf5" strokeWidth="31" />
+                        <path d="M-175,0 A175,175 0 0,1 175,0" fill="none" stroke="#9a74ef" strokeWidth="31" />
+                    </g>
+
+                    {/* Clouds */}
+                    <g fill="#ffffff" opacity="0.96" filter="url(#smallShadow)">
+                        <g transform="translate(220 220) scale(1.15)">
+                            <circle cx="0" cy="32" r="45" />
+                            <circle cx="54" cy="10" r="62" />
+                            <circle cx="115" cy="34" r="43" />
+                            <rect x="-5" y="30" width="130" height="48" rx="24" />
+                        </g>
+                        <g transform="translate(860 120) scale(0.82)">
+                            <circle cx="0" cy="32" r="45" />
+                            <circle cx="54" cy="10" r="62" />
+                            <circle cx="115" cy="34" r="43" />
+                            <rect x="-5" y="30" width="130" height="48" rx="24" />
+                        </g>
+                        <g transform="translate(1630 275) scale(1.05)">
+                            <circle cx="0" cy="32" r="45" />
+                            <circle cx="54" cy="10" r="62" />
+                            <circle cx="115" cy="34" r="43" />
+                            <rect x="-5" y="30" width="130" height="48" rx="24" />
+                        </g>
+                    </g>
+
+                    {/* Distant hills */}
+                    <path d="M-100,760 Q300,560 720,760 T1500,760 T2020,760 L2020,1080 L-100,1080 Z" fill="#8edc42" />
+                    <path d="M-100,850 Q410,640 930,850 T2020,850 L2020,1080 L-100,1080 Z" fill="#67cb2c" />
+
+                    {/* Large central house */}
+                    <g filter="url(#softShadow)">
+                        {/* House body */}
+                        <path d="M300,470 L1620,470 L1620,985 Q1620,1010 1595,1010 L325,1010 Q300,1010 300,985 Z"
+                              fill="url(#factWall)" stroke="#d7a86e" strokeWidth="9" />
+
+                        {/* Chimney */}
+                        <rect x="420" y="245" width="92" height="225" rx="12" fill="#efb46f" stroke="#b86f34" strokeWidth="8" />
+                        <rect x="400" y="220" width="132" height="52" rx="12" fill="#dc3a2f" stroke="#a62019" strokeWidth="8" />
+                        <path d="M430,310 H500 M430,360 H500 M430,410 H500" stroke="#d38b4d" strokeWidth="9" opacity="0.7" />
+
+                        {/* Yellow gable fill under the roof */}
+                        <path d="M314,470 L960,112 L1606,470 Z" fill="#fff0bd" stroke="#d89845" strokeWidth="8" />
+
+                        {/* Roof */}
+                        <path d="M230,500 L960,95 L1690,500 Q1710,515 1695,540 L1658,590 Q1640,615 1613,595 L960,238 L307,595 Q280,615 262,590 L225,540 Q210,515 230,500 Z"
+                              fill="url(#factRoof)" stroke="#a81f18" strokeWidth="12" />
+
+                        {/* Roof tiles */}
+                        <g fill="none" stroke="#b51f19" strokeWidth="8" opacity="0.55">
+                            <path d="M340,505 Q410,445 480,405" />
+                            <path d="M500,405 Q570,345 645,300" />
+                            <path d="M665,300 Q745,245 825,210" />
+                            <path d="M1095,210 Q1175,245 1255,300" />
+                            <path d="M1275,300 Q1350,345 1420,405" />
+                            <path d="M1440,405 Q1510,445 1580,505" />
+                        </g>
+
+                        {/* Dynamic number bond, fully visible inside the main house */}
+                        <g strokeWidth="8" filter="url(#smallShadow)">
+                            <path d="M928,255 L882,325 M992,255 L1038,325" stroke="#7a4d31" strokeWidth="10" strokeLinecap="round" />
+                            <circle cx="960" cy="220" r="56" fill="#ffffff" stroke="#199fe0" />
+                            <circle cx="870" cy="358" r="48" fill="#ffffff" stroke="#58b92e" />
+                            <circle cx="1050" cy="358" r="48" fill="#ffffff" stroke="#9e6de5" />
+                            {showGameData && (
+                                <>
+                                    <text x="960" y="237" textAnchor="middle" fill="#3c2a1f" fontSize="50" fontWeight="900" fontFamily="Poppins, sans-serif">
+                                        {[...currentNumbers].sort((a,b) => a-b)[2]}
+                                    </text>
+                                    <text x="870" y="374" textAnchor="middle" fill="#3c2a1f" fontSize="44" fontWeight="900" fontFamily="Poppins, sans-serif">
+                                        {[...currentNumbers].sort((a,b) => a-b)[0]}
+                                    </text>
+                                    <text x="1050" y="374" textAnchor="middle" fill="#3c2a1f" fontSize="44" fontWeight="900" fontFamily="Poppins, sans-serif">
+                                        {[...currentNumbers].sort((a,b) => a-b)[1]}
+                                    </text>
+                                </>
+                            )}
+                        </g>
+
+                        {/* Side windows */}
+                        <g filter="url(#smallShadow)">
+                            <g transform="translate(420 625)">
+                                <rect width="175" height="205" rx="55" fill="url(#factWindow)" stroke="#d29b58" strokeWidth="10" />
+                                <path d="M87,5 V200 M5,102 H170" stroke="#ffffff" strokeWidth="9" />
+                                <rect x="-12" y="188" width="199" height="42" rx="12" fill="#b76c35" />
+                                <circle cx="30" cy="188" r="22" fill="#ff5c7d" />
+                                <circle cx="78" cy="188" r="22" fill="#ffcb3d" />
+                                <circle cx="126" cy="188" r="22" fill="#a66cf0" />
+                            </g>
+                            <g transform="translate(1325 625)">
+                                <rect width="175" height="205" rx="55" fill="url(#factWindow)" stroke="#d29b58" strokeWidth="10" />
+                                <path d="M87,5 V200 M5,102 H170" stroke="#ffffff" strokeWidth="9" />
+                                <rect x="-12" y="188" width="199" height="42" rx="12" fill="#b76c35" />
+                                <circle cx="30" cy="188" r="22" fill="#ff5c7d" />
+                                <circle cx="78" cy="188" r="22" fill="#ffcb3d" />
+                                <circle cx="126" cy="188" r="22" fill="#a66cf0" />
+                            </g>
+                        </g>
+
+                        {/* Soft decorative wall blocks */}
+                        <g fill="#efc88d" opacity="0.55">
+                            <rect x="350" y="540" width="62" height="24" rx="9" />
+                            <rect x="370" y="570" width="78" height="24" rx="9" />
+                            <rect x="1465" y="545" width="72" height="24" rx="9" />
+                            <rect x="1425" y="577" width="92" height="24" rx="9" />
+                        </g>
+                    </g>
+
+                    {/* Foreground grass */}
+                    <path d="M-40,885 Q400,805 960,900 Q1480,805 1960,890 L1960,1080 L-40,1080 Z" fill="url(#factGrass)" />
+                    <path d="M-40,910 Q450,845 960,930 Q1480,845 1960,910" fill="none" stroke="#9bf054" strokeWidth="24" strokeLinecap="round" />
+
+                    {/* Trees */}
+                    <Tree x={110} y={650} scale={1.15} />
+                    <Tree x={1810} y={650} scale={1.18} />
+
+                    {/* White fence */}
+                    <g fill="#fffaf0" stroke="#d7c9a8" strokeWidth="5" opacity="0.95">
+                        {Array.from({ length: 10 }).map((_, i) => (
+                            <path key={`lf-${i}`} d={`M${10 + i * 62},900 L${38 + i * 62},865 L${66 + i * 62},900 L${66 + i * 62},1035 L${10 + i * 62},1035 Z`} />
+                        ))}
+                        {Array.from({ length: 10 }).map((_, i) => (
+                            <path key={`rf-${i}`} d={`M${1290 + i * 62},900 L${1318 + i * 62},865 L${1346 + i * 62},900 L${1346 + i * 62},1035 L${1290 + i * 62},1035 Z`} />
+                        ))}
+                    </g>
+
+                    {/* Garden flowers */}
+                    <Flower x={120} y={970} color="#ff5c7d" centerColor="#ffd43b" scale={1.2} />
+                    <Flower x={245} y={1015} color="#a86cf0" centerColor="#ffd43b" scale={0.95} />
+                    <Flower x={360} y={965} color="#ffffff" centerColor="#ffd43b" scale={0.85} />
+                    <Flower x={520} y={1020} color="#ff9f43" centerColor="#ffd43b" scale={1.0} />
+                    <Flower x={1360} y={1015} color="#ff5c7d" centerColor="#ffd43b" scale={1.05} />
+                    <Flower x={1495} y={965} color="#ffd43b" centerColor="#ff6b4a" scale={1.15} />
+                    <Flower x={1640} y={1010} color="#a86cf0" centerColor="#ffd43b" scale={0.95} />
+                    <Flower x={1780} y={955} color="#ffffff" centerColor="#ffd43b" scale={0.9} />
+
+                    {/* Stepping-stone path */}
+                    <path d="M760,1080 C820,1015 875,980 960,950 C1045,980 1100,1015 1160,1080 Z" fill="#e7d19b" opacity="0.95" />
+                    <ellipse cx="820" cy="1045" rx="55" ry="18" fill="#c8aa6a" opacity="0.72" />
+                    <ellipse cx="960" cy="1008" rx="48" ry="16" fill="#c8aa6a" opacity="0.72" />
+                    <ellipse cx="1090" cy="1048" rx="55" ry="18" fill="#c8aa6a" opacity="0.72" />
+
+                    {/* Butterflies */}
+                    <Butterfly x={300} y={285} scale={0.8} rotate={-15} color1="#ff8fb3" color2="#ffd0df" />
+                    <Butterfly x={1415} y={230} scale={0.82} rotate={18} color1="#a66cf0" color2="#d9c0ff" />
+                    <Butterfly x={1685} y={390} scale={0.72} rotate={-8} color1="#ffc93c" color2="#fff1a8" />
+                </svg>
+            </div>
+        );
 
         const TOTAL_ROUNDS = 5;
         const addSubList = [
@@ -134,11 +412,11 @@
 
         const speakText = (text) => {
             if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // Stop current speech if any
+                window.speechSynthesis.cancel(); 
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = 'en-US';
-                utterance.rate = 0.85; // Slightly slower for kids
-                utterance.pitch = 1.1; // Friendly higher pitch
+                utterance.rate = 0.85; 
+                utterance.pitch = 1.1; 
                 window.speechSynthesis.speak(utterance);
             }
         };
@@ -147,7 +425,6 @@
             return Math.floor(Math.random() * (max - min + 1)) + min;
         }
 
-        // Generate unique numbers that haven't been used in this game session yet
         function generateUniqueNumbers(diff, usedSets) {
             let a, b, c;
             let isValid = false;
@@ -174,7 +451,7 @@
                 if (isValid) {
                     key = [a, b, c].sort((x, y) => x - y).join(',');
                     if (usedSets.has(key)) {
-                        isValid = false; // The set was already used, try again
+                        isValid = false; // Already used this combination
                     }
                 }
                 attempts++;
@@ -182,75 +459,106 @@
             return [a, b, c].sort(() => Math.random() - 0.5);
         }
 
-        const Cell = ({ val, isActive }) => {
-            const isEmpty = val === undefined;
+        function buildQuestionBank(diff, count = 5) {
+            const used = new Set();
+            const bank = [];
+            while (bank.length < count) {
+                const nums = generateUniqueNumbers(diff, used);
+                const key = [...nums].sort((a, b) => a - b).join(',');
+                if (!used.has(key)) {
+                    used.add(key);
+                    bank.push(nums);
+                }
+            }
+            return bank;
+        }
+
+        const Cell = ({ val, isActive, onClick, isCorrectRow }) => {
+            const isEmpty = val === null;
+            
+            let baseStyles = "flex items-center justify-center font-extrabold leading-none select-none transition-all duration-200 rounded-2xl w-[4.55rem] h-[4.55rem] md:w-[5rem] md:h-[5rem] text-[2.1rem] md:text-[2.75rem] ";
+            
+            if (isCorrectRow) {
+                // Correctly verified row cells
+                baseStyles += "bg-[#d7ffb8] text-[#58cc02] border-4 border-solid border-[#58cc02] cursor-default";
+            } else if (isActive) {
+                // Currently focused active cell
+                baseStyles += "bg-[#ddf4ff] text-[#1cb0f6] border-4 border-solid border-[#1cb0f6] scale-110 shadow-lg cursor-pointer";
+            } else if (isEmpty) {
+                // Empty, untouched cell waiting for input
+                baseStyles += "bg-[#fffdf0] border-4 border-dashed border-[#ffc800] text-transparent hover:bg-[#fff9c4] cursor-pointer";
+            } else {
+                // Filled cell waiting to be checked
+                baseStyles += "bg-white text-[#3c3c3c] border-4 border-solid border-[#e5e5e5] border-b-[6px] hover:border-[#d4d4d4] cursor-pointer";
+            }
+
             return (
-                <div className={`
-                    flex items-center justify-center font-extrabold leading-none select-none transition-all duration-200
-                    rounded-2xl w-[4rem] h-[4rem] md:w-[4.5rem] md:h-[4.5rem] text-3xl md:text-4xl 
-                    ${isActive
-                        ? 'bg-[#ddf4ff] text-[#1cb0f6] border-4 border-solid border-[#1cb0f6] scale-110 shadow-lg'
-                        : isEmpty 
-                            ? 'bg-[#fffce8] border-4 border-dashed border-[#ffc800] text-transparent' // Colorful & attractive empty slot
-                            : 'bg-white text-[#3c3c3c] border-4 border-solid border-[#e5e5e5] border-b-[6px]' // Filled state
-                    }
-                `}>
-                    {val !== undefined ? val : ''}
+                <div onClick={onClick} className={baseStyles}>
+                    {val !== null ? val : ''}
                 </div>
             );
         };
 
         const OperatorCell = ({ op }) => {
             return (
-                <div className="flex items-center justify-center font-extrabold select-none rounded-full w-10 h-10 md:w-12 md:h-12 text-2xl md:text-3xl text-[#a855f7] bg-[#f3e8ff] border-2 border-[#d8b4fe] shadow-sm">
+                <div className="flex items-center justify-center font-extrabold select-none rounded-full w-[2.8rem] h-[2.8rem] md:w-[3.35rem] md:h-[3.35rem] text-[1.55rem] md:text-[2.45rem] text-[#a855f7] bg-[#f3e8ff] border-2 border-[#d8b4fe] shadow-sm">
                     {op}
                 </div>
             );
         };
 
-        const FactRow = ({ index, rowData, isActive, activeSlotIndex }) => {
+        const FactRow = ({ index, rowData, focusedCell, onCellClick }) => {
             const { inputs, status, message } = rowData;
 
             let rowBg = 'bg-white bg-opacity-80 backdrop-blur-sm border-[#e5e5e5] border-b-[6px]';
-            let overlayColor = '';
             
-            if (isActive) rowBg = 'bg-[#f0f9ff] border-[#1cb0f6] border-b-[6px] shadow-sm scale-[1.01]';
+            // Highlight entire row if it contains the currently focused cell
+            if (focusedCell && focusedCell.r === index && status !== 'correct') {
+                rowBg = 'bg-[#f0f9ff] border-[#1cb0f6] border-b-[6px] shadow-sm scale-[1.01]';
+            }
+            
             if (status === 'correct') {
                 rowBg = 'bg-[#d7ffb8] border-[#58cc02] border-b-[6px]';
-                overlayColor = 'text-[#58cc02]';
             }
             if (status === 'wrong' || status === 'unrelated' || status === 'same') {
                 rowBg = 'bg-[#ffdfe0] border-[#ff4b4b] border-b-[6px]';
-                overlayColor = 'text-[#ff4b4b]';
             }
 
-            const getVal = (idx) => inputs[idx];
-            const isAct = (idx) => isActive && activeSlotIndex === idx;
+            const isCorrectRow = status === 'correct';
             const operator = index < 2 ? '+' : '−';
 
-            const cells = [
-                <Cell key="v1" val={getVal(0)} isActive={isAct(0)} />,
-                <OperatorCell key="op" op={operator} />,
-                <Cell key="v2" val={getVal(1)} isActive={isAct(1)} />,
-                <div key="eq" className="text-[#3c3c3c] text-4xl font-extrabold w-8 md:w-12 flex justify-center drop-shadow-sm">=</div>,
-                <Cell key="v3" val={getVal(2)} isActive={isAct(2)} />
-            ];
+            const cells = [0, 1, 2].map((cIndex) => {
+                const isActive = focusedCell && focusedCell.r === index && focusedCell.c === cIndex;
+                return (
+                    <Cell 
+                        key={`v${cIndex}`} 
+                        val={inputs[cIndex]} 
+                        isActive={isActive} 
+                        isCorrectRow={isCorrectRow}
+                        onClick={() => onCellClick(index, cIndex)}
+                    />
+                );
+            });
 
             return (
-                <div className={`relative flex items-center justify-between px-3 md:px-6 py-3 rounded-3xl border-4 w-full max-w-[95%] md:max-w-[90%] mx-auto transition-all duration-300 ${rowBg}`}>
-                    {cells}
+                <div className={`relative flex items-center justify-between px-3 md:px-7 py-3 md:py-4 rounded-[1.7rem] md:rounded-3xl border-4 w-full max-w-[100%] md:max-w-[98%] mx-auto transition-all duration-300 ${rowBg}`}>
+                    {cells[0]}
+                    <OperatorCell key="op" op={operator} />
+                    {cells[1]}
+                    <div key="eq" className="text-[#3c3c3c] text-[2.7rem] md:text-[3.15rem] font-extrabold w-10 md:w-14 flex justify-center drop-shadow-sm">=</div>
+                    {cells[2]}
 
                     {/* Status Icons */}
                     {status === 'correct' && (
-                        <div className="absolute top-1/2 -translate-y-1/2 -right-4 md:-right-6 z-10 animate-bounce">
-                            <svg className="w-10 h-10 md:w-12 md:h-12 text-[#58cc02] bg-white rounded-full p-1 shadow-md border-2 border-[#58cc02]" fill="currentColor" viewBox="0 0 20 20">
+                        <div className="absolute top-1/2 -translate-y-1/2 -right-2 md:-right-6 z-10 animate-bounce">
+                            <svg className="w-8 h-8 md:w-12 md:h-12 text-[#58cc02] bg-white rounded-full p-1 shadow-md border-2 border-[#58cc02]" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                             </svg>
                         </div>
                     )}
                     {(status === 'wrong' || status === 'unrelated') && (
-                        <div className="absolute top-1/2 -translate-y-1/2 -right-4 md:-right-6 z-10 animate-pulse">
-                            <svg className="w-10 h-10 md:w-12 md:h-12 text-[#ff4b4b] bg-white rounded-full p-1 shadow-md border-2 border-[#ff4b4b]" fill="currentColor" viewBox="0 0 20 20">
+                        <div className="absolute top-1/2 -translate-y-1/2 -right-2 md:-right-6 z-10 animate-pulse">
+                            <svg className="w-8 h-8 md:w-12 md:h-12 text-[#ff4b4b] bg-white rounded-full p-1 shadow-md border-2 border-[#ff4b4b]" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                             </svg>
                         </div>
@@ -276,19 +584,25 @@
             const [score, setScore] = useState(0);
             const [round, setRound] = useState(1);
             
-            // Game Board State
-            const [usedGameSets, setUsedGameSets] = useState(new Set()); // Prevents duplicate questions
+            const [usedGameSets, setUsedGameSets] = useState(new Set()); 
+            const [questionBank, setQuestionBank] = useState([]);
             const [currentNumbers, setCurrentNumbers] = useState([]);
+            
             const [rows, setRows] = useState([]);
-            const [activeRowIndex, setActiveRowIndex] = useState(0);
+            const [focusedCell, setFocusedCell] = useState(null); // { r: 0, c: 0 }
             const [checkResult, setCheckResult] = useState(null);
+
+            const [miniGameOpen, setMiniGameOpen] = useState(false);
+            const [miniGameOver, setMiniGameOver] = useState(false);
+            const [miniGameScore, setMiniGameScore] = useState(0);
+            const [balloons, setBalloons] = useState([]);
+            const balloonIdRef = useRef(0);
 
             const instructionText = "Fill in the missing numbers to complete the fact family!";
 
             // Auto-read voice on game round load
             useEffect(() => {
                 if (view === 'game') {
-                    // Small delay ensures the visual transition finishes before speaking
                     const timer = setTimeout(() => {
                         speakText(instructionText);
                     }, 500);
@@ -296,70 +610,171 @@
                 }
             }, [view, round]);
 
-            const initRound = (diff, currentScore, currentRound, activeUsedSets) => {
-                const displayNums = generateUniqueNumbers(diff, activeUsedSets);
-                
-                // Save this set to history so it doesn't repeat
-                const newKey = [...displayNums].sort((x, y) => x - y).join(',');
-                const updatedSets = new Set(activeUsedSets);
-                updatedSets.add(newKey);
-                setUsedGameSets(updatedSets);
+            useEffect(() => {
+                if (!miniGameOpen || miniGameOver) return;
 
-                setCurrentNumbers(displayNums);
-                setRows(Array(4).fill(null).map(() => ({ inputs: [], status: null, message: null })));
-                setActiveRowIndex(0);
+                const colors = ['#ff5c7d', '#1cb0f6', '#58cc02', '#ce82ff', '#ffc800', '#ff8f3d'];
+                const spawnBalloon = () => {
+                    const id = ++balloonIdRef.current;
+                    const isFire = Math.random() < 0.22;
+                    const balloon = {
+                        id,
+                        x: 7 + Math.random() * 82,
+                        duration: 8 + Math.random() * 4,
+                        size: 66 + Math.random() * 28,
+                        color: isFire ? '#ff4b4b' : colors[Math.floor(Math.random() * colors.length)],
+                        isFire
+                    };
+                    setBalloons(prev => [...prev.slice(-17), balloon]);
+                };
+
+                spawnBalloon();
+                const interval = setInterval(spawnBalloon, 950);
+                return () => clearInterval(interval);
+            }, [miniGameOpen, miniGameOver]);
+
+            const makeEmptyRows = () => Array(4).fill(null).map(() => ({
+                inputs: [null, null, null],
+                status: null,
+                message: null
+            }));
+
+            const loadQuestion = (bank, questionNumber, diff, currentScore) => {
+                const selected = bank[questionNumber - 1];
+                setCurrentNumbers(selected);
+                setRows(makeEmptyRows());
+                setFocusedCell({ r: 0, c: 0 });
                 setCheckResult(null);
                 setDifficulty(diff);
                 setScore(currentScore);
-                setRound(currentRound);
+                setRound(questionNumber);
                 setView('game');
             };
 
             const startGame = (diffObj) => {
                 playSound('click');
-                // Pass an empty Set for used questions since we are starting a fresh game
-                initRound(diffObj.val, 0, 1, new Set());
+                const bank = buildQuestionBank(diffObj.val, TOTAL_ROUNDS);
+                setQuestionBank(bank);
+                setUsedGameSets(new Set(bank.map(nums => [...nums].sort((a,b) => a-b).join(','))));
+                setMiniGameOpen(false);
+                setMiniGameOver(false);
+                setMiniGameScore(0);
+                setBalloons([]);
+                loadQuestion(bank, 1, diffObj.val, 0);
+            };
+
+            const handleNextQuestion = () => {
+                playSound('click');
+                setMiniGameOpen(false);
+                setMiniGameOver(false);
+                setMiniGameScore(0);
+                setBalloons([]);
+                setCheckResult(null);
+
+                if (round < TOTAL_ROUNDS) {
+                    loadQuestion(questionBank, round + 1, difficulty, score);
+                } else {
+                    playSound('win');
+                    setView('summary');
+                    triggerRealisticConfetti();
+                }
+            };
+
+            const openBalloonGame = () => {
+                playSound('click');
+                setCheckResult(null);
+                setMiniGameScore(0);
+                setMiniGameOver(false);
+                setBalloons([]);
+                setMiniGameOpen(true);
+            };
+
+            const handleBalloonTap = (balloon) => {
+                if (miniGameOver) return;
+                setBalloons(prev => prev.filter(item => item.id !== balloon.id));
+                if (balloon.isFire) {
+                    playSound('wrong');
+                    setMiniGameOver(true);
+                    return;
+                }
+                playSound('click');
+                setMiniGameScore(prev => prev + 1);
+            };
+
+            const handleCellClick = (rIndex, cIndex) => {
+                if (checkResult) return;
+                
+                if (rows[rIndex].status === 'correct') return;
+                
+                playSound('click');
+                setFocusedCell({ r: rIndex, c: cIndex });
             };
 
             const handleInput = (val) => {
-                if (activeRowIndex > 3 || checkResult) return;
+                if (!focusedCell || checkResult) return;
                 playSound('click');
 
-                const currentRow = rows[activeRowIndex];
-                if (currentRow.inputs.length >= 3) return;
+                const { r, c } = focusedCell;
+                if (rows[r].status === 'correct') return;
 
-                const newInputs = [...currentRow.inputs, val];
                 const newRows = [...rows];
-                newRows[activeRowIndex] = { ...currentRow, inputs: newInputs };
+                newRows[r].inputs[c] = val;
                 setRows(newRows);
 
-                if (newInputs.length === 3) {
-                    setActiveRowIndex(activeRowIndex < 3 ? activeRowIndex + 1 : 4);
+                advanceFocus(newRows, r, c);
+            };
+
+            const advanceFocus = (currentRows, currR, currC) => {
+                let next = null;
+                for (let i = 0; i < 12; i++) {
+                    const flatIndex = (currR * 3 + currC + 1 + i) % 12;
+                    const r = Math.floor(flatIndex / 3);
+                    const c = flatIndex % 3;
+                    
+                    if (currentRows[r].status !== 'correct' && currentRows[r].inputs[c] === null) {
+                        next = { r, c };
+                        break;
+                    }
                 }
+                setFocusedCell(next);
             };
 
             const handleUndo = () => {
                 if (checkResult) return;
                 playSound('click');
-                let newRows = [...rows];
-                let currIdx = activeRowIndex;
-
-                if (currIdx === 4) currIdx = 3;
-
-                if (newRows[currIdx].inputs.length > 0) {
-                    newRows[currIdx].inputs.pop();
+                
+                const newRows = [...rows];
+                
+                if (focusedCell && newRows[focusedCell.r].inputs[focusedCell.c] !== null) {
+                    newRows[focusedCell.r].inputs[focusedCell.c] = null;
                     setRows(newRows);
-                    setActiveRowIndex(currIdx);
-                } else if (currIdx > 0) {
-                    currIdx--;
-                    newRows[currIdx].inputs.pop();
+                    return;
+                }
+                
+                let startR = focusedCell ? focusedCell.r : 3;
+                let startC = focusedCell ? focusedCell.c : 2;
+                let prev = null;
+                
+                for (let i = 1; i < 13; i++) {
+                    const flatIndex = (startR * 3 + startC - i + 12) % 12;
+                    const pr = Math.floor(flatIndex / 3);
+                    const pc = flatIndex % 3;
+                    if (newRows[pr].status !== 'correct' && newRows[pr].inputs[pc] !== null) {
+                        prev = { r: pr, c: pc };
+                        break;
+                    }
+                }
+                
+                if (prev) {
+                    newRows[prev.r].inputs[prev.c] = null;
                     setRows(newRows);
-                    setActiveRowIndex(currIdx);
+                    setFocusedCell(prev);
                 }
             };
 
             const handleCheck = () => {
-                if (activeRowIndex !== 4) return;
+                const isFull = rows.every(r => r.inputs.every(v => v !== null));
+                if (!isFull) return;
 
                 const newRows = [...rows];
                 let allCorrect = true;
@@ -403,22 +818,12 @@
                 }
 
                 setRows(newRows);
+                setFocusedCell(null); 
 
                 if (allCorrect) {
                     playSound('correct');
                     setCheckResult('wellDone');
-                    const newScore = score + 1;
-                    setScore(newScore);
-                    
-                    setTimeout(() => {
-                        if (round < TOTAL_ROUNDS) {
-                            initRound(difficulty, newScore, round + 1, usedGameSets);
-                        } else {
-                            playSound('win');
-                            setView('summary');
-                            triggerConfetti();
-                        }
-                    }, 2500);
+                    setScore(score + 1);
                 } else {
                     playSound('wrong');
                     setCheckResult('tryAgain');
@@ -427,38 +832,42 @@
 
             const handleTryAgain = () => {
                 playSound('click');
-                let firstEmpty = -1;
-                const newRows = rows.map((r, i) => {
+                let firstEmpty = null;
+                
+                const newRows = rows.map((r, rIndex) => {
                     if (r.status !== 'correct') {
-                        if (firstEmpty === -1) firstEmpty = i;
-                        return { ...r, inputs: [], status: null, message: null };
+                        if (!firstEmpty) firstEmpty = { r: rIndex, c: 0 };
+                        return { ...r, inputs: [null, null, null], status: null, message: null };
                     }
                     return r;
                 });
+                
                 setRows(newRows);
-                setActiveRowIndex(firstEmpty !== -1 ? firstEmpty : 4);
+                setFocusedCell(firstEmpty);
                 setCheckResult(null);
             };
 
-            const triggerConfetti = () => {
-                const duration = 3000;
+            const triggerRealisticConfetti = () => {
+                const duration = 4000;
                 const end = Date.now() + duration;
+
+                const colors = ['#ff4b4b', '#ffc800', '#58cc02', '#1cb0f6', '#ce82ff'];
 
                 (function frame() {
                     confetti({
-                        particleCount: 5,
+                        particleCount: 4,
                         angle: 60,
-                        spread: 55,
-                        origin: { x: 0 },
-                        colors: ['#ff4b4b', '#ffc800', '#58cc02', '#1cb0f6', '#ce82ff'],
+                        spread: 60,
+                        origin: { x: 0, y: 0.8 },
+                        colors: colors,
                         zIndex: 99999
                     });
                     confetti({
-                        particleCount: 5,
+                        particleCount: 4,
                         angle: 120,
-                        spread: 55,
-                        origin: { x: 1 },
-                        colors: ['#ff4b4b', '#ffc800', '#58cc02', '#1cb0f6', '#ce82ff'],
+                        spread: 60,
+                        origin: { x: 1, y: 0.8 },
+                        colors: colors,
                         zIndex: 99999
                     });
 
@@ -469,21 +878,21 @@
             };
 
             const renderSplash = () => (
-                <div className="flex flex-col items-center justify-center w-full min-h-screen p-4 md:p-8 relative overflow-hidden bg-gradient-to-br from-[#ffb6ff] via-[#b3f0ff] to-[#ffc999]">
+                <div className="flex flex-col items-center justify-center w-full min-h-screen p-4 md:p-8 relative overflow-hidden">
                     
                     {/* Empty placeholder div reserved for Logo placement later */}
                     <div className="absolute top-4 right-4 w-16 h-16 md:w-24 md:h-24 z-50"></div>
 
                     <div className="animate-float mb-8 mt-12 md:mt-0 drop-shadow-lg">
-                        <h1 className="text-5xl md:text-7xl font-black text-center rainbow-text px-4 leading-tight">
+                        <h1 className="text-5xl md:text-7xl font-black text-center rainbow-text px-4 leading-tight drop-shadow-[0_2px_4px_rgba(255,255,255,0.8)]">
                             Number Fact Families
                         </h1>
-                        <p className="text-center text-white drop-shadow-md font-bold mt-4 text-xl md:text-2xl bg-black bg-opacity-10 py-2 px-6 rounded-full inline-block">
+                        <p className="text-center text-[#1cb0f6] drop-shadow-sm font-bold mt-4 text-xl md:text-2xl bg-white bg-opacity-90 py-2 px-6 rounded-full inline-block border-2 border-[#1cb0f6] border-opacity-50">
                             Learn math the fun way!
                         </p>
                     </div>
 
-                    <div className="bg-white border-2 border-[#e5e5e5] border-b-[8px] rounded-3xl p-6 md:p-8 w-full max-w-[480px] shadow-2xl flex flex-col items-center relative z-10">
+                    <div className="bg-white bg-opacity-90 backdrop-blur-md border-2 border-[#e5e5e5] border-b-[8px] rounded-3xl p-6 md:p-8 w-full max-w-[480px] shadow-2xl flex flex-col items-center relative z-10">
                         <h2 className="text-3xl font-black text-center text-[#3c3c3c] mb-6 drop-shadow-sm">
                             Choose your level
                         </h2>
@@ -501,180 +910,16 @@
                             ))}
                         </div>
                     </div>
-                    
-                    {/* Decorative background bubbles */}
-                    <div className="absolute top-20 left-10 w-24 h-24 bg-white opacity-20 rounded-full blur-xl"></div>
-                    <div className="absolute bottom-20 right-10 w-32 h-32 bg-white opacity-30 rounded-full blur-2xl"></div>
                 </div>
             );
 
-            const renderGame = () => {
-                const checkReady = activeRowIndex === 4;
-                const isUndoDisabled = activeRowIndex === 0 && rows[0].inputs.length === 0;
-                const modeObj = addSubList.find(o => o.val === difficulty);
-
-                return (
-                    <div className="w-full min-h-screen flex flex-col md:flex-row relative overflow-y-auto md:overflow-hidden bg-gradient-to-br from-[#a8edea] to-[#fed6e3]">
-                        
-                        {/* Empty placeholder div reserved for Logo placement later */}
-                        <div className="absolute top-4 right-4 w-12 h-12 md:w-16 md:h-16 z-50"></div>
-
-                        {/* LEFT/TOP WORKSPACE PANEL */}
-                        <div className="w-full md:w-[70%] lg:w-[75%] h-auto md:h-screen flex flex-col relative z-0 p-4 md:p-8 pb-32 md:pb-8">
-                            
-                            {/* Top Bar */}
-                            <div className="flex justify-between items-center mb-6">
-                                <button 
-                                    onClick={() => { playSound('click'); setView('splash'); }} 
-                                    className="duo-btn bg-white text-[#afafaf] border-2 border-[#e5e5e5] border-b-4 rounded-xl px-4 py-2 font-bold text-lg hover:bg-gray-50 flex items-center gap-2"
-                                >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-                                    Back
-                                </button>
-                                
-                                <div className="flex gap-4 items-center mr-16">
-                                    <div className="bg-white text-[#afafaf] font-bold px-4 py-2 rounded-xl border-2 border-[#e5e5e5] shadow-sm">
-                                        Round {round}/{TOTAL_ROUNDS}
-                                    </div>
-                                    <div className="text-white px-4 py-2 rounded-xl font-bold border-b-4 shadow-sm" style={{backgroundColor: modeObj?.color, borderColor: modeObj?.border}}>
-                                        {modeObj?.label}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Instruction & TTS */}
-                            <div className="flex flex-row items-center justify-center gap-3 mb-6 bg-white py-4 px-6 rounded-2xl border-2 border-[#e5e5e5] shadow-md max-w-2xl mx-auto w-full">
-                                <h2 className="text-[#3c3c3c] text-lg md:text-xl font-black text-center flex-1">
-                                    {instructionText}
-                                </h2>
-                                <button 
-                                    onClick={() => { playSound('click'); speakText(instructionText); }}
-                                    className="duo-btn bg-[#1cb0f6] border-b-4 border-[#1899d6] text-white p-3 rounded-full flex-shrink-0 hover:brightness-110 shadow-sm"
-                                    aria-label="Read instructions aloud"
-                                >
-                                    <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd" />
-                                    </svg>
-                                </button>
-                            </div>
-
-                            {/* Active Equation Workspace Grid */}
-                            <div className="flex-1 flex flex-col gap-4 md:gap-6 justify-center w-full">
-                                {rows.map((row, i) => (
-                                    <FactRow 
-                                        key={i} 
-                                        index={i} 
-                                        rowData={row} 
-                                        isActive={activeRowIndex === i && !checkResult} 
-                                        activeSlotIndex={row.inputs.length} 
-                                    />
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* RIGHT/BOTTOM CONTROLS PANEL */}
-                        <div className="w-full md:w-[30%] lg:w-[25%] bg-white bg-opacity-95 md:border-l-2 border-t-2 md:border-t-0 border-white flex flex-col items-center py-6 px-4 fixed md:relative bottom-0 md:bottom-auto left-0 h-auto md:h-screen z-40 shadow-[0_-10px_20px_rgba(0,0,0,0.05)] md:shadow-[-5px_0_20px_rgba(0,0,0,0.05)] backdrop-blur-md">
-                            
-                            <div className="hidden md:flex w-full justify-center mb-8 mt-4">
-                                <div className="bg-[#ffc800] text-white px-6 py-3 rounded-2xl border-b-[6px] border-[#e5b400] font-black text-2xl flex items-center gap-2 shadow-sm">
-                                    <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                                    Score: {score}
-                                </div>
-                            </div>
-
-                            {/* Numbers & Buttons wrapper */}
-                            <div className="flex flex-row md:flex-col justify-center items-center w-full gap-4 md:gap-8 flex-1">
-                                
-                                {/* Number Selections */}
-                                <div className="flex flex-row md:flex-col gap-3 md:gap-6 items-center">
-                                    {currentNumbers.map((num, i) => {
-                                        const colors = [
-                                            {bg: 'bg-[#1cb0f6]', border: 'border-[#1899d6]'},
-                                            {bg: 'bg-[#ce82ff]', border: 'border-[#a568cc]'},
-                                            {bg: 'bg-[#ffc800]', border: 'border-[#e5b400]'}
-                                        ];
-                                        return (
-                                            <button
-                                                key={`num-${i}`}
-                                                onClick={() => handleInput(num)}
-                                                className={`duo-btn w-[4.5rem] h-[4.5rem] md:w-24 md:h-24 rounded-2xl border-2 border-b-[8px] text-white font-black text-3xl md:text-[2.7rem] flex items-center justify-center ${colors[i].bg} ${colors[i].border} shadow-sm hover:brightness-110`}
-                                            >
-                                                {num}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-
-                                {/* Control Triggers */}
-                                <div className="flex flex-col gap-3 w-32 md:w-full max-w-[200px]">
-                                    <button
-                                        onClick={handleUndo}
-                                        disabled={isUndoDisabled || checkResult !== null}
-                                        className={`duo-btn rounded-2xl font-black text-xl md:text-2xl py-3 md:py-4 transition-all
-                                            ${isUndoDisabled || checkResult !== null 
-                                                ? 'bg-[#e5e5e5] text-[#afafaf] border-2 border-b-4 border-[#d5d5d5]' 
-                                                : 'bg-white text-[#ff4b4b] border-2 border-b-[6px] border-[#e5e5e5] hover:bg-gray-50'
-                                            }
-                                        `}
-                                    >UNDO</button>
-                                    <button
-                                        onClick={handleCheck}
-                                        disabled={!checkReady || checkResult !== null}
-                                        className={`duo-btn rounded-2xl font-black text-xl md:text-2xl py-3 md:py-4 transition-all
-                                            ${!checkReady || checkResult !== null 
-                                                ? 'bg-[#e5e5e5] text-[#afafaf] border-2 border-b-4 border-[#d5d5d5]' 
-                                                : 'bg-[#58cc02] text-white border-2 border-b-[6px] border-[#46a302] hover:brightness-110'
-                                            }
-                                        `}
-                                    >CHECK</button>
-                                </div>
-                            </div>
-
-                            {/* Result Overlay */}
-                            {checkResult && (
-                                <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end md:items-center justify-center z-[60] rounded-none md:rounded-l-3xl p-4 pb-6 md:p-6 backdrop-blur-sm">
-                                    <div className={`w-full max-w-sm rounded-3xl border-2 border-b-[8px] flex flex-col items-center justify-center p-6 animate-float shadow-2xl
-                                        ${checkResult === 'wellDone' 
-                                            ? 'bg-[#d7ffb8] border-[#58cc02] text-[#58cc02]' 
-                                            : 'bg-[#ffdfe0] border-[#ff4b4b] text-[#ff4b4b]'}
-                                    `}>
-                                        {checkResult === 'wellDone' ? (
-                                            <>
-                                                <div className="bg-white rounded-full p-2 mb-4 shadow-sm border-2 border-[#58cc02]">
-                                                    <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
-                                                </div>
-                                                <p className="font-black text-4xl mb-2 text-center drop-shadow-sm">Awesome!</p>
-                                                <p className="font-bold text-lg text-center">Moving to next round...</p>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <div className="bg-white rounded-full p-2 mb-4 shadow-sm border-2 border-[#ff4b4b]">
-                                                    <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
-                                                </div>
-                                                <p className="font-black text-4xl mb-6 text-center drop-shadow-sm">Try again</p>
-                                                <button 
-                                                    onClick={handleTryAgain} 
-                                                    className="duo-btn bg-[#ff4b4b] w-full border-b-[6px] border-[#d93b3b] rounded-2xl px-6 py-4 font-black text-2xl text-white shadow-sm"
-                                                >
-                                                    RETRY
-                                                </button>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                );
-            };
-
             const renderSummary = () => (
-                <div className="flex flex-col items-center justify-center w-full min-h-screen p-4 relative overflow-hidden bg-gradient-to-br from-[#d7ffb8] via-[#e2fbc7] to-[#ffffff]">
+                <div className="flex flex-col items-center justify-center w-full min-h-screen p-4 relative overflow-hidden">
                     
                     {/* Empty placeholder div reserved for Logo placement later */}
                     <div className="absolute top-4 right-4 w-16 h-16 z-[10000]"></div>
 
-                    <div className="bg-white border-2 border-[#e5e5e5] border-b-[8px] rounded-3xl p-8 w-full max-w-[500px] shadow-2xl flex flex-col items-center relative z-10 animate-float">
+                    <div className="bg-white bg-opacity-90 backdrop-blur-md border-2 border-[#e5e5e5] border-b-[8px] rounded-3xl p-8 w-full max-w-[500px] shadow-2xl flex flex-col items-center relative z-10 animate-float">
                         <div className="bg-[#ffc800] p-4 rounded-full mb-6 text-white border-4 border-[#e5b400] shadow-md">
                             <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
                         </div>
@@ -696,11 +941,231 @@
                 </div>
             );
 
+            const renderGame = () => {
+                const isFull = rows.every(r => r.inputs.every(v => v !== null));
+                const checkReady = isFull;
+                const isUndoDisabled = rows.every(r => r.status === 'correct' || r.inputs.every(v => v === null));
+                const modeObj = addSubList.find(o => o.val === difficulty);
+
+                return (
+                    <div className="w-full h-screen relative overflow-hidden">
+                        {/* Compact controls stay at the top-left; top-right is reserved for a future logo. */}
+                        <div className="absolute top-2 md:top-3 left-2 md:left-4 z-40 flex flex-wrap items-center justify-start gap-1.5 md:gap-2 max-w-[76%] md:max-w-[72%]">
+                            <button
+                                onClick={() => { playSound('click'); setView('splash'); }}
+                                className="duo-btn bg-white/95 text-[#7b7b7b] border-2 border-[#e5e5e5] border-b-4 rounded-xl px-2.5 py-2 md:px-3.5 font-bold text-xs md:text-sm hover:bg-gray-50 flex items-center gap-1.5 shadow-sm"
+                            >
+                                <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                                Back
+                            </button>
+
+                            <button
+                                onClick={() => { playSound('click'); speakText(instructionText); }}
+                                className="duo-btn bg-[#1cb0f6] border-2 border-b-[5px] border-[#1899d6] text-white p-2 md:p-2.5 rounded-full hover:brightness-110 shadow-lg"
+                                aria-label="Read instructions aloud"
+                                title="Listen to the instruction"
+                            >
+                                <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+
+                            <div className="bg-white/95 text-[#7b7b7b] font-bold px-2.5 py-2 md:px-3.5 rounded-xl border-2 border-[#e5e5e5] shadow-sm text-[10px] md:text-sm whitespace-nowrap">
+                                Round {round}/{TOTAL_ROUNDS}
+                            </div>
+                            <div className="bg-[#ffc800] text-white font-black px-2.5 py-2 md:px-3.5 rounded-xl border-2 border-b-[5px] border-[#e5b400] shadow-sm text-[10px] md:text-sm whitespace-nowrap">
+                                Score: {score}
+                            </div>
+                            <div className="text-white px-2.5 py-2 md:px-3.5 rounded-xl font-bold border-2 border-b-[5px] shadow-sm text-[10px] md:text-sm whitespace-nowrap" style={{backgroundColor: modeObj?.color, borderColor: modeObj?.border}}>
+                                {modeObj?.label}
+                            </div>
+                        </div>
+
+                        {/* Reserved logo area — intentionally empty. */}
+                        <div className="absolute top-2 right-2 md:top-3 md:right-4 z-40 w-20 h-14 md:w-32 md:h-20 pointer-events-none"></div>
+
+                        {/* Equations sit directly inside the single large background house */}
+                        <div className="absolute left-1/2 top-[43.5%] md:top-[45.8%] -translate-x-1/2 -translate-y-[4%] z-30 w-[98%] max-w-[930px] flex flex-col items-center gap-3 md:gap-4">
+                            <div className="w-full rounded-[2rem] md:rounded-[2.35rem] border-[4px] md:border-[6px] border-[#d8a160] bg-[#fff8df]/94 backdrop-blur-[2px] shadow-2xl px-3.5 py-4 md:px-6 md:py-6">
+                                <div className="flex flex-col gap-2.5 md:gap-3.5 w-full">
+                                    {rows.map((row, i) => (
+                                        <FactRow
+                                            key={i}
+                                            index={i}
+                                            rowData={row}
+                                            focusedCell={focusedCell}
+                                            onCellClick={handleCellClick}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="w-full max-w-[820px] bg-[#fff4d6]/94 backdrop-blur-sm border-2 border-white rounded-[1.6rem] shadow-xl px-3.5 py-3.5 md:px-6 md:py-4.5">
+                                <div className="flex flex-wrap items-center justify-center gap-2 md:gap-3">
+                                    {currentNumbers.map((num, i) => {
+                                        const colors = [
+                                            {bg: 'bg-[#1cb0f6]', border: 'border-[#1899d6]'},
+                                            {bg: 'bg-[#ce82ff]', border: 'border-[#a568cc]'},
+                                            {bg: 'bg-[#ffc800]', border: 'border-[#e5b400]'}
+                                        ];
+                                        return (
+                                            <button
+                                                key={`num-${i}`}
+                                                onClick={() => handleInput(num)}
+                                                className={`duo-btn w-[4.1rem] h-[4.1rem] md:w-[5.2rem] md:h-[5.2rem] rounded-xl md:rounded-2xl border-2 border-b-[7px] text-white font-black text-[1.95rem] md:text-[2.35rem] flex items-center justify-center ${colors[i].bg} ${colors[i].border} shadow-sm hover:brightness-110`}
+                                            >
+                                                {num}
+                                            </button>
+                                        );
+                                    })}
+
+                                    <button
+                                        onClick={handleUndo}
+                                        disabled={isUndoDisabled || checkResult !== null}
+                                        className={`duo-btn rounded-xl md:rounded-2xl font-black text-sm md:text-lg px-4.5 py-3.5 md:px-6 md:py-4.5 transition-all min-w-[108px]
+                                            ${isUndoDisabled || checkResult !== null
+                                                ? 'bg-[#e5e5e5] text-[#afafaf] border-2 border-b-4 border-[#d5d5d5]'
+                                                : 'bg-white text-[#ff4b4b] border-2 border-b-[6px] border-[#e5e5e5] hover:bg-gray-50'
+                                            }
+                                        `}
+                                    >CLEAR</button>
+                                    <button
+                                        onClick={handleCheck}
+                                        disabled={!checkReady || checkResult !== null}
+                                        className={`duo-btn rounded-xl md:rounded-2xl font-black text-sm md:text-lg px-4.5 py-3.5 md:px-6 md:py-4.5 transition-all min-w-[108px]
+                                            ${!checkReady || checkResult !== null
+                                                ? 'bg-[#e5e5e5] text-[#afafaf] border-2 border-b-4 border-[#d5d5d5]'
+                                                : 'bg-[#58cc02] text-white border-2 border-b-[6px] border-[#46a302] hover:brightness-110'
+                                            }
+                                        `}
+                                    >CHECK</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Result overlay */}
+                        {checkResult && (
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-[70] p-4 backdrop-blur-sm">
+                                <div className={`w-full max-w-[420px] rounded-3xl border-2 border-b-[8px] flex flex-col items-center justify-center p-5 md:p-6 shadow-2xl
+                                    ${checkResult === 'wellDone'
+                                        ? 'bg-[#d7ffb8] border-[#58cc02] text-[#3f9500]'
+                                        : 'bg-[#ffdfe0] border-[#ff4b4b] text-[#ff4b4b]'}
+                                `}>
+                                    {checkResult === 'wellDone' ? (
+                                        <>
+                                            <div className="bg-white rounded-full p-2 mb-3 shadow-sm border-2 border-[#58cc02]">
+                                                <svg className="w-11 h-11 md:w-12 md:h-12" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+                                            </div>
+                                            <p className="font-black text-3xl md:text-4xl mb-1 text-center">Awesome!</p>
+                                            <p className="font-bold text-base md:text-lg text-center mb-5">Choose what to do next.</p>
+                                            <div className="grid grid-cols-2 gap-3 w-full">
+                                                <button
+                                                    onClick={handleNextQuestion}
+                                                    className="duo-btn bg-[#1cb0f6] text-white border-2 border-b-[6px] border-[#1899d6] rounded-2xl px-3 py-3.5 font-black text-base md:text-xl shadow-sm"
+                                                >
+                                                    {round < TOTAL_ROUNDS ? 'NEXT' : 'FINISH'}
+                                                </button>
+                                                <button
+                                                    onClick={openBalloonGame}
+                                                    className="duo-btn bg-[#ce82ff] text-white border-2 border-b-[6px] border-[#a568cc] rounded-2xl px-3 py-3.5 font-black text-base md:text-xl shadow-sm"
+                                                >
+                                                    PLAY GAME
+                                                </button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="bg-white rounded-full p-2 mb-4 shadow-sm border-2 border-[#ff4b4b]">
+                                                <svg className="w-11 h-11 md:w-12 md:h-12" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
+                                            </div>
+                                            <p className="font-black text-3xl md:text-4xl mb-5 text-center">Try again</p>
+                                            <button
+                                                onClick={handleTryAgain}
+                                                className="duo-btn bg-[#ff4b4b] w-full border-b-[6px] border-[#d93b3b] rounded-2xl px-6 py-4 font-black text-xl text-white shadow-sm"
+                                            >
+                                                RETRY
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            };
+
+            const renderBalloonGame = () => (
+                <div className="fixed inset-0 z-[100] overflow-hidden bg-gradient-to-b from-[#69d2ff] via-[#bcecff] to-[#8ee23f]">
+                    <div className="absolute inset-x-0 bottom-0 h-[24%] bg-gradient-to-b from-[#7fe337] to-[#48bc20]"></div>
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[120] flex flex-col items-center gap-2">
+                        <div className="bg-white/95 border-2 border-white rounded-2xl shadow-lg px-5 py-2 text-center">
+                            <div className="font-black text-[#1cb0f6] text-xl md:text-3xl">TAP BALLOONS!</div>
+                            <div className="font-bold text-[#6b7280] text-xs md:text-sm">Tap the balloons, but do not tap 🔥</div>
+                        </div>
+                        <div className="bg-[#ffc800] text-white border-2 border-b-[5px] border-[#e5b400] rounded-xl px-4 py-2 font-black text-lg shadow-md">
+                            Score: {miniGameScore}
+                        </div>
+                    </div>
+
+                    <div className="absolute inset-0 overflow-hidden">
+                        {balloons.map(balloon => (
+                            <button
+                                key={balloon.id}
+                                onClick={() => handleBalloonTap(balloon)}
+                                onAnimationEnd={() => setBalloons(prev => prev.filter(item => item.id !== balloon.id))}
+                                className="balloon-rise absolute bottom-0 z-[110] border-0 bg-transparent p-0 cursor-pointer select-none"
+                                style={{
+                                    left: `${balloon.x}%`,
+                                    animationDuration: `${balloon.duration}s`,
+                                    width: `${balloon.size}px`,
+                                    height: `${balloon.size * 1.45}px`
+                                }}
+                                aria-label={balloon.isFire ? 'Fire balloon' : 'Balloon'}
+                            >
+                                <div className="balloon-body relative w-full h-full flex flex-col items-center">
+                                    <div
+                                        className="relative flex items-center justify-center rounded-[50%_50%_46%_46%] border-[4px] border-white/80 shadow-xl text-2xl md:text-3xl"
+                                        style={{
+                                            width: `${balloon.size}px`,
+                                            height: `${balloon.size * 1.12}px`,
+                                            background: `radial-gradient(circle at 32% 24%, #ffffff 0 8%, ${balloon.color} 24% 72%, rgba(0,0,0,0.18) 100%)`
+                                        }}
+                                    >
+                                        <span className="drop-shadow-md">{balloon.isFire ? '🔥' : '⭐'}</span>
+                                        <span className="absolute -bottom-[9px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-r-[8px] border-t-[13px] border-l-transparent border-r-transparent" style={{borderTopColor: balloon.color}}></span>
+                                    </div>
+                                    <div className="w-[2px] flex-1 bg-[#7b5b45]/70 mt-2 rounded-full"></div>
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+
+                    {miniGameOver && (
+                        <div className="absolute inset-0 z-[140] bg-black/45 flex items-center justify-center p-4 backdrop-blur-sm">
+                            <div className="w-full max-w-[390px] bg-white rounded-3xl border-4 border-[#ff4b4b] border-b-[10px] shadow-2xl p-6 text-center">
+                                <div className="text-7xl mb-2">🔥</div>
+                                <h2 className="font-black text-[#ff4b4b] text-4xl mb-2">GAME OVER</h2>
+                                <p className="font-bold text-[#6b7280] text-lg mb-5">Balloon score: {miniGameScore}</p>
+                                <button
+                                    onClick={handleNextQuestion}
+                                    className="duo-btn w-full bg-[#58cc02] text-white border-2 border-b-[7px] border-[#46a302] rounded-2xl px-5 py-4 font-black text-xl shadow-sm"
+                                >
+                                    {round < TOTAL_ROUNDS ? 'NEXT QUESTION' : 'FINISH LESSON'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+
+
             return (
-                <div className="w-full min-h-screen">
+                <div className="w-full min-h-screen relative z-10">
+                    <GameBackground currentNumbers={currentNumbers} showGameData={view === 'game'} />
                     {view === 'splash' && renderSplash()}
                     {view === 'game' && renderGame()}
                     {view === 'summary' && renderSummary()}
+                    {miniGameOpen && renderBalloonGame()}
                 </div>
             );
         };
