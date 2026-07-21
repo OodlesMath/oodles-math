@@ -9,15 +9,24 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
+            --scale: 1;
+            /* CUBES LỚN HƠN 25% */
+            --cube-w: calc(75px * var(--scale));
+            --cube-h: calc(87px * var(--scale));
+            --cube-offset-y: calc(43px * var(--scale));
+            
             --sky-top: #5ee7df;
             --sky-bottom: #b490ca;
             --grass-top: #7bed9f;
             --grass-bottom: #2ed573;
             --ui-bg: rgba(255, 255, 255, 0.95);
-            --cube-w: 60px;
-            --cube-h: 70px;
-            --cube-offset-y: 35px;
         }
+
+        /* Responsive UI Scaling based on screen height to prevent overlap */
+        @media (max-width: 768px) { :root { --scale: 0.7; } }
+        @media (max-height: 800px) { :root { --scale: 0.75; } }
+        @media (max-height: 650px) { :root { --scale: 0.6; } }
+        @media (max-height: 550px) { :root { --scale: 0.45; } }
 
         body {
             font-family: 'Poppins', sans-serif;
@@ -47,7 +56,7 @@
         }
 
         /* Game Layout */
-        #app { display: flex; flex-direction: column; height: 100vh; width: 100vw; max-width: 1024px; margin: 0 auto; position: relative; }
+        #app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; width: 100vw; max-width: 1024px; margin: 0 auto; position: relative; }
         
         /* Top Bar */
         .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; z-index: 10; }
@@ -57,46 +66,52 @@
         .icon-btn { background: white; border: 2px solid #e2e8f0; border-radius: 50%; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: #475569; font-size: 1.2rem; transition: transform 0.1s; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
         .icon-btn:active { transform: scale(0.9); }
 
-        /* Instruction Area */
-        .instruction-area { text-align: center; padding: 10px 20px; z-index: 10; }
-        .instruction-box { display: inline-flex; align-items: center; gap: 10px; background: var(--ui-bg); padding: 15px 25px; border-radius: 20px; border: 3px solid #cbd5e1; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); font-size: 1.5rem; font-weight: 700; color: #334155; }
-        .speaker-btn { background: #3b82f6; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; transition: transform 0.1s; box-shadow: 0 4px 0 #2563eb; display: flex; justify-content: center; align-items: center; }
+        /* Instruction Area - THU NHỎ 10% VÀ ĐẨY CAO LÊN */
+        .instruction-area { text-align: center; padding: 5px 20px; z-index: 10; position: relative; margin-top: -5px; }
+        .instruction-box { display: inline-flex; align-items: center; gap: 10px; background: var(--ui-bg); padding: 13px 22px; border-radius: 20px; border: 3px solid #cbd5e1; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); font-size: 1.35rem; font-weight: 700; color: #334155; }
+        .speaker-btn { background: #3b82f6; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; transition: transform 0.1s; box-shadow: 0 4px 0 #2563eb; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
         .speaker-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #2563eb; }
 
         /* Main Workspace */
-        .workspace { flex-grow: 1; position: relative; display: flex; flex-direction: column; justify-content: center; z-index: 5; padding: 10px; padding-bottom: 120px; }
+        .workspace { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 5; padding: 10px 10px 100px 10px; overflow: hidden; }
+        .workspace-inner { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; width: 100%; height: 100%; }
+
+        /* Pool Area (Kho chứa khối) - NẰM TRÊN */
+        .pool-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; padding: 15px; background: rgba(255,255,255,0.7); border-radius: 20px; border: 2px solid rgba(255,255,255,0.9); max-width: 80%; min-height: 80px; box-shadow: inset 0 4px 6px rgba(0,0,0,0.05); cursor: pointer; z-index: 10; margin-bottom: 20px; margin-top: 10px; transition: all 0.3s; }
+
+        /* Towers Layout via Flexbox - NẰM DƯỚI */
+        .towers-container { display: flex; justify-content: center; align-items: flex-end; gap: calc(20px * var(--scale)); flex-wrap: wrap; width: 100%; transition: all 0.3s; margin-top: auto; margin-bottom: 20px; }
         
-        .towers-container { display: flex; justify-content: center; align-items: flex-end; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; min-height: 250px; }
-        .tower-slot { position: relative; width: 80px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; cursor: pointer; }
+        .tower-wrapper { position: relative; width: calc(var(--cube-w) + 20px); display: flex; flex-direction: column; align-items: center; justify-content: flex-end; cursor: pointer; }
+        .tower-slot-cubes { display: flex; flex-direction: column-reverse; align-items: center; width: 100%; z-index: 10; padding-bottom: calc(20px * var(--scale)); min-height: calc(60px * var(--scale)); }
         
         /* Base Styling */
-        .tower-base { width: 70px; height: 30px; background: rgba(0,0,0,0.1); border: 2px dashed rgba(0,0,0,0.2); border-radius: 50%; margin-top: 10px; transition: all 0.3s; position: relative; pointer-events: none; }
+        .tower-base { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: calc(75px * var(--scale)); height: calc(35px * var(--scale)); background: rgba(0,0,0,0.1); border: 2px dashed rgba(0,0,0,0.2); border-radius: 50%; transition: all 0.3s; pointer-events: none; z-index: 5; }
         .tower-base.active { border-style: solid; border-color: #3b82f6; background: rgba(59, 130, 246, 0.2); box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
         .tower-base.locked { border-style: solid; border-color: #22c55e; background: rgba(34, 197, 94, 0.2); }
-        .locked-tick { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); background: #22c55e; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center; font-size: 14px; opacity: 0; transition: opacity 0.3s; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 20; }
-        .tower-base.locked .locked-tick { opacity: 1; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-
-        /* Pool Area */
-        .pool-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; padding: 15px; background: rgba(255,255,255,0.7); border-radius: 20px; border: 2px solid rgba(255,255,255,0.9); margin: 0 auto 20px auto; max-width: 80%; min-height: 80px; box-shadow: inset 0 4px 6px rgba(0,0,0,0.05); cursor: pointer; }
+        
+        .locked-tick { position: absolute; bottom: 0px; left: 50%; transform: translateX(-50%) scale(0); background: #22c55e; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center; font-size: 14px; opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 30; }
+        .tower-wrapper.locked .locked-tick { opacity: 1; transform: translateX(-50%) scale(1); }
 
         /* Cube Styling */
-        .cube-wrapper { position: absolute; width: var(--cube-w); height: var(--cube-h); cursor: grab; transition: transform 0.15s ease-out; z-index: 10; filter: drop-shadow(0px 8px 6px rgba(0,0,0,0.2)); }
-        .cube-wrapper.dragging { cursor: grabbing; z-index: 999 !important; transition: none; filter: drop-shadow(0px 15px 12px rgba(0,0,0,0.3)); transform: scale(1.1); }
-        .cube-wrapper.in-tower { cursor: pointer; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .cube-wrapper { position: absolute; width: var(--cube-w); height: var(--cube-h); cursor: grab; z-index: 10; filter: drop-shadow(0px 8px 6px rgba(0,0,0,0.2)); transition: transform 0.15s ease-out; }
+        .cube-wrapper.dragging { cursor: grabbing; z-index: 999 !important; filter: drop-shadow(0px 15px 12px rgba(0,0,0,0.3)); transform: scale(1.1); transition: none; }
+        
+        /* Flexbox magic for overlapping adjacent cubes */
+        .cube-wrapper.in-tower { cursor: pointer; position: relative !important; left: auto !important; right: auto !important; top: auto !important; bottom: auto !important; transform: none !important; margin: 0 !important; }
+        .cube-wrapper.in-tower + .cube-wrapper.in-tower { margin-bottom: calc(var(--cube-offset-y) - var(--cube-h)) !important; }
         .cube-wrapper.locked { cursor: not-allowed; }
         
         /* CUBE SELECTION HIGHLIGHT */
-        .cube-wrapper.selected {
-            filter: drop-shadow(0px 10px 15px rgba(234, 179, 8, 0.9)) brightness(1.2) !important;
-            transform: translateY(-10px) !important;
-            z-index: 1000 !important;
-        }
+        .cube-wrapper.selected { filter: drop-shadow(0px 10px 15px rgba(234, 179, 8, 0.9)) brightness(1.2) !important; z-index: 1000 !important; }
+        .cube-wrapper.in-tower.selected { transform: translateY(-10px) !important; }
+        .cube-wrapper:not(.in-tower).selected { transform: scale(1.1) translateY(-5px) !important; }
 
         .cube-svg { width: 100%; height: 100%; display: block; pointer-events: none; }
 
         /* Build Button */
-        .build-btn { position: absolute; bottom: -30px; left: 50%; transform: translateX(-50%); background: #3b82f6; color: white; border: none; border-radius: 12px; padding: 4px 12px; font-size: 0.85rem; font-weight: 700; cursor: pointer; box-shadow: 0 3px 0 #2563eb; pointer-events: auto; z-index: 20; transition: all 0.1s; text-transform: uppercase; }
-        .build-btn:active { transform: translate(-50%, 3px); box-shadow: 0 0 0 #2563eb; }
+        .build-btn { position: absolute; bottom: -36px; left: 50%; transform: translateX(-50%); background: #3b82f6; color: white; border: none; border-radius: 12px; padding: 8px 20px; font-size: 1rem; font-weight: 800; cursor: pointer; box-shadow: 0 4px 0 #2563eb; pointer-events: auto; z-index: 9999; transition: all 0.1s; text-transform: uppercase; white-space: nowrap; }
+        .build-btn:active { transform: translate(-50%, 4px); box-shadow: 0 0 0 #2563eb; }
         .build-btn.hidden { opacity: 0; pointer-events: none; }
 
         /* Bottom Controls */
@@ -112,17 +127,17 @@
         /* Pictorial / Abstract Overlay Layer */
         .overlay-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 30; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         
-        /* Multiple Choice */
-        .mc-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; position: absolute; bottom: 80px; width: 100%; padding: 0 20px; pointer-events: auto; opacity: 0; transform: translateY(20px); transition: all 0.5s; z-index: 50; }
+        /* Multiple Choice - NHỎ HƠN 20% VÀ THẤP XUỐNG */
+        .mc-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; position: absolute; bottom: 40px; width: 100%; padding: 0 20px; pointer-events: auto; opacity: 0; transform: translateY(20px); transition: all 0.5s; z-index: 50; }
         .mc-container.active { opacity: 1; transform: translateY(0); }
-        .mc-btn { background: #8b5cf6; color: white; border: 3px solid #7c3aed; border-radius: 15px; padding: 15px 35px; font-size: 2rem; font-weight: bold; cursor: pointer; box-shadow: 0 6px 0 #6d28d9; transition: all 0.1s; min-width: 80px; text-align: center; }
-        .mc-btn:hover { background: #7c3aed; border-color: #6d28d9; }
-        .mc-btn:active { transform: translateY(6px); box-shadow: 0 0 0 #6d28d9; }
+        .mc-btn { background: #a855f7; color: white; border: 3px solid #9333ea; border-radius: 15px; padding: 12px 28px; font-size: 1.6rem; font-weight: bold; cursor: pointer; box-shadow: 0 6px 0 #7e22ce; transition: all 0.1s; min-width: 65px; text-align: center; }
+        .mc-btn:hover { background: #9333ea; border-color: #7e22ce; }
+        .mc-btn:active { transform: translateY(6px); box-shadow: 0 0 0 #7e22ce; }
         .mc-btn.correct { background: #22c55e !important; border-color: #16a34a !important; box-shadow: 0 6px 0 #15803d !important; }
         .mc-btn.wrong { background: #ef4444 !important; border-color: #dc2626 !important; box-shadow: 0 6px 0 #b91c1c !important; animation: shake 0.4s; }
 
-        /* Abstract Equation */
-        .equation-display { display: flex; align-items: center; justify-content: center; background: white; padding: 20px 40px; border-radius: 20px; font-size: 3.5rem; font-weight: 800; color: #1e293b; border: 4px solid #fcd34d; box-shadow: 0 10px 25px rgba(0,0,0,0.2); opacity: 0; transform: scale(0.5); transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: auto; position: absolute; top: 25%; z-index: 40; }
+        /* Abstract Equation - NHỎ HƠN 10% VÀ ĐẨY LÊN CAO XÍU */
+        .equation-display { display: flex; align-items: center; justify-content: center; background: white; padding: 18px 36px; border-radius: 20px; font-size: 3.15rem; font-weight: 800; color: #1e293b; border: 4px solid #fcd34d; box-shadow: 0 10px 25px rgba(0,0,0,0.2); opacity: 0; transform: scale(0.5); transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: auto; position: absolute; top: 15%; z-index: 40; }
         .equation-display.active { opacity: 1; transform: scale(1); }
 
         /* Modals */
@@ -134,46 +149,15 @@
         
         #confetti-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 90; }
 
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-10px); }
-            40%, 80% { transform: translateX(10px); }
-        }
-        @keyframes popIn {
-            0% { transform: translateX(-50%) scale(0); }
-            100% { transform: translateX(-50%) scale(1); }
-        }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-10px); } 40%, 80% { transform: translateX(10px); } }
         
         .icon { width: 24px; height: 24px; fill: currentColor; }
 
         @media (max-width: 768px) {
-            :root { --cube-w: 45px; --cube-h: 52px; --cube-offset-y: 26px; }
-            .instruction-box { font-size: 1.1rem; padding: 10px 15px; }
-            .mc-btn { font-size: 1.5rem; padding: 10px 25px; }
-            .equation-display { font-size: 2.5rem; padding: 15px 30px; }
-            .towers-container { gap: 8px; margin-bottom: 10px; }
-            .tower-slot { width: 55px; }
-            .tower-base { width: 50px; height: 20px; }
-            .build-btn { bottom: -25px; padding: 3px 8px; font-size: 0.75rem; box-shadow: 0 2px 0 #2563eb; border-radius: 8px; }
-            .build-btn:active { transform: translate(-50%, 2px); }
-            .modal-title { font-size: 2.2rem; }
-            .workspace { padding-bottom: 130px; }
-            .mc-container { bottom: 80px; gap: 10px; }
-        }
-
-        @media (max-height: 600px) {
-            :root { --cube-w: 40px; --cube-h: 46px; --cube-offset-y: 23px; }
-            .instruction-box { font-size: 1rem; padding: 8px 15px; }
-            .workspace { padding-top: 0; padding-bottom: 80px; justify-content: flex-start; margin-top: 10px; }
-            .pool-container { padding: 10px; min-height: 60px; margin-bottom: 10px; }
-            .equation-display { font-size: 2rem; padding: 10px 20px; top: 15%; }
-            .towers-container { min-height: 180px; margin-bottom: 5px; }
-            .mc-container { bottom: 65px; gap: 10px; }
-            .mc-btn { font-size: 1.2rem; padding: 8px 20px; box-shadow: 0 4px 0 #6d28d9; border-width: 2px;}
-            .mc-btn:active { transform: translateY(4px); box-shadow: 0 0 0 #6d28d9; }
-            .btn-main { padding: 8px 30px; font-size: 1.2rem; box-shadow: 0 4px 0 #16a34a; }
-            .btn-main:active { transform: translateY(4px); box-shadow: 0 0 0 #16a34a; }
-            .controls-area { bottom: 10px; }
+            .instruction-box { font-size: 1rem; padding: 8px 12px; }
+            .mc-btn { font-size: 1.2rem; padding: 8px 20px; }
+            .equation-display { font-size: 2.2rem; padding: 12px 24px; }
+            .modal-title { font-size: 2rem; }
         }
     </style>
 </head>
@@ -212,8 +196,12 @@
         </div>
 
         <div class="workspace" id="workspace">
-            <div class="pool-container" id="pool-container"></div>
-            <div class="towers-container" id="towers-container"></div>
+            <div class="workspace-inner">
+                <!-- Pool on top -->
+                <div class="pool-container" id="pool-container"></div>
+                <!-- Towers on bottom -->
+                <div class="towers-container" id="towers-container"></div>
+            </div>
         </div>
 
         <div class="overlay-layer" id="overlay-layer">
@@ -274,7 +262,6 @@
             { base: '#a855f7', top: '#c084fc', side: '#7e22ce', border: '#581c87' }
         ];
 
-        const MODES = ['multiply', 'divide-group', 'divide-share'];
         const TOTAL_QUESTIONS = 10;
 
         let state = {
@@ -294,8 +281,11 @@
                 initialLeft: 0, initialTop: 0,
                 element: null
             },
-            selectedCubeId: null, // Cho tính năng Click-to-Move
-            wrongAttempts: 0
+            selectedCubeId: null,
+            wrongAttempts: 0,
+            currentQuestionText: "",
+            tryAgainTimeout: null,
+            feedbackTimeout: null
         };
 
         const els = {
@@ -323,33 +313,19 @@
             const gain = audioCtx.createGain();
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-
             const now = audioCtx.currentTime;
             if (type === 'snap') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(400, now);
-                osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
-                gain.gain.setValueAtTime(0.3, now);
-                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                osc.start(now);
-                osc.stop(now + 0.1);
+                osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+                gain.gain.setValueAtTime(0.3, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
             } else if (type === 'wrong') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, now);
-                osc.frequency.linearRampToValueAtTime(100, now + 0.3);
-                gain.gain.setValueAtTime(0.2, now);
-                gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
-                osc.start(now);
-                osc.stop(now + 0.3);
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.linearRampToValueAtTime(100, now + 0.3);
+                gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
             } else if (type === 'correct') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(523.25, now);
-                osc.frequency.setValueAtTime(659.25, now + 0.1);
-                osc.frequency.setValueAtTime(783.99, now + 0.2);
-                gain.gain.setValueAtTime(0.2, now);
-                gain.gain.linearRampToValueAtTime(0, now + 0.4);
-                osc.start(now);
-                osc.stop(now + 0.4);
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(523.25, now); osc.frequency.setValueAtTime(659.25, now + 0.1); osc.frequency.setValueAtTime(783.99, now + 0.2);
+                gain.gain.setValueAtTime(0.2, now); gain.gain.linearRampToValueAtTime(0, now + 0.4);
+                osc.start(now); osc.stop(now + 0.4);
             }
         }
 
@@ -357,92 +333,52 @@
             if ('speechSynthesis' in window) {
                 speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'en-US';
-                utterance.rate = 0.9;
+                utterance.lang = 'en-US'; utterance.rate = 0.9;
                 speechSynthesis.speak(utterance);
             }
         }
 
         els.btnSpeak.addEventListener('click', () => {
             speak(els.instructionText.innerText);
-            els.btnSpeak.style.transform = 'scale(0.9)';
-            setTimeout(() => els.btnSpeak.style.transform = 'none', 100);
+            els.btnSpeak.style.transform = 'scale(0.9)'; setTimeout(() => els.btnSpeak.style.transform = 'none', 100);
         });
 
         els.btnSpeakEq.addEventListener('click', () => {
             speak(currentEqReadText);
-            els.btnSpeakEq.style.transform = 'scale(0.9)';
-            setTimeout(() => els.btnSpeakEq.style.transform = 'none', 100);
+            els.btnSpeakEq.style.transform = 'scale(0.9)'; setTimeout(() => els.btnSpeakEq.style.transform = 'none', 100);
         });
 
         const canvas = document.getElementById('confetti-canvas');
         const ctx = canvas.getContext('2d');
-        let particles = [];
-        let confettiActive = false;
+        let particles = [], confettiActive = false;
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resizeCanvas); resizeCanvas();
 
         function fireConfetti() {
-            confettiActive = true;
-            particles = [];
-            for (let i = 0; i < 100; i++) {
-                particles.push({
-                    x: canvas.width / 2, y: canvas.height / 2,
-                    r: Math.random() * 8 + 4,
-                    dx: Math.random() * 10 - 5, dy: Math.random() * -10 - 5,
-                    color: `hsl(${Math.random() * 360}, 100%, 50%)`,
-                    tilt: Math.floor(Math.random() * 10) - 10,
-                    tiltAngleInc: (Math.random() * 0.07) + 0.05,
-                    tiltAngle: 0
-                });
-            }
+            confettiActive = true; particles = [];
+            for (let i = 0; i < 100; i++) particles.push({ x: canvas.width / 2, y: canvas.height / 2, r: Math.random() * 8 + 4, dx: Math.random() * 10 - 5, dy: Math.random() * -10 - 5, color: `hsl(${Math.random() * 360}, 100%, 50%)`, tilt: Math.floor(Math.random() * 10) - 10, tiltAngleInc: (Math.random() * 0.07) + 0.05, tiltAngle: 0 });
             animateConfetti();
         }
-
         function animateConfetti() {
             if (!confettiActive) return;
-            requestAnimationFrame(animateConfetti);
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            requestAnimationFrame(animateConfetti); ctx.clearRect(0, 0, canvas.width, canvas.height);
             particles.forEach((p, index) => {
-                p.tiltAngle += p.tiltAngleInc;
-                p.y += (Math.cos(p.tiltAngle) + 1 + p.r / 2) / 2;
-                p.x += Math.sin(p.tiltAngle) * 2;
-                p.dy += 0.1;
-                p.x += p.dx; p.y += p.dy;
-                
-                ctx.beginPath();
-                ctx.lineWidth = p.r;
-                ctx.strokeStyle = p.color;
-                ctx.moveTo(p.x + p.tilt + p.r, p.y);
-                ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r);
-                ctx.stroke();
-
+                p.tiltAngle += p.tiltAngleInc; p.y += (Math.cos(p.tiltAngle) + 1 + p.r / 2) / 2; p.x += Math.sin(p.tiltAngle) * 2; p.dy += 0.1; p.x += p.dx; p.y += p.dy;
+                ctx.beginPath(); ctx.lineWidth = p.r; ctx.strokeStyle = p.color; ctx.moveTo(p.x + p.tilt + p.r, p.y); ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r); ctx.stroke();
                 if (p.y > canvas.height) particles.splice(index, 1);
             });
             if (particles.length === 0) confettiActive = false;
         }
 
         function generateQuestions() {
-            let qs = [];
-            let availableFacts = [...FACTS];
-            availableFacts.sort(() => Math.random() - 0.5);
-            let selectedFacts = availableFacts.slice(0, 10);
-
+            let qs = []; let availableFacts = [...FACTS].sort(() => Math.random() - 0.5).slice(0, 10);
+            let modeTracker = ['multiply', 'multiply', 'multiply', 'divide-group', 'divide-group', 'divide-group', 'divide-share', 'divide-share', 'divide-share', 'multiply'];
+            modeTracker.sort(() => Math.random() - 0.5);
+            
             for (let i = 0; i < 10; i++) {
-                let fact = selectedFacts[i];
-                let mode = MODES[i % 3]; 
-                qs.push({
-                    id: i, mode: mode,
-                    n: fact.n, m: fact.m, t: fact.t, 
-                    color: CUBE_COLORS[Math.floor(Math.random() * CUBE_COLORS.length)]
-                });
+                qs.push({ id: i, mode: modeTracker[i], n: availableFacts[i].n, m: availableFacts[i].m, t: availableFacts[i].t, color: CUBE_COLORS[Math.floor(Math.random() * CUBE_COLORS.length)] });
             }
-            qs.sort(() => Math.random() - 0.5);
             return qs;
         }
 
@@ -458,30 +394,22 @@
 
         function initLevel() {
             const q = state.questions[state.currentIndex];
-            state.currentColor = q.color;
-            state.phase = 'build';
-            state.cubes = [];
-            state.wrongAttempts = 0;
-            state.drag.active = false;
-            state.selectedCubeId = null; // Reset click-to-move selection
+            state.currentColor = q.color; state.phase = 'build'; state.cubes = []; state.wrongAttempts = 0; state.drag.active = false; state.selectedCubeId = null;
 
             els.progressBar.style.width = `${((state.currentIndex) / TOTAL_QUESTIONS) * 100}%`;
             els.questionCounter.innerText = `${state.currentIndex + 1}/${TOTAL_QUESTIONS}`;
-            els.btnCheck.style.display = 'block';
-            els.btnCheck.disabled = false;
-            els.btnCheck.innerText = 'Check';
-            els.mcContainer.innerHTML = '';
-            els.mcContainer.classList.remove('active');
-            els.equationDisplay.classList.remove('active');
-            els.feedbackText.classList.remove('show');
-            els.poolContainer.style.display = 'flex';
-            els.btnSpeak.style.display = 'flex'; // Đảm bảo loa luôn hiện khi vào bài
+            els.btnCheck.style.display = 'block'; els.btnCheck.disabled = false; els.btnCheck.innerText = 'Check';
+            els.mcContainer.innerHTML = ''; els.mcContainer.classList.remove('active');
+            els.equationDisplay.classList.remove('active'); els.feedbackText.classList.remove('show');
+            els.poolContainer.style.display = 'flex'; els.btnSpeak.style.display = 'flex';
+            clearTimeout(state.tryAgainTimeout);
+            clearTimeout(state.feedbackTimeout);
 
-            let numBases = q.n; // Luôn dùng đúng số lượng mâm theo số nhóm (đáp ứng yêu cầu 1)
+            let numBases = (q.mode === 'divide-group') ? q.n : q.n;
             let numCubes = q.t;
 
             if (q.mode === 'multiply') {
-                els.instructionText.innerText = `Build ${q.n} towers. Use ${q.m} cubes in each tower.`;
+                els.instructionText.innerText = `Build ${q.n} towers. Put ${q.m} cubes in each tower.`;
             } else if (q.mode === 'divide-group') {
                 els.instructionText.innerText = `Use ${q.t} cubes to build towers of ${q.m}.`;
             } else if (q.mode === 'divide-share') {
@@ -489,595 +417,313 @@
             }
             speak(els.instructionText.innerText);
 
-            els.towersContainer.innerHTML = '';
-            state.towers = [];
+            els.towersContainer.innerHTML = ''; state.towers = [];
             for (let i = 0; i < numBases; i++) {
                 state.towers.push({ locked: false });
+                const wrapper = document.createElement('div');
+                wrapper.className = 'tower-wrapper';
+                wrapper.id = `wrapper-${i}`;
+                
                 const slot = document.createElement('div');
-                slot.className = 'tower-slot';
+                slot.className = 'tower-slot-cubes';
                 slot.id = `slot-${i}`;
                 
-                // Click-to-move lên Tower Slot
-                slot.addEventListener('click', (e) => {
-                    if (state.phase !== 'build') return;
-                    if (state.towers[i].locked) return;
-                    
-                    if (state.selectedCubeId) {
-                        const cubesInThisTower = state.cubes.filter(c => c.loc === i).length;
-                        if (q.mode === 'multiply' && cubesInThisTower >= q.m) {
-                            showFeedback(`Max ${q.m} cubes per tower!`);
-                            return;
-                        }
-                        
-                        const cubeData = state.cubes.find(c => c.id === state.selectedCubeId);
-                        cubeData.loc = i;
-                        state.selectedCubeId = null;
-                        playSound('snap');
-                        updateCubeSelectionVisuals();
-                        positionCubesInPool();
-                        updateTowerVisuals();
-                    }
+                wrapper.addEventListener('click', (e) => {
+                    if (state.phase !== 'build' || state.towers[i].locked || !state.selectedCubeId) return;
+                    const cubesInThisTower = state.cubes.filter(c => c.loc === i).length;
+                    if (q.mode === 'multiply' && cubesInThisTower >= q.m) { showFeedback(`Make exactly ${q.m} cubes per tower!`); return; }
+                    const cubeData = state.cubes.find(c => c.id === state.selectedCubeId);
+                    cubeData.loc = i; state.selectedCubeId = null; playSound('snap');
+                    updateCubeSelectionVisuals(); positionCubesInPool(); updateTowerVisuals();
                 });
                 
                 const base = document.createElement('div');
-                base.className = 'tower-base';
-                base.id = `base-${i}`;
+                base.className = 'tower-base'; base.id = `base-${i}`;
                 
                 const tick = document.createElement('div');
-                tick.className = 'locked-tick';
-                tick.innerHTML = '✓';
-                base.appendChild(tick);
-
+                tick.className = 'locked-tick'; tick.innerHTML = '✓';
+                
                 const buildBtn = document.createElement('button');
-                buildBtn.className = 'build-btn';
-                buildBtn.id = `build-btn-${i}`;
-                buildBtn.innerText = 'Build';
-                buildBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    autoBuildTower(i);
-                };
+                buildBtn.className = 'build-btn'; buildBtn.id = `build-btn-${i}`; buildBtn.innerText = 'Build';
+                
+                // Cập nhật lại sự kiện touchstart & click để phím bấm mượt và nhạy 100% trên mọi thiết bị
+                const handleBuild = (e) => { e.preventDefault(); e.stopPropagation(); autoBuildTower(i); };
+                buildBtn.addEventListener('touchstart', handleBuild, { passive: false });
+                buildBtn.addEventListener('click', handleBuild);
 
-                slot.appendChild(base);
-                slot.appendChild(buildBtn);
-                els.towersContainer.appendChild(slot);
+                wrapper.appendChild(base); wrapper.appendChild(slot); wrapper.appendChild(tick); wrapper.appendChild(buildBtn);
+                els.towersContainer.appendChild(wrapper);
             }
 
             els.poolContainer.innerHTML = '';
             for (let i = 0; i < numCubes; i++) {
                 const cube = document.createElement('div');
-                cube.className = 'cube-wrapper';
-                cube.id = `cube-${i}`;
-                cube.innerHTML = getSVG(q.color);
-                
+                cube.className = 'cube-wrapper'; cube.id = `cube-${i}`; cube.innerHTML = getSVG(q.color);
                 cube.addEventListener('pointerdown', handlePointerDown);
                 els.poolContainer.appendChild(cube);
-                
-                state.cubes.push({
-                    id: `cube-${i}`,
-                    loc: 'pool',
-                    el: cube
-                });
+                state.cubes.push({ id: `cube-${i}`, loc: 'pool', el: cube });
             }
             
-            // Click-to-move về lại Pool
             els.poolContainer.onclick = function(e) {
-                if (state.phase !== 'build' || !state.selectedCubeId) return;
-                // Chỉ nhận click trực tiếp vào vùng trống của pool, không phải click vào cube khác trong pool
-                if (e.target === els.poolContainer) {
-                    const cubeData = state.cubes.find(c => c.id === state.selectedCubeId);
-                    cubeData.loc = 'pool';
-                    state.selectedCubeId = null;
-                    playSound('snap');
-                    updateCubeSelectionVisuals();
-                    positionCubesInPool();
-                    updateTowerVisuals();
-                }
+                if (state.phase !== 'build' || !state.selectedCubeId || e.target !== els.poolContainer) return;
+                const cubeData = state.cubes.find(c => c.id === state.selectedCubeId);
+                cubeData.loc = 'pool'; state.selectedCubeId = null; playSound('snap');
+                updateCubeSelectionVisuals(); positionCubesInPool(); updateTowerVisuals();
             };
-
-            positionCubesInPool();
-            updateCubeSelectionVisuals();
+            positionCubesInPool(); updateCubeSelectionVisuals();
         }
 
         function updateCubeSelectionVisuals() {
-            state.cubes.forEach(c => {
-                if (c.id === state.selectedCubeId) {
-                    c.el.classList.add('selected');
-                } else {
-                    c.el.classList.remove('selected');
-                }
-            });
+            state.cubes.forEach(c => c.id === state.selectedCubeId ? c.el.classList.add('selected') : c.el.classList.remove('selected'));
         }
 
         function positionCubesInPool() {
-            const poolCubes = state.cubes.filter(c => c.loc === 'pool');
-            poolCubes.forEach(c => {
-                c.el.style.position = 'relative';
-                c.el.style.left = '0';
-                c.el.style.top = '0';
-                c.el.style.zIndex = '10';
+            state.cubes.filter(c => c.loc === 'pool').forEach(c => {
+                c.el.style.position = 'relative'; c.el.style.left = '0'; c.el.style.top = '0';
                 c.el.classList.remove('in-tower');
             });
         }
 
         function autoBuildTower(towerIndex) {
-            if (state.phase !== 'build') return;
-            if (state.towers[towerIndex].locked) return;
-
+            if (state.phase !== 'build' || state.towers[towerIndex].locked) return;
             const q = state.questions[state.currentIndex];
-            const cubesInTowerCount = state.cubes.filter(c => c.loc === towerIndex).length;
-            const needed = q.m - cubesInTowerCount;
-            
+            let targetCubes = q.m;
+            if(q.mode === 'divide-share') {
+                 targetCubes = q.m;
+            } else if (q.mode === 'divide-group') {
+                 targetCubes = q.m;
+            }
+            const needed = targetCubes - state.cubes.filter(c => c.loc === towerIndex).length;
             if (needed <= 0) return; 
-
-            const poolCubes = state.cubes.filter(c => c.loc === 'pool');
-            const cubesToMove = poolCubes.slice(0, needed);
-
+            const cubesToMove = state.cubes.filter(c => c.loc === 'pool').slice(0, needed);
             if (cubesToMove.length > 0) {
-                cubesToMove.forEach(c => {
-                    c.loc = towerIndex;
-                });
-                playSound('snap');
-                state.selectedCubeId = null;
-                updateCubeSelectionVisuals();
-                positionCubesInPool();
-                updateTowerVisuals();
+                cubesToMove.forEach(c => c.loc = towerIndex);
+                playSound('snap'); state.selectedCubeId = null;
+                updateCubeSelectionVisuals(); positionCubesInPool(); updateTowerVisuals();
             }
         }
 
         function updateTowerVisuals() {
             const q = state.questions[state.currentIndex];
-            
             for (let i = 0; i < state.towers.length; i++) {
                 const cubesInTower = state.cubes.filter(c => c.loc === i);
+                const wrapperEl = document.getElementById(`wrapper-${i}`);
                 const baseEl = document.getElementById(`base-${i}`);
                 const slotEl = document.getElementById(`slot-${i}`);
                 const buildBtn = document.getElementById(`build-btn-${i}`);
                 
                 if (q.mode === 'divide-group' && state.phase === 'build') {
                     if (cubesInTower.length === q.m) {
-                        state.towers[i].locked = true;
-                        baseEl.classList.add('locked');
+                        state.towers[i].locked = true; wrapperEl.classList.add('locked'); baseEl.classList.add('locked');
                         cubesInTower.forEach(c => c.el.classList.add('locked'));
-                        // Nếu đang chọn khối bị lock, bỏ chọn nó
-                        if(cubesInTower.find(c => c.id === state.selectedCubeId)) {
-                            state.selectedCubeId = null;
-                            updateCubeSelectionVisuals();
-                        }
+                        if(cubesInTower.find(c => c.id === state.selectedCubeId)) { state.selectedCubeId = null; updateCubeSelectionVisuals(); }
                     } else {
-                        state.towers[i].locked = false;
-                        baseEl.classList.remove('locked');
+                        state.towers[i].locked = false; wrapperEl.classList.remove('locked'); baseEl.classList.remove('locked');
                         cubesInTower.forEach(c => c.el.classList.remove('locked'));
                     }
                 }
-
-                if (buildBtn) {
-                    if (cubesInTower.length >= q.m || state.towers[i].locked) {
-                        buildBtn.classList.add('hidden');
-                    } else {
-                        buildBtn.classList.remove('hidden');
-                    }
+                if (buildBtn) { 
+                    let target = (q.mode === 'divide-share') ? q.m : q.m;
+                    (cubesInTower.length >= target || state.towers[i].locked) ? buildBtn.classList.add('hidden') : buildBtn.classList.remove('hidden'); 
                 }
 
-                cubesInTower.forEach((c, index) => {
+                cubesInTower.forEach((c) => {
                     const cubeEl = c.el;
-                    if (cubeEl.parentElement !== slotEl) {
-                        slotEl.appendChild(cubeEl);
-                    }
-                    cubeEl.style.position = 'absolute';
-                    cubeEl.style.left = '50%';
-                    cubeEl.style.transform = 'translateX(-50%)';
-                    
-                    const yOffset = 20 + (index * parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cube-offset-y')));
-                    cubeEl.style.bottom = `${yOffset}px`;
-                    cubeEl.style.top = 'auto'; 
-                    cubeEl.style.zIndex = 10 + index;
+                    if (cubeEl.parentElement !== slotEl) slotEl.appendChild(cubeEl);
                     cubeEl.classList.add('in-tower');
                 });
             }
         }
 
-        function getPointerCoords(e) {
-            return {
-                x: e.clientX || (e.touches && e.touches[0].clientX),
-                y: e.clientY || (e.touches && e.touches[0].clientY)
-            };
-        }
+        function getPointerCoords(e) { return { x: e.clientX || (e.touches && e.touches[0].clientX), y: e.clientY || (e.touches && e.touches[0].clientY) }; }
 
         function handlePointerDown(e) {
             if (state.phase !== 'build') return;
-            const cubeId = e.currentTarget.id;
-            const cubeData = state.cubes.find(c => c.id === cubeId);
-            
-            if (typeof cubeData.loc === 'number' && state.towers[cubeData.loc].locked) return;
-            if (e.currentTarget.classList.contains('locked')) return;
-
+            const cubeId = e.currentTarget.id; const cubeData = state.cubes.find(c => c.id === cubeId);
+            if ((typeof cubeData.loc === 'number' && state.towers[cubeData.loc].locked) || e.currentTarget.classList.contains('locked')) return;
             if(e.type === 'touchstart') e.preventDefault(); 
 
-            state.drag.active = true;
-            state.drag.cubeId = cubeId;
-            state.drag.element = e.currentTarget;
-            state.drag.originalLoc = cubeData.loc;
-            
-            const coords = getPointerCoords(e);
-            state.drag.startX = coords.x;
-            state.drag.startY = coords.y;
-
-            const rect = state.drag.element.getBoundingClientRect();
-            state.drag.initialLeft = rect.left;
-            state.drag.initialTop = rect.top;
+            state.drag.active = true; state.drag.cubeId = cubeId; state.drag.element = e.currentTarget; state.drag.originalLoc = cubeData.loc;
+            const coords = getPointerCoords(e); state.drag.startX = coords.x; state.drag.startY = coords.y;
+            const rect = state.drag.element.getBoundingClientRect(); state.drag.initialLeft = rect.left; state.drag.initialTop = rect.top;
 
             document.body.appendChild(state.drag.element);
-            state.drag.element.style.position = 'fixed';
-            state.drag.element.style.left = `${state.drag.initialLeft}px`;
-            state.drag.element.style.top = `${state.drag.initialTop}px`;
-            state.drag.element.style.margin = '0';
-            state.drag.element.style.bottom = 'auto';
-            state.drag.element.classList.add('dragging');
-            state.drag.element.classList.remove('in-tower');
+            state.drag.element.style.position = 'fixed'; state.drag.element.style.left = `${state.drag.initialLeft}px`; state.drag.element.style.top = `${state.drag.initialTop}px`;
+            state.drag.element.style.margin = '0'; state.drag.element.classList.add('dragging'); state.drag.element.classList.remove('in-tower');
 
             cubeData.loc = 'drag';
-
-            document.addEventListener('pointermove', handlePointerMove, {passive: false});
-            document.addEventListener('pointerup', handlePointerUp);
-            document.addEventListener('touchmove', handlePointerMove, {passive: false});
-            document.addEventListener('touchend', handlePointerUp);
+            document.addEventListener('pointermove', handlePointerMove, {passive: false}); document.addEventListener('pointerup', handlePointerUp);
+            document.addEventListener('touchmove', handlePointerMove, {passive: false}); document.addEventListener('touchend', handlePointerUp);
         }
 
         function handlePointerMove(e) {
-            if (!state.drag.active) return;
-            e.preventDefault();
-
+            if (!state.drag.active) return; e.preventDefault();
             const coords = getPointerCoords(e);
-            const dx = coords.x - state.drag.startX;
-            const dy = coords.y - state.drag.startY;
-
-            state.drag.element.style.left = `${state.drag.initialLeft + dx}px`;
-            state.drag.element.style.top = `${state.drag.initialTop + dy}px`;
-
+            state.drag.element.style.left = `${state.drag.initialLeft + coords.x - state.drag.startX}px`;
+            state.drag.element.style.top = `${state.drag.initialTop + coords.y - state.drag.startY}px`;
             highlightDropTarget(coords.x, coords.y);
         }
 
         function highlightDropTarget(x, y) {
-            const q = state.questions[state.currentIndex];
             for (let i = 0; i < state.towers.length; i++) {
-                const baseEl = document.getElementById(`base-${i}`);
-                baseEl.classList.remove('active');
-                
+                const baseEl = document.getElementById(`base-${i}`); baseEl.classList.remove('active');
                 if (state.towers[i].locked) continue;
-                
-                const cubesInThisTower = state.cubes.filter(c => c.loc === i).length;
-                if (q.mode !== 'divide-group' && cubesInThisTower >= q.m + 2) continue;
-
-                const rect = document.getElementById(`slot-${i}`).getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                
-                if (Math.abs(x - centerX) < 50 && y > rect.top - 100 && y < rect.bottom + 50) {
-                    baseEl.classList.add('active');
-                }
+                const rect = document.getElementById(`wrapper-${i}`).getBoundingClientRect();
+                if (Math.abs(x - (rect.left + rect.width / 2)) < 50 && y > rect.top - 100 && y < rect.bottom + 50) baseEl.classList.add('active');
             }
         }
 
         function handlePointerUp(e) {
             if (!state.drag.active) return;
-            
-            const coords = getPointerCoords(e);
-            let targetLoc = 'pool'; 
-            let closestBase = -1;
-            
-            const q = state.questions[state.currentIndex];
-            const cubeData = state.cubes.find(c => c.id === state.drag.cubeId);
+            const coords = getPointerCoords(e); let targetLoc = 'pool', closestBase = -1;
+            const q = state.questions[state.currentIndex]; const cubeData = state.cubes.find(c => c.id === state.drag.cubeId);
 
-            // Phân biệt Click và Drag
-            const dx = coords.x - state.drag.startX;
-            const dy = coords.y - state.drag.startY;
-            const isClick = Math.abs(dx) < 5 && Math.abs(dy) < 5;
-
-            if (isClick) {
-                // Hành vi Click
-                targetLoc = state.drag.originalLoc; // Trả về vị trí cũ trước khi click
-                if (state.selectedCubeId === state.drag.cubeId) {
-                    state.selectedCubeId = null; // Bỏ chọn
-                } else {
-                    state.selectedCubeId = state.drag.cubeId; // Chọn cube này
-                    playSound('snap');
-                }
+            if (Math.abs(coords.x - state.drag.startX) < 5 && Math.abs(coords.y - state.drag.startY) < 5) {
+                targetLoc = state.drag.originalLoc;
+                if (state.selectedCubeId === state.drag.cubeId) { state.selectedCubeId = null; } 
+                else { state.selectedCubeId = state.drag.cubeId; playSound('snap'); }
             } else {
-                // Hành vi Drag - hủy chọn nếu đang kéo
                 state.selectedCubeId = null;
-                
                 for (let i = 0; i < state.towers.length; i++) {
                     document.getElementById(`base-${i}`).classList.remove('active');
                     if (state.towers[i].locked) continue;
-                    
-                    const rect = document.getElementById(`slot-${i}`).getBoundingClientRect();
-                    const centerX = rect.left + rect.width / 2;
-                    if (Math.abs(coords.x - centerX) < 50 && coords.y > rect.top - 100 && coords.y < rect.bottom + 50) {
-                        const cubesInThisTower = state.cubes.filter(c => c.loc === i).length;
-                        if (q.mode === 'multiply' && cubesInThisTower >= q.m) {
-                            showFeedback(`Max ${q.m} cubes per tower!`);
-                            continue;
-                        }
-                        closestBase = i;
-                        break;
-                    }
+                    const rect = document.getElementById(`wrapper-${i}`).getBoundingClientRect();
+                    if (Math.abs(coords.x - (rect.left + rect.width / 2)) < 50 && coords.y > rect.top - 100 && coords.y < rect.bottom + 50) { closestBase = i; break; }
                 }
-
-                if (closestBase !== -1) {
-                    targetLoc = closestBase;
-                    playSound('snap');
-                } else {
-                    const poolRect = els.poolContainer.getBoundingClientRect();
-                    if (coords.x > poolRect.left - 50 && coords.x < poolRect.right + 50 && coords.y > poolRect.top - 50 && coords.y < poolRect.bottom + 50) {
-                        targetLoc = 'pool';
-                    } else {
-                        targetLoc = 'pool';
-                    }
-                }
+                if (closestBase !== -1) { targetLoc = closestBase; playSound('snap'); } 
+                else { targetLoc = 'pool'; }
             }
 
             cubeData.loc = targetLoc;
+            state.drag.element.classList.remove('dragging'); state.drag.element.style.position = ''; state.drag.element.style.left = ''; state.drag.element.style.top = '';
+            if (targetLoc === 'pool') els.poolContainer.appendChild(state.drag.element);
+            state.drag.active = false; state.drag.element = null;
 
-            state.drag.element.classList.remove('dragging');
-            state.drag.element.style.position = '';
-            state.drag.element.style.left = '';
-            state.drag.element.style.top = '';
-            state.drag.element.style.transform = '';
-            
-            if (targetLoc === 'pool') {
-                els.poolContainer.appendChild(state.drag.element);
-            }
-
-            state.drag.active = false;
-            state.drag.element = null;
-
-            document.removeEventListener('pointermove', handlePointerMove);
-            document.removeEventListener('pointerup', handlePointerUp);
-            document.removeEventListener('touchmove', handlePointerMove);
-            document.removeEventListener('touchend', handlePointerUp);
-
-            updateCubeSelectionVisuals();
-            positionCubesInPool();
-            updateTowerVisuals();
+            document.removeEventListener('pointermove', handlePointerMove); document.removeEventListener('pointerup', handlePointerUp);
+            document.removeEventListener('touchmove', handlePointerMove); document.removeEventListener('touchend', handlePointerUp);
+            updateCubeSelectionVisuals(); positionCubesInPool(); updateTowerVisuals();
         }
 
         function showFeedback(msg) {
-            els.feedbackText.innerText = msg;
-            els.feedbackText.classList.remove('show');
-            void els.feedbackText.offsetWidth;
-            els.feedbackText.classList.add('show');
-            playSound('wrong');
+            els.feedbackText.innerText = msg; els.feedbackText.classList.remove('show');
+            void els.feedbackText.offsetWidth; els.feedbackText.classList.add('show'); playSound('wrong');
+            clearTimeout(state.feedbackTimeout);
+            state.feedbackTimeout = setTimeout(() => { els.feedbackText.classList.remove('show'); }, 3000);
         }
 
         els.btnCheck.addEventListener('click', () => {
-            if (state.phase === 'build') {
-                validateBuild();
-            } else if (state.phase === 'mcq_done') {
-                state.currentIndex++;
-                if (state.currentIndex < TOTAL_QUESTIONS) {
-                    initLevel();
-                } else {
-                    endGame();
-                }
-            }
+            if (state.phase === 'build') validateBuild();
+            else if (state.phase === 'mcq_done') { state.currentIndex++; state.currentIndex < TOTAL_QUESTIONS ? initLevel() : endGame(); }
         });
 
         function validateBuild() {
             const q = state.questions[state.currentIndex];
             const poolCount = state.cubes.filter(c => c.loc === 'pool').length;
-            
-            const activeTowers = [];
-            for(let i=0; i < state.towers.length; i++) {
-                const c = state.cubes.filter(cube => cube.loc === i).length;
-                if (c > 0) activeTowers.push(c);
-            }
+            const activeTowers = []; for(let i=0; i < state.towers.length; i++) { const c = state.cubes.filter(cube => cube.loc === i).length; if (c > 0) activeTowers.push(c); }
 
-            if (poolCount > 0) {
-                showFeedback("Use all the cubes from the pool.");
-                return;
-            }
-
-            let isValid = false;
+            if (poolCount > 0) { showFeedback("Use all the cubes from the pool."); return; }
 
             if (q.mode === 'multiply') {
-                if (activeTowers.length !== q.n) {
-                    showFeedback(`Check the number of towers. You need ${q.n}.`);
-                    return;
-                }
-                if (!activeTowers.every(c => c === q.m)) {
-                    showFeedback(`Make sure every tower has exactly ${q.m} cubes.`);
-                    return;
-                }
-                isValid = true;
-            } 
-            else if (q.mode === 'divide-group') {
-                if (!activeTowers.every(c => c === q.m)) {
-                    showFeedback(`Make all towers equal to ${q.m}.`);
-                    return;
-                }
-                isValid = true;
-            }
-            else if (q.mode === 'divide-share') {
-                if (activeTowers.length !== q.n) {
-                    showFeedback(`You must build on exactly ${q.n} bases.`);
-                    return;
-                }
-                const firstCount = activeTowers[0];
-                if (!activeTowers.every(c => c === firstCount)) {
-                    showFeedback("Make all towers equal.");
-                    return;
-                }
-                isValid = true;
+                if (activeTowers.length !== q.n) { showFeedback(`Make exactly ${q.n} towers.`); return; }
+                if (!activeTowers.every(c => c === q.m)) { showFeedback(`Make sure every tower has exactly ${q.m} cubes.`); return; }
+            } else if (q.mode === 'divide-group') {
+                if (!activeTowers.every(c => c === q.m)) { showFeedback(`Each tower must have exactly ${q.m} cubes.`); return; }
+            } else if (q.mode === 'divide-share') {
+                if (activeTowers.length !== q.n) { showFeedback(`You must build exactly ${q.n} towers.`); return; }
+                if (!activeTowers.every(c => c === activeTowers[0])) { showFeedback("Make all towers equal."); return; }
             }
 
-            if (isValid) {
-                playSound('correct');
-                els.feedbackText.classList.remove('show');
-                state.selectedCubeId = null;
-                updateCubeSelectionVisuals();
-                
-                document.querySelectorAll('.build-btn').forEach(btn => btn.classList.add('hidden'));
-
-                transitionToPictorial();
-            }
+            playSound('correct'); els.feedbackText.classList.remove('show'); state.selectedCubeId = null; updateCubeSelectionVisuals();
+            document.querySelectorAll('.build-btn').forEach(btn => btn.classList.add('hidden'));
+            transitionToPictorial();
         }
 
         function transitionToPictorial() {
-            state.phase = 'mcq';
-            els.btnCheck.style.display = 'none';
-            els.poolContainer.style.display = 'none';
-            els.btnSpeak.style.display = 'flex'; // Khôi phục lại icon loa lỡ bị ẩn ở vòng trước
-
+            state.phase = 'mcq'; els.btnCheck.style.display = 'none'; els.poolContainer.style.display = 'none'; els.btnSpeak.style.display = 'flex';
             const q = state.questions[state.currentIndex];
             
             setTimeout(() => {
-                let questionText = "";
-                let answers = [];
-                let correctAns = 0;
+                let questionText = "", answers = [], correctAns = 0;
+                if (q.mode === 'multiply') { questionText = `${q.n} groups of ${q.m} make... How many altogether?`; correctAns = q.t; answers = generateDistractors(q.t, [q.n + q.m, q.t - 1, q.t + 2]); }
+                else if (q.mode === 'divide-group') { questionText = `${q.t} cubes in groups of ${q.m} make... How many towers?`; correctAns = q.n; answers = generateDistractors(q.n, [q.n - 1, q.n + 1, q.m]); }
+                else if (q.mode === 'divide-share') { questionText = `${q.t} cubes shared among ${q.n} towers. How many in each?`; correctAns = q.m; answers = generateDistractors(q.m, [q.m - 1, q.m + 1, q.n]); }
 
-                if (q.mode === 'multiply') {
-                    questionText = `${q.n} groups of ${q.m} make... How many altogether?`;
-                    correctAns = q.t;
-                    answers = generateDistractors(q.t, [q.n + q.m, q.t - 1, q.t + 2]);
-                } else if (q.mode === 'divide-group') {
-                    questionText = `${q.t} cubes in groups of ${q.m}. How many towers?`;
-                    correctAns = q.n;
-                    answers = generateDistractors(q.n, [q.n - 1, q.n + 1, q.m]);
-                } else if (q.mode === 'divide-share') {
-                    questionText = `${q.t} cubes shared among ${q.n} towers. How many in each?`;
-                    correctAns = q.m;
-                    answers = generateDistractors(q.m, [q.m - 1, q.m + 1, q.n]);
-                }
-
-                els.instructionText.innerText = questionText;
-                speak(questionText);
-
+                state.currentQuestionText = questionText;
+                els.instructionText.innerText = questionText; speak(questionText);
                 els.mcContainer.innerHTML = '';
                 answers.forEach(ans => {
-                    const btn = document.createElement('button');
-                    btn.className = 'mc-btn';
-                    btn.innerText = ans;
-                    btn.onclick = () => handleMCQClick(btn, ans, correctAns);
-                    els.mcContainer.appendChild(btn);
+                    const btn = document.createElement('button'); btn.className = 'mc-btn'; btn.innerText = ans;
+                    btn.onclick = () => handleMCQClick(btn, ans, correctAns); els.mcContainer.appendChild(btn);
                 });
-                
                 els.mcContainer.classList.add('active');
-
             }, 500);
         }
 
         function generateDistractors(correct, preferred) {
             let options = new Set([correct]);
-            
-            preferred.forEach(p => {
-                if (p > 0 && p !== correct && options.size < 4) options.add(p);
-            });
-
+            preferred.forEach(p => { if (p > 0 && p !== correct && options.size < 4) options.add(p); });
             while(options.size < 4) {
-                let randomOffset = Math.floor(Math.random() * 7) - 3;
-                if(randomOffset === 0) randomOffset = 5;
-                let num = correct + randomOffset;
-                if (num > 0 && !options.has(num)) options.add(num);
+                let randomOffset = Math.floor(Math.random() * 7) - 3; if(randomOffset === 0) randomOffset = 5;
+                let num = correct + randomOffset; if (num > 0 && !options.has(num)) options.add(num);
             }
-
             return Array.from(options).sort(() => Math.random() - 0.5);
         }
 
         function handleMCQClick(btn, selected, correct) {
             if (state.phase !== 'mcq') return;
-
-            const btns = els.mcContainer.querySelectorAll('.mc-btn');
-            btns.forEach(b => b.style.pointerEvents = 'none');
+            const btns = els.mcContainer.querySelectorAll('.mc-btn'); btns.forEach(b => b.style.pointerEvents = 'none');
+            clearTimeout(state.tryAgainTimeout);
 
             if (selected === correct) {
-                btn.classList.add('correct');
-                playSound('correct');
-                fireConfetti();
-                
-                if (state.wrongAttempts === 0) {
-                    state.score += 10;
-                    state.stars++;
-                    els.score.innerText = state.score;
-                }
-
+                btn.classList.add('correct'); playSound('correct'); fireConfetti();
+                if (state.wrongAttempts === 0) { state.score += 10; state.stars++; els.score.innerText = state.score; }
                 setTimeout(transitionToAbstract, 1000);
             } else {
-                btn.classList.add('wrong');
-                playSound('wrong');
-                state.wrongAttempts++;
-                els.instructionText.innerText = "Try again!";
-                els.btnSpeak.style.display = 'none'; // Ẩn icon loa sau chữ "try again" theo yêu cầu
-
-                setTimeout(() => {
-                    btn.classList.remove('wrong');
-                    btns.forEach(b => b.style.pointerEvents = 'auto');
-                }, 800);
+                btn.classList.add('wrong'); playSound('wrong'); state.wrongAttempts++; els.instructionText.innerText = "Try again!"; els.btnSpeak.style.display = 'none';
+                setTimeout(() => { btn.classList.remove('wrong'); btns.forEach(b => b.style.pointerEvents = 'auto'); }, 800);
+                state.tryAgainTimeout = setTimeout(() => {
+                    if (state.phase === 'mcq') {
+                        els.instructionText.innerText = state.currentQuestionText;
+                        els.btnSpeak.style.display = 'flex';
+                    }
+                }, 2500);
             }
         }
 
         function transitionToAbstract() {
-            state.phase = 'mcq_done';
-            els.mcContainer.classList.remove('active');
-            
-            const q = state.questions[state.currentIndex];
-            let eqText = "";
-            let readText = "";
+            state.phase = 'mcq_done'; els.mcContainer.classList.remove('active');
+            const q = state.questions[state.currentIndex]; let eqText = "", readText = "";
 
-            if (q.mode === 'multiply') {
-                eqText = `${q.n} × ${q.m} = ${q.t}`;
-                readText = `${q.n} times ${q.m} equals ${q.t}`;
-            } else {
-                eqText = `${q.t} ÷ ${q.mode === 'divide-group' ? q.m : q.n} = ${q.mode === 'divide-group' ? q.n : q.m}`;
-                readText = `${q.t} divided by ${q.mode === 'divide-group' ? q.m : q.n} equals ${q.mode === 'divide-group' ? q.n : q.m}`;
-            }
+            if (q.mode === 'multiply') { eqText = `${q.n} × ${q.m} = ${q.t}`; readText = `${q.n} times ${q.m} equals ${q.t}`; } 
+            else { eqText = `${q.t} ÷ ${q.mode === 'divide-group' ? q.m : q.n} = ${q.mode === 'divide-group' ? q.n : q.m}`; readText = `${q.t} divided by ${q.mode === 'divide-group' ? q.m : q.n} equals ${q.mode === 'divide-group' ? q.n : q.m}`; }
 
-            els.instructionText.innerText = "Awesome!";
-            els.btnSpeak.style.display = 'none'; // Ẩn loa ở chữ Awesome để tập trung vào loa dưới phép tính
-            
-            els.eqTextContent.innerText = eqText;
-            currentEqReadText = readText;
-            els.equationDisplay.classList.add('active');
-            speak(readText);
-
-            els.btnCheck.innerText = state.currentIndex === TOTAL_QUESTIONS - 1 ? 'Finish' : 'Next';
-            els.btnCheck.style.display = 'block';
+            els.instructionText.innerText = "Awesome!"; els.btnSpeak.style.display = 'none';
+            els.eqTextContent.innerText = eqText; currentEqReadText = readText; els.equationDisplay.classList.add('active'); speak(readText);
+            els.btnCheck.innerText = state.currentIndex === TOTAL_QUESTIONS - 1 ? 'Finish' : 'Next'; els.btnCheck.style.display = 'block';
         }
 
         function endGame() {
             document.getElementById('modal-end').classList.add('active');
             document.getElementById('final-correct').innerText = `${state.stars}/${TOTAL_QUESTIONS}`;
             document.getElementById('final-stars').innerText = state.stars;
-            playSound('correct');
-            fireConfetti();
+            playSound('correct'); fireConfetti();
         }
 
         document.getElementById('btn-start').addEventListener('click', () => {
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            speak("Let's build some towers!");
-            document.getElementById('modal-start').classList.remove('active');
-            state.questions = generateQuestions();
-            state.currentIndex = 0;
-            state.score = 0;
-            state.stars = 0;
-            els.score.innerText = '0';
+            speak("Let's build some towers!"); document.getElementById('modal-start').classList.remove('active');
+            state.questions = generateQuestions(); state.currentIndex = 0; state.score = 0; state.stars = 0; els.score.innerText = '0';
             initLevel();
         });
 
         document.getElementById('btn-restart').addEventListener('click', () => {
             document.getElementById('modal-end').classList.remove('active');
-            state.questions = generateQuestions();
-            state.currentIndex = 0;
-            state.score = 0;
-            state.stars = 0;
-            els.score.innerText = '0';
+            state.questions = generateQuestions(); state.currentIndex = 0; state.score = 0; state.stars = 0; els.score.innerText = '0';
             initLevel();
         });
 
-        document.getElementById('btn-home').addEventListener('click', () => {
-            document.getElementById('modal-start').classList.add('active');
-        });
-
+        document.getElementById('btn-home').addEventListener('click', () => { document.getElementById('modal-start').classList.add('active'); });
         document.body.addEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });
-
     </script>
 </body>
 </html>
