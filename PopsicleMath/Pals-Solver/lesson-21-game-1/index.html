@@ -138,6 +138,16 @@
         .mascot-container:hover { transform: scale(1.05) rotate(-5deg); }
 
         .hidden-force { display: none !important; }
+
+        /* MINIGAME STYLES */
+        .hole { width: 90px; height: 90px; background: #3E1F00; border-radius: 50%; box-shadow: inset 0 10px 15px rgba(0,0,0,0.8), 0 4px 0 #A0522D; position: relative; overflow: hidden; margin: auto; }
+        .mole-sprite { position: absolute; bottom: -100px; left: 5px; width: 80px; height: 80px; transition: bottom 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: crosshair; }
+        .mole-sprite.up { bottom: 0px; }
+        .mole-hit { animation: moleHit 0.3s ease-out; }
+        @keyframes moleHit { 0% { filter: brightness(1); transform: scale(1); } 50% { filter: brightness(2) drop-shadow(0 0 10px red); transform: scale(0.9); } 100% { filter: brightness(1); transform: scale(1); } }
+        .hit-fx { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0; background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%); }
+        .hit-fx.show { animation: pow 0.3s ease-out; }
+        @keyframes pow { 0% { opacity: 1; transform: scale(0.5); } 100% { opacity: 0; transform: scale(1.5); } }
     </style>
 </head>
 <body>
@@ -172,6 +182,7 @@
             <div class="hill-front"></div>
         </div>
 
+        <!-- START SCREEN -->
         <div id="screenStart" class="screen active justify-center items-center">
             <div class="card-main text-center animate-pop z-20 mt-10 border-8 border-white">
                 <div class="flex justify-center mb-6">
@@ -213,6 +224,7 @@
             </div>
         </div>
 
+        <!-- SETTINGS SCREEN -->
         <div id="screenSettings" class="screen justify-center items-center bg-black bg-opacity-60 backdrop-blur-sm">
             <div class="card-main animate-pop z-20 max-h-[95vh] overflow-y-auto w-11/12 max-w-4xl">
                 <h2 class="text-3xl font-black text-primary mb-6 border-b-4 border-indigo-100 pb-4 flex justify-between items-center w-full">
@@ -268,6 +280,7 @@
             </div>
         </div>
 
+        <!-- MAIN GAME SCREEN -->
         <div id="screenGame" class="screen z-20">
             <div class="w-full bg-white bg-opacity-95 shadow-md p-3 flex justify-between items-center z-30 relative rounded-b-3xl border-b-4 border-gray-200">
                 <div class="flex items-center gap-2 md:gap-4 ml-2 md:ml-4">
@@ -337,12 +350,55 @@
                         <button id="btnHint" onclick="showHint()" class="btn-game bg-accent text-white font-black py-3 md:py-4 px-6 md:px-8 rounded-2xl shadow-duo border-4 border-yellow-600 text-xl md:text-2xl hidden-force hover:bg-yellow-500">HINT</button>
                     </div>
 
-                    <button id="btnNext" onclick="nextQuestion()" class="btn-game bg-primary text-white font-black py-4 md:py-5 px-14 rounded-3xl shadow-duo border-4 border-indigo-700 text-3xl md:text-4xl mt-6 hidden-force w-full max-w-md animate-pop hover:bg-indigo-500">NEXT &rarr;</button>
+                    <!-- POST ANSWER ACTION BUTTONS -->
+                    <div id="postAnswerArea" class="flex flex-col md:flex-row justify-center gap-4 mt-6 hidden-force w-full max-w-2xl animate-pop">
+                        <button onclick="nextQuestion()" class="btn-game bg-primary text-white font-black py-4 md:py-5 px-8 flex-1 rounded-3xl shadow-duo border-4 border-indigo-700 text-2xl md:text-3xl hover:bg-indigo-500">NEXT ➡</button>
+                        <button onclick="openMinigame()" class="btn-game bg-accent text-white font-black py-4 md:py-5 px-8 flex-1 rounded-3xl shadow-duo border-4 border-yellow-600 text-2xl md:text-3xl hover:bg-yellow-500">🎮 PLAY GAME</button>
+                    </div>
 
                 </div>
             </div>
         </div>
 
+        <!-- WHACK A MOLE MINIGAME SCREEN -->
+        <div id="screenMinigame" class="screen bg-sky-200 items-center justify-center relative overflow-hidden">
+            <button onclick="quitMinigame()" class="absolute top-4 right-4 btn-game bg-red-500 text-white rounded-full w-14 h-14 font-black text-2xl border-4 border-red-700 z-50 flex items-center justify-center hover:bg-red-600">X</button>
+
+            <div class="text-center mb-6 z-10">
+                <h2 class="text-4xl md:text-6xl font-black text-primary drop-shadow-md mb-4 text-fun">WHACK-A-MOLE!</h2>
+                <div class="flex gap-4 md:gap-8 justify-center">
+                    <div class="bg-white px-6 py-2 rounded-2xl border-4 border-blue-400 font-bold text-2xl md:text-3xl text-blue-800 shadow-sm">Time: <span id="mgTime">30</span></div>
+                    <div class="bg-white px-6 py-2 rounded-2xl border-4 border-green-400 font-bold text-2xl md:text-3xl text-green-800 shadow-sm">Score: <span id="mgScore">0</span></div>
+                </div>
+            </div>
+
+            <div class="bg-[#8B4513] p-6 md:p-8 rounded-3xl border-8 border-[#5c2e0b] shadow-2xl relative z-10" id="mgBoard">
+                <!-- 3x3 Grid -->
+                <div class="grid grid-cols-3 gap-4 md:gap-6" id="mgHolesContainer">
+                    <!-- Holes generated via JS -->
+                </div>
+                
+                <!-- Start Overlay -->
+                <div id="mgStartOverlay" class="absolute inset-0 bg-black/60 rounded-2xl flex flex-col items-center justify-center backdrop-blur-sm z-20">
+                    <p class="text-white font-bold text-xl mb-4">Whack as many as you can!</p>
+                    <button onclick="startMinigame()" class="btn-game bg-accent text-white text-4xl font-black py-4 px-12 rounded-3xl shadow-duo border-4 border-yellow-600 hover:bg-yellow-500 animate-pulse">START</button>
+                </div>
+                
+                <!-- End Overlay -->
+                <div id="mgEndOverlay" class="absolute inset-0 bg-black/80 rounded-2xl flex flex-col items-center justify-center backdrop-blur-sm z-20 hidden-force">
+                    <h3 class="text-4xl md:text-5xl font-black text-white mb-2 text-fun">TIME'S UP!</h3>
+                    <p class="text-2xl md:text-3xl font-bold text-yellow-400 mb-6">You whacked <span id="mgFinalScore" class="text-white font-black text-4xl">0</span> moles!</p>
+                    <button onclick="quitMinigame()" class="btn-game bg-primary text-white text-2xl font-black py-4 px-8 rounded-3xl shadow-duo border-4 border-indigo-600 hover:bg-indigo-500">BACK TO WORKSHOP</button>
+                </div>
+            </div>
+            
+            <div class="scenery opacity-50 pointer-events-none">
+                <div class="hill-back"></div>
+                <div class="hill-front"></div>
+            </div>
+        </div>
+
+        <!-- RESULTS SCREEN -->
         <div id="screenResult" class="screen justify-center items-center bg-black bg-opacity-70 z-40 backdrop-blur-sm">
             <canvas id="confettiCanvas" class="absolute top-0 left-0 w-full h-full pointer-events-none z-50"></canvas>
             
@@ -403,8 +459,6 @@
             isDragging: false, draggedCubeColor: null,
             dragSourceIdx: -1, dragOffsetX: 0, dragOffsetY: 0,
             selectedNumber: null,
-            
-            // Interaction states to fix bugs
             questionResolved: false, dragStartX: 0, dragStartY: 0, dragStartTime: 0, hasMoved: false
         };
 
@@ -425,7 +479,7 @@
             DOM.sentenceArea = document.getElementById('sentenceArea');
             DOM.numSelectArea = document.getElementById('numSelectArea');
             DOM.controlArea = document.getElementById('controlArea');
-            DOM.btnNext = document.getElementById('btnNext');
+            DOM.postAnswerArea = document.getElementById('postAnswerArea');
             DOM.feedbackText = document.getElementById('feedbackText');
             DOM.btnHint = document.getElementById('btnHint');
             DOM.dragAvatar = document.getElementById('dragAvatar');
@@ -437,10 +491,36 @@
         }
 
         function updateUnitSize() {
-            const cardInnerWidth = Math.min(window.innerWidth - 40, 900) - 48; 
-            const maxRequiredSlots = state.settings.rangeMax + 0.5; 
-            let calculatedSize = Math.floor(cardInnerWidth / maxRequiredSlots);
-            let finalSize = Math.min(75, Math.max(35, calculatedSize));
+            // Subtract generous safe padding to strictly account for all internal padding 
+            // (card-main p-6, inner wrappers px-6) and guarantee no overflow.
+            const safePadding = 100; 
+            const cardInnerWidth = Math.min(window.innerWidth - 40, 900) - safePadding; 
+            
+            // Add a solid buffer (+2.0 slots) to guarantee the object never touches the right edge
+            let requiredSlots = state.settings.rangeMax + 2.0; 
+            let availableWidth = cardInnerWidth;
+
+            if (state.qData) {
+                if (state.qData.type === 'compare') {
+                    // Compare layout centers items, no supply box
+                    requiredSlots = Math.max(state.qData.length, state.qData.length2) + 2.0;
+                } else if (state.qData.type === 'build' || state.qData.type === 'fix') {
+                    requiredSlots = state.qData.length + 2.0;
+                    // Deduct width for the floating supply box if on a larger screen 
+                    if (window.innerWidth >= 768) {
+                        availableWidth -= 120; // Reserve space for supply box on right
+                    }
+                } else {
+                     requiredSlots = state.qData.length + 2.0;
+                }
+            }
+
+            // Ensure we don't divide by 0 or extremely small numbers
+            requiredSlots = Math.max(requiredSlots, 3); 
+
+            let calculatedSize = Math.floor(availableWidth / requiredSlots);
+            // Lowered min size to 20 to allow deep shrinking for very long objects on mobile
+            let finalSize = Math.min(75, Math.max(20, calculatedSize)); 
             document.documentElement.style.setProperty('--unit-size', finalSize + 'px');
         }
         window.addEventListener('resize', updateUnitSize);
@@ -518,14 +598,11 @@
                 marker: { name: 'marker' }
             },
             draw(type, lengthUnits, colorObj) {
-                // Fallback to blue if colorObj is missing
                 colorObj = colorObj || { main: '#3B82F6', dark: '#1D4ED8', light: '#93C5FD' };
                 
                 const unit = 100; 
                 const w = lengthUnits * unit;
                 const h = unit;
-                
-                // Unique gradient ID to prevent clashing when multiple objects exist
                 const gradId = 'grad-' + Math.random().toString(36).substr(2, 6);
                 
                 let svg = `<div style="width: calc(var(--unit-size) * ${lengthUnits}); height: var(--unit-size);"><svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0px 8px 6px rgba(0,0,0,0.25));">`;
@@ -544,11 +621,8 @@
                 </defs>`;
 
                 if (type === 'pencil') {
-                    // Eraser
                     svg += `<path d="M 0 25 h 30 v 50 h -30 a 10 10 0 0 1 -10 -10 v -30 a 10 10 0 0 1 10 -10 z" fill="url(#eraser)" stroke="#111827" stroke-width="2.5"/>`;
                     svg += `<path d="M 0 27 h 30 v 10 h -30 a 8 8 0 0 1 -8 -8 z" fill="rgba(255,255,255,0.5)" pointer-events="none"/>`;
-                    
-                    // Ferrule
                     svg += `<rect x="30" y="25" width="30" height="50" fill="url(#metal)" stroke="#111827" stroke-width="2.5"/>`;
                     svg += `<rect x="30" y="27" width="30" height="12" fill="rgba(255,255,255,0.6)" pointer-events="none"/>`;
                     svg += `<rect x="37" y="25" width="3" height="50" fill="rgba(0,0,0,0.3)" />`;
@@ -556,35 +630,25 @@
                     svg += `<rect x="53" y="25" width="3" height="50" fill="rgba(0,0,0,0.3)" />`;
 
                     const bW = w - 125;
-                    // Body segments for 3D Hexagonal effect using Rainbow colors
                     svg += `<rect x="60" y="25" width="${bW}" height="16" fill="${colorObj.light}" stroke="#111827" stroke-width="2.5"/>`;
                     svg += `<rect x="60" y="41" width="${bW}" height="18" fill="${colorObj.main}" stroke="#111827" stroke-width="2.5"/>`;
                     svg += `<rect x="60" y="59" width="${bW}" height="16" fill="${colorObj.dark}" stroke="#111827" stroke-width="2.5"/>`;
                     svg += `<rect x="60" y="27" width="${bW}" height="6" fill="rgba(255,255,255,0.6)" pointer-events="none"/>`;
 
-                    // Cone
                     svg += `<polygon points="${60+bW},25 ${w-10},50 ${60+bW},75" fill="url(#woodTone)" stroke="#111827" stroke-width="2.5" stroke-linejoin="round"/>`;
-                    
-                    // Scallops matching body colors
                     svg += `<path d="M ${60+bW} 25 Q ${60+bW+10} 33 ${60+bW} 41 Z" fill="${colorObj.light}" stroke="#111827" stroke-width="2.5"/>`;
                     svg += `<path d="M ${60+bW} 41 Q ${60+bW+10} 50 ${60+bW} 59 Z" fill="${colorObj.main}" stroke="#111827" stroke-width="2.5"/>`;
                     svg += `<path d="M ${60+bW} 59 Q ${60+bW+10} 67 ${60+bW} 75 Z" fill="${colorObj.dark}" stroke="#111827" stroke-width="2.5"/>`;
                     
-                    // Tip (Graphite)
                     svg += `<polygon points="${w-35},40.5 ${w-10},50 ${w-35},59.5" fill="#1F2937" stroke="#111827" stroke-width="2.5" stroke-linejoin="round"/>`;
-                    // Shiny reflection on graphite tip
                     svg += `<polygon points="${w-35},40.5 ${w-10},50 ${w-28},47" fill="rgba(255,255,255,0.3)" pointer-events="none"/>`;
                 } 
                 else if (type === 'ruler') {
                     const hR = h * 0.4; 
                     const yR = h * 0.3; 
-                    
-                    // Vibrant Rainbow Plastic Ruler Body
                     svg += `<rect x="0" y="${yR}" width="${w}" height="${hR}" rx="4" fill="url(#${gradId})" stroke="#111827" stroke-width="2.5"/>`;
-                    // Inner light highlight line
                     svg += `<rect x="2" y="${yR + 2}" width="${w - 4}" height="${hR - 4}" rx="2" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2" pointer-events="none"/>`;
 
-                    // Ruler tick marks
                     const tickSpacing = 20;
                     for(let x=tickSpacing; x<w; x+=tickSpacing) {
                         let isMajor = (x % 100 === 0);
@@ -595,27 +659,20 @@
                 } 
                 else if (type === 'watch') {
                     const strapW = (w/2) - 45;
-                    // Left strap using dynamic rainbow gradient
                     svg += `<rect x="0" y="30" width="${strapW}" height="40" rx="4" fill="url(#${gradId})" stroke="#111827" stroke-width="2.5"/>`;
                     svg += `<rect x="0" y="32" width="${strapW}" height="6" fill="rgba(255,255,255,0.4)" pointer-events="none"/>`;
-                    // Strap stitching
                     svg += `<rect x="4" y="34" width="${strapW-8}" height="32" rx="2" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.8"/>`;
                     for(let i=1; i<=3; i++) { svg += `<circle cx="${strapW*0.25*i}" cy="50" r="3.5" fill="#111827"/>`; }
                     
-                    // Right strap
                     svg += `<rect x="${w/2 + 35}" y="30" width="${strapW}" height="40" rx="4" fill="url(#${gradId})" stroke="#111827" stroke-width="2.5"/>`;
                     svg += `<rect x="${w/2 + 35}" y="32" width="${strapW}" height="6" fill="rgba(255,255,255,0.4)" pointer-events="none"/>`;
                     svg += `<rect x="${w/2 + 39}" y="34" width="${strapW-8}" height="32" rx="2" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.8"/>`;
                     
-                    // Buckle
                     svg += `<rect x="${w/2 + 50}" y="26" width="14" height="48" rx="3" fill="url(#metal)" stroke="#111827" stroke-width="2.5"/>`;
                     svg += `<rect x="${w/2 + 54}" y="30" width="6" height="40" rx="1" fill="#111827" />`;
                     svg += `<line x1="${w/2 + 50}" y1="50" x2="${w/2 + 40}" y2="50" stroke="url(#metal)" stroke-width="4" stroke-linecap="round"/>`;
                     
-                    // Lugs
                     svg += `<rect x="${w/2 - 35}" y="22" width="70" height="56" rx="6" fill="url(#metal)" stroke="#111827" stroke-width="2.5"/>`;
-                    
-                    // Watch Face
                     svg += `<circle cx="${w/2}" cy="50" r="42" fill="url(#metal)" stroke="#111827" stroke-width="2.5"/>`;
                     svg += `<circle cx="${w/2}" cy="50" r="34" fill="#1F2937" />`;
                     svg += `<circle cx="${w/2}" cy="50" r="31" fill="#F9FAFB" />`;
@@ -627,36 +684,27 @@
                     svg += ticks;
                     
                     svg += `<circle cx="${w/2}" cy="50" r="3.5" fill="#111827"/>`;
-                    // Hands
                     svg += `<line x1="${w/2}" y1="50" x2="${w/2 + 13}" y2="37" stroke="#111827" stroke-width="4" stroke-linecap="round"/>`;
                     svg += `<line x1="${w/2}" y1="50" x2="${w/2 - 17}" y2="33" stroke="#111827" stroke-width="3" stroke-linecap="round"/>`;
                     svg += `<line x1="${w/2}" y1="50" x2="${w/2 - 6}" y2="62" stroke="${colorObj.main}" stroke-width="1.5" stroke-linecap="round"/>`;
                     
-                    // Glass reflection
                     svg += `<path d="M ${w/2 - 20} 24 A 26 26 0 0 1 ${w/2 + 20} 42 A 26 26 0 0 0 ${w/2 - 20} 24" fill="rgba(255,255,255,0.6)" pointer-events="none"/>`;
                 } 
                 else if (type === 'marker') {
-                    // Back Cap using rainbow gradient
                     svg += `<path d="M 0 30 Q -2 50 0 70 L 25 70 L 25 30 Z" fill="url(#${gradId})" stroke="#111827" stroke-width="2.5" stroke-linejoin="round"/>`;
                     svg += `<rect x="2" y="32" width="20" height="8" fill="rgba(255,255,255,0.4)" pointer-events="none"/>`;
-                    // Cap ridges
                     svg += `<line x1="10" y1="30" x2="10" y2="70" stroke="#111827" stroke-width="2" opacity="0.3"/>`;
                     svg += `<line x1="18" y1="30" x2="18" y2="70" stroke="#111827" stroke-width="2" opacity="0.3"/>`;
 
-                    // Marker Body
                     const bodyW = w - 85;
                     svg += `<rect x="25" y="25" width="${bodyW}" height="50" fill="url(#markerBody)" stroke="#111827" stroke-width="2.5"/>`;
-                    // Body Highlight
                     svg += `<rect x="25" y="28" width="${bodyW}" height="10" fill="rgba(255,255,255,0.7)" pointer-events="none"/>`;
-                    // Label
                     svg += `<rect x="40" y="38" width="${Math.min(bodyW - 30, 80)}" height="24" rx="4" fill="#111827" opacity="0.8"/>`;
                     svg += `<rect x="42" y="40" width="${Math.min(bodyW - 34, 76)}" height="20" rx="2" fill="${colorObj.main}" opacity="0.9"/>`;
 
-                    // Front Cone Plastic
                     svg += `<polygon points="${25+bodyW},25 ${w-30},35 ${w-30},65 ${25+bodyW},75" fill="url(#markerBody)" stroke="#111827" stroke-width="2.5" stroke-linejoin="round"/>`;
                     svg += `<polygon points="${25+bodyW},28 ${w-30},37 ${w-30},45 ${25+bodyW},38" fill="rgba(255,255,255,0.7)" pointer-events="none"/>`;
 
-                    // Felt Tip matching rainbow color
                     svg += `<path d="M ${w-30} 40 Q ${w-5} 40 ${w-5} 50 Q ${w-5} 60 ${w-30} 60 Z" fill="url(#${gradId})" stroke="#111827" stroke-width="2.5" stroke-linejoin="round"/>`;
                 }
                 svg += `</svg></div>`;
@@ -687,7 +735,7 @@
         }
 
         function loadSettings() {
-            const saved = localStorage.getItem('cubeWorkshopSettings_v8');
+            const saved = localStorage.getItem('cubeWorkshopSettings_v11');
             if(saved) {
                 try {
                     const parsed = JSON.parse(saved);
@@ -696,7 +744,7 @@
                 } catch(e) { console.error('Settings parse error'); }
             }
             
-            const hs = localStorage.getItem('cubeWorkshopBestScore_v8');
+            const hs = localStorage.getItem('cubeWorkshopBestScore_v11');
             if(hs) state.bestScore = parseInt(hs);
             DOM.startScore.innerText = state.bestScore;
 
@@ -729,8 +777,7 @@
             state.settings.speech = document.getElementById('setSpeech').checked;
             state.settings.showNumbers = document.getElementById('setShowNumbers').checked;
 
-            localStorage.setItem('cubeWorkshopSettings_v8', JSON.stringify(state.settings));
-            updateUnitSize();
+            localStorage.setItem('cubeWorkshopSettings_v11', JSON.stringify(state.settings));
             startGame();
         }
 
@@ -771,7 +818,6 @@
 
         function nextQuestion() {
             state.currentQuestion++;
-            // Reset the resolved flag immediately for the new question
             state.questionResolved = false; 
 
             const maxQ = state.settings.numQuestions;
@@ -780,13 +826,14 @@
             DOM.qCounter.innerText = maxQ === 999 ? `Question ${state.currentQuestion}` : `Question ${state.currentQuestion} of ${maxQ}`;
             if(maxQ !== 999) DOM.progBar.style.width = `${((state.currentQuestion-1)/maxQ)*100}%`;
 
-            DOM.btnNext.classList.add('hidden-force');
+            DOM.postAnswerArea.classList.add('hidden-force');
             DOM.btnHint.classList.add('hidden-force');
             DOM.feedbackText.style.opacity = 0;
             DOM.feedbackText.innerText = "";
-            state.attempts = 0; // Crucial for tracking 1st try points
+            state.attempts = 0; 
 
             generateQuestionData();
+            updateUnitSize(); 
             renderQuestion();
             speakInstruction();
         }
@@ -808,7 +855,6 @@
                 
                 const len = getRandomInt(minLen, maxLen);
                 
-                // Fetch dynamic vibrant Rainbow Colors for cubes and objects
                 const cubeColorObj = RAINBOW[Math.floor(Math.random() * RAINBOW.length)];
                 const objColorObj = RAINBOW[Math.floor(Math.random() * RAINBOW.length)];
                 const objColorObj2 = RAINBOW[Math.floor(Math.random() * RAINBOW.length)];
@@ -858,11 +904,17 @@
             const q = state.qData;
             DOM.instText.innerText = q.instruction;
             
-            DOM.objContainer.innerHTML = ''; DOM.gridContainer.innerHTML = '';
-            DOM.supplyContainer.innerHTML = ''; DOM.numSelectArea.innerHTML = '';
+            // STRICT CLEANUP: Completely clear all dynamic areas to prevent state leakage
+            DOM.objContainer.innerHTML = ''; 
+            DOM.gridContainer.innerHTML = '';
+            DOM.supplyContainer.innerHTML = ''; 
+            DOM.numSelectArea.innerHTML = '';
+            DOM.mcqArea.innerHTML = ''; 
             
-            DOM.trayArea.classList.add('hidden-force'); DOM.supplyArea.classList.add('hidden-force');
-            DOM.mcqArea.classList.add('hidden-force'); DOM.sentenceArea.classList.add('hidden-force');
+            DOM.trayArea.classList.add('hidden-force'); 
+            DOM.supplyArea.classList.add('hidden-force');
+            DOM.mcqArea.classList.add('hidden-force'); 
+            DOM.sentenceArea.classList.add('hidden-force');
             DOM.controlArea.classList.add('hidden-force');
             
             DOM.btnCheck.innerText = "CHECK";
@@ -907,7 +959,6 @@
             }
             else if (q.type === 'fix') {
                 fillTrayWithError();
-                DOM.mcqArea.innerHTML = '';
                 DOM.mcqArea.classList.remove('hidden-force');
                 
                 let btnYes = document.createElement('button');
@@ -929,7 +980,6 @@
                     q.askedToFix = true; 
                     DOM.instText.innerText = "Fix the cubes!";
                     speak("Fix the cubes!", true);
-                    state.attempts = 0; // Reset attempts when starting the actual fix interaction
                 };
                 
                 DOM.mcqArea.appendChild(btnYes); DOM.mcqArea.appendChild(btnNo);
@@ -938,16 +988,12 @@
 
         function renderCompareLayout() {
             const q = state.qData;
-            DOM.mcqArea.classList.remove('hidden-force');
             
-            // Container max-width controls the overall size. 
-            // Child rows are w-full and items-start, guaranteeing PERFECT left-alignment!
             const container = document.createElement('div');
             container.className = "flex flex-col gap-6 w-full max-w-2xl mx-auto items-start overflow-visible";
             
             const createObjRow = (type, len, isObj1, colorObj) => {
                 const row = document.createElement('div');
-                // w-full ensures both boxes are the same width. items-start aligns SVGs to left edge.
                 row.className = "flex flex-col items-start w-full cursor-pointer bg-white hover:bg-indigo-50 p-6 rounded-3xl border-4 border-gray-200 hover:border-primary transition-all shadow-md";
                 row.onclick = () => checkCompareAnswer(isObj1);
                 row.innerHTML = Graphics.draw(type, len, colorObj);
@@ -1071,7 +1117,6 @@
                 let clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
                 let clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
 
-                // Track starting positions to detect if it was just a quick tap/click
                 state.dragStartX = clientX;
                 state.dragStartY = clientY;
                 state.dragStartTime = Date.now();
@@ -1105,7 +1150,6 @@
             let clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
             let clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
             
-            // Register movement to cancel the tap detection
             let dx = clientX - state.dragStartX;
             let dy = clientY - state.dragStartY;
             if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
@@ -1140,7 +1184,6 @@
             
             let dt = Date.now() - state.dragStartTime;
             
-            // Perfect Tap/Click detection to remove cubes instantly without dragging!
             if (!state.hasMoved && dt < 500 && state.dragSourceIdx >= 0) {
                 state.isDragging = false;
                 DOM.dragAvatar.classList.add('hidden-force');
@@ -1178,7 +1221,6 @@
         }
 
         function showFeedback(isCorrect, message) {
-            // Guard: Absolutely prevent processing if already resolved
             if (state.questionResolved) return; 
 
             DOM.feedbackText.innerText = message;
@@ -1186,11 +1228,10 @@
             DOM.feedbackText.style.opacity = 1;
             
             if (isCorrect) {
-                state.questionResolved = true; // Lock the answer in!
+                state.questionResolved = true;
 
                 playSound('correct'); speak(message, true);
                 
-                // STARS SCORING LOGIC: 1 point only if correct on first try
                 if(state.attempts === 0) {
                     state.stars++; state.totalCorrectFirstTry++;
                     DOM.starCount.innerText = state.stars;
@@ -1201,7 +1242,8 @@
                 DOM.controlArea.classList.add('hidden-force');
                 DOM.mcqArea.classList.add('hidden-force');
                 DOM.supplyArea.classList.add('hidden-force');
-                DOM.btnNext.classList.remove('hidden-force');
+                
+                DOM.postAnswerArea.classList.remove('hidden-force');
                 
                 Array.from(DOM.gridContainer.children).forEach((slot, idx) => {
                     if(state.trayCubes[idx] && slot.firstChild) slot.firstChild.classList.add('glow-correct');
@@ -1209,7 +1251,7 @@
                 checkReward();
             } else {
                 playSound('wrong'); 
-                state.attempts++; // Track mistake to prevent awarding a star later
+                state.attempts++; 
                 speak(message, true);
                 
                 DOM.cardMain.classList.add('animate-shake');
@@ -1297,6 +1339,119 @@
             }
         }
 
+        let mgState = { score: 0, time: 30, isPlaying: false, timer: null, moleTimer: null, activeMole: -1 };
+
+        function buildMinigameBoard() {
+            const board = document.getElementById('mgHolesContainer');
+            board.innerHTML = '';
+            
+            const moleSvg = `<svg viewBox="0 0 100 100" width="100%" height="100%">
+                <circle cx="50" cy="50" r="45" fill="#8B4513"/>
+                <circle cx="50" cy="65" r="30" fill="#D2691E"/>
+                <rect x="42" y="75" width="16" height="12" fill="#fff" rx="2"/>
+                <circle cx="35" cy="40" r="6" fill="#fff"/><circle cx="35" cy="40" r="3" fill="#000"/>
+                <circle cx="65" cy="40" r="6" fill="#fff"/><circle cx="65" cy="40" r="3" fill="#000"/>
+                <ellipse cx="50" cy="55" rx="10" ry="6" fill="#000"/>
+            </svg>`;
+
+            for(let i=0; i<9; i++) {
+                const hole = document.createElement('div');
+                hole.className = 'hole';
+                hole.innerHTML = `
+                    <div class="mole-sprite" id="mole-${i}" onclick="whackMole(${i})">${moleSvg}</div>
+                    <div class="hit-fx" id="fx-${i}"></div>
+                `;
+                board.appendChild(hole);
+            }
+        }
+
+        function openMinigame() {
+            playSound('pop');
+            showScreen('screenMinigame');
+            document.getElementById('mgStartOverlay').classList.remove('hidden-force');
+            document.getElementById('mgEndOverlay').classList.add('hidden-force');
+            document.getElementById('mgScore').innerText = '0';
+            document.getElementById('mgTime').innerText = '30';
+            if(!document.getElementById('mgHolesContainer').children.length) buildMinigameBoard();
+        }
+
+        function startMinigame() {
+            playSound('pop');
+            document.getElementById('mgStartOverlay').classList.add('hidden-force');
+            mgState = { score: 0, time: 30, isPlaying: true, activeMole: -1 };
+            document.getElementById('mgScore').innerText = '0';
+            document.getElementById('mgTime').innerText = '30';
+
+            mgState.timer = setInterval(() => {
+                mgState.time--;
+                document.getElementById('mgTime').innerText = mgState.time;
+                if(mgState.time <= 0) endMinigame();
+            }, 1000);
+
+            popMole();
+        }
+
+        function popMole() {
+            if(!mgState.isPlaying) return;
+            
+            if(mgState.activeMole !== -1) {
+                document.getElementById(`mole-${mgState.activeMole}`).classList.remove('up');
+            }
+
+            let newMole;
+            do { newMole = Math.floor(Math.random() * 9); } while(newMole === mgState.activeMole);
+            mgState.activeMole = newMole;
+
+            document.getElementById(`mole-${mgState.activeMole}`).classList.add('up');
+
+            const speed = Math.max(500, 1500 - (mgState.score * 50));
+            mgState.moleTimer = setTimeout(popMole, speed);
+        }
+
+        function whackMole(index) {
+            if(!mgState.isPlaying || mgState.activeMole !== index) return;
+            
+            playSound('pop'); 
+            mgState.score++;
+            document.getElementById('mgScore').innerText = mgState.score;
+            
+            const moleEl = document.getElementById(`mole-${index}`);
+            const fxEl = document.getElementById(`fx-${index}`);
+            
+            moleEl.classList.remove('up');
+            moleEl.classList.add('mole-hit');
+            setTimeout(() => moleEl.classList.remove('mole-hit'), 300);
+            
+            fxEl.classList.add('show');
+            setTimeout(() => fxEl.classList.remove('show'), 300);
+            
+            mgState.activeMole = -1;
+            clearTimeout(mgState.moleTimer);
+            mgState.moleTimer = setTimeout(popMole, 200); 
+        }
+
+        function endMinigame() {
+            mgState.isPlaying = false;
+            clearInterval(mgState.timer);
+            clearTimeout(mgState.moleTimer);
+            if(mgState.activeMole !== -1) {
+                document.getElementById(`mole-${mgState.activeMole}`).classList.remove('up');
+            }
+            
+            document.getElementById('mgFinalScore').innerText = mgState.score;
+            document.getElementById('mgEndOverlay').classList.remove('hidden-force');
+            playSound('win');
+        }
+
+        function quitMinigame() {
+            playSound('pop');
+            mgState.isPlaying = false;
+            clearInterval(mgState.timer);
+            clearTimeout(mgState.moleTimer);
+            showScreen('screenGame');
+            nextQuestion(); 
+        }
+
         const TOOL_SVGS = [
             `<svg viewBox="0 0 100 100" width="50" height="50"><path d="M20 80 L80 20" stroke="#94A3B8" stroke-width="10" stroke-linecap="round"/><rect x="65" y="5" width="25" height="35" rx="4" fill="#EF4444" transform="rotate(45 80 20)"/></svg>`, 
             `<svg viewBox="0 0 100 100" width="50" height="50"><rect x="40" y="40" width="20" height="50" rx="4" fill="#FDE047" stroke="#B45309" stroke-width="2"/><path d="M40 40 Q50 10 60 40 Z" fill="#3B82F6"/></svg>`,
@@ -1313,7 +1468,7 @@
             playSound('win');
             if (state.stars > state.bestScore) {
                 state.bestScore = state.stars;
-                localStorage.setItem('cubeWorkshopBestScore_v8', state.bestScore);
+                localStorage.setItem('cubeWorkshopBestScore_v11', state.bestScore);
                 DOM.startScore.innerText = state.bestScore;
             }
 
