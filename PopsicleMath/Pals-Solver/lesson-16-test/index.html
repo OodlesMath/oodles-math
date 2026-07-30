@@ -4,7 +4,7 @@
   <link rel="stylesheet" href="../assets/brand.css">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Mid-Module Assessment Revision (Ver 4)</title>
+  <title>Mid-Module Assessment Revision (Ver 5)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -121,6 +121,11 @@
     
     .action-row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto;padding-top:12px;border-top:3px dashed #e2e8f0;flex-wrap:wrap}
     .action-group{display:flex;gap:8px;flex-wrap:wrap;flex:1}
+    
+    .teacher-toggle{width:100%;margin-top:13px;text-align:center}
+    .teacher-panel{display:none;margin-top:12px;padding:13px;background:#fff7ed;border:3px solid #fdba74;border-radius:18px}
+    .teacher-panel.show{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+    .teacher-note{font-size:12px;color:#9a3412;font-weight:800;text-align:center;width:100%;margin-bottom:3px}
     
     .finish{display:none;height:100%;background:rgba(255,255,255,0.85)}.finish h2{font-size:clamp(26px,4vw,40px);font-weight:900;color:var(--blue-dark);margin-top:8px}.finish p{font-size:16px;font-weight:800;color:var(--slate);margin-top:6px}.score-ring{width:120px;height:120px;border-radius:50%;background:#fef3c7;border:6px solid #f59e0b;display:grid;place-items:center;margin:12px auto;box-shadow:0 6px 0 #d97706}.score-ring b{font-size:36px;color:#b45309}.summary-container{width:100%;max-height:220px;overflow:auto;border:3px solid #bae6fd;border-radius:16px;background:#fff;margin-top:10px}.summary-table{border-collapse:collapse;width:100%;text-align:left}.summary-table th{position:sticky;top:0;background:#e0f2fe;color:var(--blue-dark);padding:8px;font-size:13px}.summary-table td{padding:8px;border-top:2px solid #f1f5f9;font-size:12px;font-weight:700; color:var(--text)}.finish-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:12px}
     
@@ -246,6 +251,13 @@
                   <button class="btn green" id="checkBtn" style="flex:1">✓ Check</button>
                   <button class="btn blue" id="nextBtn" style="flex:1;display:none">Next ➡</button>
                 </div>
+              </div>
+              
+              <div class="teacher-toggle" id="teacherToggleWrap"><button class="btn orange" id="teacherToggle" style="padding:10px 16px; font-size:14px">👩‍🏫 Teacher Controls</button></div>
+              <div class="teacher-panel" id="teacherPanel">
+                <div class="teacher-note">Mark oral answers directly here.</div>
+                <button class="btn green" id="teacherCorrect">✓ Mark Correct</button>
+                <button class="btn ghost" id="teacherSupport">Needs Support</button>
               </div>
             </div>
 
@@ -381,7 +393,6 @@
     const rand = (min,max) => Math.floor(Math.random()*(max-min+1))+min;
     function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
     
-    // Robust unique choice generator
     function uniqueChoices(correct, candidates, count=4){ 
         const out=[String(correct)]; 
         const cands = shuffle(candidates.map(String));
@@ -481,17 +492,17 @@
         };
       },
       addition(){
-        let a,b,total; do{a=rand(11,39);b=rand(11,39);total=a+b;}while(total>50 || total<20); 
-        const regroup=(a%10+b%10)>=10; 
+        let a,b,total; do{a=rand(11,39);b=rand(11,39);total=a+b;}while(total>50 || total<20 || (a%10+b%10)<10); 
+        const regroup=true; 
         const prompt = `What is ${a} + ${b}?`;
         const speak = `What is ${a} plus ${b}?`;
         const vis=`<div class="math-big">${a} + ${b} = ?</div>${toTable(a,b,'+')}${regroup?'<div class="regroup-note">✨ Regroup: 10 ones make 1 new ten.</div>':''}<div class="number-bonds">${bondHTML(a,Math.floor(a/10)*10,a%10)}${bondHTML(b,Math.floor(b/10)*10,b%10)}</div>`;
         return { key:'addition', tag:'➕ Addition', prompt, speak, vis, type:'choice', choices:uniqueChoices(total,[total-10,total-2,total-1,total+1,total+2,total+10].filter(x=>x>0&&x<=99)), answer:String(total), answerKey:total, explain:`${a} plus ${b} equals ${total}.` };
       },
       subtraction(){
-        let a,b,total; const wantRegroup=Math.random()>.35; 
-        do{a=rand(21,40);b=rand(11,a-5);total=a-b;}while(wantRegroup?((a%10)>=(b%10)):((a%10)<(b%10))); 
-        const regroup=(a%10)<(b%10); 
+        let a,b,total;
+        do{a=rand(21,40);b=rand(11,a-5);total=a-b;}while((a%10)>=(b%10)); 
+        const regroup=true; 
         const prompt = `What is ${a} − ${b}?`;
         const speak = `What is ${a} minus ${b}?`;
         const vis=`<div class="math-big">${a} − ${b} = ?</div>${toTable(a,b,'−')}${regroup?'<div class="regroup-note">🔄 Regroup: Change 1 ten into 10 ones.</div>':'<div class="regroup-note">Subtract the ones first, then subtract the tens.</div>'}`;
@@ -612,7 +623,7 @@
     let state=[];
     let autoSpeakTimeout = null;
 
-    const els={welcome:$('welcome'),quiz:$('quiz'),finish:$('finish'),skillGrid:$('skillGrid'),qTitle:$('qTitle'),qTag:$('qTag'),qPrompt:$('qPrompt'),visBox:$('visBox'),answerArea:$('answerArea'),feedback:$('feedback'),clearBtn:$('clearBtn'),checkBtn:$('checkBtn'),nextBtn:$('nextBtn'),startWrap:$('startWrap'),progressText:$('progressText'),starText:$('starText'),progressBar:$('progressBar'),questionChip:$('questionChip'),timerChip:$('timerChip'),bestChip:$('bestChip'),reviewBtn:$('reviewBtn')};
+    const els={welcome:$('welcome'),quiz:$('quiz'),finish:$('finish'),skillGrid:$('skillGrid'),qTitle:$('qTitle'),qTag:$('qTag'),qPrompt:$('qPrompt'),visBox:$('visBox'),answerArea:$('answerArea'),feedback:$('feedback'),clearBtn:$('clearBtn'),checkBtn:$('checkBtn'),nextBtn:$('nextBtn'),startWrap:$('startWrap'),progressText:$('progressText'),starText:$('starText'),progressBar:$('progressBar'),questionChip:$('questionChip'),timerChip:$('timerChip'),bestChip:$('bestChip'),reviewBtn:$('reviewBtn'), teacherToggleWrap:$('teacherToggleWrap'), teacherToggle:$('teacherToggle'), teacherPanel:$('teacherPanel'), teacherCorrect:$('teacherCorrect'), teacherSupport:$('teacherSupport')};
 
     function makeSet(keys){
       const order=keys; 
@@ -639,6 +650,10 @@
         els.qTag.textContent=q.tag;
         els.qPrompt.textContent=q.prompt;
         els.visBox.innerHTML=q.vis;
+        
+        els.feedback.style.background = '';
+        els.feedback.style.borderColor = '';
+        els.feedback.style.color = '';
         if(s.feedbackText){
             els.feedback.className=`feedback show ${s.feedbackOk?'correct':'wrong'}`;
             els.feedback.textContent=(s.feedbackOk?'✓ ':'↻ ')+s.feedbackText;
@@ -649,6 +664,10 @@
         els.nextBtn.style.display=s.checked?'inline-flex':'none';
         els.nextBtn.textContent=state.every(x=>x.checked)?'Finish Revision 🏆':'Next ➡';
         els.clearBtn.style.display=s.checked?'none':'inline-flex';
+        
+        els.teacherToggleWrap.style.display = s.checked ? 'none' : 'block';
+        els.teacherPanel.classList.remove('show');
+
         renderAnswer(q,s);
         bindVisual(q,s);
         renderSkills();
@@ -700,7 +719,37 @@
     function isCorrect(q,s){if(q.type==='sequence')return s.sequence.map(i=>q.source[i]).join('|')===q.answer.join('|');if(q.type==='makeTen')return s.selected===String(q.answer);return s.selected===String(q.answer);}
     function hasAnswer(q,s){if(q.type==='sequence')return s.sequence.length===q.answer.length;if(q.type==='makeTen')return s.selected!==null;return s.selected!==null;}
     
-    function checkAnswer(){const q=questions[current],s=state[current];if(!hasAnswer(q,s)){s.feedbackText='Choose an answer first.';s.feedbackOk=false;showFeedback(false,s.feedbackText);return;}s.attempts++;if(isCorrect(q,s)){s.checked=true;s.earned=s.firstTry;if(s.earned)score++;s.feedbackText=`${praise[rand(0,praise.length-1)]} ${q.explain}`;s.feedbackOk=true;AudioFX.correct();showFeedback(true,s.feedbackText);els.checkBtn.style.display='none';els.clearBtn.style.display='none';els.nextBtn.style.display='inline-flex';updateProgress();els.nextBtn.textContent=state.every(x=>x.checked)?'Finish Revision 🏆':'Next ➡';}else{s.firstTry=false;s.feedbackText='Not quite. Try again!';s.feedbackOk=false;AudioFX.wrong();showFeedback(false,s.feedbackText);}}
+    function checkAnswer(){const q=questions[current],s=state[current];if(!hasAnswer(q,s)){s.feedbackText='Choose an answer first.';s.feedbackOk=false;showFeedback(false,s.feedbackText);return;}s.attempts++;if(isCorrect(q,s)){s.checked=true;s.earned=s.firstTry;if(s.earned)score++;s.feedbackText=`${praise[rand(0,praise.length-1)]} ${q.explain}`;s.feedbackOk=true;AudioFX.correct();showFeedback(true,s.feedbackText);els.checkBtn.style.display='none';els.clearBtn.style.display='none';els.nextBtn.style.display='inline-flex';els.teacherToggleWrap.style.display='none';els.teacherPanel.classList.remove('show');updateProgress();els.nextBtn.textContent=state.every(x=>x.checked)?'Finish Revision 🏆':'Next ➡';}else{s.firstTry=false;s.feedbackText='Not quite. Try again!';s.feedbackOk=false;AudioFX.wrong();showFeedback(false,s.feedbackText);}}
+    
+    function markManually(isCorrect) {
+        const s = state[current];
+        if(s.checked) return;
+        s.checked = true;
+        s.earned = isCorrect;
+        s.firstTry = isCorrect;
+        if(isCorrect) score++;
+        s.feedbackOk = isCorrect;
+        s.feedbackText = isCorrect ? 'Marked correct by teacher.' : 'Needs Support recorded.';
+        
+        if(isCorrect) AudioFX.correct(); else AudioFX.click();
+        
+        els.feedback.className = `feedback show ${isCorrect?'correct':'wrong'}`;
+        if(!isCorrect) {
+            els.feedback.style.background = '#e0f2fe';
+            els.feedback.style.borderColor = '#38bdf8';
+            els.feedback.style.color = '#0284c7';
+        }
+        els.feedback.textContent = (isCorrect?'✓ ':'ℹ️ ') + s.feedbackText;
+        
+        els.checkBtn.style.display = 'none';
+        els.clearBtn.style.display = 'none';
+        els.nextBtn.style.display = 'inline-flex';
+        els.teacherToggleWrap.style.display = 'none';
+        els.teacherPanel.classList.remove('show');
+        
+        updateProgress();
+        els.nextBtn.textContent = state.every(x=>x.checked) ? 'Finish Revision 🏆' : 'Next ➡';
+    }
     
     function showFeedback(ok,text){els.feedback.className=`feedback show ${ok?'correct':'wrong'}`;els.feedback.textContent=(ok?'✓ ':'↻ ')+text;}
     
@@ -737,6 +786,10 @@
     $('playAgainBtn').onclick=()=>startGame();
     $('homeBtn').onclick=home;
     els.reviewBtn.onclick=reviewMistakes;
+    els.teacherToggle.onclick=()=>els.teacherPanel.classList.toggle('show');
+    els.teacherCorrect.onclick=()=>markManually(true);
+    els.teacherSupport.onclick=()=>markManually(false);
+    
     $('soundBtn').onclick=()=>{
         soundOn=!soundOn;
         $('soundBtn').textContent=soundOn?'🔊':'🔇';
