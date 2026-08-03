@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Sokoban Puzzle Adventure - Ver 2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --green:#58cc02; --green-dark:#43a000; --blue:#1cb0f6; --blue-dark:#148dc5;
+      --yellow:#ffc800; --yellow-dark:#d19d00; --pink:#ff5fa2; --purple:#8b5cf6;
+      --red:#ff4b4b; --ink:#243047; --paper:rgba(255,255,255,.94);
+      --shadow:0 12px 0 rgba(20,70,100,.14),0 26px 55px rgba(20,70,100,.18);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:"Poppins",sans-serif;color:var(--ink);background:#8ed8ff;touch-action:none;overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+    button{font:inherit}
+    .hidden{display:none!important}
+    #bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+    .screen{position:fixed;inset:0;z-index:2}
+    .scroll-screen{overflow:auto;padding:22px 16px 34px}
+    .glass{
+      background:var(--paper);border:5px solid rgba(255,255,255,.95);border-radius:34px;
+      box-shadow:var(--shadow);backdrop-filter:blur(10px)
+    }
+    .topbar{
+      width:min(1120px,calc(100% - 20px));margin:0 auto 24px;padding:14px 18px;
+      display:flex;align-items:center;justify-content:space-between;gap:14px
+    }
+    .brand{display:flex;align-items:center;gap:13px;min-width:0}
+    .logo{
+      width:62px;height:62px;border-radius:20px;display:grid;place-items:center;
+      background:linear-gradient(180deg,#ffd84a,#ffb300);box-shadow:0 7px 0 #d38a00;
+      border:3px solid #fff;font-size:36px
+    }
+    .brand-copy h1{margin:0;font-size:clamp(1.25rem,3.2vw,2.15rem);line-height:1;font-weight:900;letter-spacing:-.04em}
+    .brand-copy h1 span:first-child{color:var(--blue)} .brand-copy h1 span:last-child{color:var(--green)}
+    .brand-copy p{margin:7px 0 0;font-size:.78rem;font-weight:800;color:#64748b}
+    .pill{
+      background:#fff7c2;border:3px solid #ffdf58;box-shadow:0 5px 0 #e5c53f;
+      border-radius:999px;padding:9px 15px;color:#9a6500;font-size:.82rem;font-weight:900;white-space:nowrap
+    }
+    .menu-wrap{width:min(940px,calc(100% - 20px));margin:auto;display:grid;grid-template-columns:1.15fr .85fr;gap:24px}
+    .hero-card{padding:32px;display:flex;flex-direction:column;justify-content:center;min-height:440px;position:relative;overflow:hidden}
+    .hero-card:before{content:"";position:absolute;width:280px;height:280px;border-radius:50%;right:-100px;top:-100px;background:rgba(28,176,246,.12)}
+    .hero-robot{font-size:95px;filter:drop-shadow(0 12px 0 rgba(23,78,112,.12));animation:bob 3s ease-in-out infinite}
+    .hero-card h2{font-size:clamp(2rem,5vw,3.5rem);line-height:1.02;margin:14px 0 8px;font-weight:900;letter-spacing:-.055em;color:#334155}
+    .hero-card p{font-size:1rem;font-weight:700;color:#64748b;margin:0 0 26px;max-width:530px}
+    .button-stack{display:grid;gap:13px;max-width:520px}
+    .btn{
+      border:0;border-radius:22px;padding:15px 20px;font-weight:900;cursor:pointer;
+      transition:transform .1s,filter .1s,box-shadow .1s;letter-spacing:.03em
+    }
+    .btn:hover{filter:brightness(1.04);transform:translateY(-2px)}
+    .btn:active{transform:translateY(6px);box-shadow:none!important}
+    .btn.primary{background:var(--green);color:#fff;box-shadow:0 7px 0 var(--green-dark);font-size:1.25rem}
+    .btn.blue{background:var(--blue);color:#fff;box-shadow:0 7px 0 var(--blue-dark)}
+    .btn.yellow{background:var(--yellow);color:#7d5300;box-shadow:0 7px 0 var(--yellow-dark)}
+    .btn.gray{background:#e7edf3;color:#475569;box-shadow:0 7px 0 #cbd5e1}
+    .btn.red{background:#ff7474;color:#fff;box-shadow:0 7px 0 #d93c3c}
+    .btn.small{padding:10px 14px;border-radius:16px;font-size:.82rem}
+    .btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important;filter:none!important}
+    .stats-card{padding:26px;display:flex;flex-direction:column;gap:18px}
+    .stats-card h3{margin:0;font-size:1.2rem;font-weight:900}
+    .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .stat{
+      background:#f7fbff;border:3px solid #e5edf5;border-radius:22px;padding:16px;text-align:center
+    }
+    .stat b{display:block;font-size:2rem;line-height:1;font-weight:900;color:var(--purple)}
+    .stat span{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;font-weight:900;color:#64748b}
+    .sound-row{display:flex;gap:10px;align-items:center;justify-content:space-between;background:#effaf0;border:3px solid #d6f1ce;border-radius:20px;padding:13px 15px;font-weight:900}
+    .sound-toggle{min-width:92px}
+    .tiny-note{font-size:.72rem;color:#64748b;font-weight:700;line-height:1.5}
+    .section-card{width:min(1120px,calc(100% - 20px));margin:auto;padding:24px}
+    .section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+    .section-head h2{margin:0;font-size:clamp(1.5rem,4vw,2.3rem);font-weight:900}
+    .filters{display:flex;flex-wrap:wrap;gap:8px}
+    .filter-btn{border:3px solid #d9e3ec;background:#fff;color:#64748b;border-radius:999px;padding:8px 14px;font-weight:900;cursor:pointer}
+    .filter-btn.active{background:#e0f2fe;border-color:var(--blue);color:var(--blue-dark)}
+    .level-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:12px}
+    .level-btn{
+      position:relative;min-height:92px;border:4px solid #dbe5ee;background:#fff;border-radius:22px;
+      box-shadow:0 6px 0 #cbd5e1;cursor:pointer;padding:10px;font-weight:900;color:#334155
+    }
+    .level-btn:hover:not(:disabled){transform:translateY(-2px)}
+    .level-btn:active:not(:disabled){transform:translateY(5px);box-shadow:none}
+    .level-btn.locked{background:#eef2f6;color:#94a3b8}
+    .level-btn.complete{border-color:#86efac;background:#f0fdf4}
+    .level-num{font-size:1.25rem}
+    .level-stars{font-size:.8rem;letter-spacing:1px;color:#f5b700;margin-top:5px}
+    .level-badge{position:absolute;top:-9px;right:-7px;background:#fff;border:3px solid #dbe5ee;width:29px;height:29px;border-radius:50%;display:grid;place-items:center;font-size:.8rem}
+    .how-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:13px}
+    .how-step{background:#f8fbfe;border:3px solid #e3ebf2;border-radius:22px;padding:16px;text-align:center}
+    .how-icon{font-size:48px}.how-step b{display:block;margin:8px 0 4px}.how-step p{margin:0;font-size:.78rem;font-weight:700;color:#64748b}
+    #gameScreen{background:transparent}
+    .game-layout{height:100%;display:grid;grid-template-rows:auto 1fr auto;gap:10px;padding:12px}
+    .hud{
+      max-width:1400px;width:100%;margin:auto;padding:10px 14px;border-radius:26px;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap
+    }
+    .hud-left,.hud-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .hud-chip{background:#fff;border:3px solid #e5edf5;border-radius:16px;padding:8px 12px;font-size:.78rem;font-weight:900;white-space:nowrap}
+    .hud-chip b{color:var(--purple)}
+    .icon-btn{
+      width:45px;height:45px;border:0;border-radius:15px;background:#fff;box-shadow:0 5px 0 #cbd5e1;
+      display:grid;place-items:center;font-size:1.15rem;cursor:pointer
+    }
+    .icon-btn:active{transform:translateY(5px);box-shadow:none}
+    .game-main{min-height:0;display:grid;grid-template-columns:1fr 238px;gap:12px;max-width:1400px;width:100%;margin:auto}
+    .board-shell{
+      min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;padding:10px;position:relative
+    }
+    /* Ver 2: remove the white glass block behind the puzzle board. */
+    .board-shell.glass{
+      background:transparent;border-color:transparent;box-shadow:none;
+      backdrop-filter:none;-webkit-backdrop-filter:none
+    }
+    #board{
+      --tile:48px;display:grid;gap:2px;padding:8px;border-radius:22px;width:max-content;height:max-content;flex:0 0 auto;
+      background:rgba(26,55,76,.35);box-shadow:0 16px 35px rgba(21,61,89,.2);touch-action:none;overscroll-behavior:none
+    }
+    .tile{width:var(--tile);height:var(--tile);position:relative;border-radius:8px;overflow:hidden}
+    .tile.floor{background:linear-gradient(145deg,#f3e7c9,#e7d7b5)}
+    .tile.floor:nth-child(odd){filter:brightness(1.02)}
+    .tile.wall{
+      background:linear-gradient(145deg,#718096,#475569);border:2px solid #93a4b7;
+      box-shadow:inset 0 3px 0 rgba(255,255,255,.22),inset 0 -4px 0 rgba(23,37,52,.25)
+    }
+    .goal{
+      position:absolute;inset:19%;border-radius:50%;background:radial-gradient(circle,#fff7a8 0 22%,#ffca38 23% 52%,#ff6ea8 53% 100%);
+      box-shadow:0 0 12px rgba(255,95,162,.65);animation:goalPulse 2.2s ease-in-out infinite
+    }
+    .box{
+      position:absolute;inset:8%;border-radius:9px;background:linear-gradient(145deg,#ffd33d,#f4a900);
+      border:3px solid #c87900;box-shadow:inset 0 4px 0 rgba(255,255,255,.35),0 4px 0 rgba(125,76,0,.25);
+      display:grid;place-items:center;color:#9a5a00;font-size:calc(var(--tile)*.42);font-weight:900;z-index:3;
+      animation:pop .13s ease-out
+    }
+    .box:after{content:"✕"}
+    .box.on-goal{background:linear-gradient(145deg,#9df65f,#48c90c);border-color:#2c9700;color:#176a00;box-shadow:0 0 17px rgba(88,204,2,.72),inset 0 4px 0 rgba(255,255,255,.35)}
+    .box.on-goal:after{content:"★"}
+    .player{
+      position:absolute;inset:5%;z-index:4;border-radius:50%;background:linear-gradient(145deg,#f5fbff,#bde8ff);
+      border:3px solid #177eb5;box-shadow:0 4px 0 rgba(20,100,145,.28);display:grid;place-items:center;
+      font-size:calc(var(--tile)*.55);animation:stepIn .12s ease-out
+    }
+    .player[data-dir="left"]{transform:scaleX(-1)}
+    .player:after{content:"🤖"}
+    .board-shake{animation:shake .22s linear}
+    .side-panel{padding:15px;display:flex;flex-direction:column;gap:11px;min-height:0}
+    .side-panel h3{margin:0;font-size:1.05rem;font-weight:900}
+    .hint-box{background:#fff9d9;border:3px solid #ffe16b;border-radius:19px;padding:13px;font-size:.78rem;font-weight:800;color:#7a5a00;line-height:1.45}
+    .action-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+    .action-grid .btn{padding:11px 8px;font-size:.72rem;border-radius:16px}
+    .tip{font-size:.68rem;line-height:1.5;color:#64748b;font-weight:700;background:#f7fafc;border:3px solid #e7edf3;border-radius:17px;padding:11px}
+    .controls{
+      max-width:1400px;width:100%;margin:auto;display:flex;justify-content:center;align-items:center;gap:13px;min-height:98px
+    }
+    .dpad{display:grid;grid-template-columns:58px 58px 58px;grid-template-rows:46px 46px 46px;gap:5px}
+    .dpad button{border:0;border-radius:15px;background:#fff;box-shadow:0 5px 0 #bfcbd6;font-size:1.25rem;font-weight:900;cursor:pointer}
+    .dpad button:active{transform:translateY(5px);box-shadow:none}
+    .dpad .up{grid-column:2;grid-row:1}.dpad .left{grid-column:1;grid-row:2}.dpad .down{grid-column:2;grid-row:2}.dpad .right{grid-column:3;grid-row:2}
+    .quick-controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+    .overlay{
+      position:fixed;inset:0;z-index:20;background:rgba(15,30,45,.55);display:grid;place-items:center;padding:18px
+    }
+    .modal{width:min(470px,100%);padding:28px;text-align:center}
+    .modal-icon{font-size:74px}.modal h2{font-size:2rem;margin:8px 0 6px;font-weight:900}.modal p{font-weight:700;color:#64748b}
+    .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0}
+    .result-cell{background:#f7fafc;border:3px solid #e6edf3;border-radius:18px;padding:12px}
+    .result-cell b{display:block;font-size:1.35rem;color:var(--purple)}
+    .result-cell span{font-size:.7rem;font-weight:900;color:#64748b;text-transform:uppercase}
+    .stars-big{font-size:2.4rem;letter-spacing:4px;color:#ffc107;margin:8px 0}
+    .modal-actions{display:grid;gap:10px}
+    .toast{
+      position:fixed;z-index:30;left:50%;top:86px;transform:translateX(-50%) translateY(-20px);
+      background:#fff;border:4px solid #ffd667;border-radius:18px;padding:12px 18px;font-weight:900;color:#805b00;
+      box-shadow:0 8px 22px rgba(0,0,0,.18);opacity:0;pointer-events:none;transition:.25s
+    }
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    #confetti{position:fixed;inset:0;width:100%;height:100%;z-index:50;pointer-events:none}
+    @keyframes bob{50%{transform:translateY(-10px) rotate(1deg)}}
+    @keyframes pop{from{transform:scale(.84)}to{transform:scale(1)}}
+    @keyframes stepIn{from{transform:scale(.86)}to{transform:scale(1)}}
+    @keyframes shake{25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
+    @keyframes goalPulse{50%{transform:scale(.9);filter:brightness(1.12)}}
+    @media (prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+    @media(max-width:900px){
+      .menu-wrap{grid-template-columns:1fr}.hero-card{min-height:360px}.how-grid{grid-template-columns:1fr 1fr}
+      .game-main{grid-template-columns:1fr}.side-panel{display:none}.game-layout{padding:8px}.hud{padding:8px}
+    }
+    @media(max-width:620px){
+      .scroll-screen{padding:10px 8px 24px}.topbar{margin-bottom:12px;border-radius:24px}.logo{width:50px;height:50px;font-size:28px}
+      .pill{display:none}.hero-card,.stats-card,.section-card{border-radius:25px;border-width:3px}.hero-card{padding:22px}.hero-robot{font-size:72px}
+      .stat-grid{grid-template-columns:1fr 1fr}.how-grid{grid-template-columns:1fr}.section-card{padding:15px}
+      .level-grid{grid-template-columns:repeat(4,1fr);gap:8px}.level-btn{min-height:76px;border-radius:17px;padding:7px}
+      .hud-chip.hide-mobile{display:none}.game-layout{grid-template-rows:auto 1fr auto}.controls{min-height:92px}
+      .quick-controls .btn{padding:9px 10px;font-size:.65rem}.dpad{grid-template-columns:52px 52px 52px;grid-template-rows:42px 42px}
+    }
+  </style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<canvas id="confetti"></canvas>
+
+<section id="menuScreen" class="screen scroll-screen">
+  <header class="topbar glass">
+    <div class="brand">
+      <div class="logo">📦</div>
+      <div class="brand-copy">
+        <h1><span>SOKOBAN</span> <span>ADVENTURE</span></h1>
+        <p>Push Every Box to Its Goal!</p>
+      </div>
+    </div>
+    <div class="pill">150 LOGIC PUZZLES ⭐</div>
+  </header>
+  <main class="menu-wrap">
+    <section class="hero-card glass">
+      <div class="hero-robot">🤖</div>
+      <h2>Ready to push, plan and solve?</h2>
+      <p>Move the little robot, push every box onto a glowing goal, and unlock all 150 levels.</p>
+      <div class="button-stack">
+        <button id="playBtn" class="btn primary">▶ PLAY</button>
+        <button id="levelSelectBtn" class="btn blue">🗺 LEVEL SELECT</button>
+        <button id="howBtn" class="btn yellow">❓ HOW TO PLAY</button>
+      </div>
+    </section>
+    <aside class="stats-card glass">
+      <h3>Your Adventure</h3>
+      <div class="stat-grid">
+        <div class="stat"><b id="menuCurrent">1</b><span>Current Level</span></div>
+        <div class="stat"><b id="menuCompleted">0</b><span>Completed</span></div>
+        <div class="stat"><b id="menuStars">0</b><span>Total Stars</span></div>
+        <div class="stat"><b id="menuUnlocked">1</b><span>Unlocked</span></div>
+      </div>
+      <div class="sound-row"><span>🔊 Sound</span><button id="menuSoundBtn" class="btn blue small sound-toggle">ON</button></div>
+      <button id="resetProgressBtn" class="btn red small">RESET PROGRESS</button>
+      <div class="tiny-note">Your progress is stored only in this browser using localStorage.</div>
+    </aside>
+  </main>
+</section>
+
+<section id="levelScreen" class="screen scroll-screen hidden">
+  <div class="section-card glass">
+    <div class="section-head">
+      <div><h2>Choose a Level</h2><div class="tiny-note">Complete a level to unlock the next one.</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button id="continueBtn" class="btn primary small">CONTINUE</button>
+        <button class="btn gray small backMenuBtn">🏠 HOME</button>
+      </div>
+    </div>
+    <div class="filters" id="filters"></div>
+    <div style="height:16px"></div>
+    <div id="levelGrid" class="level-grid"></div>
+  </div>
+</section>
+
+<section id="howScreen" class="screen scroll-screen hidden">
+  <div class="section-card glass">
+    <div class="section-head"><h2>How to Play</h2><button class="btn gray small backMenuBtn">🏠 HOME</button></div>
+    <div class="how-grid">
+      <div class="how-step"><div class="how-icon">🤖</div><b>1. Move</b><p>Use arrow keys, WASD, the buttons, or swipe.</p></div>
+      <div class="how-step"><div class="how-icon">📦</div><b>2. Stand Nearby</b><p>Move next to a box before you push it.</p></div>
+      <div class="how-step"><div class="how-icon">➡️</div><b>3. Push</b><p>Walk into a box to push it one square.</p></div>
+      <div class="how-step"><div class="how-icon">🎯</div><b>4. Fill Goals</b><p>Put every box on a glowing goal.</p></div>
+      <div class="how-step"><div class="how-icon">⚠️</div><b>5. Plan Ahead</b><p>Boxes can be pushed, but they cannot be pulled.</p></div>
+    </div>
+    <div style="margin-top:20px;display:flex;justify-content:center"><button id="howPlayBtn" class="btn primary">GOT IT — PLAY!</button></div>
+  </div>
+</section>
+
+<section id="gameScreen" class="screen hidden">
+  <div class="game-layout">
+    <header class="hud glass">
+      <div class="hud-left">
+        <button id="homeGameBtn" class="icon-btn" title="Home">🏠</button>
+        <button id="pauseBtn" class="icon-btn" title="Pause">⏸</button>
+        <div class="hud-chip">Level <b id="hudLevel">1 / 150</b></div>
+        <div class="hud-chip hide-mobile">Difficulty <b id="hudDifficulty">Tutorial</b></div>
+      </div>
+      <div class="hud-right">
+        <div class="hud-chip">Moves <b id="hudMoves">0</b></div>
+        <div class="hud-chip">Pushes <b id="hudPushes">0</b></div>
+        <div class="hud-chip hide-mobile">Best <b id="hudBest">—</b></div>
+        <div class="hud-chip">Stars <b id="hudStars">☆☆☆</b></div>
+        <button id="soundGameBtn" class="icon-btn" title="Sound">🔊</button>
+      </div>
+    </header>
+
+    <main class="game-main">
+      <div class="board-shell glass"><div id="board" aria-label="Sokoban board"></div></div>
+      <aside class="side-panel glass">
+        <h3>Mission</h3>
+        <div id="missionText" class="hint-box">Push every box onto a glowing goal.</div>
+        <div class="action-grid">
+          <button id="undoBtn" class="btn blue">↶ UNDO</button>
+          <button id="restartBtn" class="btn yellow">↻ RESTART</button>
+          <button id="prevBtn" class="btn gray">◀ PREV</button>
+          <button id="nextBtn" class="btn primary">NEXT ▶</button>
+        </div>
+        <div class="tip"><b>Keyboard:</b> Arrow keys or WASD to move, Z/U to undo, R to restart, Esc to pause.</div>
+        <div class="tip"><b>Remember:</b> You can push only one box at a time. A box in a non-goal corner may get stuck.</div>
+      </aside>
+    </main>
+
+    <footer class="controls">
+      <div class="dpad" aria-label="Touch controls">
+        <button class="up moveBtn" data-dir="up">▲</button>
+        <button class="left moveBtn" data-dir="left">◀</button>
+        <button class="down moveBtn" data-dir="down">▼</button>
+        <button class="right moveBtn" data-dir="right">▶</button>
+      </div>
+      <div class="quick-controls">
+        <button id="undoMobileBtn" class="btn blue small">↶ UNDO</button>
+        <button id="restartMobileBtn" class="btn yellow small">↻ RESTART</button>
+      </div>
+    </footer>
+  </div>
+</section>
+
+<div id="winOverlay" class="overlay hidden">
+  <div class="modal glass">
+    <div class="modal-icon">🏆</div>
+    <h2 id="winTitle">LEVEL COMPLETE!</h2>
+    <p id="winSubtitle">Brilliant planning!</p>
+    <div id="winStars" class="stars-big">★★★</div>
+    <div class="result-grid">
+      <div class="result-cell"><b id="resultMoves">0</b><span>Moves</span></div>
+      <div class="result-cell"><b id="resultPushes">0</b><span>Pushes</span></div>
+      <div class="result-cell"><b id="resultBest">0</b><span>Best Moves</span></div>
+      <div class="result-cell"><b id="resultLevel">1</b><span>Level</span></div>
+    </div>
+    <div class="modal-actions">
+      <button id="winNextBtn" class="btn primary">NEXT LEVEL ▶</button>
+      <button id="winReplayBtn" class="btn yellow">PLAY AGAIN</button>
+      <button id="winLevelsBtn" class="btn blue">LEVEL SELECT</button>
+    </div>
+  </div>
+</div>
+
+<div id="pauseOverlay" class="overlay hidden">
+  <div class="modal glass">
+    <div class="modal-icon">⏸️</div><h2>Game Paused</h2><p>Take a little break, then keep solving.</p>
+    <div class="modal-actions">
+      <button id="resumeBtn" class="btn primary">RESUME</button>
+      <button id="pauseRestartBtn" class="btn yellow">RESTART LEVEL</button>
+      <button id="pauseHowBtn" class="btn blue">HOW TO PLAY</button>
+      <button id="pauseSoundBtn" class="btn gray">SOUND: ON</button>
+      <button id="pauseHomeBtn" class="btn gray">HOME</button>
+    </div>
+  </div>
+</div>
+
+<div id="confirmOverlay" class="overlay hidden">
+  <div class="modal glass">
+    <div class="modal-icon">⚠️</div><h2>Reset Progress?</h2>
+    <p>Are you sure you want to reset all progress?</p>
+    <div class="modal-actions">
+      <button id="confirmResetBtn" class="btn red">RESET</button>
+      <button id="cancelResetBtn" class="btn gray">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<div id="tutorialOverlay" class="overlay hidden">
+  <div class="modal glass">
+    <div class="modal-icon">💡</div><h2>Quick Tip</h2><p id="tutorialText"></p>
+    <div class="modal-actions"><button id="tutorialCloseBtn" class="btn primary">GOT IT!</button></div>
+  </div>
+</div>
+
+<div id="toast" class="toast">Oops! This box may be stuck.</div>
+
+<script>
+(() => {
+  "use strict";
+  const LEVELS = [{"map":["########","#  @   #","# #$   #","#      #","#      #","#    . #","########"],"solutionMoves":7,"solutionPushes":5,"star3Moves":9,"star2Moves":14},{"map":["#######","#     #","# @$ .#","#     #","#     #","#######"],"solutionMoves":2,"solutionPushes":2,"star3Moves":5,"star2Moves":8},{"map":["########","#   # @#","#     $#","#      #","#     .#","#      #","########"],"solutionMoves":2,"solutionPushes":2,"star3Moves":5,"star2Moves":8},{"map":["######","#    #","#  $@#","# .  #","#    #","######"],"solutionMoves":4,"solutionPushes":2,"star3Moves":6,"star2Moves":10},{"map":["########","#  #   #","#   #  #","#      #","#      #","#    $@#","# .    #","########"],"solutionMoves":6,"solutionPushes":4,"star3Moves":8,"star2Moves":13},{"map":["######","#    #","#. $@#","#    #","#    #","######"],"solutionMoves":2,"solutionPushes":2,"star3Moves":5,"star2Moves":8},{"map":["######","#  @ #","#  $ #","#    #","#    #","#    #","#  . #","######"],"solutionMoves":4,"solutionPushes":4,"star3Moves":6,"star2Moves":10},{"map":["#######","#     #","#     #","#     #","#  $@.#","##    #","#######"],"solutionMoves":8,"solutionPushes":4,"star3Moves":10,"star2Moves":16},{"map":["########","#      #","# @$  .#","#      #","#      #","########"],"solutionMoves":13,"solutionPushes":5,"star3Moves":15,"star2Moves":23},{"map":["######","# @  #","# $  #","#    #","#  . #","#  # #","######"],"solutionMoves":5,"solutionPushes":3,"star3Moves":7,"star2Moves":11},{"map":["########","#      #","#.     #","#  # $ #","#  # @ #","########"],"solutionMoves":7,"solutionPushes":5,"star3Moves":9,"star2Moves":14},{"map":["#######","#     #","#     #","# @$  #","# # . #","#######"],"solutionMoves":4,"solutionPushes":2,"star3Moves":6,"star2Moves":10},{"map":["######","#    #","#    #","#  + #","# #$ #","#    #","#    #","######"],"solutionMoves":7,"solutionPushes":3,"star3Moves":9,"star2Moves":14},{"map":["######","#    #","# #  #","#  + #","#  $ #","# #  #","#    #","######"],"solutionMoves":13,"solutionPushes":5,"star3Moves":15,"star2Moves":23},{"map":["######","#@#  #","#$   #","#.   #","#  # #","#    #","######"],"solutionMoves":1,"solutionPushes":1,"star3Moves":5,"star2Moves":8},{"map":["#########","# @     #","##$#.   #","#       #","# .  $  #","#       #","#      ##","#########"],"solutionMoves":16,"solutionPushes":7,"star3Moves":18,"star2Moves":28},{"map":["#######","#   # #","#     #","#  $  #","#. @# #","#  #  #","#######"],"solutionMoves":17,"solutionPushes":7,"star3Moves":19,"star2Moves":29},{"map":["#########","#       #","#   . # #","#       #","#   $   #","#   @   #","#########"],"solutionMoves":12,"solutionPushes":6,"star3Moves":14,"star2Moves":22},{"map":["#########","#   #   #","#  #@$  #","#    #  #","#      .#","#       #","#       #","#      ##","#########"],"solutionMoves":6,"solutionPushes":4,"star3Moves":8,"star2Moves":13},{"map":["#########","#       #","#@$     #","#       #","#  # #  #","# #   . #","#########"],"solutionMoves":9,"solutionPushes":7,"star3Moves":11,"star2Moves":17},{"map":["#########","#  @    #","#       #","# $# ## #","#   # * #","# .     #","#########"],"solutionMoves":4,"solutionPushes":2,"star3Moves":6,"star2Moves":10},{"map":["#########","#       #","#    # ##","#       #","#@$ . # #","#   #   #","#########"],"solutionMoves":16,"solutionPushes":6,"star3Moves":18,"star2Moves":28},{"map":["#######","#     #","#@$   #","#     #","##   ##","#  #  #","#   . #","#     #","#######"],"solutionMoves":8,"solutionPushes":6,"star3Moves":10,"star2Moves":16},{"map":["########","#   ## #","#      #","# $    #","# @ *. #","#    # #","#      #","#      #","########"],"solutionMoves":14,"solutionPushes":6,"star3Moves":16,"star2Moves":25},{"map":["#######","#  .  #","##    #","#     #","#  $ ##","# #@  #","#######"],"solutionMoves":19,"solutionPushes":7,"star3Moves":21,"star2Moves":32},{"map":["########","#      #","#      #","#      #","#   #$ #","#     +#","#      #","#      #","########"],"solutionMoves":17,"solutionPushes":6,"star3Moves":19,"star2Moves":29},{"map":["########","#  # # #","#      #","#   $@ #","#.     #","#    # #","#  . $ #","#      #","########"],"solutionMoves":16,"solutionPushes":6,"star3Moves":18,"star2Moves":28},{"map":["########","#      #","#      #","#    @ #","# * #$ #","# .    #","#      #","########"],"solutionMoves":6,"solutionPushes":4,"star3Moves":8,"star2Moves":13},{"map":["#########","#       #","#@$     #","#  ##   #","# .     #","#       #","#  #    #","#       #","#########"],"solutionMoves":10,"solutionPushes":4,"star3Moves":12,"star2Moves":19},{"map":["#########","#     @ #","#  #  $ #","# $     #","# .#  . #","#    #  #","#########"],"solutionMoves":18,"solutionPushes":5,"star3Moves":20,"star2Moves":31},{"map":["########","#      #","#      #","#      #","## $ .##","#  @   #","########"],"solutionMoves":8,"solutionPushes":4,"star3Moves":10,"star2Moves":16},{"map":["#########","#       #","# ..    #","# # $   #","##  @   #","# $  #  #","#       #","#########"],"solutionMoves":18,"solutionPushes":7,"star3Moves":20,"star2Moves":31},{"map":["########","# #   ##","#   $+ #","# #    #","#      #","#   #  #","#      #","########"],"solutionMoves":11,"solutionPushes":5,"star3Moves":13,"star2Moves":20},{"map":["########","#  . $ #","# @$.  #","#    # #","#      #","#      #","########"],"solutionMoves":13,"solutionPushes":5,"star3Moves":15,"star2Moves":23},{"map":["#######","#     #","#     #","# $  ##","# @ . #","# *   #","#     #","#######"],"solutionMoves":9,"solutionPushes":5,"star3Moves":11,"star2Moves":17},{"map":["########","#  #   #","#      #","#  $   #","#.*@   #","#      #","#   ## #","########"],"solutionMoves":16,"solutionPushes":7,"star3Moves":18,"star2Moves":28},{"map":["#########","#      ##","#       #","# #     #","#   $   #","#   @.  #","#########"],"solutionMoves":12,"solutionPushes":6,"star3Moves":14,"star2Moves":22},{"map":["########","# #    #","#      #","# $ #  #","# +$  .#","#      #","########"],"solutionMoves":9,"solutionPushes":4,"star3Moves":11,"star2Moves":17},{"map":["#########","#       #","#  # #  #","#   #   #","#@$     #","##  .   #","#       #","#########"],"solutionMoves":13,"solutionPushes":5,"star3Moves":15,"star2Moves":23},{"map":["#######","#     #","# ##  #","#   $ #","#   @ #","## .  #","#######"],"solutionMoves":19,"solutionPushes":7,"star3Moves":21,"star2Moves":32},{"map":["########","##    ##","# @$ $ #","#      #","#  #   #","#    . #","#  .   #","########"],"solutionMoves":26,"solutionPushes":11,"star3Moves":28,"star2Moves":43},{"map":["#########","#       #","#       #","##.#  # #","#  #*   #","#  $@#  #","##  #   #","#########"],"solutionMoves":24,"solutionPushes":9,"star3Moves":26,"star2Moves":40},{"map":["###########","#         #","#      $  #","#     #   #","# #     . #","#       # #","# .   $@  #","###########"],"solutionMoves":26,"solutionPushes":9,"star3Moves":28,"star2Moves":43},{"map":["#########","#  .    #","##    . #","#    #$ #","##    @ #","#  .  $ #","#     $ #","#      ##","#########"],"solutionMoves":39,"solutionPushes":14,"star3Moves":42,"star2Moves":64},{"map":["###########","#         #","#       # #","#      $ .#","##.   $@  #","# $#      #","#  #    . #","#    ## # #","###########"],"solutionMoves":44,"solutionPushes":11,"star3Moves":47,"star2Moves":72},{"map":["#########","#       #","#    # $#","##     .#","#       #","#       #","#    .# #","# @$. $ #","#     # #","# #     #","#########"],"solutionMoves":78,"solutionPushes":16,"star3Moves":81,"star2Moves":123},{"map":["#########","#   #   #","##   #  #","#   $   #","#     * #","# #  #@ #","#   .   #","#########"],"solutionMoves":32,"solutionPushes":13,"star3Moves":34,"star2Moves":52},{"map":["##########","#        #","#  .   # #","#       ##","# *     ##","#   .$ $@#","### .  $ #","##########"],"solutionMoves":23,"solutionPushes":11,"star3Moves":27,"star2Moves":42},{"map":["##########","#    . # #","#   $#  .#","#  #     #","#    $$  #","#    @   #","# *   . ##","##########"],"solutionMoves":19,"solutionPushes":9,"star3Moves":23,"star2Moves":36},{"map":["#########","# #     #","#  $... #","#      ##","# # # $##","#       #","#       #","#     $ #","#     @ #","##      #","#########"],"solutionMoves":40,"solutionPushes":15,"star3Moves":43,"star2Moves":66},{"map":["###########","#        ##","##     #  #","##        #","#       . #","#      #  #","#         #","#.$       #","#      $$ #","#    . @  #","###########"],"solutionMoves":23,"solutionPushes":10,"star3Moves":26,"star2Moves":40},{"map":["##########","#     # ##","# #.$    #","#        #","#        #","#@      ##","#$       #","#.   $#  #","#  *  .  #","#   # # ##","##########"],"solutionMoves":35,"solutionPushes":8,"star3Moves":39,"star2Moves":60},{"map":["###########","#     ##  #","##    #   #","#  $   @$.#","#      .. #","#         #","#  . $ $###","#    #    #","###########"],"solutionMoves":40,"solutionPushes":15,"star3Moves":44,"star2Moves":68},{"map":["##########","#  .  $  #","# ##     #","#   @$   #","# *  # # #","#     .  #","#    #   #","##########"],"solutionMoves":32,"solutionPushes":10,"star3Moves":35,"star2Moves":54},{"map":["#########","#  . *  #","#  # #  #","#   # # #","#       #","#       #","#       #","#       #","#    $  #","#  * @  #","#########"],"solutionMoves":25,"solutionPushes":13,"star3Moves":28,"star2Moves":43},{"map":["###########","#         #","#    .  $##","#    @$   #","##        #","#  #  *   #","#       . #","###########"],"solutionMoves":36,"solutionPushes":16,"star3Moves":39,"star2Moves":60},{"map":["#########","#  #    #","#@$.    #","#.$     #","#    #  #","#       #","# * #   #","#########"],"solutionMoves":17,"solutionPushes":8,"star3Moves":20,"star2Moves":31},{"map":["########","#   #  #","## . $ #","#   .# #","#    $ #","# #. $ #","# @*   #","#      #","#    # #","########"],"solutionMoves":38,"solutionPushes":12,"star3Moves":42,"star2Moves":65},{"map":["###########","#       # #","#  $ .    #","#       # #","## $  .  ##","#  .    $@#","# *       #","###########"],"solutionMoves":33,"solutionPushes":14,"star3Moves":37,"star2Moves":57},{"map":["##########","#    .  @#","# $### $$#","#   # .  #","#  #    .#","#   ## # #","#        #","##########"],"solutionMoves":28,"solutionPushes":14,"star3Moves":31,"star2Moves":48},{"map":["########","#      #","#  $   #","#  # . #","#   #  #","#      #","#     ##","#@$  . #","#      #","########"],"solutionMoves":27,"solutionPushes":10,"star3Moves":29,"star2Moves":44},{"map":["########","# *  * #","#  *#  #","#   #  #","#  .# ##","##     #","#   $@ #","#    # #","########"],"solutionMoves":29,"solutionPushes":11,"star3Moves":33,"star2Moves":51},{"map":["###########","#         #","#         #","#         #","#         #","# .  .  # #","#   $     #","# $ @     #","#   #  #  #","###########"],"solutionMoves":32,"solutionPushes":14,"star3Moves":34,"star2Moves":52},{"map":["###########","##        #","#     @   #","# $   $   #","#         #","#         #","#*       ##","# .      ##","#         #","#      .  #","###########"],"solutionMoves":27,"solutionPushes":13,"star3Moves":30,"star2Moves":46},{"map":["##########","#    ### #","# # $  . #","#        #","# * #    #","##       #","#      # #","#   .$@  #","#        #","##########"],"solutionMoves":23,"solutionPushes":10,"star3Moves":26,"star2Moves":40},{"map":["########","# .  # #","##   $.#","#      #","#   ##*#","##  #  #","#      #","#      #","#   $  #","#   @  #","########"],"solutionMoves":24,"solutionPushes":14,"star3Moves":27,"star2Moves":42},{"map":["########","#    # #","#.#    #","# .  # #","# $    #","#$ # * #","#@$.   #","########"],"solutionMoves":19,"solutionPushes":7,"star3Moves":23,"star2Moves":36},{"map":["########","#      #","# @ $ $#","# $ .  #","#  ## .#","#  #   #","# . #  #","########"],"solutionMoves":37,"solutionPushes":14,"star3Moves":40,"star2Moves":61},{"map":["###########","#   @$.   #","##$ $ *   #","#    .   ##","##    #   #","#  .   #  #","#         #","#  #  #   #","###########"],"solutionMoves":36,"solutionPushes":13,"star3Moves":40,"star2Moves":62},{"map":["#########","# @#    #","#$#     #","#   $  .#","#. #    #","#    #  #","#    #  #","#########"],"solutionMoves":18,"solutionPushes":7,"star3Moves":20,"star2Moves":31},{"map":["########","# @    #","# $    #","##   # #","# .#   #","#      #","##     #","#  #   #","#      #","# $  . #","########"],"solutionMoves":18,"solutionPushes":13,"star3Moves":20,"star2Moves":31},{"map":["#########","#       #","#   #  ##","## $ .# #","#   .   #","#.    $ #","#   $@  #","#  .  # #","#   $   #","#       #","#########"],"solutionMoves":36,"solutionPushes":13,"star3Moves":40,"star2Moves":62},{"map":["##########","#        #","#        #","#* *     #","#    #  ##","#        #","## # # # #","##      ##","# $.     #","#@$.     #","##########"],"solutionMoves":10,"solutionPushes":4,"star3Moves":14,"star2Moves":23},{"map":["##########","# .      #","#    $.* #","#    @ ###","#  ##$   #","#      # #","#        #","# ##     #","##########"],"solutionMoves":34,"solutionPushes":15,"star3Moves":37,"star2Moves":57},{"map":["###########","##        #","#    $ #. #","#  $@     #","#     #   #","#. #      #","#         #","###########"],"solutionMoves":30,"solutionPushes":13,"star3Moves":32,"star2Moves":49},{"map":["########","#   #  #","#  .   #","# #    #","# #  . #","# # $  #","#  $@  #","#     *#","#  #   #","#      #","########"],"solutionMoves":14,"solutionPushes":8,"star3Moves":17,"star2Moves":27},{"map":["########","#  . $@#","#  # $ #","#   $  #","#  # . #","#* .   #","# ##   #","########"],"solutionMoves":24,"solutionPushes":9,"star3Moves":28,"star2Moves":44},{"map":["###########","#     *   #","#         #","# @       #","# $ .     #","#  #      #","#  #      #","#  #      #","###########"],"solutionMoves":22,"solutionPushes":12,"star3Moves":24,"star2Moves":37},{"map":["###########","# *       #","#         #","#      #  #","#     # @##","# # .   $ #","# .  $    #","#        ##","# #  $ #. #","#         #","###########"],"solutionMoves":39,"solutionPushes":14,"star3Moves":43,"star2Moves":66},{"map":["########","# #    #","# *@   #","#  $.$ #","# #   ##","# ..## #","# $    #","#     ##","# #    #","########"],"solutionMoves":45,"solutionPushes":12,"star3Moves":49,"star2Moves":75},{"map":["##########","#        #","# .    $ #","#       .#","##$   ## #","# @#  *  #","##$ #  # #","# .      #","###      #","# *      #","##########"],"solutionMoves":38,"solutionPushes":17,"star3Moves":43,"star2Moves":67},{"map":["#########","#   # # #","#       #","# $  .  #","#    .  #","#    $@ #","#   # $ #","#   .   #","#    .  #","## $    #","#    #  #","#########"],"solutionMoves":81,"solutionPushes":24,"star3Moves":85,"star2Moves":129},{"map":["############","#  #      ##","#  .   **  #","#   $  #   #","#@$  $     #","# #. .     #","#      # # #","# #    #   #","############"],"solutionMoves":42,"solutionPushes":15,"star3Moves":47,"star2Moves":73},{"map":["#########","#  # *  #","#  $ .  #","#  #  # #","#       #","#.      #","#   #  ##","##  .   #","#  *$ $@#","#       #","#########"],"solutionMoves":30,"solutionPushes":15,"star3Moves":35,"star2Moves":55},{"map":["##########","#        #","#$ $.  $@#","# ###    #","#        #","#. .  .  #","#      $ #","# #   #  #","#       ##","##########"],"solutionMoves":65,"solutionPushes":21,"star3Moves":69,"star2Moves":105},{"map":["#########","#   #   #","#* #    #","#    @  #","##   $  #","# #$#. ##","#   # . #","##      #","#       #","#  #    #","#########"],"solutionMoves":67,"solutionPushes":25,"star3Moves":70,"star2Moves":106},{"map":["###########","# # *   # #","#         #","# .#  #   #","#  $      #","#         #","#  #  # # #","#    #  * #","## *  #   #","#@$    .  #","###########"],"solutionMoves":22,"solutionPushes":9,"star3Moves":27,"star2Moves":43},{"map":["###########","#         #","## # .  $ #","#         #","#         #","#.        #","#         #","# $ #     #","# @       #","#* #    # #","# #       #","###########"],"solutionMoves":51,"solutionPushes":26,"star3Moves":54,"star2Moves":82},{"map":["#########","#       #","# $   $ #","##  .## #","#  #.   #","# #  .  #","#    #  #","#  $    #","# #@$.  #","#  #   ##","#########"],"solutionMoves":55,"solutionPushes":14,"star3Moves":59,"star2Moves":90},{"map":["##########","# #      #","#     ## #","#*       #","#  .     #","#  #     #","#    $.# #","# #   $ *#","#  # # @ #","##########"],"solutionMoves":18,"solutionPushes":9,"star3Moves":22,"star2Moves":35},{"map":["#########","##     ##","# #     #","#       #","#       #","#   +$. #","#   $## #","# #   . #","#.$    ##","#  $    #","#   ##  #","#########"],"solutionMoves":35,"solutionPushes":14,"star3Moves":39,"star2Moves":60},{"map":["##########","#   .    #","#.       #","#.  $    #","# $  ##  #","#      # #","#@$     ##","#   #    #","#        #","#  #     #","#     #  #","##########"],"solutionMoves":44,"solutionPushes":21,"star3Moves":47,"star2Moves":72},{"map":["###########","#         #","#  $ .    #","#       .##","# #  @$.  #","#. #      #","#  #     ##","#   $ $   #","#         #","###########"],"solutionMoves":61,"solutionPushes":24,"star3Moves":65,"star2Moves":99},{"map":["##########","#   ##   #","#  $+   *#","# #      #","# #      #","#  $     #","##.     ##","#     #  #","###  *   #","#      * #","##########"],"solutionMoves":57,"solutionPushes":25,"star3Moves":62,"star2Moves":95},{"map":["###########","#  #  # # #","#      .  #","#.        #","# $    .$##","#       @ #","# ## $ #  #","#     #   #","#    #    #","###########"],"solutionMoves":47,"solutionPushes":15,"star3Moves":50,"star2Moves":76},{"map":["##########","# #  # # #","#        #","# $   #  #","#.       #","# @      #","# $.     #","#    $.  #","#  ##    #","# $ .*   #","#     #  #","##########"],"solutionMoves":55,"solutionPushes":18,"star3Moves":60,"star2Moves":92},{"map":["#########","#       #","#  #    #","# *.    #","#  $#####","##      #","#       #","# . $#  #","#  #@$ .#","# * #   #","#########"],"solutionMoves":32,"solutionPushes":15,"star3Moves":37,"star2Moves":58},{"map":["############","#  # # $ . #","#*#    #   #","# #      # #","# #        #","#       #$ #","# #      .##","# #.     $@#","##         #","############"],"solutionMoves":63,"solutionPushes":23,"star3Moves":67,"star2Moves":102},{"map":["###########","#    #    #","#     $   #","#       . #","# #  #   $#","##@$.     #","#    #* $ #","#         #","#     .  .#","#         #","#    #    #","###########"],"solutionMoves":38,"solutionPushes":14,"star3Moves":43,"star2Moves":67},{"map":["#########","#       #","# $     #","##      #","#   + # #","#  #$. ##","#       #","#  # *# #","#      ##","#########"],"solutionMoves":47,"solutionPushes":19,"star3Moves":50,"star2Moves":76},{"map":["###################","#      ######     #","#       #  #  #   #","# $   .   .     $ #","# @    . $  $    .#","#               . #","#       #  #  # $ #","#      ######     #","#      ############","###################"],"solutionMoves":412,"solutionPushes":40,"star3Moves":462,"star2Moves":651},{"map":["#####################","#      #######      #","#  $   #  ##        #","#       #   #    $  #","#                   #","#  .           .#. .#","#    $@         $   #","#       #   #       #","#    . #  ##  $     #","#      #######      #","#####################"],"solutionMoves":554,"solutionPushes":41,"star3Moves":621,"star2Moves":876},{"map":["##################","#                #","#      #  #      #","#           .    #","#      #  #   $@ #","# $              #","###. ########  ###","#                #","#     # $  #     #","#     .   .     .#","#     #  $ #   $ #","#                #","##################"],"solutionMoves":479,"solutionPushes":46,"star3Moves":537,"star2Moves":757},{"map":["#################","#####   @   #####","#       *       #","#      # #  $.  #","#  #         #  #","#     $         #","# .         .   #","# $             #","#  #         #  #","#      # #   .$ #","#               #","#####       #####","#################"],"solutionMoves":384,"solutionPushes":46,"star3Moves":431,"star2Moves":607},{"map":["##################","#                #","#        ## .$   #","#   ## $ ##      #","#   ##       ##  #","#      .# +  ##  #","# #     # $      #","#     ##         #","#     ##   ##    #","#  ##      ## #  #","#  ##    $   $ . #","#      .         #","##################"],"solutionMoves":415,"solutionPushes":43,"star3Moves":465,"star2Moves":656},{"map":["###################","#                 #","#      #   #    . #","#               $ #","############      #","##             #  #","#       $  .#.    #","# $               #","#       ####      #","#         @$     ##","#    .#.$ #   #  ##","#                ##","###################"],"solutionMoves":564,"solutionPushes":48,"star3Moves":632,"star2Moves":892},{"map":["###################","#      ######     #","#       #  #  #   #","#   $ .   . $ $   #","#   @   $.  $. .  #","#                 #","#       #  #  #   #","#      ######     #","#      ############","###################"],"solutionMoves":418,"solutionPushes":48,"star3Moves":469,"star2Moves":661},{"map":["#####################","#      #######      #","#      #  ##    .   #","#       #   #       #","# $  $              #","#  .   .     .  #.  #","#          @$    $  #","#       #   #       #","#      #  ##    $   #","#      #######      #","#####################"],"solutionMoves":597,"solutionPushes":52,"star3Moves":669,"star2Moves":944},{"map":["##################","#                #","#      #  #      #","#     .          #","#      #  #  $   #","# $              #","###  ########  ###","#                #","#     #    #     #","# .       . .   .#","# $   #$   #   $ #","#      @         #","##################"],"solutionMoves":625,"solutionPushes":51,"star3Moves":701,"star2Moves":988},{"map":["#################","#####       #####","#    @$ .       #","#      # #      #","#  #         #  #","#   $           #","#     .     $   #","#               #","#  #    .    #  #","# $.   # #      #","#       .   $   #","#####       #####","#################"],"solutionMoves":438,"solutionPushes":52,"star3Moves":491,"star2Moves":693},{"map":["##################","#                #","#     .  ## .    #","#   ##   ##  $   #","#   ##       ##$ #","#       # .  ##  #","# #     #        #","#   $ ##         #","# .   ##   ##  @ #","# $##      ## #$ #","#  ## $     .    #","#      .         #","##################"],"solutionMoves":617,"solutionPushes":54,"star3Moves":692,"star2Moves":975},{"map":["###################","#                 #","#      #   #  .   #","#               $ #","############    $ #","##             #  #","#  $     $ .#  . .#","#                 #","#       ####      #","#            $$  ##","#  .  #   #. @#  ##","#                ##","###################"],"solutionMoves":543,"solutionPushes":51,"star3Moves":609,"star2Moves":858},{"map":["###################","#      ######     #","#       #  #  #   #","#     .         $ #","#    $ . .   .$.  #","#      $  $     . #","#       # @#  # $ #","#      ######     #","#      ############","###################"],"solutionMoves":495,"solutionPushes":55,"star3Moves":555,"star2Moves":783},{"map":["#####################","#      #######      #","#      #  ##      $ #","#       #   # $     #","#                   #","#  +   .        #. .#","#  $             $  #","# $     #   # $     #","#    . #  ##    .   #","#      #######      #","#####################"],"solutionMoves":670,"solutionPushes":56,"star3Moves":751,"star2Moves":1059},{"map":["##################","#                #","#      #  #      #","#   . .          #","#   $  #  #  @   #","#            $   #","###$ ######## .###","#                #","#     #  $ #     #","#  $.   . .      #","#     # $  #     #","#                #","##################"],"solutionMoves":667,"solutionPushes":59,"star3Moves":748,"star2Moves":1054},{"map":["#################","#####       #####","#               #","#      # #   .$ #","#  #    .  $ #  #","#               #","# . $@    .   . #","# $             #","#  #         #  #","#  .$  # # $    #","#               #","#####       #####","#################"],"solutionMoves":525,"solutionPushes":58,"star3Moves":588,"star2Moves":830},{"map":["##################","#                #","#        ## .  . #","#   ##   ##      #","#   ##      $##$ #","#       # .  ##  #","# #     #        #","#     ##  $@   $ #","#     ##   ##    #","#  ##   .$ ## #  #","#  ##      $.  . #","#                #","##################"],"solutionMoves":467,"solutionPushes":55,"star3Moves":524,"star2Moves":738},{"map":["###################","#                 #","#      #.$ #      #","#                 #","############      #","##             #  #","#    $@     #.    #","#                 #","#     $ ####   $  #","#          $ $   ##","#  . .#   #. .#  ##","#                ##","###################"],"solutionMoves":645,"solutionPushes":62,"star3Moves":723,"star2Moves":1020},{"map":["###################","#      ######     #","#    $  #  # $#   #","#         .   .   #","#      . .     .$ #","#              $. #","# @$    #  #  # $ #","#      ######     #","#      ############","###################"],"solutionMoves":597,"solutionPushes":61,"star3Moves":669,"star2Moves":944},{"map":["#####################","#      #######      #","#      #  ##    $   #","#  $@   #   #  $    #","#                   #","#  .$.   $ .   .#  .#","#                   #","#       #   #       #","# $  . #  ##        #","#      #######      #","#####################"],"solutionMoves":723,"solutionPushes":58,"star3Moves":810,"star2Moves":1143},{"map":["##################","#                #","#    $ #  #      #","# .   .     .$   #","#      # $#    $ #","#              @ #","###  ######## .###","#                #","#     #  $ #     #","#     . . .      #","#     #$ $ #     #","#                #","##################"],"solutionMoves":687,"solutionPushes":64,"star3Moves":770,"star2Moves":1086},{"map":["#################","#####       #####","#               #","#  .   # #$  .  #","#  #    .    #  #","#               #","# $      $.   . #","#     $ $       #","# $#    .    #  #","#  .   # # $    #","#          @    #","#####       #####","#################"],"solutionMoves":535,"solutionPushes":66,"star3Moves":600,"star2Moves":846},{"map":["##################","#                #","# . $    ## . $@ #","# $ ##   ##    $ #","#   ##       ##  #","#  .    # .  ##  #","# #     #      . #","#     ##    $    #","# .$  ##   ##    #","#  ##      ## #  #","#  ##   $      . #","#                #","##################"],"solutionMoves":797,"solutionPushes":62,"star3Moves":893,"star2Moves":1260},{"map":["###################","#                 #","# .  $ #   #  .   #","#                 #","############      #","##             #  #","#    .@ $  *#.   .#","#     $           #","#  $    ####  $   #","#                ##","#     # $.#   #  ##","#                ##","###################"],"solutionMoves":780,"solutionPushes":69,"star3Moves":874,"star2Moves":1233},{"map":["###################","#      ######     #","#       #  #  # $ #","#     .       .   #","#    .$. $ .$  . .#","#       $       $ #","#       #  #  #   #","#   $@ ######     #","#      ############","###################"],"solutionMoves":720,"solutionPushes":71,"star3Moves":807,"star2Moves":1138},{"map":["#####################","#      #######      #","#      #  ##    .   #","#       #   #    $  #","#                   #","#      . .  $.$ #.  #","#   $@          $   #","#       #   # $     #","#    .$#  ##    .   #","#      #######      #","#####################"],"solutionMoves":712,"solutionPushes":70,"star3Moves":798,"star2Moves":1125},{"map":["##################","#                #","#      #  #  $   #","#     . . @$  . .#","#  $   #  #    $ #","#                #","###. ########  ###","#                #","#    $#  $ #     #","# .     .        #","#   $ #    #     #","#                #","##################"],"solutionMoves":684,"solutionPushes":66,"star3Moves":767,"star2Moves":1081},{"map":["#################","#####       #####","#       .       #","#  . $ # #      #","#  #    . $  #  #","#    $          #","#             . #","#      $        #","# $#    .    #  #","#  .   # #   .  #","#    $    $@    #","#####       #####","#################"],"solutionMoves":584,"solutionPushes":67,"star3Moves":655,"star2Moves":923},{"map":["##################","#          @     #","#     .  ##$.$   #","#   ##   ##      #","#   ##       ##  #","#       #$.  ##  #","# #     #      . #","#  $  ##  $      #","# .   ##   ##    #","#  ##   .  ##$#  #","#  ##  $       . #","#                #","##################"],"solutionMoves":664,"solutionPushes":66,"star3Moves":744,"star2Moves":1050},{"map":["###################","#                 #","# .$.$ #   #  . * #","#                 #","############  $   #","##            @#  #","#           #  .$ #","#              $  #","#    $  ####      #","#                ##","#     #.  #.  #  ##","#                ##","###################"],"solutionMoves":834,"solutionPushes":72,"star3Moves":935,"star2Moves":1318},{"map":["###################","#      ######     #","#       #  #  #$  #","#         .$  .   #","#     @$ .$.$.$.  #","#              $. #","#       #  #  #   #","#      ######     #","#      ############","###################"],"solutionMoves":615,"solutionPushes":69,"star3Moves":689,"star2Moves":972},{"map":["#####################","#      #######      #","#      #  ##    .   #","#       #   #       #","#@$  $         $  $ #","#      .   .$.$ #.  #","#                   #","#       #   #    $  #","#    . #  ##    .   #","#      #######      #","#####################"],"solutionMoves":800,"solutionPushes":75,"star3Moves":897,"star2Moves":1264},{"map":["##################","#          @     #","#      #  #$ $   #","#       .   .  $.#","#      #  #      #","#            $   #","###  ######## .###","#              $ #","#     #  $ #     #","#       .     .$.#","#     #    #     #","#                #","##################"],"solutionMoves":641,"solutionPushes":69,"star3Moves":718,"star2Moves":1013},{"map":["#################","#####       #####","#         $     #","#  .   # #      #","#  #   $. $  #  #","#               #","#@$   . . . .   #","#               #","#  #  $ .    #$ #","#      # #      #","#        $      #","#####       #####","#################"],"solutionMoves":730,"solutionPushes":76,"star3Moves":818,"star2Moves":1154},{"map":["##################","#                #","# .$     ##   $. #","# $ ##   ##  $   #","#   ##       ##  #","#  .    # .  ##  #","# #     #      . #","#     ##         #","#     ##   ##    #","#  ##   .  ##$#  #","#  ## $      @$. #","#                #","##################"],"solutionMoves":832,"solutionPushes":77,"star3Moves":932,"star2Moves":1315},{"map":["###################","#                 #","#   $ .#* *#      #","#                 #","############    $ #","##             #  #","#        .  #. .  #","#              $@ #","#     $ ####      #","#                ##","#     # $.# $.#  ##","#                ##","###################"],"solutionMoves":859,"solutionPushes":75,"star3Moves":963,"star2Moves":1358},{"map":["###################","#      ######     #","#       #  #  #$$ #","#             .   #","#   $+ .   . .$.$.#","#         $     . #","#     $ #  #  # $ #","#      ######     #","#      ############","###################"],"solutionMoves":742,"solutionPushes":78,"star3Moves":832,"star2Moves":1173},{"map":["#####################","#      #######      #","#      #  ##   $    #","#       #   #       #","# $$                #","#  . .$.$.$. .  #   #","#                   #","#       #   #       #","#  $ . #  ## @$ .   #","#      #######      #","#####################"],"solutionMoves":703,"solutionPushes":77,"star3Moves":788,"star2Moves":1111},{"map":["##################","#                #","#     $# $#      #","# .     . .      #","#      #  #    $ #","#                #","###  ########  ###","#             $  #","#  @$ # $  #     #","# . .     .   . .#","#  $  #    #  $  #","#                #","##################"],"solutionMoves":903,"solutionPushes":84,"star3Moves":1012,"star2Moves":1427},{"map":["#################","#####       #####","#               #","#  . $ # # $    #","#  #    .    #  #","#    $    $     #","#   . . .     . #","#        $      #","#  #    . $  #  #","# @$ $ # #      #","#       .       #","#####       #####","#################"],"solutionMoves":627,"solutionPushes":79,"star3Moves":703,"star2Moves":991},{"map":["##################","#                #","#     .$ ## .    #","#   ##   ##      #","#   ##  $@ $ ##  #","#      .# .  ##  #","# #$    #      . #","#     ##     $   #","# .   ##$  ##    #","#  ##   .  ## #  #","#  ##     $ .  $ #","#                #","##################"],"solutionMoves":792,"solutionPushes":81,"star3Moves":888,"star2Moves":1252},{"map":["###################","#                 #","#      #* *#  .   #","#             $   #","############  $   #","##             #  #","#    . .$   #     #","#   $             #","#   $   ####   $@ #","#                ##","#  .  #   #  .#. ##","#                ##","###################"],"solutionMoves":846,"solutionPushes":82,"star3Moves":948,"star2Moves":1337},{"map":["###################","#      ######     #","#       #  #  #   #","#    $.$  .   $ $ #","#   $. .     . .$.#","#         @$    . #","#       #  #  # $ #","#      ######     #","#      ############","###################"],"solutionMoves":705,"solutionPushes":82,"star3Moves":790,"star2Moves":1114},{"map":["#####################","#      #######      #","#    . #  ##    .   #","#       #   #       #","#               $   #","#      . .   .$.# $.#","#        $ $        #","#       #   #       #","#   $.$#  ##  $     #","#      #######@     #","#####################"],"solutionMoves":965,"solutionPushes":86,"star3Moves":1081,"star2Moves":1525},{"map":["##################","#                #","#      #  #      #","#       $     .  #","#      #  #      #","#                #","###  ######## .###","#@$              #","#     # $  #$    #","# . . . . .    $.#","#  $  # $ $#     #","#                #","##################"],"solutionMoves":877,"solutionPushes":84,"star3Moves":983,"star2Moves":1386},{"map":["#################","#####       #####","#     $   $     #","#      # #   .  #","#  #         #  #","#        $@   $ #","#     .$. . .   #","#       $       #","#  #         #  #","#  .  $# # $ .  #","#       .       #","#####       #####","#################"],"solutionMoves":724,"solutionPushes":84,"star3Moves":811,"star2Moves":1144},{"map":["##################","#                #","#        ##  $ . #","#   ## $ ##      #","#   ##       ##  #","#  .   .#    ##  #","# #     #      . #","#    $##     $   #","#     ##   ##@$  #","#  ##   .$ ## #  #","#  ##  $   $.  . #","#      .         #","##################"],"solutionMoves":971,"solutionPushes":89,"star3Moves":1088,"star2Moves":1535},{"map":["###################","#                 #","# .$.$ #   #      #","#                 #","############    $ #","##             #  #","# $  . .$ $.#.$  .#","#                 #","#       ####    $@#","#                ##","#     #   #  .#  ##","#                ##","###################"],"solutionMoves":983,"solutionPushes":86,"star3Moves":1101,"star2Moves":1554},{"map":["###################","#      ######     #","#       #  #  # $ #","#     .   $   .   #","#     $.$. .$. . .#","#     $    $@     #","#       #  #  # $ #","#      ######     #","#      ############","###################"],"solutionMoves":727,"solutionPushes":86,"star3Moves":815,"star2Moves":1149},{"map":["#####################","#      #######      #","#    . #  ##  $ *   #","#       #   #       #","#    $$             #","#  .         .  #. .#","#                $  #","# $     #   # $@    #","#    . #  ##    *   #","#      #######      #","#####################"],"solutionMoves":1016,"solutionPushes":86,"star3Moves":1138,"star2Moves":1606}];
+  const SAVE_KEY = "sokobanPuzzleAdventureSaveV1";
+  const DIRS = {up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
+  const TUTORIALS = [
+    "Use the arrow keys or buttons to move.",
+    "Stand behind the box and push it.",
+    "Boxes can be pushed, but they cannot be pulled.",
+    "Do not push a box into a corner.",
+    "Plan your moves before you push."
+  ];
+
+  const $ = id => document.getElementById(id);
+  const screens = ["menuScreen","levelScreen","howScreen","gameScreen"];
+  let state = null;
+  let currentFilter = "All";
+  let swipeStart = null;
+  let toastTimer = null;
+
+  const defaultSave = () => ({
+    unlocked:1,currentLevel:1,completed:{},stars:{},bestMoves:{},bestPushes:{},
+    sound:true,tutorialsSeen:{},totalStars:0
+  });
+
+  let save = loadSave();
+
+  function loadSave(){
+    try{
+      const raw = localStorage.getItem(SAVE_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      return Object.assign(defaultSave(), parsed);
+    }catch(err){
+      console.warn("Save data could not be loaded.",err);
+      return defaultSave();
+    }
+  }
+  function storeSave(){
+    save.totalStars = Object.values(save.stars || {}).reduce((a,b)=>a+(Number(b)||0),0);
+    try{ localStorage.setItem(SAVE_KEY,JSON.stringify(save)); }
+    catch(err){ console.warn("Progress could not be saved.",err); }
+    updateMenuStats();
+  }
+
+  function difficultyFor(n){
+    if(n<=15) return "Tutorial";
+    if(n<=40) return "Easy";
+    if(n<=80) return "Medium";
+    if(n<=120) return "Hard";
+    return "Expert";
+  }
+
+  function validateLevels(){
+    if(LEVELS.length!==150) console.error(`Expected 150 levels, found ${LEVELS.length}.`);
+    const validChars = new Set(["#"," ","@","$",".","*","+"]);
+    LEVELS.forEach((level,index)=>{
+      const rows=level.map;
+      if(!Array.isArray(rows)||!rows.length){console.error(`Level ${index+1}: missing map.`);return;}
+      const width=rows[0].length;
+      let players=0,boxes=0,goals=0;
+      rows.forEach((row,y)=>{
+        if(row.length!==width) console.error(`Level ${index+1}: row ${y+1} has a different width.`);
+        [...row].forEach(ch=>{
+          if(!validChars.has(ch)) console.error(`Level ${index+1}: invalid character "${ch}".`);
+          if(ch==="@"||ch==="+") players++;
+          if(ch==="$"||ch==="*") boxes++;
+          if(ch==="."||ch==="*"||ch==="+") goals++;
+        });
+      });
+      if(players!==1) console.error(`Level ${index+1}: expected 1 player, found ${players}.`);
+      if(boxes!==goals) console.error(`Level ${index+1}: boxes (${boxes}) do not match goals (${goals}).`);
+      const walls=new Set();
+      rows.forEach((row,y)=>[...row].forEach((ch,x)=>{if(ch==="#") walls.add(`${x},${y}`);}));
+      rows.forEach((row,y)=>[...row].forEach((ch,x)=>{
+        if(ch==="$"){
+          const wall=(a,b)=>walls.has(`${a},${b}`);
+          const corner=(wall(x-1,y)&&wall(x,y-1))||(wall(x+1,y)&&wall(x,y-1))||(wall(x-1,y)&&wall(x,y+1))||(wall(x+1,y)&&wall(x,y+1));
+          if(corner) console.error(`Level ${index+1}: a box begins in a non-goal corner at ${x},${y}.`);
+        }
+      }));
+    });
+  }
+
+  const AudioSystem = {
+    ctx:null,
+    ensure(){
+      if(!save.sound) return;
+      try{
+        if(!this.ctx) this.ctx=new (window.AudioContext||window.webkitAudioContext)();
+        if(this.ctx.state==="suspended") this.ctx.resume();
+      }catch(err){}
+    },
+    tone(freq=440,duration=.08,type="sine",gain=.045,delay=0){
+      if(!save.sound) return;
+      this.ensure(); if(!this.ctx) return;
+      const now=this.ctx.currentTime+delay;
+      const osc=this.ctx.createOscillator(),vol=this.ctx.createGain();
+      osc.type=type; osc.frequency.setValueAtTime(freq,now);
+      vol.gain.setValueAtTime(.0001,now); vol.gain.exponentialRampToValueAtTime(gain,now+.01); vol.gain.exponentialRampToValueAtTime(.0001,now+duration);
+      osc.connect(vol);vol.connect(this.ctx.destination);osc.start(now);osc.stop(now+duration+.03);
+    },
+    click(){this.tone(520,.05,"triangle",.035)},
+    step(){this.tone(260,.045,"sine",.028)},
+    push(){this.tone(150,.08,"square",.035);this.tone(220,.06,"triangle",.025,.04)},
+    goal(){this.tone(660,.09,"sine",.045);this.tone(880,.12,"triangle",.04,.08)},
+    blocked(){this.tone(105,.11,"sawtooth",.028)},
+    undo(){this.tone(420,.07,"triangle",.035);this.tone(300,.08,"triangle",.025,.06)},
+    win(){[523,659,784,1046].forEach((f,i)=>this.tone(f,.18,"triangle",.055,i*.12))}
+  };
+
+  function parseLevel(index){
+    const data=LEVELS[index];
+    const walls=new Set(),goals=new Set(),boxes=new Set();
+    let player={x:0,y:0};
+    data.map.forEach((row,y)=>[...row].forEach((ch,x)=>{
+      const key=`${x},${y}`;
+      if(ch==="#") walls.add(key);
+      if(ch==="."||ch==="*"||ch==="+") goals.add(key);
+      if(ch==="$"||ch==="*") boxes.add(key);
+      if(ch==="@"||ch==="+") player={x,y};
+    }));
+    return {
+      index,width:data.map[0].length,height:data.map.length,walls,goals,boxes,player,
+      moves:0,pushes:0,history:[],locked:false,paused:false,direction:"down",tileSize:null
+    };
+  }
+
+  function showScreen(id){
+    screens.forEach(s=>$(s).classList.toggle("hidden",s!==id));
+    if(id==="menuScreen") updateMenuStats();
+    if(id==="levelScreen") renderLevelSelect();
+  }
+
+  function startLevel(number){
+    const n=Math.max(1,Math.min(150,number));
+    if(n>save.unlocked) return;
+    save.currentLevel=n;storeSave();
+    state=parseLevel(n-1);
+    $("winOverlay").classList.add("hidden");
+    $("pauseOverlay").classList.add("hidden");
+    showScreen("gameScreen");
+    renderBoard(true);
+    updateHud();
+    maybeShowTutorial(n);
+  }
+
+  function key(x,y){return `${x},${y}`}
+  function has(set,x,y){return set.has(key(x,y))}
+
+  function snapshot(){
+    return {
+      player:{...state.player},boxes:[...state.boxes],moves:state.moves,pushes:state.pushes,direction:state.direction
+    };
+  }
+
+  function move(dirName){
+    if(!state||state.locked||state.paused) return;
+    const dir=DIRS[dirName]; if(!dir) return;
+    AudioSystem.ensure();
+    const [dx,dy]=dir;
+    const nx=state.player.x+dx,ny=state.player.y+dy;
+    state.direction=dirName;
+    if(has(state.walls,nx,ny)){blocked();return;}
+    const nextKey=key(nx,ny);
+    const pushing=state.boxes.has(nextKey);
+    if(pushing){
+      const bx=nx+dx,by=ny+dy,bk=key(bx,by);
+      if(has(state.walls,bx,by)||state.boxes.has(bk)){blocked();return;}
+      state.history.push(snapshot());
+      const wasGoal=state.goals.has(nextKey);
+      state.boxes.delete(nextKey);state.boxes.add(bk);
+      state.player={x:nx,y:ny};state.moves++;state.pushes++;
+      AudioSystem.push();
+      if(!wasGoal&&state.goals.has(bk)) AudioSystem.goal();
+      renderBoard(false);updateHud();
+      if(isCornerDeadlock(bx,by)&&!state.goals.has(bk)) showDeadlockToast();
+      if(isSolved()) handleWin();
+    }else{
+      state.history.push(snapshot());
+      state.player={x:nx,y:ny};state.moves++;
+      AudioSystem.step();renderBoard(false);updateHud();
+    }
+  }
+
+  function blocked(){
+    AudioSystem.blocked();
+    const board=$("board");board.classList.remove("board-shake");void board.offsetWidth;board.classList.add("board-shake");
+  }
+
+  function undo(){
+    if(!state||state.locked||state.paused||!state.history.length) return;
+    const prev=state.history.pop();
+    state.player={...prev.player};state.boxes=new Set(prev.boxes);state.moves=prev.moves;state.pushes=prev.pushes;state.direction=prev.direction;
+    AudioSystem.undo();renderBoard(false);updateHud();
+  }
+
+  function restartLevel(){
+    if(!state) return;
+    const n=state.index+1;startLevel(n);
+  }
+
+  function isSolved(){
+    return [...state.boxes].every(b=>state.goals.has(b))&&state.boxes.size===state.goals.size;
+  }
+
+  function isCornerDeadlock(x,y){
+    const wall=(a,b)=>has(state.walls,a,b);
+    return (wall(x-1,y)&&wall(x,y-1))||(wall(x+1,y)&&wall(x,y-1))||(wall(x-1,y)&&wall(x,y+1))||(wall(x+1,y)&&wall(x,y+1));
+  }
+
+  function showDeadlockToast(){
+    const toast=$("toast");toast.classList.add("show");clearTimeout(toastTimer);
+    toastTimer=setTimeout(()=>toast.classList.remove("show"),2500);
+  }
+
+  function starCount(moves,levelData){
+    if(moves<=levelData.star3Moves) return 3;
+    if(moves<=levelData.star2Moves) return 2;
+    return 1;
+  }
+
+  function handleWin(){
+    state.locked=true;
+    const number=state.index+1;
+    const levelData=LEVELS[state.index];
+    const earned=starCount(state.moves,levelData);
+    const oldStars=Number(save.stars[number]||0);
+    const oldBest=Number(save.bestMoves[number]||0);
+    const isNewBest=!oldBest||state.moves<oldBest;
+    save.completed[number]=true;
+    save.stars[number]=Math.max(oldStars,earned);
+    save.bestMoves[number]=isNewBest?state.moves:oldBest;
+    const oldPush=Number(save.bestPushes[number]||0);
+    save.bestPushes[number]=!oldPush||state.pushes<oldPush?state.pushes:oldPush;
+    save.unlocked=Math.max(save.unlocked,Math.min(150,number+1));
+    save.currentLevel=Math.min(150,number+1);
+    storeSave();
+    setTimeout(()=>{
+      AudioSystem.win();Confetti.burst();
+      $("resultMoves").textContent=state.moves;
+      $("resultPushes").textContent=state.pushes;
+      $("resultBest").textContent=save.bestMoves[number];
+      $("resultLevel").textContent=`${number} / 150`;
+      $("winStars").textContent="★".repeat(earned)+"☆".repeat(3-earned);
+      $("winSubtitle").textContent=isNewBest?"New best! Brilliant planning!":"Great job! Every box is home.";
+      $("winTitle").textContent=number===150?"ALL 150 LEVELS COMPLETE!":"LEVEL COMPLETE!";
+      $("winNextBtn").style.display=number===150?"none":"block";
+      $("winOverlay").classList.remove("hidden");
+    },420);
+  }
+
+  function calculateBoardTileSize(){
+    const board=$("board");
+    const shell=board.parentElement;
+    const rect=shell.getBoundingClientRect();
+    const styles=getComputedStyle(shell);
+    const horizontalChrome=
+      (parseFloat(styles.paddingLeft)||0)+(parseFloat(styles.paddingRight)||0)+
+      (parseFloat(styles.borderLeftWidth)||0)+(parseFloat(styles.borderRightWidth)||0);
+    const verticalChrome=
+      (parseFloat(styles.paddingTop)||0)+(parseFloat(styles.paddingBottom)||0)+
+      (parseFloat(styles.borderTopWidth)||0)+(parseFloat(styles.borderBottomWidth)||0);
+    const maxW=Math.max(120,rect.width-horizontalChrome-8);
+    const maxH=Math.max(120,rect.height-verticalChrome-8);
+    const gap=2,pad=16;
+    return Math.max(18,Math.min(68,Math.floor(Math.min(
+      (maxW-pad-gap*(state.width-1))/state.width,
+      (maxH-pad-gap*(state.height-1))/state.height
+    ))));
+  }
+
+  function renderBoard(recalculateSize=false){
+    if(!state) return;
+    const board=$("board");
+    if(recalculateSize||!state.tileSize){
+      state.tileSize=calculateBoardTileSize();
+    }
+    board.style.setProperty("--tile",`${state.tileSize}px`);
+    board.style.gridTemplateColumns=`repeat(${state.width},var(--tile))`;
+    board.style.gridTemplateRows=`repeat(${state.height},var(--tile))`;
+    board.innerHTML="";
+    const fragment=document.createDocumentFragment();
+    for(let y=0;y<state.height;y++){
+      for(let x=0;x<state.width;x++){
+        const k=key(x,y);const tileEl=document.createElement("div");
+        tileEl.className=`tile ${state.walls.has(k)?"wall":"floor"}`;
+        if(!state.walls.has(k)&&state.goals.has(k)){
+          const goal=document.createElement("div");goal.className="goal";tileEl.appendChild(goal);
+        }
+        if(state.boxes.has(k)){
+          const box=document.createElement("div");box.className="box"+(state.goals.has(k)?" on-goal":"");tileEl.appendChild(box);
+        }
+        if(state.player.x===x&&state.player.y===y){
+          const p=document.createElement("div");p.className="player";p.dataset.dir=state.direction;tileEl.appendChild(p);
+        }
+        fragment.appendChild(tileEl);
+      }
+    }
+    board.appendChild(fragment);
+  }
+
+  function updateHud(){
+    if(!state) return;
+    const n=state.index+1,data=LEVELS[state.index];
+    $("hudLevel").textContent=`${n} / 150`;
+    $("hudDifficulty").textContent=difficultyFor(n);
+    $("hudMoves").textContent=state.moves;
+    $("hudPushes").textContent=state.pushes;
+    $("hudBest").textContent=save.bestMoves[n]||"—";
+    const predicted=starCount(state.moves,data);
+    $("hudStars").textContent="★".repeat(predicted)+"☆".repeat(3-predicted);
+    $("missionText").innerHTML=`Push all <b>${state.boxes.size}</b> box${state.boxes.size===1?"":"es"} onto the glowing goals.<br><small>3★ target: ${data.star3Moves} moves • 2★ target: ${data.star2Moves} moves</small>`;
+    $("prevBtn").disabled=n<=1;
+    $("nextBtn").disabled=n>=save.unlocked||n>=150;
+    updateSoundButtons();
+  }
+
+  function renderLevelSelect(){
+    const categories=["All","Tutorial","Easy","Medium","Hard","Expert"];
+    $("filters").innerHTML="";
+    categories.forEach(cat=>{
+      const b=document.createElement("button");b.className="filter-btn"+(currentFilter===cat?" active":"");b.textContent=cat;
+      b.addEventListener("click",()=>{currentFilter=cat;renderLevelSelect();AudioSystem.click();});
+      $("filters").appendChild(b);
+    });
+    const grid=$("levelGrid");grid.innerHTML="";
+    LEVELS.forEach((_,i)=>{
+      const n=i+1,diff=difficultyFor(n);
+      if(currentFilter!=="All"&&currentFilter!==diff) return;
+      const unlocked=n<=save.unlocked,complete=!!save.completed[n],stars=Number(save.stars[n]||0);
+      const b=document.createElement("button");
+      b.className=`level-btn ${!unlocked?"locked":""} ${complete?"complete":""}`;
+      b.disabled=!unlocked;
+      b.innerHTML=`<div class="level-badge">${unlocked?(complete?"✓":"🔓"):"🔒"}</div><div class="level-num">${n}</div><div class="level-stars">${"★".repeat(stars)}${"☆".repeat(3-stars)}</div>`;
+      b.title=`${diff} • Level ${n}`;
+      b.addEventListener("click",()=>{AudioSystem.click();startLevel(n);});
+      grid.appendChild(b);
+    });
+  }
+
+  function updateMenuStats(){
+    const completed=Object.keys(save.completed||{}).filter(k=>save.completed[k]).length;
+    const totalStars=Object.values(save.stars||{}).reduce((a,b)=>a+(Number(b)||0),0);
+    $("menuCurrent").textContent=save.currentLevel;
+    $("menuCompleted").textContent=completed;
+    $("menuStars").textContent=totalStars;
+    $("menuUnlocked").textContent=save.unlocked;
+    updateSoundButtons();
+  }
+
+  function updateSoundButtons(){
+    $("menuSoundBtn").textContent=save.sound?"ON":"OFF";
+    $("soundGameBtn").textContent=save.sound?"🔊":"🔇";
+    $("pauseSoundBtn").textContent=`SOUND: ${save.sound?"ON":"OFF"}`;
+  }
+  function toggleSound(){
+    save.sound=!save.sound;storeSave();updateSoundButtons();
+    if(save.sound) AudioSystem.click();
+  }
+
+  function maybeShowTutorial(n){
+    if(n<=5&&!save.tutorialsSeen[n]){
+      $("tutorialText").textContent=TUTORIALS[n-1];
+      $("tutorialOverlay").classList.remove("hidden");
+      state.paused=true;
+    }
+  }
+
+  function closeTutorial(){
+    if(!state) return;
+    const n=state.index+1;save.tutorialsSeen[n]=true;storeSave();
+    $("tutorialOverlay").classList.add("hidden");state.paused=false;
+  }
+
+  function pauseGame(){
+    if(!state||state.locked) return;
+    state.paused=true;$("pauseOverlay").classList.remove("hidden");
+  }
+  function resumeGame(){
+    if(!state) return;
+    state.paused=false;$("pauseOverlay").classList.add("hidden");
+  }
+
+  const Confetti={
+    canvas:$("confetti"),ctx:$("confetti").getContext("2d"),parts:[],raf:0,
+    resize(){this.canvas.width=innerWidth;this.canvas.height=innerHeight},
+    burst(){
+      this.resize();this.parts=[];
+      const colors=["#58cc02","#1cb0f6","#ff4b4b","#ffc800","#8b5cf6","#ff5fa2"];
+      for(let i=0;i<180;i++) this.parts.push({x:innerWidth/2,y:innerHeight*.42,vx:(Math.random()-.5)*15,vy:-Math.random()*12-4,g:.22,r:4+Math.random()*5,c:colors[i%colors.length],a:Math.random()*Math.PI});
+      cancelAnimationFrame(this.raf);this.loop();
+    },
+    loop(){
+      this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
+      this.parts.forEach(p=>{p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.a+=.13;this.ctx.save();this.ctx.translate(p.x,p.y);this.ctx.rotate(p.a);this.ctx.fillStyle=p.c;this.ctx.fillRect(-p.r/2,-p.r,p.r,p.r*2);this.ctx.restore();});
+      this.parts=this.parts.filter(p=>p.y<this.canvas.height+30);
+      if(this.parts.length)this.raf=requestAnimationFrame(()=>this.loop());else this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
+    }
+  };
+
+  function initBackground(){
+    const c=$("bg"),ctx=c.getContext("2d");let clouds=[];
+    function resize(){const dpr=Math.min(2,devicePixelRatio||1);c.width=innerWidth*dpr;c.height=innerHeight*dpr;c.style.width=innerWidth+"px";c.style.height=innerHeight+"px";ctx.setTransform(dpr,0,0,dpr,0,0);clouds=Array.from({length:6},()=>({x:Math.random()*innerWidth,y:40+Math.random()*innerHeight*.34,s:32+Math.random()*45,v:.05+Math.random()*.12}));}
+    function draw(){
+      const g=ctx.createLinearGradient(0,0,0,innerHeight);g.addColorStop(0,"#78d2ff");g.addColorStop(.62,"#c8efff");g.addColorStop(1,"#eafff2");ctx.fillStyle=g;ctx.fillRect(0,0,innerWidth,innerHeight);
+      ctx.fillStyle="rgba(255,220,80,.82)";ctx.beginPath();ctx.arc(90,82,48,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle="rgba(255,255,255,.88)";clouds.forEach(cl=>{cl.x-=cl.v;if(cl.x+cl.s*2<0)cl.x=innerWidth+cl.s*2;ctx.beginPath();ctx.arc(cl.x,cl.y,cl.s,0,Math.PI*2);ctx.arc(cl.x+cl.s*.75,cl.y+8,cl.s*.7,0,Math.PI*2);ctx.arc(cl.x-cl.s*.75,cl.y+10,cl.s*.65,0,Math.PI*2);ctx.fill();});
+      ctx.fillStyle="#7bcf31";ctx.beginPath();ctx.moveTo(0,innerHeight);ctx.lineTo(0,innerHeight*.72);ctx.quadraticCurveTo(innerWidth*.28,innerHeight*.59,innerWidth*.55,innerHeight*.72);ctx.quadraticCurveTo(innerWidth*.8,innerHeight*.6,innerWidth,innerHeight*.7);ctx.lineTo(innerWidth,innerHeight);ctx.fill();
+      ctx.fillStyle="#58b91e";ctx.beginPath();ctx.moveTo(0,innerHeight);ctx.lineTo(0,innerHeight*.82);ctx.quadraticCurveTo(innerWidth*.5,innerHeight*.7,innerWidth,innerHeight*.82);ctx.lineTo(innerWidth,innerHeight);ctx.fill();
+      requestAnimationFrame(draw);
+    }
+    addEventListener("resize",resize);resize();draw();
+  }
+
+  function bindEvents(){
+    $("playBtn").addEventListener("click",()=>{AudioSystem.click();startLevel(Math.min(save.currentLevel,save.unlocked));});
+    $("levelSelectBtn").addEventListener("click",()=>{AudioSystem.click();showScreen("levelScreen");});
+    $("howBtn").addEventListener("click",()=>{AudioSystem.click();showScreen("howScreen");});
+    $("continueBtn").addEventListener("click",()=>startLevel(Math.min(save.currentLevel,save.unlocked)));
+    document.querySelectorAll(".backMenuBtn").forEach(b=>b.addEventListener("click",()=>showScreen("menuScreen")));
+    $("howPlayBtn").addEventListener("click",()=>startLevel(Math.min(save.currentLevel,save.unlocked)));
+    $("menuSoundBtn").addEventListener("click",toggleSound);$("soundGameBtn").addEventListener("click",toggleSound);$("pauseSoundBtn").addEventListener("click",toggleSound);
+    $("resetProgressBtn").addEventListener("click",()=>$("confirmOverlay").classList.remove("hidden"));
+    $("cancelResetBtn").addEventListener("click",()=>$("confirmOverlay").classList.add("hidden"));
+    $("confirmResetBtn").addEventListener("click",()=>{
+      try{localStorage.removeItem(SAVE_KEY)}catch(err){}
+      save=defaultSave();storeSave();$("confirmOverlay").classList.add("hidden");showScreen("menuScreen");
+    });
+
+    document.querySelectorAll(".moveBtn").forEach(b=>b.addEventListener("click",()=>move(b.dataset.dir)));
+    $("undoBtn").addEventListener("click",undo);$("undoMobileBtn").addEventListener("click",undo);
+    $("restartBtn").addEventListener("click",restartLevel);$("restartMobileBtn").addEventListener("click",restartLevel);
+    $("prevBtn").addEventListener("click",()=>state&&startLevel(state.index));
+    $("nextBtn").addEventListener("click",()=>state&&startLevel(state.index+2));
+    $("homeGameBtn").addEventListener("click",()=>showScreen("menuScreen"));
+    $("pauseBtn").addEventListener("click",pauseGame);
+    $("resumeBtn").addEventListener("click",resumeGame);
+    $("pauseRestartBtn").addEventListener("click",()=>{resumeGame();restartLevel();});
+    $("pauseHowBtn").addEventListener("click",()=>{resumeGame();showScreen("howScreen");});
+    $("pauseHomeBtn").addEventListener("click",()=>{resumeGame();showScreen("menuScreen");});
+    $("tutorialCloseBtn").addEventListener("click",closeTutorial);
+    $("winNextBtn").addEventListener("click",()=>startLevel(state.index+2));
+    $("winReplayBtn").addEventListener("click",restartLevel);
+    $("winLevelsBtn").addEventListener("click",()=>{$("winOverlay").classList.add("hidden");showScreen("levelScreen");});
+
+    document.addEventListener("keydown",e=>{
+      if($("gameScreen").classList.contains("hidden")) return;
+      const map={
+        ArrowUp:"up",KeyW:"up",
+        ArrowDown:"down",KeyS:"down",
+        ArrowLeft:"left",KeyA:"left",
+        ArrowRight:"right",KeyD:"right"
+      };
+      const direction=map[e.code]||map[e.key];
+      if(direction){
+        e.preventDefault();
+        e.stopPropagation();
+        move(direction);
+        return;
+      }
+      if(["KeyZ","KeyU"].includes(e.code)||["z","Z","u","U"].includes(e.key)){
+        e.preventDefault();e.stopPropagation();undo();
+      }else if(e.code==="KeyR"||e.key==="r"||e.key==="R"){
+        e.preventDefault();e.stopPropagation();restartLevel();
+      }else if(e.key==="Escape"){
+        e.preventDefault();e.stopPropagation();state&&state.paused?resumeGame():pauseGame();
+      }
+    },{capture:true});
+
+    const board=$("board");
+    board.addEventListener("pointerdown",e=>{swipeStart={x:e.clientX,y:e.clientY,id:e.pointerId};board.setPointerCapture?.(e.pointerId);});
+    board.addEventListener("pointerup",e=>{
+      if(!swipeStart||swipeStart.id!==e.pointerId)return;
+      const dx=e.clientX-swipeStart.x,dy=e.clientY-swipeStart.y;swipeStart=null;
+      if(Math.max(Math.abs(dx),Math.abs(dy))<28)return;
+      move(Math.abs(dx)>Math.abs(dy)?(dx>0?"right":"left"):(dy>0?"down":"up"));
+    });
+    let boardResizeTimer=0;
+    addEventListener("resize",()=>{
+      clearTimeout(boardResizeTimer);
+      boardResizeTimer=setTimeout(()=>{
+        if(state&&!$("gameScreen").classList.contains("hidden")) renderBoard(true);
+      },80);
+    });
+  }
+
+  validateLevels();bindEvents();initBackground();updateMenuStats();showScreen("menuScreen");
+})();
+</script>
+</body>
+</html>
