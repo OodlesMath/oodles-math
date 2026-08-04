@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Adventure: Nature Park</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --wood-brown: #f39221;
+        }
+        body {
+            font-family: 'Quicksand', sans-serif;
+            /* Beautiful new nature background without rainbow */
+            background-color: #4facfe;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 800' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='sky' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%234facfe'/%3E%3Cstop offset='100%25' stop-color='%2300f2fe'/%3E%3C/linearGradient%3E%3ClinearGradient id='grassBack' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%23a8e063'/%3E%3Cstop offset='100%25' stop-color='%2356ab2f'/%3E%3C/linearGradient%3E%3ClinearGradient id='grassFront' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%2338ef7d'/%3E%3Cstop offset='100%25' stop-color='%2311998e'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1000' height='800' fill='url(%23sky)'/%3E%3Ccircle cx='850' cy='150' r='70' fill='%23FFF59D' opacity='0.9'/%3E%3Ccircle cx='850' cy='150' r='50' fill='%23FFEB3B'/%3E%3Cpath d='M100 250 Q130 210 170 250 T250 230 T300 260 H100 Z' fill='white' opacity='0.8'/%3E%3Cpath d='M400 180 Q440 130 490 180 T600 150 T650 190 H400 Z' fill='white' opacity='0.7'/%3E%3Cpath d='M700 280 Q740 240 780 280 T860 250 T920 290 H700 Z' fill='white' opacity='0.8'/%3E%3Cpath d='M-100 550 Q 250 400 600 550 T 1200 500 V 800 H -100 Z' fill='url(%23grassBack)'/%3E%3Cpath d='M-100 650 Q 300 500 700 650 T 1200 600 V 800 H -100 Z' fill='url(%23grassFront)'/%3E%3C/svg%3E");
+            background-size: cover;
+            background-position: center bottom;
+            background-repeat: no-repeat;
+            overflow: hidden; 
+            user-select: none;
+            touch-action: manipulation;
+            height: 100vh;
+            width: 100vw;
+            margin: 0;
+            position: relative;
+        }
+        
+        .wooden-board {
+            background: #f39221;
+            border: 6px solid #d37a1a;
+            box-shadow: inset 0 4px 0 rgba(255,255,255,0.3), 0 8px 16px rgba(0,0,0,0.2);
+            transform: rotate(-0.5deg);
+        }
+        .inner-board {
+            background: #fff9f0;
+            border: 4px solid #b56715;
+        }
+        .animal-container {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(6px);
+            border: 5px solid #4ADE80;
+            box-shadow: inset 0 6px 15px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            min-height: 250px;
+        }
+        .btn-option {
+            background: #f39221;
+            border-bottom: 8px solid #d37a1a;
+            transition: all 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .btn-option:hover { transform: scale(1.05); }
+        .btn-option:active {
+            transform: translateY(4px) scale(0.95);
+            border-bottom-width: 2px;
+        }
+        .btn-option.correct {
+            background: #28a745;
+            border-bottom-color: #1e7e34;
+        }
+        
+        .bounce-in { animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.1); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .shake { animation: shake 0.4s; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+
+        .bonus-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(34, 197, 94, 0.5), rgba(6, 78, 59, 0.6));
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            display: none;
+            overflow: hidden;
+            border-radius: inherit;
+        }
+        
+        .dino-character {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 150px;
+            z-index: 110;
+            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.2));
+            transition: transform 0.3s ease-out;
+        }
+
+        .energy-bubble {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(135,206,250,0.6));
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(255,255,255,0.8);
+            z-index: 105;
+            pointer-events: none;
+        }
+
+        .dino-egg {
+            position: absolute;
+            width: 80px;
+            height: 100px;
+            cursor: pointer;
+            z-index: 102;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+        }
+
+        .points-popup {
+            position: fixed;
+            pointer-events: none;
+            color: #ffdb15;
+            font-family: 'Fredoka One', cursive;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 0 #b56715;
+            animation: floatUp 0.8s ease-out forwards;
+            z-index: 150;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-120px); opacity: 0; }
+        }
+
+        .item-svg {
+            width: clamp(3.5rem, 9vw, 5rem);
+            height: clamp(3.5rem, 9vw, 5rem);
+            transition: all 0.2s ease;
+        }
+        
+        .item-container {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        /* State for clicked items in subtraction - keeps them dim without red X */
+        .item-dimmed .item-svg {
+            opacity: 0.3;
+            transform: scale(0.8) rotate(15deg);
+            filter: grayscale(80%);
+        }
+
+        .timer-bar-container {
+            width: 300px;
+            height: 15px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-top: 10px;
+            border: 3px solid white;
+        }
+        .timer-bar {
+            height: 100%;
+            background: #4ade80;
+            width: 100%;
+            transition: width 0.1s linear;
+        }
+
+        #bonus-summary, #final-summary {
+            background: white;
+            padding: 2rem;
+            border-radius: 2.5rem;
+            border: 6px solid #fbbf24;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            text-align: center;
+            display: none;
+            position: absolute;
+            z-index: 200;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            min-width: 320px;
+        }
+        
+        #final-summary {
+            border-color: #4ade80;
+            z-index: 1000;
+            position: fixed;
+        }
+
+        .speaker-icon {
+            cursor: pointer;
+            transition: transform 0.2s;
+            color: white;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            padding: 8px;
+            backdrop-filter: blur(4px);
+        }
+        .speaker-icon:hover { transform: scale(1.1); background: rgba(255,255,255,0.3); }
+        .speaker-icon:active { transform: scale(0.9); }
+        
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-2 md:p-6">
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <div class="relative w-full h-full max-w-[1200px] flex flex-col items-center justify-between gap-4 md:gap-6 z-10">
+        
+        <div id="bonus-overlay" class="bonus-overlay rounded-[2rem] md:rounded-[3rem]" onclick="shootBubble(event)">
+            <div id="bonus-header" class="absolute top-10 w-full flex flex-col items-center pointer-events-none z-50">
+                <h2 class="text-white text-4xl md:text-6xl font-family-fredoka italic drop-shadow-lg animate-pulse tracking-wider">BUBBLE BLAST!</h2>
+                <div class="timer-bar-container">
+                    <div id="timer-bar" class="timer-bar"></div>
+                </div>
+            </div>
+            
+            <div id="dino-player" class="dino-character">
+                <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-lg">
+                    <path d="M25 70 Q10 75 5 60 Q10 50 25 55" fill="#4ade80" stroke="#166534" stroke-width="2"/>
+                    <path d="M30 85 Q50 95 70 85 Q85 75 80 50 Q75 20 50 15 Q25 20 20 50 Q15 75 30 85 Z" fill="#4ade80" stroke="#166534" stroke-width="2"/>
+                    <path d="M40 85 Q50 90 60 85 Q70 70 65 50 Q60 35 50 35 Q40 35 35 50 Q30 70 40 85 Z" fill="#bbf7d0" opacity="0.6"/>
+                    <circle cx="72" cy="40" r="4" fill="#166534" opacity="0.3" />
+                    <circle cx="68" cy="30" r="3" fill="#166534" opacity="0.3" />
+                    <circle cx="42" cy="42" r="7" fill="white" />
+                    <circle cx="44" cy="40" r="4" fill="#333" />
+                    <circle cx="45" cy="38" r="1.5" fill="white" />
+                    <circle cx="65" cy="42" r="7" fill="white" />
+                    <circle cx="63" cy="40" r="4" fill="#333" />
+                    <circle cx="62" cy="38" r="1.5" fill="white" />
+                    <circle cx="35" cy="55" r="4" fill="#f472b6" opacity="0.4" />
+                    <circle cx="72" cy="55" r="4" fill="#f472b6" opacity="0.4" />
+                    <path d="M45 65 Q53 72 62 65" fill="none" stroke="#166534" stroke-width="2.5" stroke-linecap="round" />
+                    <path d="M45 15 L50 5 L55 15" fill="#166534" />
+                    <path d="M35 20 L38 12 L42 18" fill="#166534" />
+                </svg>
+            </div>
+            
+            <div id="bonus-summary" class="bounce-in">
+                <h3 class="text-3xl md:text-4xl font-family-fredoka text-slate-800 mb-2">TIME'S UP!</h3>
+                <div class="text-xl md:text-2xl font-bold text-orange-500 mb-4">Bonus Points: <span id="summary-bonus">+0</span></div>
+                <div class="text-4xl md:text-5xl font-family-fredoka text-green-600">Score: <span id="summary-total">0</span></div>
+            </div>
+
+            <div id="game-field" class="absolute inset-0 pointer-events-none"></div>
+        </div>
+
+        <div class="w-full flex justify-between items-start z-30 px-2 md:px-6 mt-2">
+            <div class="bg-white/30 backdrop-blur-md rounded-2xl px-6 py-2 border border-white/40 shadow-xl flex items-center gap-3">
+                <span class="text-white font-bold text-sm md:text-base uppercase tracking-tighter">Score</span>
+                <span id="score-val" class="text-yellow-300 font-bold text-2xl md:text-3xl font-family-fredoka drop-shadow-md">0</span>
+            </div>
+            
+            <div class="flex gap-3 items-center">
+                 <div class="bg-white/30 backdrop-blur-md rounded-2xl px-4 py-2 border border-white/40 shadow-xl flex items-center gap-2">
+                    <span class="text-white font-bold text-sm uppercase">Round</span>
+                    <span id="round-val" class="text-white font-bold text-xl font-family-fredoka drop-shadow-md">1/10</span>
+                </div>
+                <div class="w-12 h-12 md:w-16 md:h-16">
+                </div>
+            </div>
+        </div>
+
+        <div id="math-section" class="flex flex-col items-center w-full mt-auto md:mt-0">
+            <div class="wooden-board rounded-[1.5rem] md:rounded-[2rem] p-3 md:p-4 w-fit min-w-[280px] md:min-w-[380px] shadow-2xl">
+                <div id="equation-board" class="inner-board rounded-[1rem] md:rounded-[1.5rem] px-6 md:px-12 py-3 md:py-5 flex items-center justify-center text-4xl md:text-6xl font-bold tracking-widest text-slate-800">
+                    <span id="num1">0</span>
+                    <span class="mx-2 md:mx-5 text-orange-500" id="op">-</span>
+                    <span id="num2">0</span>
+                    <span class="mx-2 md:mx-5">=</span>
+                    <div id="answer-slot" class="w-14 h-14 md:w-20 md:h-20 bg-orange-100/50 rounded-2xl flex items-center justify-center text-orange-300 border-4 border-dashed border-orange-200 text-3xl md:text-5xl transition-all duration-300">?</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="animal-container rounded-[1.5rem] md:rounded-[2rem] w-full md:w-[90%] flex-1 flex flex-col items-center justify-center px-4 py-4 md:py-8 my-2">
+            <div id="animal-gallery" class="flex flex-wrap justify-center items-center gap-2 md:gap-5 w-full h-full content-center overflow-visible">
+            </div>
+        </div>
+
+        <div class="w-full flex flex-col items-center justify-center gap-4 md:gap-6 pb-4 mt-auto">
+            <div class="flex items-center gap-3 bg-black/10 px-4 py-2 rounded-full backdrop-blur-sm">
+                <p id="prompt-text" class="text-lg md:text-2xl font-bold text-white drop-shadow-md italic uppercase tracking-wider">How many altogether?</p>
+                <button id="speak-btn" class="speaker-icon" onclick="speakPrompt()">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                </button>
+            </div>
+            <div id="options-container" class="flex gap-4 md:gap-6 justify-center w-full px-4"></div>
+        </div>
+    </div>
+
+    <div id="final-summary" class="bounce-in">
+        <h2 class="text-4xl md:text-5xl font-family-fredoka text-green-500 mb-4 drop-shadow-sm">AMAZING JOB!</h2>
+        <div class="text-xl md:text-2xl text-slate-600 font-bold mb-6">You completed all rounds!</div>
+        <div class="flex flex-col items-center justify-center bg-green-50 rounded-3xl p-6 border-4 border-green-100 mb-8">
+            <span class="text-green-600 uppercase tracking-widest font-bold text-sm mb-2">Total Score</span>
+            <span id="final-score" class="text-6xl font-family-fredoka text-orange-500">0</span>
+        </div>
+        <button onclick="window.location.reload()" class="bg-orange-500 hover:bg-orange-400 text-white font-bold text-xl md:text-2xl py-4 px-10 rounded-full shadow-[0_6px_0_#d37a1a] hover:shadow-[0_2px_0_#d37a1a] hover:translate-y-1 transition-all active:translate-y-2 active:shadow-none uppercase tracking-widest">
+            Play Again
+        </button>
+    </div>
+
+    <canvas id="confetti-canvas" class="confetti-container"></canvas>
+
+    <audio id="snd-correct" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3" preload="auto"></audio>
+    <audio id="snd-wrong" src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3" preload="auto"></audio>
+    <audio id="snd-pop" src="https://assets.mixkit.co/active_storage/sfx/2441/2441-preview.mp3" preload="auto"></audio>
+    <audio id="snd-cheer" src="https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3" preload="auto"></audio>
+    <audio id="snd-bonus" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
+
+    <template id="apple-svg"><svg class="item-svg drop-shadow-md" viewBox="0 0 100 100"><path d="M50 30 C20 20 10 60 25 80 C40 100 60 100 75 80 C90 60 80 20 50 30" fill="#FF3B30"/><path d="M50 30 Q45 10 60 5" fill="none" stroke="#8B4513" stroke-width="4" stroke-linecap="round"/><path d="M60 5 Q75 10 65 25 Q55 20 60 5" fill="#34C759"/></svg></template>
+    <template id="orange-svg"><svg class="item-svg drop-shadow-md" viewBox="0 0 100 100"><circle cx="50" cy="55" r="40" fill="#FF9500"/><circle cx="50" cy="55" r="35" fill="#FFA726"/><path d="M50 15 Q40 5 30 15 Q40 25 50 15" fill="#34C759"/><circle cx="40" cy="40" r="2" fill="#FFB74D"/><circle cx="60" cy="50" r="2" fill="#FFB74D"/><circle cx="45" cy="70" r="2" fill="#FFB74D"/></svg></template>
+    <template id="watermelon-svg"><svg class="item-svg drop-shadow-md" viewBox="0 0 100 100"><path d="M10 50 A40 40 0 0 0 90 50 Z" fill="#34C759"/><path d="M18 50 A32 32 0 0 0 82 50 Z" fill="#FFF"/><path d="M22 50 A28 28 0 0 0 78 50 Z" fill="#FF3B30"/><circle cx="40" cy="60" r="2" fill="#333"/><circle cx="60" cy="60" r="2" fill="#333"/><circle cx="50" cy="70" r="2" fill="#333"/></svg></template>
+    <template id="strawberry-svg"><svg class="item-svg drop-shadow-md" viewBox="0 0 100 100"><path d="M50 25 C10 25 10 55 25 75 C40 95 60 95 75 75 C90 55 90 25 50 25 Z" fill="#FF2D55"/><circle cx="40" cy="45" r="2" fill="#FFD60A"/><circle cx="60" cy="45" r="2" fill="#FFD60A"/><circle cx="50" cy="60" r="2" fill="#FFD60A"/><circle cx="35" cy="65" r="2" fill="#FFD60A"/><circle cx="65" cy="65" r="2" fill="#FFD60A"/><path d="M50 25 Q30 15 25 25 Q40 35 50 25" fill="#34C759"/><path d="M50 25 Q70 15 75 25 Q60 35 50 25" fill="#34C759"/><path d="M50 25 L50 10" stroke="#34C759" stroke-width="4" stroke-linecap="round"/></svg></template>
+    <template id="grape-svg"><svg class="item-svg drop-shadow-md" viewBox="0 0 100 100"><path d="M50 10 Q40 5 35 15 Q45 20 50 10" fill="#34C759"/><path d="M50 10 Q60 5 65 15 Q55 20 50 10" fill="#34C759"/><circle cx="35" cy="35" r="12" fill="#AF52DE"/><circle cx="65" cy="35" r="12" fill="#AF52DE"/><circle cx="50" cy="35" r="12" fill="#9014C9"/><circle cx="40" cy="55" r="12" fill="#AF52DE"/><circle cx="60" cy="55" r="12" fill="#AF52DE"/><circle cx="50" cy="55" r="12" fill="#9014C9"/><circle cx="50" cy="75" r="12" fill="#AF52DE"/></svg></template>
+    
+    <template id="candy-svg"><svg class="item-svg drop-shadow-md" viewBox="0 0 100 100"><path d="M30 50 L10 30 L10 70 Z" fill="#FF9500"/><path d="M70 50 L90 30 L90 70 Z" fill="#FF9500"/><rect x="30" y="35" width="40" height="30" rx="10" fill="#FF2D55"/><line x1="40" y1="35" x2="40" y2="65" stroke="#FFF" stroke-width="4"/><line x1="60" y1="35" x2="60" y2="65" stroke="#FFF" stroke-width="4"/></svg></template>
+    <template id="donut-svg"><svg class="item-svg drop-shadow-md" viewBox="0 0 100 100"><circle cx="50" cy="50" r="35" fill="#D2691E"/><circle cx="50" cy="50" r="15" fill="#FFF"/><path d="M15 50 A35 35 0 0 1 85 50 Q75 60 65 50 T45 55 T15 50" fill="#FF69B4"/><rect x="30" y="25" width="6" height="3" fill="#00FFFF" transform="rotate(45 30 25)"/><rect x="65" y="30" width="6" height="3" fill="#FFD700" transform="rotate(-30 65 30)"/><rect x="45" y="20" width="6" height="3" fill="#34C759" transform="rotate(15 45 20)"/></svg></template>
+    <template id="icecream-svg"><svg class="item-svg drop-shadow-md" viewBox="0 0 100 100"><path d="M30 55 L50 95 L70 55 Z" fill="#E6C280"/><path d="M35 55 L65 55 L50 85 Z" fill="#C19A5B"/><circle cx="50" cy="40" r="22" fill="#FF2D55"/><circle cx="50" cy="25" r="16" fill="#FFF"/><circle cx="50" cy="5" r="5" fill="#FF3B30"/></svg></template>
+    <template id="cookie-svg"><svg class="item-svg drop-shadow-md" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="#E6C280"/><circle cx="30" cy="40" r="5" fill="#5D4037"/><circle cx="60" cy="30" r="6" fill="#5D4037"/><circle cx="45" cy="70" r="5" fill="#5D4037"/><circle cx="70" cy="60" r="7" fill="#5D4037"/><circle cx="40" cy="25" r="4" fill="#5D4037"/><circle cx="25" cy="60" r="4" fill="#5D4037"/></svg></template>
+    <template id="cupcake-svg"><svg class="item-svg drop-shadow-md" viewBox="0 0 100 100"><path d="M30 90 L70 90 L75 55 L25 55 Z" fill="#FF9500"/><line x1="35" y1="55" x2="40" y2="90" stroke="#E67E22" stroke-width="2"/><line x1="50" y1="55" x2="50" y2="90" stroke="#E67E22" stroke-width="2"/><line x1="65" y1="55" x2="60" y2="90" stroke="#E67E22" stroke-width="2"/><path d="M20 55 C20 20 80 20 80 55 Z" fill="#AF52DE"/><circle cx="50" cy="15" r="8" fill="#FF3B30"/></svg></template>
+
+    <template id="egg-svg"><svg viewBox="0 0 100 100" class="drop-shadow-lg"><path d="M50,10 Q30,30 30,60 Q30,90 50,95 Q70,90 70,60 Q70,30 50,10 Z" fill="#FFFDD0"/><circle cx="40" cy="40" r="5" fill="#FFD700"/><circle cx="60" cy="70" r="7" fill="#FFD700"/><circle cx="45" cy="80" r="4" fill="#FFD700"/></svg></template>
+    <template id="dino-svg"><svg viewBox="0 0 100 100" class="drop-shadow-lg"><path d="M20 80 Q50 20 80 80" fill="#4ade80" stroke="#166534" stroke-width="2"/><circle cx="40" cy="45" r="5" fill="white" /><circle cx="42" cy="43" r="2.5" fill="#333" /><circle cx="60" cy="45" r="5" fill="white" /><circle cx="58" cy="43" r="2.5" fill="#333" /><circle cx="35" cy="55" r="3" fill="#f472b6" opacity="0.4" /><circle cx="65" cy="55" r="3" fill="#f472b6" opacity="0.4" /></svg></template>
+    
+    <script>
+        const state = {
+            num1: 0, num2: 0, op: '+', answer: 0, points: 0, 
+            isSolved: false, currentItem: 'apple', bonusActive: false,
+            eggs: [], bubbles: [], bonusPointsEarned: 0,
+            currentRound: 1, maxRounds: 10,
+            usedProblems: new Set(),
+            dimmedCount: 0,
+            questionsAnswered: 0
+        };
+
+        const elements = {
+            num1: document.getElementById('num1'), num2: document.getElementById('num2'),
+            op: document.getElementById('op'), answerSlot: document.getElementById('answer-slot'),
+            gallery: document.getElementById('animal-gallery'), options: document.getElementById('options-container'),
+            prompt: document.getElementById('prompt-text'), scoreVal: document.getElementById('score-val'),
+            roundVal: document.getElementById('round-val'),
+            bonusOverlay: document.getElementById('bonus-overlay'), timerBar: document.getElementById('timer-bar'),
+            gameField: document.getElementById('game-field'), dino: document.getElementById('dino-player'),
+            summary: document.getElementById('bonus-summary'),
+            summaryBonus: document.getElementById('summary-bonus'),
+            summaryTotal: document.getElementById('summary-total'),
+            bonusHeader: document.getElementById('bonus-header'),
+            finalSummary: document.getElementById('final-summary'),
+            finalScore: document.getElementById('final-score'),
+            confettiCanvas: document.getElementById('confetti-canvas')
+        };
+
+        const categories = {
+            fruits: ['apple', 'orange', 'watermelon', 'strawberry', 'grape'],
+            sweets: ['candy', 'donut', 'icecream', 'cookie', 'cupcake']
+        };
+
+        const sounds = {
+            correct: document.getElementById('snd-correct'),
+            wrong: document.getElementById('snd-wrong'),
+            pop: document.getElementById('snd-pop'),
+            cheer: document.getElementById('snd-cheer'),
+            bonus: document.getElementById('snd-bonus')
+        };
+
+        function playSound(type) {
+            if(sounds[type]) {
+                sounds[type].currentTime = 0;
+                sounds[type].play().catch(e => console.log("Audio play blocked"));
+            }
+        }
+
+        const synth = window.speechSynthesis;
+        function speakPrompt() {
+            if (synth.speaking) synth.cancel();
+            let equationText = state.op === '+' ? `${state.num1} plus ${state.num2}. ` : `${state.num1} minus ${state.num2}. `;
+            const questionText = state.op === '+' ? "How many altogether?" : "How many are left?";
+            const fullText = equationText + questionText;
+            const utterThis = new SpeechSynthesisUtterance(fullText);
+            utterThis.rate = 0.9; utterThis.pitch = 1.1; utterThis.lang = 'en-US';
+            const voices = synth.getVoices();
+            const preferredVoice = voices.find(voice => voice.name.includes('Female') || voice.name.includes('Google US English'));
+            if(preferredVoice) utterThis.voice = preferredVoice;
+            synth.speak(utterThis);
+        }
+
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = () => synth.getVoices();
+        }
+
+        function init() { 
+            state.points = 0;
+            state.currentRound = 1;
+            state.questionsAnswered = 0;
+            state.usedProblems.clear();
+            elements.confettiCanvas.style.zIndex = -1;
+            generateProblem(); 
+            requestAnimationFrame(gameLoop); 
+        }
+
+        function getUniqueProblem() {
+            let attempts = 0;
+            let n1, n2, op, ans;
+            while (attempts < 50) {
+                const isAddition = state.currentRound % 2 !== 0; 
+                if (isAddition) {
+                    op = '+';
+                    ans = Math.floor(Math.random() * 8) + 2;
+                    n1 = Math.floor(Math.random() * (ans - 1)) + 1;
+                    n2 = ans - n1;
+                } else {
+                    op = '-';
+                    n1 = Math.floor(Math.random() * 7) + 3;
+                    n2 = Math.floor(Math.random() * (n1 - 1)) + 1;
+                    ans = n1 - n2;
+                }
+                const problemKey = `${n1}${op}${n2}`;
+                if (!state.usedProblems.has(problemKey)) {
+                    state.usedProblems.add(problemKey);
+                    return { n1, n2, op, ans };
+                }
+                attempts++;
+            }
+            return { n1: 2, n2: 1, op: '+', ans: 3 };
+        }
+
+        function generateProblem() {
+            if (state.currentRound > state.maxRounds) {
+                showFinalSummary();
+                return;
+            }
+            state.isSolved = false; state.bonusActive = false;
+            state.dimmedCount = 0;
+            elements.bonusOverlay.style.display = 'none';
+            elements.summary.style.display = 'none';
+            elements.gameField.innerHTML = '';
+            elements.bonusHeader.style.display = 'flex';
+            elements.dino.style.display = 'block';
+            state.eggs = []; state.bubbles = [];
+            state.bonusPointsEarned = 0;
+            elements.roundVal.textContent = `${state.currentRound}/${state.maxRounds}`;
+            const catKeys = Object.keys(categories);
+            const chosenCat = catKeys[Math.floor(Math.random() * catKeys.length)];
+            state.currentItem = categories[chosenCat][Math.floor(Math.random() * categories[chosenCat].length)];
+            const prob = getUniqueProblem();
+            state.num1 = prob.n1; state.num2 = prob.n2; state.op = prob.op; state.answer = prob.ans;
+            updateUI();
+            setTimeout(speakPrompt, 600);
+        }
+
+        function updateUI() {
+            elements.num1.textContent = state.num1; 
+            elements.num2.textContent = state.num2; 
+            elements.op.textContent = state.op;
+            elements.answerSlot.textContent = '?'; 
+            elements.answerSlot.className = "w-14 h-14 md:w-20 md:h-20 bg-orange-100/50 rounded-2xl flex items-center justify-center text-orange-300 border-4 border-dashed border-orange-200 text-3xl md:text-5xl transition-all duration-300";
+            elements.prompt.textContent = state.op === '+' ? "How many altogether?" : "How many are left?";
+            elements.gallery.innerHTML = ''; elements.options.innerHTML = '';
+            for (let i = 0; i < state.num1; i++) addItem(i * 0.05, i);
+            if (state.op === '+') {
+                const p = document.createElement('div'); 
+                p.className = "text-4xl md:text-5xl font-bold text-slate-400 mx-2 md:mx-4 drop-shadow-sm"; 
+                p.textContent = '+';
+                elements.gallery.appendChild(p);
+                for (let i = 0; i < state.num2; i++) addItem((state.num1 + i) * 0.05, state.num1 + i);
+            }
+            const opts = new Set([state.answer]);
+            while (opts.size < 3) {
+                const w = Math.max(0, state.answer + (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 3) + 1));
+                if (w <= 15) opts.add(w);
+            }
+            Array.from(opts).sort((a, b) => a - b).forEach(val => {
+                const b = document.createElement('button');
+                b.className = "btn-option flex-1 max-w-[100px] md:max-w-[120px] h-16 md:h-20 rounded-[1.2rem] md:rounded-[1.5rem] text-3xl md:text-4xl text-white font-bold flex items-center justify-center shadow-xl bounce-in";
+                b.textContent = val; 
+                b.onclick = (e) => handleChoice(val, b, e);
+                elements.options.appendChild(b);
+            });
+        }
+
+        function addItem(delay, index) {
+            const w = document.createElement('div'); 
+            w.className = "relative bounce-in p-1 md:p-2 item-container";
+            w.style.animationDelay = `${delay}s`; 
+            w.innerHTML = document.getElementById(`${state.currentItem}-svg`).innerHTML;
+            
+            // Subtraction logic - click to dim WITHOUT the red X or popping sound
+            if (state.op === '-') {
+                w.onclick = () => {
+                    if (state.isSolved) return;
+                    if (w.classList.contains('item-dimmed')) {
+                        w.classList.remove('item-dimmed');
+                        state.dimmedCount--;
+                    } else if (state.dimmedCount < state.num2) {
+                        w.classList.add('item-dimmed');
+                        state.dimmedCount++;
+                    }
+                };
+            }
+            elements.gallery.appendChild(w);
+        }
+
+        function handleChoice(val, btn, event) {
+            if (state.isSolved) return;
+            if (state.op === '-' && state.dimmedCount !== state.num2 && val === state.answer) {
+                 btn.classList.add('shake'); return;
+            }
+            if (val === state.answer) {
+                state.isSolved = true; playSound('correct');
+                state.questionsAnswered++;
+                btn.classList.add('correct');
+                elements.answerSlot.textContent = state.answer;
+                elements.answerSlot.className = "w-16 h-16 md:w-24 md:h-24 bg-green-500 rounded-2xl flex items-center justify-center text-white border-b-8 border-green-700 shadow-2xl scale-110 transition-all duration-300 text-4xl md:text-5xl";
+                state.points += 50; elements.scoreVal.textContent = state.points;
+                showPointsPopup(event.clientX, event.clientY, "+50");
+                elements.gallery.querySelectorAll('.item-container:not(.item-dimmed)').forEach(el => { 
+                    el.style.transform = 'translateY(-15px)'; 
+                    el.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'; 
+                });
+                
+                state.currentRound++;
+                if (state.currentRound > state.maxRounds) {
+                    setTimeout(showFinalSummary, 1500);
+                } else {
+                    // Trigger bonus round exactly after every 2 completed questions
+                    if (state.questionsAnswered % 2 === 0) {
+                        setTimeout(startBonusRound, 1200);
+                    } else {
+                        setTimeout(generateProblem, 1500);
+                    }
+                }
+            } else { 
+                playSound('wrong');
+                btn.classList.add('shake'); setTimeout(() => btn.classList.remove('shake'), 400); 
+            }
+        }
+
+        function startBonusRound() {
+            state.bonusActive = true; elements.bonusOverlay.style.display = 'block';
+            playSound('bonus');
+            let timeLeft = 6000; elements.timerBar.style.width = '100%';
+            const timer = setInterval(() => {
+                timeLeft -= 100; elements.timerBar.style.width = (timeLeft / 6000 * 100) + '%';
+                if (timeLeft <= 0) { clearInterval(timer); showBonusSummary(); }
+            }, 100);
+            for(let i=0; i<3; i++) setTimeout(spawnEgg, i*500);
+        }
+
+        function showBonusSummary() {
+            state.bonusActive = false;
+            elements.bonusHeader.style.display = 'none';
+            elements.dino.style.display = 'none';
+            
+            // Clean up bubbles from DOM
+            state.bubbles.forEach(b => b.el.remove());
+            elements.gameField.innerHTML = '';
+            
+            state.eggs = []; state.bubbles = []; 
+            elements.summaryBonus.textContent = `+${state.bonusPointsEarned}`;
+            elements.summaryTotal.textContent = state.points;
+            elements.summary.style.display = 'block';
+            playSound('cheer');
+            setTimeout(generateProblem, 3000);
+        }
+
+        function spawnEgg() {
+            if (!state.bonusActive) return;
+            const egg = document.createElement('div'); egg.className = 'dino-egg';
+            egg.innerHTML = document.getElementById('egg-svg').innerHTML;
+            const x = -100; const y = 100 + Math.random() * (window.innerHeight / 2.5);
+            egg.style.left = x + 'px'; egg.style.top = y + 'px';
+            state.eggs.push({ el: egg, x: x, y: y, vx: 1.5 + Math.random() * 2 }); 
+            elements.gameField.appendChild(egg);
+        }
+
+        function shootBubble(e) {
+            if (!state.bonusActive) return;
+            playSound('pop');
+            const bubble = document.createElement('div'); bubble.className = 'energy-bubble';
+            const dinoRect = elements.dino.getBoundingClientRect();
+            const startX = dinoRect.left + dinoRect.width / 2; const startY = dinoRect.top;
+            bubble.style.left = (startX - 20) + 'px'; bubble.style.top = startY + 'px';
+            const targetX = e.clientX; const targetY = e.clientY;
+            const angle = Math.atan2(targetY - startY, targetX - startX);
+            state.bubbles.push({ el: bubble, x: startX, y: startY, vx: Math.cos(angle) * 12, vy: Math.sin(angle) * 12 });
+            elements.bonusOverlay.appendChild(bubble);
+            elements.dino.style.transform = `translateX(-50%) scale(1.1) rotate(${(targetX - startX) * 0.03}deg)`;
+            setTimeout(() => elements.dino.style.transform = `translateX(-50%) scale(1) rotate(0deg)`, 150);
+        }
+
+        function gameLoop() {
+            if (state.bonusActive) {
+                // Update and check bubbles
+                for (let i = state.bubbles.length - 1; i >= 0; i--) {
+                    const b = state.bubbles[i];
+                    b.x += b.vx; b.y += b.vy;
+                    b.el.style.left = (b.x - 20) + 'px'; b.el.style.top = b.y + 'px';
+                    
+                    // Maintained Bug Fix: Remove if off-screen completely to prevent ghost elements
+                    if (b.x < -50 || b.x > window.innerWidth + 50 || b.y < -50 || b.y > window.innerHeight + 50) {
+                        b.el.remove();
+                        state.bubbles.splice(i, 1);
+                        continue; 
+                    }
+
+                    // Check collision with eggs
+                    for (let j = state.eggs.length - 1; j >= 0; j--) {
+                        const egg = state.eggs[j];
+                        if(egg.hit) continue; 
+                        const dist = Math.sqrt((egg.x + 40 - b.x)**2 + (egg.y + 50 - b.y)**2);
+                        if (dist < 60) {
+                            hatchEgg(egg);
+                            b.el.remove();
+                            state.bubbles.splice(i, 1); 
+                            break; 
+                        }
+                    }
+                }
+
+                // Update eggs
+                state.eggs.forEach((egg) => {
+                    if(egg.hit) return;
+                    egg.x += egg.vx; egg.el.style.left = egg.x + 'px';
+                    if (egg.x > window.innerWidth + 100) { 
+                        egg.x = -100; egg.y = 100 + Math.random() * (window.innerHeight / 2.5); 
+                        egg.el.style.top = egg.y + 'px'; 
+                    }
+                });
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        function hatchEgg(eggData) {
+            playSound('correct'); eggData.hit = true;
+            eggData.el.classList.add('bounce-in');
+            const dino = document.createElement('div');
+            dino.style.position = 'fixed'; dino.style.left = eggData.x + 'px'; dino.style.top = eggData.y + 'px';
+            dino.style.zIndex = 110; dino.innerHTML = document.getElementById('dino-svg').innerHTML;
+            dino.className = 'w-20 h-20 bounce-in filter drop-shadow-md'; 
+            document.body.appendChild(dino);
+            state.points += 20; state.bonusPointsEarned += 20;
+            elements.scoreVal.textContent = state.points;
+            showPointsPopup(eggData.x + 40, eggData.y, "+20");
+            eggData.el.style.visibility = 'hidden';
+            setTimeout(() => {
+                dino.remove(); 
+                if(state.bonusActive) {
+                    eggData.hit = false;
+                    eggData.x = -100;
+                    eggData.y = 100 + Math.random() * (window.innerHeight / 2.5);
+                    eggData.el.style.top = eggData.y + 'px';
+                    eggData.el.style.visibility = 'visible';
+                } else {
+                    eggData.el.remove(); 
+                }
+            }, 800);
+        }
+
+        function showPointsPopup(x, y, text) {
+            const p = document.createElement('div'); p.className = 'points-popup'; p.textContent = text;
+            const safeX = Math.max(20, Math.min(x, window.innerWidth - 100));
+            const safeY = Math.max(100, y);
+            p.style.left = `${safeX}px`; p.style.top = `${safeY}px`;
+            document.body.appendChild(p); setTimeout(() => p.remove(), 1000);
+        }
+
+        function showFinalSummary() {
+            playSound('cheer');
+            elements.finalScore.textContent = state.points;
+            elements.finalSummary.style.display = 'block';
+            elements.confettiCanvas.style.zIndex = 999;
+            const duration = 5 * 1000; const animationEnd = Date.now() + duration;
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1000 };
+            const myConfetti = confetti.create(elements.confettiCanvas, { resize: true, useWorker: true });
+            function randomInRange(min, max) { return Math.random() * (max - min) + min; }
+            const interval = setInterval(function() {
+                const timeLeft = animationEnd - Date.now();
+                if (timeLeft <= 0) return clearInterval(interval);
+                const particleCount = 50 * (timeLeft / duration);
+                myConfetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: -0.1 }, gravity: 1.2 }));
+                myConfetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: -0.1 }, gravity: 1.2 }));
+            }, 250);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
