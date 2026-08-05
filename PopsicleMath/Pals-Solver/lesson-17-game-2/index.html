@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <!-- Optimized viewport for mobile apps (prevents zooming and scaling issues) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Math Bar Models - Ver3</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        duoGreen: '#58CC02',
+                        duoGreenDark: '#46A302',
+                        duoBlue: '#1CB0F6',
+                        duoBlueDark: '#1899D6',
+                        duoPurple: '#CE82FF',
+                        duoPurpleDark: '#A855F7',
+                        duoYellow: '#FFC800',
+                        duoRed: '#FF4B4B',
+                        duoRedDark: '#EA2B2B',
+                        bgSoft: '#F7F7F8',
+                        mathPaper: '#FFF9E6'
+                    },
+                    boxShadow: {
+                        'duo': '0 4px 0 0 rgba(0, 0, 0, 0.1)',
+                        'duo-green': '0 4px 0 0 #46A302',
+                        'duo-blue': '0 4px 0 0 #1899D6',
+                        'duo-red': '0 4px 0 0 #EA2B2B',
+                        'duo-purple': '0 4px 0 0 #A855F7',
+                        'duo-white': '0 4px 0 0 #E5E7EB',
+                        'duo-slate': '0 4px 0 0 #94A3B8',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            /* Wrapping paper background pattern */
+            background-color: #fdf4ff;
+            background-image: 
+                radial-gradient(circle at center, #fbcfe8 6px, transparent 6px),
+                radial-gradient(circle at center, #bfdbfe 6px, transparent 6px);
+            background-size: 80px 80px;
+            background-position: 0 0, 40px 40px;
+            user-select: none;
+            touch-action: manipulation;
+            overscroll-behavior-y: none; /* Prevents pull-to-refresh on mobile */
+        }
+
+        /* Math Symbol Watermark Background for the Game Area */
+        .math-bg {
+            background-color: #FFF9E6;
+            background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23E6DAB3' fill-opacity='0.25' font-family='Poppins, sans-serif' font-size='24' font-weight='900'%3E%3Ctext x='15' y='35'%3E+%3C/text%3E%3Ctext x='75' y='25'%3E-%3C/text%3E%3Ctext x='40' y='85'%3E=%3C/text%3E%3Ctext x='85' y='95'%3E%C3%97%3C/text%3E%3Ctext x='100' y='55'%3E%C3%B7%3C/text%3E%3Ctext x='10' y='100'%3E?%3C/text%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        .math-input:focus {
+            outline: none;
+            border-color: #1CB0F6;
+            box-shadow: 0 0 0 4px rgba(28, 176, 246, 0.3);
+        }
+        .math-input:disabled {
+            background-color: #f1f5f9;
+            cursor: not-allowed;
+            color: #94a3b8;
+        }
+
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 99999;
+        }
+
+        @keyframes bounce-in {
+            0% { transform: scale(0.5); opacity: 0; }
+            60% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-bounce-in {
+            animation: bounce-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        
+        @keyframes pop-in {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop-in {
+            animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(-3deg); }
+            50% { transform: rotate(3deg); }
+        }
+        .animate-wiggle {
+            animation: wiggle 1s ease-in-out infinite;
+        }
+
+        .btn-3d {
+            transition: transform 0.1s, box-shadow 0.1s, background-color 0.2s;
+        }
+        .btn-3d:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0 0px 0 0 transparent !important;
+        }
+        .btn-3d:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: translateY(4px);
+            box-shadow: 0 0px 0 0 transparent !important;
+        }
+
+        .cube-unit {
+            transition: transform 0.2s ease, filter 0.2s ease, fill 0.3s ease;
+            transform-origin: center;
+            transform-box: fill-box;
+        }
+        .bracket-label, .nb-text {
+            font-weight: 800;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        /* Responsive height clamp for the main container */
+        .app-h {
+            height: 100dvh;
+        }
+        @media (min-width: 768px) {
+            .app-h {
+                height: 90vh;
+                max-height: 850px;
+            }
+        }
+        
+        .fade-in {
+            opacity: 1;
+            transition: opacity 0.5s ease-in;
+        }
+    
+
+        /* Ver2: animated scenic background imported from BGnew.html */
+        #backgroundCanvas {
+            display: block;
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        #app-container {
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.90);
+        }
+
+        /* Keep the original math-paper styling while letting BGnew show through. */
+        .math-bg {
+            background-color: rgba(255, 249, 230, 0.86);
+        }
+
+        /* Ver3: make the complete cube bar model 15% larger without changing its logic. */
+        #number-bond-svg {
+            width: 105% !important;
+            max-width: 105% !important;
+            margin-left: -2.5%;
+            margin-right: -2.5%;
+            overflow: visible;
+        }
+        #bar-svg {
+            width: 115% !important;
+            max-width: 115% !important;
+            margin-left: -7.5%;
+            margin-right: -7.5%;
+        }
+
+        @media (min-width: 768px) {
+            #bar-svg {
+                max-height: 184px !important;
+            }
+        }
+</style>
+</head>
+<body class="flex items-center justify-center p-0 md:p-4 font-sans app-h w-full overflow-hidden">
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- Ver3 background imported from BGnew.html -->
+    <canvas id="backgroundCanvas" aria-label="Background with sky, rainbow, grass, flowers, butterflies, and trees"></canvas>
+    <script>
+(() => {
+            const bgCanvas = document.getElementById('backgroundCanvas');
+            const bgCtx = bgCanvas.getContext('2d', { alpha: false });
+
+            let bgWidth = 0;
+            let bgHeight = 0;
+            let bgClouds = [];
+            let bgTrees = [];
+            let bgFlowers = [];
+            let bgButterflies = [];
+
+            const flowerColors = ['#ff4b4b', '#ffc800', '#ce82ff', '#ffffff', '#1cb0f6', '#ff8fab'];
+
+            function resizeBackgroundCanvas() {
+                const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+                bgWidth = window.innerWidth;
+                bgHeight = window.innerHeight;
+                bgCanvas.width = Math.floor(bgWidth * dpr);
+                bgCanvas.height = Math.floor(bgHeight * dpr);
+                bgCanvas.style.width = bgWidth + 'px';
+                bgCanvas.style.height = bgHeight + 'px';
+                bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                generateBackgroundEnvironment();
+            }
+
+            function generateBackgroundEnvironment() {
+                bgClouds = [];
+                bgTrees = [];
+                bgFlowers = [];
+                bgButterflies = [];
+
+                // Reduced cloud count by about 40% from ver6.
+                const cloudCount = bgWidth < 600 ? 3 : 5;
+                for (let i = 0; i < cloudCount; i++) {
+                    bgClouds.push({
+                        x: Math.random() * bgWidth,
+                        y: bgHeight * (0.08 + Math.random() * 0.34),
+                        size: 28 + Math.random() * (bgWidth < 600 ? 34 : 52),
+                        speed: Math.random() * 0.16 + 0.05,
+                        opacity: 0.72 + Math.random() * 0.24
+                    });
+                }
+
+                const treeCount = bgWidth < 600 ? 6 : 11;
+                for (let i = 0; i < treeCount; i++) {
+                    bgTrees.push({
+                        x: (i / Math.max(1, treeCount - 1)) * bgWidth + (Math.random() * 70 - 35),
+                        y: bgHeight * (0.66 + Math.random() * 0.04),
+                        scale: 0.48 + Math.random() * 0.56
+                    });
+                }
+
+                const flowerCount = bgWidth < 600 ? 10 : 18;
+                for (let i = 0; i < flowerCount; i++) {
+                    bgFlowers.push({
+                        x: Math.random() * bgWidth,
+                        y: bgHeight * 0.80 + Math.random() * (bgHeight * 0.16),
+                        color: flowerColors[Math.floor(Math.random() * flowerColors.length)],
+                        scale: 0.42 + Math.random() * 0.42,
+                        sway: Math.random() * Math.PI * 2,
+                        petals: Math.random() > 0.45 ? 6 : 5
+                    });
+                }
+
+                for (let i = 0; i < 4; i++) {
+                    bgButterflies.push({
+                        x: Math.random() * bgWidth,
+                        y: bgHeight * (0.28 + Math.random() * 0.24),
+                        size: 5 + Math.random() * 4,
+                        speed: 0.18 + Math.random() * 0.18,
+                        phase: Math.random() * Math.PI * 2,
+                        color: ['#ff6b9d', '#ffd93d', '#9b5de5', '#00bbf9'][i % 4]
+                    });
+                }
+            }
+
+            function updateBackground() {
+                bgClouds.forEach(cloud => {
+                    cloud.x -= cloud.speed;
+                    if (cloud.x + cloud.size * 2.4 < 0) {
+                        cloud.x = bgWidth + cloud.size * 2.4;
+                        cloud.y = bgHeight * (0.08 + Math.random() * 0.34);
+                    }
+                });
+
+                bgButterflies.forEach(b => {
+                    b.x += b.speed;
+                    b.phase += 0.08;
+                    if (b.x > bgWidth + 30) {
+                        b.x = -30;
+                        b.y = bgHeight * (0.28 + Math.random() * 0.24);
+                    }
+                });
+            }
+
+            function drawRoundedCloud(cloud) {
+                bgCtx.save();
+                bgCtx.globalAlpha = cloud.opacity;
+                bgCtx.fillStyle = '#ffffff';
+                bgCtx.beginPath();
+                bgCtx.arc(cloud.x, cloud.y, cloud.size, 0, Math.PI * 2);
+                bgCtx.arc(cloud.x + cloud.size * 0.82, cloud.y + cloud.size * 0.2, cloud.size * 0.72, 0, Math.PI * 2);
+                bgCtx.arc(cloud.x - cloud.size * 0.85, cloud.y + cloud.size * 0.22, cloud.size * 0.68, 0, Math.PI * 2);
+                bgCtx.arc(cloud.x + cloud.size * 0.15, cloud.y - cloud.size * 0.28, cloud.size * 0.72, 0, Math.PI * 2);
+                bgCtx.fill();
+                bgCtx.restore();
+            }
+
+            function drawSun() {
+                const x = Math.min(90, bgWidth * 0.12);
+                const y = Math.min(92, bgHeight * 0.13);
+                const r = Math.max(35, Math.min(bgWidth, bgHeight) * 0.055);
+                bgCtx.save();
+                bgCtx.translate(x, y);
+                bgCtx.fillStyle = 'rgba(255, 213, 82, 0.22)';
+                bgCtx.beginPath();
+                bgCtx.arc(0, 0, r * 1.75, 0, Math.PI * 2);
+                bgCtx.fill();
+                bgCtx.fillStyle = '#FFD369';
+                bgCtx.beginPath();
+                bgCtx.arc(0, 0, r, 0, Math.PI * 2);
+                bgCtx.fill();
+                bgCtx.fillStyle = '#D35400';
+                bgCtx.beginPath();
+                bgCtx.arc(-r * 0.32, -r * 0.1, r * 0.08, 0, Math.PI * 2);
+                bgCtx.arc(r * 0.32, -r * 0.1, r * 0.08, 0, Math.PI * 2);
+                bgCtx.fill();
+                bgCtx.strokeStyle = '#D35400';
+                bgCtx.lineWidth = Math.max(3, r * 0.07);
+                bgCtx.lineCap = 'round';
+                bgCtx.beginPath();
+                bgCtx.arc(0, r * 0.12, r * 0.36, 0.15 * Math.PI, 0.85 * Math.PI);
+                bgCtx.stroke();
+                bgCtx.restore();
+            }
+
+            function drawRainbow() {
+                bgCtx.save();
+                bgCtx.translate(bgWidth * 0.5, bgHeight * 0.67);
+                bgCtx.lineWidth = Math.max(13, Math.min(22, bgWidth * 0.015));
+                bgCtx.lineCap = 'round';
+                const rainbowColors = ['#ff4b4b', '#ff9900', '#ffc800', '#58cc02', '#1cb0f6', '#ce82ff'];
+                const baseRadius = Math.min(bgWidth * 0.34, bgHeight * 0.46, 420);
+                for (let i = 0; i < rainbowColors.length; i++) {
+                    bgCtx.strokeStyle = rainbowColors[i];
+                    bgCtx.globalAlpha = 0.82;
+                    bgCtx.beginPath();
+                    bgCtx.arc(0, 0, baseRadius - i * bgCtx.lineWidth, Math.PI, 0);
+                    bgCtx.stroke();
+                }
+                bgCtx.restore();
+            }
+
+            function drawTree(tree) {
+                bgCtx.save();
+                bgCtx.translate(tree.x, tree.y);
+                bgCtx.scale(tree.scale, tree.scale);
+                bgCtx.fillStyle = '#8B5A2B';
+                bgCtx.fillRect(-9, 0, 18, 56);
+                bgCtx.fillStyle = '#4ade80';
+                bgCtx.beginPath();
+                bgCtx.arc(0, -24, 38, 0, Math.PI * 2);
+                bgCtx.arc(-25, -12, 29, 0, Math.PI * 2);
+                bgCtx.arc(24, -10, 30, 0, Math.PI * 2);
+                bgCtx.fill();
+                bgCtx.fillStyle = 'rgba(255,255,255,0.28)';
+                bgCtx.beginPath();
+                bgCtx.arc(-12, -34, 12, 0, Math.PI * 2);
+                bgCtx.fill();
+                bgCtx.restore();
+            }
+
+            function drawFlower(flower, time) {
+                bgCtx.save();
+                const sway = Math.sin(time * 0.0015 + flower.sway) * 1.4;
+                bgCtx.translate(flower.x + sway, flower.y);
+                bgCtx.scale(flower.scale, flower.scale);
+
+                bgCtx.strokeStyle = '#259a3f';
+                bgCtx.lineWidth = 2.4;
+                bgCtx.lineCap = 'round';
+                bgCtx.beginPath();
+                bgCtx.moveTo(0, 5);
+                bgCtx.quadraticCurveTo(2, 14, 0, 23);
+                bgCtx.stroke();
+
+                bgCtx.fillStyle = '#55d85a';
+                bgCtx.beginPath();
+                bgCtx.ellipse(-6, 15, 4, 8, -0.8, 0, Math.PI * 2);
+                bgCtx.ellipse(6, 18, 4, 8, 0.75, 0, Math.PI * 2);
+                bgCtx.fill();
+
+                const petalCount = flower.petals || 6;
+                bgCtx.fillStyle = flower.color;
+                for (let petal = 0; petal < petalCount; petal++) {
+                    bgCtx.save();
+                    bgCtx.rotate((Math.PI * 2 * petal) / petalCount);
+                    bgCtx.beginPath();
+                    bgCtx.ellipse(0, -9, 5.2, 9.5, 0, 0, Math.PI * 2);
+                    bgCtx.fill();
+                    bgCtx.restore();
+                }
+
+                bgCtx.fillStyle = '#ffe066';
+                bgCtx.beginPath();
+                bgCtx.arc(0, 0, 5, 0, Math.PI * 2);
+                bgCtx.fill();
+                bgCtx.strokeStyle = 'rgba(154,103,0,0.28)';
+                bgCtx.lineWidth = 1;
+                bgCtx.stroke();
+                bgCtx.restore();
+            }
+
+            function drawButterfly(b) {
+                const y = b.y + Math.sin(b.phase) * 10;
+                bgCtx.save();
+                bgCtx.translate(b.x, y);
+                bgCtx.fillStyle = b.color;
+                bgCtx.globalAlpha = 0.88;
+                bgCtx.beginPath();
+                bgCtx.ellipse(-b.size, 0, b.size, b.size * 1.35, Math.sin(b.phase) * 0.5, 0, Math.PI * 2);
+                bgCtx.ellipse(b.size, 0, b.size, b.size * 1.35, -Math.sin(b.phase) * 0.5, 0, Math.PI * 2);
+                bgCtx.fill();
+                bgCtx.strokeStyle = '#334155';
+                bgCtx.lineWidth = 1.4;
+                bgCtx.beginPath();
+                bgCtx.moveTo(0, -b.size * 1.1);
+                bgCtx.lineTo(0, b.size * 1.2);
+                bgCtx.stroke();
+                bgCtx.restore();
+            }
+
+            function drawBackground(time = 0) {
+                const skyGradient = bgCtx.createLinearGradient(0, 0, 0, bgHeight * 0.72);
+                skyGradient.addColorStop(0, '#7dd3fc');
+                skyGradient.addColorStop(0.62, '#bae6fd');
+                skyGradient.addColorStop(1, '#e0f8ff');
+                bgCtx.fillStyle = skyGradient;
+                bgCtx.fillRect(0, 0, bgWidth, bgHeight);
+
+                drawSun();
+                drawRainbow();
+
+                bgClouds.forEach(drawRoundedCloud);
+                bgButterflies.forEach(drawButterfly);
+
+                bgCtx.fillStyle = '#65a30d';
+                bgCtx.beginPath();
+                bgCtx.moveTo(0, bgHeight);
+                bgCtx.lineTo(0, bgHeight * 0.66);
+                for (let x = 0; x <= bgWidth + 280; x += 280) {
+                    bgCtx.quadraticCurveTo(x - 140, bgHeight * 0.55, x, bgHeight * 0.66);
+                }
+                bgCtx.lineTo(bgWidth, bgHeight);
+                bgCtx.fill();
+
+                bgTrees.forEach(drawTree);
+
+                bgCtx.fillStyle = '#58cc02';
+                bgCtx.beginPath();
+                bgCtx.moveTo(0, bgHeight);
+                bgCtx.lineTo(0, bgHeight * 0.72);
+                bgCtx.quadraticCurveTo(bgWidth * 0.5, bgHeight * 0.66, bgWidth, bgHeight * 0.72);
+                bgCtx.lineTo(bgWidth, bgHeight);
+                bgCtx.fill();
+
+                bgCtx.strokeStyle = '#84cc16';
+                bgCtx.lineWidth = Math.max(10, Math.min(18, bgWidth * 0.014));
+                bgCtx.lineCap = 'round';
+                bgCtx.beginPath();
+                bgCtx.moveTo(-20, bgHeight * 0.72);
+                bgCtx.quadraticCurveTo(bgWidth * 0.5, bgHeight * 0.66, bgWidth + 20, bgHeight * 0.72);
+                bgCtx.stroke();
+
+                bgFlowers.forEach(flower => drawFlower(flower, time));
+            }
+
+            function backgroundAnimationLoop(time) {
+                updateBackground();
+                drawBackground(time);
+                requestAnimationFrame(backgroundAnimationLoop);
+            }
+
+            window.addEventListener('resize', resizeBackgroundCanvas);
+            resizeBackgroundCanvas();
+            requestAnimationFrame(backgroundAnimationLoop);
+        })();
+    </script>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Main Game Container -->
+    <div id="app-container" class="w-full h-full max-w-5xl bg-white md:rounded-[2rem] md:border-b-8 md:border-slate-200 shadow-xl overflow-hidden flex flex-col relative">
+        
+        <!-- Start Screen Overlay (To initialize Audio Context) -->
+        <div id="start-screen" class="absolute inset-0 z-50 flex items-center justify-center bg-white/95 backdrop-blur-sm md:rounded-[2rem]">
+            <div class="text-center animate-bounce-in">
+                <div class="text-6xl mb-4 animate-wiggle">🍎</div>
+                <h1 class="text-3xl md:text-5xl font-black text-duoBlue mb-8 drop-shadow-sm">Math Bar Models</h1>
+                <button onclick="initGame()" class="bg-duoGreen hover:bg-duoGreenDark text-white font-black text-2xl px-10 py-5 rounded-3xl shadow-duo-green btn-3d tracking-wide flex items-center justify-center gap-3 mx-auto">
+                    START GAME <i class="fa-solid fa-play"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Tool Bar (Score, Type Tag, Progress, Hint, Home) -->
+        <div class="px-4 md:px-6 pt-4 md:pt-5 pb-2 flex justify-between items-center bg-white border-b-2 border-slate-100 z-10 shrink-0">
+            <!-- Left Side: Score, Tag & Progress -->
+            <div class="flex items-center gap-2 md:gap-4 flex-1">
+                <span class="flex items-center text-duoYellow font-bold text-base md:text-lg bg-amber-50 px-2 md:px-3 py-1 rounded-xl shadow-sm border border-amber-100 shrink-0">
+                    <i class="fa-solid fa-star mr-1 md:mr-2 text-lg md:text-xl animate-pulse"></i>
+                    <span id="score-display">0</span>
+                </span>
+                
+                <div id="problem-type-tag" class="inline-block font-black px-2 md:px-3 py-1 rounded-xl uppercase tracking-wider text-xs md:text-sm shadow-sm border-b-2 shrink-0">
+                    Addition
+                </div>
+
+                <!-- Shortened Progress Bar -->
+                <div class="w-24 md:w-40 bg-slate-200 h-3 md:h-4 rounded-full overflow-hidden relative hidden sm:block">
+                    <div id="progress-bar-fill" class="bg-duoGreen h-full rounded-full transition-all duration-500 ease-out" style="width: 0%">
+                        <div class="w-full h-1/3 bg-white/30 absolute top-0 rounded-t-full"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Side: Home + Hint -->
+            <div class="flex items-center gap-2 md:gap-3 shrink-0">
+                <button onclick="resetAppFull()" class="text-slate-500 hover:text-slate-700 transition p-2 rounded-xl hover:bg-slate-100 text-lg md:text-xl btn-3d flex items-center justify-center" title="Go Home">
+                    <i class="fa-solid fa-house"></i>
+                </button>
+                <button onclick="showHint()" class="text-amber-500 hover:text-amber-600 transition p-2 rounded-xl hover:bg-amber-50 text-lg md:text-xl btn-3d flex items-center justify-center" title="Get a Hint">
+                    <i class="fa-solid fa-lightbulb"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- GAME AREA -->
+        <main id="game-area" class="flex-1 p-3 md:p-6 flex flex-col items-center justify-start relative math-bg overflow-y-auto">
+
+            <!-- Clean Problem Text Area with Audio Button -->
+            <div class="w-full max-w-4xl text-center mb-3 md:mb-5 bg-white/90 backdrop-blur-sm p-3 md:p-4 rounded-3xl shadow-sm border border-white/60 min-h-[60px] md:min-h-[80px] flex flex-col items-center justify-center relative">
+                
+                <div id="problem-text-container" class="text-base sm:text-lg md:text-2xl font-extrabold text-slate-800 leading-snug space-y-1">
+                    <p id="sent1" class="hidden transition-opacity duration-300">Emma has 15 red apples.</p>
+                    <p id="sent2" class="hidden transition-opacity duration-300 text-slate-600">She has 8 green apples.</p>
+                    <p id="sent3" class="hidden transition-opacity duration-300 text-indigo-700">How many apples does she have altogether?</p>
+                </div>
+                
+                <!-- Floating Speaker Icon -->
+                <button onclick="readAloudVisible()" class="absolute right-2 top-2 md:right-4 md:top-4 bg-duoBlue hover:bg-duoBlueDark text-white w-8 h-8 md:w-10 md:h-10 rounded-full shadow-duo-blue btn-3d flex items-center justify-center text-sm md:text-base active:translate-y-1" title="Read Text Aloud">
+                    <i class="fa-solid fa-volume-up"></i>
+                </button>
+            </div>
+
+            <!-- VISUALS CONTAINER -->
+            <div class="w-full flex flex-col md:flex-row items-stretch justify-center gap-3 md:gap-6 mb-3 md:mb-5 max-w-5xl shrink-0">
+                
+                <!-- Visual Bar Model Container -->
+                <div class="w-full md:w-2/3 flex flex-col items-center justify-center bg-white/95 rounded-3xl border-2 border-slate-200 p-2 md:p-4 shadow-md backdrop-blur-sm min-h-[140px] md:min-h-[200px]">
+                    <div id="bar-model-container" class="w-full mx-auto flex flex-col items-center">
+                        <!-- Viewbox extended slightly for larger cubes -->
+                        <svg id="bar-svg" class="w-full overflow-visible max-h-[120px] md:max-h-[160px]" viewBox="0 0 580 180" preserveAspectRatio="xMidYMid meet">
+                            <defs>
+                                <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+                                    <feDropShadow dx="0" dy="3" stdDeviation="2" flood-opacity="0.15"/>
+                                </filter>
+                                <linearGradient id="cubeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="rgba(255,255,255,0.4)" />
+                                    <stop offset="40%" stop-color="rgba(255,255,255,0.1)" />
+                                    <stop offset="100%" stop-color="rgba(0,0,0,0.15)" />
+                                </linearGradient>
+                                <linearGradient id="cubeHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stop-color="rgba(255,255,255,0.6)" />
+                                    <stop offset="30%" stop-color="rgba(255,255,255,0)" />
+                                </linearGradient>
+                                <filter id="innerShadow">
+                                    <feOffset dx="0" dy="1"/>
+                                    <feGaussianBlur stdDeviation="1" result="offset-blur"/>
+                                    <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse"/>
+                                    <feFlood flood-color="black" flood-opacity="0.3" result="color"/>
+                                    <feComposite operator="in" in="color" in2="inverse" result="shadow"/>
+                                    <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
+                                </filter>
+                            </defs>
+                            <g id="svg-brackets-top"></g>
+                            <g id="svg-cubes-group" filter="url(#shadow)"></g>
+                            <g id="svg-brackets-bottom"></g>
+                        </svg>
+                    </div>
+
+                    <!-- Cube Legend -->
+                    <div class="mt-2 md:mt-4 flex flex-wrap items-center justify-center gap-2 md:gap-4 text-xs md:text-sm font-bold text-slate-700">
+                        <div id="legend-box-1" class="flex items-center gap-1.5 bg-slate-50 px-2 py-1 md:px-3 md:py-1.5 rounded-xl border border-slate-200 opacity-0 transition-opacity duration-300">
+                            <span id="legend-color-1" class="w-3 h-3 md:w-4 md:h-4 rounded inline-block border border-black/10 shadow-inner"></span>
+                            <span id="legend-label-1"></span>
+                        </div>
+                        <div id="legend-box-2" class="flex items-center gap-1.5 bg-slate-50 px-2 py-1 md:px-3 md:py-1.5 rounded-xl border border-slate-200 opacity-0 transition-opacity duration-300">
+                            <span id="legend-color-2" class="w-3 h-3 md:w-4 md:h-4 rounded inline-block border border-black/10 shadow-inner"></span>
+                            <span id="legend-label-2"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Number Bond Container (Larger by ~15%, Title Removed) -->
+                <div class="w-full md:w-1/3 flex flex-col items-center justify-center bg-white/95 rounded-3xl border-2 border-slate-200 p-2 md:p-4 shadow-md backdrop-blur-sm min-h-[140px] md:min-h-[200px]">
+                    <svg id="number-bond-svg" class="w-full max-w-[185px] md:max-w-[230px]" viewBox="0 -8 200 160" preserveAspectRatio="xMidYMid meet">
+                        <!-- Connecting Lines (Always visible as empty structure) -->
+                        <line x1="100" y1="33" x2="45" y2="110" stroke="#E2E8F0" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="100" y1="33" x2="155" y2="110" stroke="#E2E8F0" stroke-width="4" stroke-linecap="round"/>
+                        
+                        <circle cx="100" cy="28" r="26" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="3"/>
+                        <circle cx="45" cy="115" r="22" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="3"/>
+                        <circle cx="155" cy="115" r="22" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="3"/>
+
+                        <!-- Whole (Top) -->
+                        <g id="nb-whole-group" class="opacity-0 transition-opacity duration-500" transform="translate(100, 28)">
+                            <circle cx="0" cy="0" r="26" fill="#FFF" stroke="#64748B" stroke-width="3" filter="url(#shadow)"/>
+                            <text id="nb-whole-text" x="0" y="8" text-anchor="middle" class="nb-text" font-size="22" fill="#1E293B"></text>
+                        </g>
+
+                        <!-- Part 1 (Bottom Left) -->
+                        <g id="nb-part1-group" class="opacity-0 transition-opacity duration-500" transform="translate(45, 115)">
+                            <circle cx="0" cy="0" r="22" fill="#FFF" stroke="#64748B" stroke-width="3" filter="url(#shadow)"/>
+                            <text id="nb-part1-text" x="0" y="7" text-anchor="middle" class="nb-text" font-size="20" fill="#1E293B"></text>
+                        </g>
+
+                        <!-- Part 2 (Bottom Right) -->
+                        <g id="nb-part2-group" class="opacity-0 transition-opacity duration-500" transform="translate(155, 115)">
+                            <circle cx="0" cy="0" r="22" fill="#FFF" stroke="#64748B" stroke-width="3" filter="url(#shadow)"/>
+                            <text id="nb-part2-text" x="0" y="7" text-anchor="middle" class="nb-text" font-size="20" fill="#1E293B"></text>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Hint / Error Feedback Banner (Only shows when needed) -->
+            <div id="feedback-banner" class="hidden">
+                <div id="feedback-message"></div>
+            </div>
+
+            <!-- Dynamic Interactive Bar (Swaps between Input and Equation) -->
+            <div id="interactive-bar" class="w-full max-w-3xl flex flex-col sm:flex-row flex-wrap items-center justify-center font-bold text-slate-800 gap-2 md:gap-4 bg-white p-3 md:p-5 rounded-3xl shadow-md border-b-4 border-slate-200 shrink-0 transition-colors duration-300 min-h-[80px]">
+                
+                <!-- State 3: Answer Input Form -->
+                <div id="input-area" class="hidden flex items-center justify-center gap-2 md:gap-4 text-sm md:text-xl">
+                    <span id="sentence-prefix">...</span>
+                    <input type="number" id="user-answer" placeholder="?"
+                           class="math-input w-16 md:w-28 px-1 md:px-2 py-2 md:py-3 text-center text-xl md:text-3xl font-black text-duoBlue bg-slate-100 border-b-4 border-slate-300 rounded-xl md:rounded-2xl transition duration-150"
+                           autocomplete="off" onkeydown="if(event.key === 'Enter') handleActionKey()" />
+                    <span id="sentence-suffix" class="hidden sm:inline-block">...</span>
+                </div>
+
+                <!-- State 4: Solved Equation & Feedback -->
+                <div id="equation-area" class="hidden flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 w-full md:w-auto">
+                    <div class="flex items-center gap-2 text-green-700 text-base md:text-xl shrink-0">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span id="equation-feedback-msg">Brilliant!</span>
+                    </div>
+                    <div class="flex items-center justify-center gap-3 bg-white/60 py-1.5 px-4 rounded-xl border border-green-200 shadow-sm shrink-0">
+                        <span id="equation-text" class="text-xl md:text-2xl font-black tracking-wide text-slate-800"></span>
+                        <button onclick="readEquation()" class="bg-indigo-500 hover:bg-indigo-600 text-white w-8 h-8 md:w-10 md:h-10 rounded-full shadow-md btn-3d flex items-center justify-center active:translate-y-1">
+                            <i class="fa-solid fa-volume-up text-sm md:text-base"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dynamic Action Button -->
+                <button id="action-btn" onclick="handleAction()" class="bg-duoPurple text-white font-black text-sm md:text-lg px-4 py-3 md:px-6 md:py-4 rounded-xl md:rounded-2xl shadow-duo-purple btn-3d tracking-wide flex items-center justify-center shrink-0 sm:ml-4">
+                    NEXT <i class="fa-solid fa-arrow-right ml-1 md:ml-2"></i>
+                </button>
+            </div>
+            
+            <div class="h-4 w-full shrink-0"></div> <!-- spacing -->
+        </main>
+
+        <!-- END GAME SCREEN -->
+        <div id="end-screen" class="hidden absolute inset-0 flex flex-col items-center justify-center p-6 bg-white z-20 rounded-[2rem]">
+            <div class="animate-bounce-in text-center">
+                <div class="text-6xl md:text-7xl mb-4 md:mb-6 animate-wiggle">🎉</div>
+                <h1 class="text-3xl md:text-5xl font-black text-duoYellow mb-3 md:mb-4 drop-shadow-md">Round Complete!</h1>
+                <p class="text-lg md:text-2xl font-bold text-slate-600 mb-6 md:mb-8">You are a Math Superstar!</p>
+                
+                <div class="bg-amber-50 border-4 border-amber-200 rounded-3xl p-5 md:p-8 inline-block mb-8 md:mb-10 shadow-lg">
+                    <h3 class="text-slate-500 font-bold uppercase tracking-wider mb-1 md:mb-2 text-sm md:text-base">Total Score</h3>
+                    <div class="text-5xl md:text-7xl font-black text-amber-500 flex items-center justify-center gap-3">
+                        <i class="fa-solid fa-star"></i>
+                        <span id="final-score">100</span>
+                    </div>
+                </div>
+                
+                <div>
+                    <button onclick="startNewRound()" class="bg-duoGreen text-white font-black text-xl md:text-2xl px-8 md:px-10 py-4 md:py-5 rounded-3xl shadow-duo-green btn-3d tracking-wide flex items-center justify-center gap-3 mx-auto hover:bg-duoGreenDark">
+                        PLAY AGAIN <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cleaned up Kid-friendly questions
+        const allQuestions = [
+            { type: "addition", s1: "Emma has 15 red apples.", s2: "She also has 8 green apples.", s3: "How many apples does she have altogether?", val1: 15, val2: 8, total: 23, color1Name: "Red Apples 🍎", color2Name: "Green Apples 🍏", color1: "#ef4444", color2: "#84cc16", prefix: "Emma has", suffix: "apples." },
+            { type: "subtraction", s1: "Tom bought 25 balloons for his party.", s2: "12 of the balloons popped.", s3: "How many balloons are left?", val1: 12, val2: 13, total: 25, color1Name: "Popped 💥", color2Name: "Left 🎈", color1: "#f97316", color2: "#cbd5e1", prefix: "Tom has", suffix: "balloons left." },
+            { type: "addition", s1: "Mia saw 14 puppies at the pet store.", s2: "She also saw 11 kittens.", s3: "How many animals did she see in total?", val1: 14, val2: 11, total: 25, color1Name: "Puppies 🐶", color2Name: "Kittens 🐱", color1: "#8b5cf6", color2: "#ec4899", prefix: "Mia saw", suffix: "animals." },
+            { type: "subtraction", s1: "Liam had 30 yummy candies.", s2: "He ate 15 of them.", s3: "How many candies does he have now?", val1: 15, val2: 15, total: 30, color1Name: "Eaten 😋", color2Name: "Left 🍬", color1: "#ef4444", color2: "#cbd5e1", prefix: "Liam has", suffix: "candies." },
+            { type: "addition", s1: "Leo has 18 red toy cars.", s2: "He has 12 yellow toy cars.", s3: "How many cars does he have in all?", val1: 18, val2: 12, total: 30, color1Name: "Red Cars 🚗", color2Name: "Yellow Cars 🚕", color1: "#ef4444", color2: "#eab308", prefix: "Leo has", suffix: "cars." },
+            { type: "subtraction", s1: "Zoe had 35 bright crayons.", s2: "She lost 14 of them.", s3: "How many crayons are left in the box?", val1: 14, val2: 21, total: 35, color1Name: "Lost 🖍️", color2Name: "Left 🖍️", color1: "#64748b", color2: "#cbd5e1", prefix: "Zoe has", suffix: "crayons." },
+            { type: "addition", s1: "Max found 16 toy dinosaurs.", s2: "He also found 13 toy dragons.", s3: "How many toys did he find altogether?", val1: 16, val2: 13, total: 29, color1Name: "Dinosaurs 🦕", color2Name: "Dragons 🦖", color1: "#10b981", color2: "#f59e0b", prefix: "Max found", suffix: "toys." },
+            { type: "subtraction", s1: "Sam made 28 pizza slices.", s2: "His friends ate 14 slices.", s3: "How many slices are left?", val1: 14, val2: 14, total: 28, color1Name: "Eaten 🍕", color2Name: "Left 🍕", color1: "#f97316", color2: "#cbd5e1", prefix: "Sam has", suffix: "slices." },
+            { type: "addition", s1: "Lily caught 17 green frogs.", s2: "She caught 15 brown turtles.", s3: "How many animals did she catch in total?", val1: 17, val2: 15, total: 32, color1Name: "Frogs 🐸", color2Name: "Turtles 🐢", color1: "#22c55e", color2: "#a8a29e", prefix: "Lily caught", suffix: "animals." },
+            { type: "subtraction", s1: "Noah had 38 shiny gold stars.", s2: "He gave away 19 stars.", s3: "How many stars does he have now?", val1: 19, val2: 19, total: 38, color1Name: "Given 🎁", color2Name: "Left ⭐", color1: "#3b82f6", color2: "#cbd5e1", prefix: "Noah has", suffix: "stars." },
+            { type: "addition", s1: "Chloe picked 22 strawberries.", s2: "She picked 16 blueberries.", s3: "How many berries does she have altogether?", val1: 22, val2: 16, total: 38, color1Name: "Strawberries 🍓", color2Name: "Blueberries 🫐", color1: "#ef4444", color2: "#3b82f6", prefix: "Chloe has", suffix: "berries." },
+            { type: "subtraction", s1: "Jack baked 40 chocolate cookies.", s2: "His family ate 25 of them.", s3: "How many cookies are left?", val1: 25, val2: 15, total: 40, color1Name: "Eaten 🤤", color2Name: "Left 🍪", color1: "#84cc16", color2: "#cbd5e1", prefix: "Jack has", suffix: "cookies." },
+            { type: "addition", s1: "Oliver has 19 teddy bears.", s2: "He has 11 toy trains.", s3: "How many toys does he have in total?", val1: 19, val2: 11, total: 30, color1Name: "Bears 🧸", color2Name: "Trains 🚂", color1: "#d97706", color2: "#dc2626", prefix: "Oliver has", suffix: "toys." },
+            { type: "subtraction", s1: "A pond had 36 little fish.", s2: "18 fish swam away.", s3: "How many fish are still in the pond?", val1: 18, val2: 18, total: 36, color1Name: "Swam Away 🌊", color2Name: "Still There 🐟", color1: "#0ea5e9", color2: "#cbd5e1", prefix: "There are", suffix: "fish." },
+            { type: "addition", s1: "Maya saw 21 blue butterflies.", s2: "She saw 14 yellow bees.", s3: "How many insects did she see?", val1: 21, val2: 14, total: 35, color1Name: "Butterflies 🦋", color2Name: "Bees 🐝", color1: "#0ea5e9", color2: "#eab308", prefix: "Maya saw", suffix: "insects." },
+            { type: "subtraction", s1: "There were 33 pink flowers in the garden.", s2: "Ava picked 12 of them.", s3: "How many flowers are left?", val1: 12, val2: 21, total: 33, color1Name: "Picked 🖐️", color2Name: "Left 🌸", color1: "#db2777", color2: "#cbd5e1", prefix: "There are", suffix: "flowers." },
+            { type: "addition", s1: "Ethan bought 15 sweet donuts.", s2: "He also bought 15 cupcakes.", s3: "How many treats does he have?", val1: 15, val2: 15, total: 30, color1Name: "Donuts 🍩", color2Name: "Cupcakes 🧁", color1: "#d946ef", color2: "#ec4899", prefix: "Ethan has", suffix: "treats." },
+            { type: "subtraction", s1: "Santa had 39 wrapped presents.", s2: "He delivered 20 of them.", s3: "How many presents are left in the sleigh?", val1: 20, val2: 19, total: 39, color1Name: "Delivered 🛷", color2Name: "Left 🎁", color1: "#22c55e", color2: "#cbd5e1", prefix: "Santa has", suffix: "presents." },
+            { type: "addition", s1: "Lucas saw 13 lions at the zoo.", s2: "He saw 16 tigers.", s3: "How many big cats did he see in total?", val1: 13, val2: 16, total: 29, color1Name: "Lions 🦁", color2Name: "Tigers 🐯", color1: "#f59e0b", color2: "#f97316", prefix: "Lucas saw", suffix: "big cats." },
+            { type: "subtraction", s1: "Ruby bought 27 ice cream cones.", s2: "11 melted in the sun.", s3: "How many ice creams are still good?", val1: 11, val2: 16, total: 27, color1Name: "Melted ☀️", color2Name: "Good 🍦", color1: "#fbbf24", color2: "#cbd5e1", prefix: "Ruby has", suffix: "ice creams." }
+        ];
+
+        let currentRoundQuestions = [];
+        let currentProblemIndex = 0;
+        let score = 0;
+        let soundEnabled = true; // Always on, button removed
+        let gameStarted = false;
+        
+        let currentStep = 0;
+        let isAnimating = false;
+        let isSolved = false;
+        let actionState = 'next-step'; 
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                const now = audioCtx.currentTime;
+
+                if (type === 'correct') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.setValueAtTime(554.37, now + 0.1);
+                    osc.frequency.setValueAtTime(659.25, now + 0.2);
+                    osc.frequency.setValueAtTime(880, now + 0.3);
+                    gain.gain.setValueAtTime(0, now);
+                    gain.gain.linearRampToValueAtTime(0.3, now + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                    osc.start(now); osc.stop(now + 0.6);
+                } else if (type === 'wrong') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(150, now + 0.3);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                    osc.start(now); osc.stop(now + 0.3);
+                } else if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                    osc.start(now); osc.stop(now + 0.1);
+                } else if (type === 'pop') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, now);
+                    osc.frequency.exponentialRampToValueAtTime(400, now + 0.05);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                    osc.start(now); osc.stop(now + 0.05);
+                }
+            } catch (e) {}
+        }
+
+        function speakText(text) {
+            if (!soundEnabled || !('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.9; 
+            utterance.pitch = 1.1;
+            utterance.lang = 'en-US';
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function readAloudVisible() {
+            playSound('click');
+            let textToRead = "";
+            if (currentStep >= 1) textToRead += document.getElementById('sent1').textContent + " ";
+            if (currentStep >= 2) textToRead += document.getElementById('sent2').textContent + " ";
+            if (currentStep >= 3) textToRead += document.getElementById('sent3').textContent;
+            speakText(textToRead.trim());
+        }
+
+        function readEquation() {
+            const prob = currentRoundQuestions[currentProblemIndex];
+            let eqText = prob.type === 'addition' ? 
+                `${prob.val1} plus ${prob.val2} equals ${prob.total}` : 
+                `${prob.total} minus ${prob.val1} equals ${prob.val2}`;
+            speakText(eqText);
+        }
+
+        function setActionState(state) {
+            actionState = state;
+            const btn = document.getElementById('action-btn');
+            
+            // Remove existing color classes to avoid conflict
+            btn.classList.remove('bg-duoBlue', 'bg-duoGreen', 'bg-duoPurple', 'shadow-duo-blue', 'shadow-duo-green', 'shadow-duo-purple');
+            
+            if (state === 'next-step') {
+                btn.classList.add('bg-duoPurple', 'shadow-duo-purple');
+                btn.innerHTML = 'NEXT <i class="fa-solid fa-arrow-right ml-1 md:ml-2"></i>';
+            } else if (state === 'check') {
+                btn.classList.add('bg-duoGreen', 'shadow-duo-green');
+                btn.innerHTML = 'CHECK <i class="fa-solid fa-check ml-1 md:ml-2"></i>';
+            } else if (state === 'next-prob') {
+                btn.classList.add('bg-duoPurple', 'shadow-duo-purple');
+                btn.innerHTML = 'NEXT <i class="fa-solid fa-arrow-right ml-1 md:ml-2"></i>';
+            }
+            btn.disabled = false;
+        }
+
+        function handleAction() {
+            if (isAnimating) return;
+            if (actionState === 'next-step') advanceStep();
+            else if (actionState === 'check') checkAnswer();
+            else if (actionState === 'next-prob') nextProblem();
+        }
+
+        function handleActionKey() {
+            if (actionState === 'check') checkAnswer();
+            else if (actionState === 'next-prob') nextProblem();
+        }
+
+        function showFeedback(msg, type) {
+            const fb = document.getElementById('feedback-banner');
+            const fbMsg = document.getElementById('feedback-message');
+            fb.classList.remove('hidden', 'animate-bounce-in');
+            void fb.offsetWidth; // trigger reflow
+            
+            if (type === 'wrong' || type === 'warn') {
+                const colors = type==='wrong' ? 'bg-red-100 text-red-600 border-red-300' : 'bg-yellow-100 text-yellow-700 border-yellow-300';
+                const icon = type==='wrong' ? 'fa-circle-xmark' : 'fa-triangle-exclamation';
+                fb.className = `w-full max-w-3xl mt-3 p-3 md:p-4 rounded-2xl text-center font-bold text-sm md:text-xl border-b-4 animate-bounce-in shadow-sm ${colors} shrink-0`;
+                fbMsg.innerHTML = `<i class="fa-solid ${icon} text-xl md:text-2xl mr-2 align-middle"></i> ${msg}`;
+            } else if (type === 'hint') {
+                fb.className = 'w-full max-w-3xl mt-3 p-3 md:p-4 rounded-2xl text-center font-bold text-sm md:text-lg bg-blue-50 text-blue-600 border-b-4 border-blue-200 animate-bounce-in shadow-sm shrink-0';
+                fbMsg.innerHTML = msg;
+            }
+        }
+
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+        function makeBracketPath(x1, y, x2, isUpward = true) {
+            const midX = (x1 + x2) / 2;
+            const qH = isUpward ? -12 : 12;
+            const tip = isUpward ? -20 : 20;
+            return `M ${x1},${y} Q ${x1+4},${y+qH/2} ${x1+8},${y+qH/2} L ${midX-8},${y+qH/2} Q ${midX-4},${y+qH/2} ${midX},${y+tip} Q ${midX+4},${y+qH/2} ${midX+8},${y+qH/2} L ${x2-8},${y+qH/2} Q ${x2-4},${y+qH/2} ${x2},${y}`;
+        }
+
+        function createCubeSVG(id, x, y, w, h, fill) {
+            const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            g.setAttribute('class', 'cube-unit animate-pop-in');
+            g.setAttribute('id', id);
+
+            const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            rect.setAttribute('x', x); rect.setAttribute('y', y);
+            rect.setAttribute('width', w); rect.setAttribute('height', h);
+            rect.setAttribute('rx', '3'); rect.setAttribute('fill', fill);
+            rect.setAttribute('stroke', 'rgba(0,0,0,0.2)'); rect.setAttribute('stroke-width', '1.5');
+            g.appendChild(rect);
+
+            const overlay = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            overlay.setAttribute('x', x); overlay.setAttribute('y', y);
+            overlay.setAttribute('width', w); overlay.setAttribute('height', h);
+            overlay.setAttribute('rx', '3'); overlay.setAttribute('fill', 'url(#cubeGradient)');
+            g.appendChild(overlay);
+            
+            const highlight = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            highlight.setAttribute('x', x + 1); highlight.setAttribute('y', y + 1);
+            highlight.setAttribute('width', w - 2); highlight.setAttribute('height', h/3);
+            highlight.setAttribute('rx', '2'); highlight.setAttribute('fill', 'url(#cubeHighlight)');
+            g.appendChild(highlight);
+
+            const stud = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            stud.setAttribute('cx', x + w / 2); stud.setAttribute('cy', y + h / 2);
+            stud.setAttribute('r', Math.min(w, h) * 0.25); stud.setAttribute('fill', fill);
+            stud.setAttribute('filter', 'url(#innerShadow)');
+            stud.setAttribute('stroke', 'rgba(255, 255, 255, 0.4)'); stud.setAttribute('stroke-width', '1');
+            g.appendChild(stud);
+
+            const studHL = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            studHL.setAttribute('cx', x + w / 2 - Math.min(w,h)*0.08);
+            studHL.setAttribute('cy', y + h / 2 - Math.min(w,h)*0.08);
+            studHL.setAttribute('r', Math.min(w, h) * 0.08); studHL.setAttribute('fill', 'rgba(255, 255, 255, 0.6)');
+            g.appendChild(studHL);
+            
+            return g;
+        }
+
+        function drawBracket(group, x1, x2, isTop, yStart, cubeSize, labelText, labelColor, labelId = null, isQuestion = false) {
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            const yPos = isTop ? yStart - 6 : yStart + cubeSize + 6;
+            path.setAttribute('d', makeBracketPath(x1, yPos, x2, isTop));
+            path.setAttribute('fill', 'none'); path.setAttribute('stroke', '#64748b');
+            path.setAttribute('stroke-width', '2.5'); path.setAttribute('stroke-linecap', 'round');
+            path.setAttribute('class', 'animate-pop-in');
+            group.appendChild(path);
+
+            const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            if (labelId) label.setAttribute('id', labelId);
+            label.setAttribute('x', (x1 + x2) / 2);
+            label.setAttribute('y', isTop ? yStart - 26 : yStart + cubeSize + 48);
+            label.setAttribute('text-anchor', 'middle'); label.setAttribute('fill', labelColor);
+            label.setAttribute('class', 'bracket-label animate-pop-in');
+            label.setAttribute('font-size', isQuestion ? '28' : '18');
+            label.textContent = labelText;
+            group.appendChild(label);
+        }
+
+        const showNBNode = (id, text, color) => {
+            const group = document.getElementById(id + '-group');
+            const textEl = document.getElementById(id + '-text');
+            textEl.textContent = text; textEl.setAttribute('fill', color);
+            group.classList.remove('opacity-0'); group.classList.add('opacity-100');
+            playSound('pop');
+        };
+
+        let layoutData = {};
+
+        function renderProblem() {
+            const prob = currentRoundQuestions[currentProblemIndex];
+            currentStep = 0;
+            isAnimating = false;
+            isSolved = false;
+
+            // Setup Tags
+            const tag = document.getElementById('problem-type-tag');
+            tag.textContent = prob.type === 'addition' ? 'Addition' : 'Subtraction';
+            tag.className = prob.type === 'addition' 
+                ? 'inline-block bg-purple-100 text-purple-700 font-black px-2 md:px-3 py-1 rounded-xl uppercase tracking-wider text-xs md:text-sm shadow-sm border-b-2 border-purple-200 shrink-0'
+                : 'inline-block bg-orange-100 text-orange-700 font-black px-2 md:px-3 py-1 rounded-xl uppercase tracking-wider text-xs md:text-sm shadow-sm border-b-2 border-orange-200 shrink-0';
+
+            // Reset Sentences
+            ['sent1', 'sent2', 'sent3'].forEach(id => {
+                const el = document.getElementById(id);
+                el.textContent = prob[id.replace('sent', 's')];
+                el.classList.add('hidden');
+            });
+
+            // Answer Input setup
+            document.getElementById('sentence-prefix').textContent = prob.prefix;
+            document.getElementById('sentence-suffix').textContent = prob.suffix;
+            const inputEl = document.getElementById('user-answer');
+            inputEl.value = ''; inputEl.disabled = false;
+            
+            // Hide Input Area and Equation Area initially
+            document.getElementById('input-area').classList.add('hidden');
+            document.getElementById('equation-area').classList.add('hidden');
+            document.getElementById('feedback-banner').classList.add('hidden');
+
+            // Reset Bar background
+            const bar = document.getElementById('interactive-bar');
+            bar.classList.remove('bg-green-100', 'border-green-400');
+            bar.classList.add('bg-white', 'border-slate-200');
+
+            // Clear visuals
+            document.getElementById('svg-cubes-group').innerHTML = '';
+            document.getElementById('svg-brackets-top').innerHTML = '';
+            document.getElementById('svg-brackets-bottom').innerHTML = '';
+
+            ['nb-whole', 'nb-part1', 'nb-part2'].forEach(id => {
+                document.getElementById(id + '-group').classList.remove('opacity-100');
+                document.getElementById(id + '-group').classList.add('opacity-0');
+            });
+            ['legend-box-1', 'legend-box-2'].forEach(id => {
+                document.getElementById(id).classList.remove('opacity-100');
+                document.getElementById(id).classList.add('opacity-0');
+            });
+
+            // Increased size calculation
+            const startX = 20; 
+            const availableWidth = 540; 
+            const cubeSize = Math.min(27, Math.floor(availableWidth / prob.total));
+            const cubeY = 90 - (cubeSize / 2);
+            layoutData = { startX, cubeSize, cubeY, prob };
+            
+            // Immediately kick off Step 1
+            advanceStep();
+        }
+
+        async function advanceStep() {
+            if (isAnimating) return;
+            isAnimating = true;
+            document.getElementById('action-btn').disabled = true;
+
+            const { startX, cubeSize, cubeY, prob } = layoutData;
+            const cubesG = document.getElementById('svg-cubes-group');
+            const topG = document.getElementById('svg-brackets-top');
+            const botG = document.getElementById('svg-brackets-bottom');
+
+            if (currentStep === 0) {
+                // STEP 1: Sentence 1 & First set of cubes
+                currentStep = 1;
+                document.getElementById('sent1').classList.remove('hidden');
+                speakText(prob.s1);
+
+                if (prob.type === 'addition') {
+                    const endX1 = startX + prob.val1 * cubeSize;
+                    for (let i = 0; i < prob.val1; i++) {
+                        cubesG.appendChild(createCubeSVG(`cube-${i}`, startX + i * cubeSize, cubeY, cubeSize, cubeSize, prob.color1));
+                        await sleep(25);
+                    }
+                    document.getElementById('legend-label-1').textContent = prob.color1Name;
+                    document.getElementById('legend-color-1').style.backgroundColor = prob.color1;
+                    document.getElementById('legend-box-1').classList.replace('opacity-0', 'opacity-100');
+                    await sleep(200);
+                    drawBracket(topG, startX, endX1, true, cubeY, cubeSize, prob.val1, '#475569');
+                    showNBNode('nb-part1', prob.val1, prob.color1);
+                } else {
+                    const neutralCol = "#E2E8F0"; 
+                    const endX2 = startX + prob.total * cubeSize;
+                    for (let i = 0; i < prob.total; i++) {
+                        cubesG.appendChild(createCubeSVG(`cube-${i}`, startX + i * cubeSize, cubeY, cubeSize, cubeSize, neutralCol));
+                        await sleep(15);
+                    }
+                    await sleep(200);
+                    drawBracket(topG, startX, endX2, true, cubeY, cubeSize, prob.total, '#475569');
+                    showNBNode('nb-whole', prob.total, '#475569');
+                }
+                setActionState('next-step');
+            } 
+            else if (currentStep === 1) {
+                // STEP 2: Sentence 2 & Second set of cubes
+                currentStep = 2;
+                playSound('click');
+                document.getElementById('sent2').classList.remove('hidden');
+                speakText(prob.s2);
+
+                const endX1 = startX + prob.val1 * cubeSize;
+                if (prob.type === 'addition') {
+                    const endX2 = endX1 + prob.val2 * cubeSize;
+                    for (let i = 0; i < prob.val2; i++) {
+                        cubesG.appendChild(createCubeSVG(`cube-${prob.val1+i}`, endX1 + i * cubeSize, cubeY, cubeSize, cubeSize, prob.color2));
+                        await sleep(25);
+                    }
+                    document.getElementById('legend-label-2').textContent = prob.color2Name;
+                    document.getElementById('legend-color-2').style.backgroundColor = prob.color2;
+                    document.getElementById('legend-box-2').classList.replace('opacity-0', 'opacity-100');
+                    await sleep(200);
+                    drawBracket(topG, endX1, endX2, true, cubeY, cubeSize, prob.val2, '#475569');
+                    showNBNode('nb-part2', prob.val2, prob.color2);
+                } else {
+                    for (let i = 0; i < prob.val1; i++) {
+                        document.querySelector(`#cube-${i} rect`).setAttribute('fill', prob.color1);
+                        document.querySelector(`#cube-${i} circle`).setAttribute('fill', prob.color1);
+                        await sleep(25);
+                    }
+                    document.getElementById('legend-label-1').textContent = prob.color1Name;
+                    document.getElementById('legend-color-1').style.backgroundColor = prob.color1;
+                    document.getElementById('legend-box-1').classList.replace('opacity-0', 'opacity-100');
+                    await sleep(200);
+                    drawBracket(botG, startX, endX1, false, cubeY, cubeSize, prob.val1, '#475569');
+                    showNBNode('nb-part1', prob.val1, prob.color1);
+                }
+                setActionState('next-step');
+            }
+            else if (currentStep === 2) {
+                // STEP 3: Question & Unlock Input Box
+                currentStep = 3;
+                playSound('click');
+                document.getElementById('sent3').classList.remove('hidden');
+                speakText(prob.s3);
+
+                const endX1 = startX + prob.val1 * cubeSize;
+                const endX2 = startX + prob.total * cubeSize;
+                if (prob.type === 'addition') {
+                    drawBracket(botG, startX, endX2, false, cubeY, cubeSize, '?', '#1CB0F6', 'bottom-question-label', true);
+                    showNBNode('nb-whole', '?', '#1CB0F6');
+                } else {
+                    for (let i = prob.val1; i < prob.total; i++) {
+                        document.querySelector(`#cube-${i} rect`).setAttribute('fill', prob.color2); 
+                        document.querySelector(`#cube-${i} circle`).setAttribute('fill', prob.color2); 
+                        await sleep(15);
+                    }
+                    document.getElementById('legend-label-2').textContent = prob.color2Name;
+                    document.getElementById('legend-color-2').style.backgroundColor = prob.color2;
+                    document.getElementById('legend-box-2').classList.replace('opacity-0', 'opacity-100');
+                    await sleep(200);
+                    drawBracket(botG, endX1, endX2, false, cubeY, cubeSize, '?', '#1CB0F6', 'bottom-question-label', true);
+                    showNBNode('nb-part2', '?', '#1CB0F6');
+                }
+                
+                // Show Input Area and Check Button
+                document.getElementById('input-area').classList.remove('hidden');
+                setActionState('check');
+                
+                const inputEl = document.getElementById('user-answer');
+                setTimeout(() => inputEl.focus(), 100);
+            }
+            
+            isAnimating = false;
+        }
+
+        function checkAnswer() {
+            if (isSolved) return;
+            playSound('click');
+            const prob = currentRoundQuestions[currentProblemIndex];
+            const targetAnswer = prob.type === 'addition' ? prob.total : prob.val2;
+            const inputEl = document.getElementById('user-answer');
+            const userVal = parseInt(inputEl.value.trim(), 10);
+
+            if (isNaN(userVal)) {
+                showFeedback('Please enter a number!', 'warn');
+                return;
+            }
+
+            if (userVal === targetAnswer) {
+                isSolved = true;
+                playSound('correct');
+                score += 10;
+                document.getElementById('score-display').textContent = score;
+
+                // Hide potential warning banner
+                document.getElementById('feedback-banner').classList.add('hidden');
+
+                // Visual swapping: Hide input, show equation replacing it
+                document.getElementById('input-area').classList.add('hidden');
+                document.getElementById('equation-area').classList.remove('hidden');
+                
+                // Style interactive-bar to turn green
+                const bar = document.getElementById('interactive-bar');
+                bar.classList.remove('bg-white', 'border-slate-200');
+                bar.classList.add('bg-green-100', 'border-green-400');
+
+                // Populate success info
+                document.getElementById('equation-feedback-msg').textContent = `Brilliant! ${targetAnswer} is correct!`;
+                const eqText = document.getElementById('equation-text');
+                if (prob.type === 'addition') eqText.textContent = `${prob.val1} + ${prob.val2} = ${targetAnswer}`;
+                else eqText.textContent = `${prob.total} - ${prob.val1} = ${targetAnswer}`;
+
+                // Update visual diagrams
+                const qLabel = document.getElementById('bottom-question-label');
+                if (qLabel) { qLabel.textContent = targetAnswer; qLabel.setAttribute('fill', '#46A302'); }
+                
+                const nbTarget = prob.type === 'addition' ? 'nb-whole-text' : 'nb-part2-text';
+                const nbTargetEl = document.getElementById(nbTarget);
+                if (nbTargetEl) { nbTargetEl.textContent = targetAnswer; nbTargetEl.setAttribute('fill', '#46A302'); }
+
+                setActionState('next-prob');
+            } else {
+                playSound('wrong');
+                showFeedback(`Oops! That's not it. Try again!`, 'wrong');
+                inputEl.value = ''; inputEl.focus();
+            }
+        }
+
+        function showHint() {
+            playSound('click');
+            const prob = currentRoundQuestions[currentProblemIndex];
+            if (prob.type === 'addition') showFeedback(`💡 Hint: Add ${prob.val1} + ${prob.val2}.`, 'hint');
+            else showFeedback(`💡 Hint: Subtract to find the missing part! ${prob.total} - ${prob.val1}.`, 'hint');
+        }
+
+        function nextProblem() {
+            playSound('click');
+            if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+            currentProblemIndex++;
+            document.getElementById('progress-bar-fill').style.width = `${(currentProblemIndex / 10) * 100}%`;
+
+            if (currentProblemIndex >= 10) {
+                setTimeout(() => {
+                    document.getElementById('game-area').classList.add('hidden');
+                    document.getElementById('end-screen').classList.remove('hidden');
+                    document.getElementById('final-score').textContent = score;
+                    playSound('correct'); 
+                    triggerConfetti();
+                }, 300);
+            } else {
+                renderProblem();
+            }
+        }
+
+        function initGame() {
+            playSound('click');
+            // Init audio context on user interaction
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if ('speechSynthesis' in window) {
+                let u = new SpeechSynthesisUtterance("");
+                u.volume = 0; window.speechSynthesis.speak(u);
+            }
+            document.getElementById('start-screen').classList.add('hidden');
+            startNewRound();
+        }
+
+        function startNewRound() {
+            gameStarted = true;
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('game-area').classList.remove('hidden');
+            
+            // Ensure alternating addition and subtraction questions
+            let addQ = allQuestions.filter(q => q.type === 'addition').sort(() => 0.5 - Math.random());
+            let subQ = allQuestions.filter(q => q.type === 'subtraction').sort(() => 0.5 - Math.random());
+            
+            currentRoundQuestions = [];
+            let isAdd = Math.random() > 0.5; // Randomly start with Add or Sub
+            for (let i = 0; i < 10; i++) {
+                if (isAdd && addQ.length > 0) currentRoundQuestions.push(addQ.pop());
+                else if (!isAdd && subQ.length > 0) currentRoundQuestions.push(subQ.pop());
+                else if (addQ.length > 0) currentRoundQuestions.push(addQ.pop()); // Fallback
+                else if (subQ.length > 0) currentRoundQuestions.push(subQ.pop());
+                isAdd = !isAdd;
+            }
+            
+            currentProblemIndex = 0;
+            score = 0;
+            document.getElementById('score-display').textContent = score;
+            document.getElementById('progress-bar-fill').style.width = '0%';
+            
+            renderProblem();
+        }
+
+        function resetAppFull() {
+            if(confirm("Do you want to restart the whole game?")) {
+                if(gameStarted) startNewRound();
+            }
+        }
+
+        function triggerConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            const particles = [];
+            const colors = ['#58CC02', '#1CB0F6', '#CE82FF', '#FFC800', '#FF4B4B'];
+
+            for (let i = 0; i < 150; i++) {
+                particles.push({
+                    x: canvas.width / 2, y: -20, 
+                    vx: (Math.random() - 0.5) * 20, vy: (Math.random() * 5) + 2, 
+                    size: Math.random() * 12 + 6,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    life: 200, rotation: Math.random() * 360, rotSpeed: (Math.random() - 0.5) * 10
+                });
+            }
+
+            function animateConfetti() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let active = false;
+                particles.forEach(p => {
+                    if (p.life > 0) {
+                        active = true;
+                        p.x += p.vx; p.y += p.vy; p.vy += 0.2; 
+                        p.rotation += p.rotSpeed; p.life -= 1;
+                        
+                        ctx.save();
+                        ctx.translate(p.x, p.y);
+                        ctx.rotate(p.rotation * Math.PI / 180);
+                        ctx.fillStyle = p.color;
+                        ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+                        ctx.restore();
+                    }
+                });
+                if (active) requestAnimationFrame(animateConfetti);
+                else ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+            animateConfetti();
+        }
+    </script>
+</body>
+</html>
