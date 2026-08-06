@@ -92,13 +92,22 @@
 
     /* Modal */
     #winModal{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:rgba(31,20,47,.5);backdrop-filter:blur(6px);padding:18px}
-    .win-card{width:min(470px,100%);background:white;border:6px solid white;border-radius:34px;padding:30px;text-align:center;box-shadow:0 15px 0 rgba(73,43,88,.28),0 28px 70px rgba(12,20,44,.35)}
+    .win-card{width:min(650px,100%);background:white;border:6px solid white;border-radius:34px;padding:30px;text-align:center;box-shadow:0 15px 0 rgba(73,43,88,.28),0 28px 70px rgba(12,20,44,.35)}
     .win-icon{font-size:84px;animation:bounce 1.3s infinite}
     @keyframes bounce{50%{transform:translateY(-12px)}}
     .win-card h2{font-size:42px;color:var(--blue-dark);font-weight:900;line-height:1.05}
     .win-card p{font-size:17px;font-weight:700;color:#64748b;margin:12px 0 20px}
     .win-stats{background:#f4f8fc;border:3px solid #e3ecf5;border-radius:22px;padding:16px;margin-bottom:20px;font-size:17px;font-weight:900}
-    .modal-actions{display:grid;gap:12px}
+    .modal-actions{display:grid;gap:14px}
+    .level-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .level-choice{border:0;border-radius:24px;padding:18px 16px 16px;font-family:inherit;text-align:center;cursor:pointer;transition:transform .12s ease,filter .12s ease;min-height:145px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+    .level-choice:hover{transform:translateY(-3px);filter:brightness(1.03)}
+    .level-choice:active{transform:translateY(7px);box-shadow:none!important}
+    .level-choice.easy{background:#ecfdf5;color:#087f3f;border:4px solid #86efac;box-shadow:0 8px 0 #4ade80}
+    .level-choice.higher{background:#eef2ff;color:#493b8b;border:4px solid #a5b4fc;box-shadow:0 8px 0 #7768cf}
+    .level-choice-icon{font-size:38px;line-height:1;margin-bottom:8px}
+    .level-choice-title{font-size:18px;font-weight:900;text-transform:uppercase;line-height:1.15}
+    .level-choice-sub{font-size:12px;font-weight:800;line-height:1.35;margin-top:7px;opacity:.82}
     .modal-btn{border-radius:20px;padding:15px;font-size:18px;font-weight:900;text-transform:uppercase}
     .modal-btn.primary{background:var(--green);color:white;box-shadow:0 7px 0 var(--green-dark)}
     .modal-btn.secondary{background:#e6e9ef;color:#586174;box-shadow:0 7px 0 #c3c9d3}
@@ -115,6 +124,7 @@
     }
     @media(max-width:560px){
       .screen{padding:6px}.setup-card{min-height:calc(100vh - 12px);border-radius:24px;padding:22px 14px}.logo-main{-webkit-text-stroke:3px #e9f8ff}.intro{margin:10px auto 18px}.teacher-note{font-size:10px}
+      .win-card{padding:22px 16px}.win-icon{font-size:62px}.win-card h2{font-size:32px}.level-choice-grid{grid-template-columns:1fr}.level-choice{min-height:108px;padding:13px}.level-choice-icon{font-size:30px}
       .game-shell{height:calc(100vh - 12px);border-radius:20px;border-width:3px}.icon-btn{width:43px;height:43px;border-radius:14px;font-size:20px}.tools{gap:6px}.target-label{display:none}#targetAmount{font-size:39px}.target-card{border-width:3px}
       .coin.dime{--coin-size:42px}.coin.penny{--coin-size:45px}.coin.nickel{--coin-size:50px}.coin.quarter{--coin-size:57px}.coin.dollar{--coin-size:62px}.coin.half{--coin-size:69px}
       .money-box-wrap{border-width:3px;border-radius:20px}.selected-total{font-size:14px;padding:8px 13px}#selectedAmount{font-size:19px}#feedback{font-size:12px}.collect-btn{font-size:16px;padding:11px 22px}
@@ -190,7 +200,18 @@
       <p>Wonderful coin counting!</p>
       <div class="win-stats"><div id="finalStats">Time: 00:00</div></div>
       <div class="modal-actions">
-        <button id="playAgainBtn" class="modal-btn primary">Play Again ↻</button>
+        <div class="level-choice-grid">
+          <button id="playEasyBtn" class="level-choice easy" type="button">
+            <span class="level-choice-icon">⭐</span>
+            <span class="level-choice-title">Play Easy Again</span>
+            <span class="level-choice-sub">All coins show the same back side.</span>
+          </button>
+          <button id="playHigherBtn" class="level-choice higher" type="button">
+            <span class="level-choice-icon">🚀</span>
+            <span class="level-choice-title">Play Higher Level</span>
+            <span class="level-choice-sub">Coins show both front and back sides.</span>
+          </button>
+        </div>
         <button id="modalHomeBtn" class="modal-btn secondary">🏠 Home</button>
       </div>
     </div>
@@ -260,7 +281,7 @@
   ];
   const COUNTS=[[20],[12,8],[9,6,7],[8,6,6,6],[7,6,6,5,4],[7,6,6,5,4,4]];
   const TARGET_CAP=[6,20,35,70,120,220];
-  let level=3,coins=[],target=0,hintIds=[],rounds=0,startTime=0,timerId=null,hintTimer=null;
+  let level=3,difficulty='easy',coins=[],target=0,hintIds=[],rounds=0,startTime=0,timerId=null,hintTimer=null;
   const $=id=>document.getElementById(id);
   const setupScreen=$('setupScreen'),gameScreen=$('gameScreen'),moneyBox=$('moneyBox'),gameShell=$('gameShell');
   function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
@@ -272,7 +293,15 @@
     $('setupCoinPreview').querySelector('button').onclick=()=>{SFX.click();speak(t.speak)};
   }
   function buildCoins(){
-    coins=[];let id=0;COUNTS[level].forEach((count,idx)=>{for(let i=0;i<count;i++){const type=TYPES[idx];coins.push({id:`c${id++}`,type,side:Math.random()>.5?'front':'back',selected:false,removed:false,removing:false,hinted:false})}});shuffle(coins)
+    coins=[];let id=0;
+    COUNTS[level].forEach((count,idx)=>{
+      for(let i=0;i<count;i++){
+        const type=TYPES[idx];
+        const side=difficulty==='easy'?'back':(id%2===0?'front':'back');
+        coins.push({id:`c${id++}`,type,side,selected:false,removed:false,removing:false,hinted:false});
+      }
+    });
+    shuffle(coins)
   }
   function remaining(){return coins.filter(c=>!c.removed&&!c.removing)}
   function chooseTarget(){
@@ -305,12 +334,13 @@
   function showHint(){
     clearTimeout(hintTimer);coins.forEach(c=>{c.hinted=false;c.selected=false});hintIds.forEach(id=>{const c=coins.find(x=>x.id===id&&!x.removed);if(c)c.hinted=true});updateSelection();renderCoins();$('feedback').textContent='Try the glowing coins!';SFX.click();speak('Try the glowing coins');hintTimer=setTimeout(()=>{coins.forEach(c=>c.hinted=false);renderCoins()},3200)
   }
-  function startGame(){
+  function startGame(mode='easy'){
+    difficulty=mode==='higher'?'higher':'easy';
     SFX.ensure();setupScreen.classList.add('hidden');gameScreen.classList.remove('hidden');$('winModal').classList.add('hidden');buildCoins();rounds=0;startTime=Date.now();clearInterval(timerId);timerId=setInterval(updateTimer,1000);updateTimer();chooseTarget()
   }
   function updateTimer(){const sec=Math.floor((Date.now()-startTime)/1000),m=String(Math.floor(sec/60)).padStart(2,'0'),s=String(sec%60).padStart(2,'0');$('timer').textContent=`⏱ ${m}:${s}`}
-  function finishGame(){clearInterval(timerId);updateTimer();SFX.win();speak('Wonderful! The money box is empty.');burstConfetti();$('finalStats').textContent=`${$('timer').textContent} • ${rounds} collections`;$('winModal').classList.remove('hidden')}
-  function goHome(){clearInterval(timerId);speechSynthesis?.cancel?.();$('winModal').classList.add('hidden');gameScreen.classList.add('hidden');setupScreen.classList.remove('hidden');updateSetup()}
+  function finishGame(){clearInterval(timerId);updateTimer();SFX.win();speak('Wonderful! The money box is empty. Choose easy or higher level.');burstConfetti();const modeName=difficulty==='easy'?'Easy Level':'Higher Level';$('finalStats').textContent=`${modeName} • ${$('timer').textContent} • ${rounds} collections`;$('winModal').classList.remove('hidden')}
+  function goHome(){clearInterval(timerId);difficulty='easy';speechSynthesis?.cancel?.();$('winModal').classList.add('hidden');gameScreen.classList.add('hidden');setupScreen.classList.remove('hidden');updateSetup()}
 
   // ---------- Confetti ----------
   const confetti=$('confettiCanvas'),cc=confetti.getContext('2d');let parts=[];
@@ -321,7 +351,7 @@
   // ---------- Events ----------
   $('minusBtn').onclick=()=>{SFX.click();level=(level+TYPES.length-1)%TYPES.length;updateSetup()};
   $('plusBtn').onclick=()=>{SFX.click();level=(level+1)%TYPES.length;updateSetup()};
-  $('beginBtn').onclick=startGame;$('collectBtn').onclick=collect;$('hintBtn').onclick=showHint;$('homeBtn').onclick=goHome;$('modalHomeBtn').onclick=goHome;$('playAgainBtn').onclick=startGame;
+  $('beginBtn').onclick=()=>startGame('easy');$('collectBtn').onclick=collect;$('hintBtn').onclick=showHint;$('homeBtn').onclick=goHome;$('modalHomeBtn').onclick=goHome;$('playEasyBtn').onclick=()=>startGame('easy');$('playHigherBtn').onclick=()=>startGame('higher');
   $('soundBtn').onclick=()=>{SFX.enabled=!SFX.enabled;$('soundBtn').textContent=SFX.enabled?'🔊':'🔇';if(SFX.enabled){SFX.click();speak('Sound on')}else speechSynthesis?.cancel?.()};
   addEventListener('keydown',e=>{if(gameScreen.classList.contains('hidden'))return;if(e.key==='Enter')collect();if(e.key.toLowerCase()==='h')showHint();if(e.key==='Escape')goHome()});
   updateSetup();
