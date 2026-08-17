@@ -1,227 +1,667 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Colorful Classroom Background Template</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;900&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --sky-top: #7dd3fc;
-      --sky-bottom: #bae6fd;
-      --grass-main: #58cc02;
-      --grass-highlight: #84cc16;
-      --hill-green: #65a30d;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minesweeper - Dò mìn</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --panel: #16213e;
+            --cell-bg: #b0c4de;
+            --cell-hover: #c9d9f0;
+            --cell-open: #e0e5ec;
+            --border-dark: #7a8b9f;
+            --border-light: #f0f4fa;
+            --mine-color: #e74c3c;
+            --flag-color: #e74c3c;
+            --text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
 
-    * {
-      box-sizing: border-box;
-    }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
 
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: var(--sky-top);
-      font-family: 'Poppins', sans-serif;
-      touch-action: none;
-      user-select: none;
-      -webkit-user-select: none;
-    }
+        body {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
 
-    #backgroundCanvas {
-      display: block;
-      position: fixed;
-      inset: 0;
-      width: 100vw;
-      height: 100vh;
-    }
-  </style>
+        .game-container {
+            background: var(--panel);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 0 2px #3a3f5e inset;
+            max-width: 700px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #fff;
+            font-size: 2rem;
+            margin-bottom: 15px;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        h1 .bomb-icon {
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .difficulty {
+            display: flex;
+            gap: 6px;
+        }
+
+        .difficulty button {
+            background: #2c3e6b;
+            color: #ddd;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .difficulty button:hover {
+            background: #3d5599;
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .difficulty button.active {
+            background: #e67e22;
+            color: #fff;
+            box-shadow: 0 0 15px #e67e22aa;
+        }
+
+        .reset-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 15px rgba(231, 76, 60, 0.5);
+        }
+
+        .reset-btn:hover {
+            transform: rotate(180deg) scale(1.1);
+            background: #ff6b5e;
+        }
+
+        .info-panel {
+            display: flex;
+            justify-content: space-between;
+            background: #0d1b2a;
+            border-radius: 12px;
+            padding: 10px 20px;
+            margin-bottom: 15px;
+            color: #fff;
+            font-size: 1.4rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.6), 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .mines-counter, .timer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mines-counter span, .timer span {
+            background: #000;
+            color: #ff3333;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 1.8rem;
+            padding: 2px 10px;
+            border-radius: 6px;
+            letter-spacing: 3px;
+            min-width: 60px;
+            text-align: center;
+            box-shadow: inset 0 0 8px #ff333355;
+        }
+
+        .board {
+            display: grid;
+            gap: 2px;
+            background: #333;
+            padding: 5px;
+            border-radius: 10px;
+            box-shadow: inset 0 0 10px #000;
+            justify-content: center;
+            margin: 0 auto;
+            width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        .cell {
+            width: 36px;
+            height: 36px;
+            background: var(--cell-bg);
+            border: 2px solid;
+            border-color: var(--border-light) var(--border-dark) var(--border-dark) var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+            border-radius: 3px;
+            position: relative;
+        }
+
+        .cell:hover:not(.open):not(.flag) {
+            background: var(--cell-hover);
+            transform: scale(1.05);
+            z-index: 2;
+        }
+
+        .cell.open {
+            background: var(--cell-open);
+            border: 1px solid #bbb;
+            cursor: default;
+        }
+
+        .cell.flag {
+            background: #f9e79f;
+        }
+
+        .cell.mine-exploded {
+            background: #ff4444;
+            animation: explode 0.5s ease-out;
+        }
+
+        @keyframes explode {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); background: #ff8800; }
+            100% { transform: scale(1); background: #ff4444; }
+        }
+
+        .cell.mine-shown {
+            background: #ffcccb;
+        }
+
+        .cell .flag-icon {
+            font-size: 1.4rem;
+            color: var(--flag-color);
+            animation: flagWave 0.3s ease-out;
+        }
+
+        @keyframes flagWave {
+            0% { transform: scale(0); rotate: -30deg; }
+            100% { transform: scale(1); rotate: 0deg; }
+        }
+
+        .cell .bomb-icon {
+            font-size: 1.5rem;
+        }
+
+        .cell .number {
+            font-size: 1.3rem;
+            font-weight: 900;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.3);
+        }
+
+        .color-1 { color: #1e56d6; }
+        .color-2 { color: #1e8a2e; }
+        .color-3 { color: #d63031; }
+        .color-4 { color: #6c2bd9; }
+        .color-5 { color: #8b4513; }
+        .color-6 { color: #00b894; }
+        .color-7 { color: #2d3436; }
+        .color-8 { color: #888; }
+
+        .game-status {
+            text-align: center;
+            color: #fff;
+            font-size: 1.3rem;
+            margin-top: 15px;
+            min-height: 35px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .game-status.win {
+            color: #2ecc71;
+        }
+        .game-status.lose {
+            color: #ff5555;
+        }
+
+        .instructions {
+            color: #aaa;
+            font-size: 0.85rem;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .instructions kbd {
+            background: #2c3e6b;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 600px) {
+            .cell {
+                width: 28px;
+                height: 28px;
+                font-size: 1rem;
+            }
+            h1 { font-size: 1.5rem; }
+            .info-panel { font-size: 1.1rem; }
+            .mines-counter span, .timer span { font-size: 1.3rem; min-width: 45px; }
+            .game-container { padding: 15px; }
+        }
+    </style>
 </head>
 <body>
-  <canvas id="backgroundCanvas" aria-label="Colorful sky, rainbow, trees, flowers, and grass background"></canvas>
+    <div class="game-container">
+        <h1>
+            <span class="bomb-icon">💣</span> Minesweeper <span class="bomb-icon">💣</span>
+        </h1>
 
-  <script>
-    const canvas = document.getElementById('backgroundCanvas');
-    const ctx = canvas.getContext('2d', { alpha: false });
+        <div class="controls">
+            <div class="difficulty">
+                <button data-level="easy" class="active">Dễ (9x9)</button>
+                <button data-level="medium">Trung bình (16x16)</button>
+                <button data-level="hard">Khó (30x16)</button>
+            </div>
+            <button class="reset-btn" id="resetBtn" title="Chơi lại">🔄</button>
+        </div>
 
-    let canvasWidth = 0;
-    let canvasHeight = 0;
-    let clouds = [];
-    let bgTrees = [];
-    let bgFlowers = [];
+        <div class="info-panel">
+            <div class="mines-counter">
+                💣 <span id="mineCount">10</span>
+            </div>
+            <div class="timer">
+                ⏱️ <span id="timerDisplay">000</span>
+            </div>
+        </div>
 
-    function resizeCanvas() {
-      canvasWidth = window.innerWidth;
-      canvasHeight = window.innerHeight;
-      canvas.width = canvasWidth;
-      canvas.height = canvasHeight;
-      generateEnvironment();
-    }
+        <div class="board" id="board"></div>
 
-    function generateEnvironment() {
-      clouds = [];
-      bgTrees = [];
-      bgFlowers = [];
+        <div class="game-status" id="gameStatus"></div>
+        <div class="instructions">
+            <kbd>Click trái</kbd> mở ô &nbsp;|&nbsp; <kbd>Click phải</kbd> cắm cờ 🚩
+        </div>
+    </div>
 
-      for (let i = 0; i < 8; i++) {
-        clouds.push({
-          x: Math.random() * canvasWidth,
-          y: Math.random() * (canvasHeight * 0.42),
-          size: 30 + Math.random() * 50,
-          speed: Math.random() * 0.18 + 0.08
-        });
-      }
+    <script>
+        (function() {
+            // Cấu hình độ khó
+            const LEVELS = {
+                easy:   { rows: 9,  cols: 9,  mines: 10 },
+                medium: { rows: 16, cols: 16, mines: 40 },
+                hard:   { rows: 16, cols: 30, mines: 99 }
+            };
 
-      for (let i = 0; i < 10; i++) {
-        bgTrees.push({
-          x: Math.random() * canvasWidth,
-          y: canvasHeight * 0.65 + (Math.random() * 20 - 10),
-          scale: 0.5 + Math.random() * 0.5
-        });
-      }
+            let currentLevel = 'easy';
+            let board = [];           // 2D array: { mine, open, flag, adjacentMines }
+            let rows, cols, totalMines;
+            let gameActive = false;
+            let firstClick = true;
+            let timerInterval = null;
+            let seconds = 0;
+            let flagsPlaced = 0;
+            let cellsOpened = 0;
 
-      const flowerColors = ['#ff4b4b', '#ffc800', '#ce82ff', '#ffffff', '#1cb0f6'];
-      for (let i = 0; i < 28; i++) {
-        bgFlowers.push({
-          x: Math.random() * canvasWidth,
-          y: canvasHeight * 0.8 + Math.random() * (canvasHeight * 0.18),
-          color: flowerColors[Math.floor(Math.random() * flowerColors.length)],
-          scale: 0.45 + Math.random() * 0.85
-        });
-      }
-    }
+            const boardElement = document.getElementById('board');
+            const mineCountDisplay = document.getElementById('mineCount');
+            const timerDisplay = document.getElementById('timerDisplay');
+            const gameStatus = document.getElementById('gameStatus');
+            const resetBtn = document.getElementById('resetBtn');
+            const difficultyButtons = document.querySelectorAll('.difficulty button');
 
-    function updateBackground() {
-      clouds.forEach(cloud => {
-        cloud.x -= cloud.speed;
-        if (cloud.x + cloud.size * 2 < 0) {
-          cloud.x = canvasWidth + cloud.size * 2;
-          cloud.y = Math.random() * (canvasHeight * 0.42);
-        }
-      });
-    }
+            // ========== Khởi tạo ==========
+            function initGame() {
+                const config = LEVELS[currentLevel];
+                rows = config.rows;
+                cols = config.cols;
+                totalMines = config.mines;
+                gameActive = true;
+                firstClick = true;
+                seconds = 0;
+                flagsPlaced = 0;
+                cellsOpened = 0;
+                clearInterval(timerInterval);
+                timerInterval = null;
+                timerDisplay.textContent = '000';
+                gameStatus.textContent = '';
+                gameStatus.className = 'game-status';
+                updateMineCounter();
 
-    function drawCloud(cloud) {
-      ctx.beginPath();
-      ctx.arc(cloud.x, cloud.y, cloud.size, 0, Math.PI * 2);
-      ctx.arc(cloud.x + cloud.size * 0.8, cloud.y + cloud.size * 0.2, cloud.size * 0.7, 0, Math.PI * 2);
-      ctx.arc(cloud.x - cloud.size * 0.8, cloud.y + cloud.size * 0.2, cloud.size * 0.7, 0, Math.PI * 2);
-      ctx.fill();
-    }
+                // Tạo ma trận trống
+                board = [];
+                for (let r = 0; r < rows; r++) {
+                    board[r] = [];
+                    for (let c = 0; c < cols; c++) {
+                        board[r][c] = {
+                            mine: false,
+                            open: false,
+                            flag: false,
+                            adjacentMines: 0
+                        };
+                    }
+                }
 
-    function drawTree(tree) {
-      ctx.save();
-      ctx.translate(tree.x, tree.y);
-      ctx.scale(tree.scale, tree.scale);
+                renderBoard();
+            }
 
-      ctx.fillStyle = '#78350f';
-      ctx.fillRect(-10, 0, 20, 60);
+            // Đặt mìn ngẫu nhiên, tránh vị trí (excludeRow, excludeCol)
+            function placeMines(excludeRow, excludeCol) {
+                let minesPlaced = 0;
+                while (minesPlaced < totalMines) {
+                    const r = Math.floor(Math.random() * rows);
+                    const c = Math.floor(Math.random() * cols);
+                    // Tránh ô exclude và không đặt trùng
+                    if (r === excludeRow && c === excludeCol) continue;
+                    if (board[r][c].mine) continue;
+                    board[r][c].mine = true;
+                    minesPlaced++;
+                }
+                calculateAdjacentMines();
+            }
 
-      ctx.fillStyle = '#4ade80';
-      ctx.beginPath();
-      ctx.arc(0, -20, 40, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(-25, -10, 30, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(25, -10, 30, 0, Math.PI * 2);
-      ctx.fill();
+            // Tính số mìn xung quanh mỗi ô
+            function calculateAdjacentMines() {
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        if (board[r][c].mine) {
+                            board[r][c].adjacentMines = -1;
+                            continue;
+                        }
+                        let count = 0;
+                        forEachNeighbor(r, c, (nr, nc) => {
+                            if (board[nr][nc].mine) count++;
+                        });
+                        board[r][c].adjacentMines = count;
+                    }
+                }
+            }
 
-      ctx.restore();
-    }
+            // Lặp qua các ô lân cận (8 hướng)
+            function forEachNeighbor(row, col, callback) {
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        if (dr === 0 && dc === 0) continue;
+                        const nr = row + dr;
+                        const nc = col + dc;
+                        if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+                            callback(nr, nc);
+                        }
+                    }
+                }
+            }
 
-    function drawFlower(flower) {
-      ctx.save();
-      ctx.translate(flower.x, flower.y);
-      ctx.scale(flower.scale, flower.scale);
+            // ========== Render bảng ==========
+            function renderBoard() {
+                boardElement.innerHTML = '';
+                boardElement.style.gridTemplateColumns = `repeat(${cols}, var(--cell-size, 36px))`;
+                // Cập nhật kích thước cell responsive
+                const isMobile = window.innerWidth < 600;
+                document.documentElement.style.setProperty('--cell-size', isMobile ? '28px' : '36px');
 
-      ctx.fillStyle = flower.color;
-      for (let petal = 0; petal < 5; petal++) {
-        ctx.rotate((Math.PI * 2) / 5);
-        ctx.beginPath();
-        ctx.ellipse(0, -10, 6, 12, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.row = r;
+                        cell.dataset.col = c;
+                        cell.addEventListener('click', () => handleLeftClick(r, c));
+                        cell.addEventListener('contextmenu', (e) => {
+                            e.preventDefault();
+                            handleRightClick(r, c);
+                        });
+                        // Cũng hỗ trợ mousedown cho click phải trên mobile
+                        cell.addEventListener('mousedown', (e) => {
+                            if (e.button === 2) e.preventDefault();
+                        });
+                        boardElement.appendChild(cell);
+                    }
+                }
+                updateBoardUI();
+            }
 
-      ctx.fillStyle = '#ffc800';
-      ctx.beginPath();
-      ctx.arc(0, 0, 6, 0, Math.PI * 2);
-      ctx.fill();
+            // Cập nhật giao diện từng ô theo trạng thái
+            function updateBoardUI() {
+                const cells = boardElement.children;
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        const cell = cells[r * cols + c];
+                        const data = board[r][c];
+                        cell.className = 'cell';
+                        cell.innerHTML = '';
 
-      ctx.restore();
-    }
+                        if (data.open) {
+                            cell.classList.add('open');
+                            if (data.mine) {
+                                cell.classList.add('mine-exploded');
+                                cell.innerHTML = '<span class="bomb-icon">💣</span>';
+                            } else if (data.adjacentMines > 0) {
+                                const numberSpan = document.createElement('span');
+                                numberSpan.className = `number color-${data.adjacentMines}`;
+                                numberSpan.textContent = data.adjacentMines;
+                                cell.appendChild(numberSpan);
+                            }
+                            // Nếu là 0 thì để trống
+                        } else if (data.flag) {
+                            cell.classList.add('flag');
+                            cell.innerHTML = '<span class="flag-icon">🚩</span>';
+                        }
+                        // Nếu không mở, không cờ -> hiển thị như ban đầu
+                    }
+                }
+            }
 
-    function drawBackground() {
-      const skyGradient = ctx.createLinearGradient(0, 0, 0, canvasHeight * 0.7);
-      skyGradient.addColorStop(0, '#7dd3fc');
-      skyGradient.addColorStop(1, '#bae6fd');
-      ctx.fillStyle = skyGradient;
-      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            // ========== Xử lý click trái ==========
+            function handleLeftClick(row, col) {
+                if (!gameActive) return;
+                const cell = board[row][col];
+                if (cell.open || cell.flag) return;
 
-      ctx.save();
-      ctx.translate(canvasWidth / 2, canvasHeight * 0.7);
-      ctx.lineWidth = Math.min(20, canvasWidth * 0.015);
-      ctx.lineCap = 'round';
-      const rainbowColors = ['#ff4b4b', '#ff9900', '#ffc800', '#58cc02', '#1cb0f6', '#ce82ff'];
-      const baseRadius = Math.min(canvasWidth * 0.3, 400);
+                // Nếu là lần click đầu tiên
+                if (firstClick) {
+                    firstClick = false;
+                    // Đặt mìn tránh ô này
+                    placeMines(row, col);
+                    startTimer();
+                    // Sau khi đặt mìn, mở ô (sẽ an toàn vì đã tránh)
+                    openCell(row, col);
+                } else {
+                    // Nếu click trúng mìn
+                    if (cell.mine) {
+                        gameOver(false);
+                        return;
+                    }
+                    openCell(row, col);
+                }
+                checkWin();
+                updateBoardUI();
+            }
 
-      for (let i = 0; i < rainbowColors.length; i++) {
-        ctx.strokeStyle = rainbowColors[i];
-        ctx.beginPath();
-        ctx.arc(0, 0, baseRadius - i * ctx.lineWidth, Math.PI, 0);
-        ctx.stroke();
-      }
-      ctx.restore();
+            // ========== Xử lý click phải (cắm cờ) ==========
+            function handleRightClick(row, col) {
+                if (!gameActive) return;
+                const cell = board[row][col];
+                if (cell.open) return;
 
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-      clouds.forEach(drawCloud);
+                // Nếu lần đầu chưa bấm trái, vẫn cho phép cắm cờ
+                if (firstClick) {
+                    // Vẫn cho cắm cờ nhưng chưa đặt mìn
+                    cell.flag = !cell.flag;
+                    if (cell.flag) flagsPlaced++;
+                    else flagsPlaced--;
+                    updateMineCounter();
+                    updateBoardUI();
+                    return;
+                }
 
-      ctx.fillStyle = '#65a30d';
-      ctx.beginPath();
-      ctx.moveTo(0, canvasHeight);
-      ctx.lineTo(0, canvasHeight * 0.65);
-      for (let x = 0; x <= canvasWidth + 300; x += 300) {
-        ctx.quadraticCurveTo(x - 150, canvasHeight * 0.55, x, canvasHeight * 0.65);
-      }
-      ctx.lineTo(canvasWidth, canvasHeight);
-      ctx.fill();
+                cell.flag = !cell.flag;
+                if (cell.flag) flagsPlaced++;
+                else flagsPlaced--;
+                updateMineCounter();
+                updateBoardUI();
+                checkWin();
+            }
 
-      bgTrees.forEach(drawTree);
+            // ========== Mở ô và lan rộng nếu trống ==========
+            function openCell(row, col) {
+                const cell = board[row][col];
+                if (cell.open || cell.flag) return;
 
-      ctx.fillStyle = '#58cc02';
-      ctx.beginPath();
-      ctx.moveTo(0, canvasHeight);
-      ctx.lineTo(0, canvasHeight * 0.7);
-      ctx.quadraticCurveTo(canvasWidth / 2, canvasHeight * 0.65, canvasWidth, canvasHeight * 0.7);
-      ctx.lineTo(canvasWidth, canvasHeight);
-      ctx.fill();
+                cell.open = true;
+                cellsOpened++;
 
-      ctx.strokeStyle = '#84cc16';
-      ctx.lineWidth = 15;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(-20, canvasHeight * 0.7);
-      ctx.quadraticCurveTo(canvasWidth / 2, canvasHeight * 0.65, canvasWidth + 20, canvasHeight * 0.7);
-      ctx.stroke();
+                // Nếu ô trống (0 mìn xung quanh) -> lan rộng
+                if (!cell.mine && cell.adjacentMines === 0) {
+                    forEachNeighbor(row, col, (nr, nc) => {
+                        const neighbor = board[nr][nc];
+                        if (!neighbor.open && !neighbor.flag && !neighbor.mine) {
+                            openCell(nr, nc);
+                        }
+                    });
+                }
+            }
 
-      bgFlowers.forEach(drawFlower);
-    }
+            // ========== Kiểm tra thắng ==========
+            function checkWin() {
+                if (!gameActive) return;
+                const totalSafeCells = rows * cols - totalMines;
+                if (cellsOpened === totalSafeCells) {
+                    gameOver(true);
+                }
+            }
 
-    function animationLoop() {
-      updateBackground();
-      drawBackground();
-      requestAnimationFrame(animationLoop);
-    }
+            // ========== Kết thúc game ==========
+            function gameOver(isWin) {
+                gameActive = false;
+                clearInterval(timerInterval);
+                timerInterval = null;
 
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-    requestAnimationFrame(animationLoop);
-  </script>
+                if (isWin) {
+                    gameStatus.textContent = '🎉 Chúc mừng! Bạn đã thắng! 🎉';
+                    gameStatus.className = 'game-status win';
+                    // Tự động cắm cờ hết các ô mìn còn lại
+                    for (let r = 0; r < rows; r++) {
+                        for (let c = 0; c < cols; c++) {
+                            if (board[r][c].mine && !board[r][c].flag) {
+                                board[r][c].flag = true;
+                                flagsPlaced++;
+                            }
+                        }
+                    }
+                    updateMineCounter();
+                } else {
+                    gameStatus.textContent = '💥 Bùm! Bạn đã trúng mìn! 💥';
+                    gameStatus.className = 'game-status lose';
+                    // Hiện tất cả mìn
+                    for (let r = 0; r < rows; r++) {
+                        for (let c = 0; c < cols; c++) {
+                            if (board[r][c].mine && !board[r][c].open) {
+                                board[r][c].open = true;
+                                board[r][c].flag = false; // bỏ cờ để hiện mìn
+                            }
+                        }
+                    }
+                }
+                updateBoardUI();
+            }
+
+            // ========== Đồng hồ ==========
+            function startTimer() {
+                if (timerInterval) clearInterval(timerInterval);
+                seconds = 0;
+                updateTimerDisplay();
+                timerInterval = setInterval(() => {
+                    seconds++;
+                    if (seconds > 999) seconds = 999;
+                    updateTimerDisplay();
+                }, 1000);
+            }
+
+            function updateTimerDisplay() {
+                timerDisplay.textContent = String(seconds).padStart(3, '0');
+            }
+
+            function updateMineCounter() {
+                const remaining = totalMines - flagsPlaced;
+                mineCountDisplay.textContent = String(Math.max(remaining, -99)).padStart(3, '0');
+            }
+
+            // ========== Sự kiện ==========
+            resetBtn.addEventListener('click', () => {
+                initGame();
+            });
+
+            difficultyButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    difficultyButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentLevel = btn.dataset.level;
+                    initGame();
+                });
+            });
+
+            // Ngăn menu chuột phải toàn bộ trang
+            document.addEventListener('contextmenu', (e) => {
+                if (e.target.closest('.board')) e.preventDefault();
+            });
+
+            // Khởi tạo game lần đầu
+            initGame();
+
+            // Điều chỉnh kích thước cell khi resize
+            window.addEventListener('resize', () => {
+                const isMobile = window.innerWidth < 600;
+                document.documentElement.style.setProperty('--cell-size', isMobile ? '28px' : '36px');
+                renderBoard(); // render lại để cập nhật grid-template
+            });
+        })();
+    </script>
 </body>
 </html>
