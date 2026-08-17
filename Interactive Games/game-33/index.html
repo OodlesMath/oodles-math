@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris - Game cổ điển</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --board-bg: #0f0f1a;
+            --cell-size: 30px;
+            --border: #2a2a4a;
+            --text: #e0e0e0;
+            --accent: #e94560;
+            --accent2: #0f3460;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            overflow: hidden;
+        }
+
+        .game-container {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 24px 32px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 80px rgba(233, 69, 96, 0.1);
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .board-wrapper {
+            position: relative;
+            border: 3px solid #333366;
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--board-bg);
+            box-shadow: 0 0 30px rgba(100, 100, 200, 0.2), inset 0 0 20px rgba(0, 0, 0, 0.6);
+        }
+
+        canvas#board {
+            display: block;
+        }
+
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-width: 160px;
+        }
+
+        .info-box {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .info-box h3 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #8888bb;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .info-box .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text);
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+
+        .info-box.score .value {
+            color: #ffd700;
+        }
+
+        .info-box.level .value {
+            color: #4fc3f7;
+        }
+
+        .info-box.lines .value {
+            color: #81c784;
+        }
+
+        .next-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        canvas#nextCanvas {
+            display: block;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .controls .key-row {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .key {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            color: #ccc;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-align: center;
+            min-width: 36px;
+            transition: all 0.15s;
+        }
+
+        .key.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+            transform: scale(0.95);
+        }
+
+        .btn {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
+            width: 100%;
+        }
+
+        .btn:hover {
+            background: #ff5a7a;
+            box-shadow: 0 6px 25px rgba(233, 69, 96, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(233, 69, 96, 0.3);
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            z-index: 10;
+            border-radius: 5px;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .overlay.show {
+            pointer-events: all;
+            opacity: 1;
+        }
+
+        .overlay .title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 40px var(--accent), 0 0 80px var(--accent);
+            letter-spacing: 4px;
+        }
+
+        .overlay .subtitle {
+            color: #ccc;
+            font-size: 1rem;
+        }
+
+        .overlay .btn {
+            width: auto;
+            padding: 14px 40px;
+            font-size: 1.1rem;
+        }
+
+        .mobile-controls {
+            display: none;
+            gap: 12px;
+            margin-top: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .m-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            color: #fff;
+            font-size: 1.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+        }
+
+        .m-btn:active {
+            background: var(--accent);
+            border-color: var(--accent);
+            transform: scale(0.9);
+        }
+
+        @media (max-width: 700px) {
+            .game-container {
+                padding: 16px;
+                gap: 14px;
+                flex-direction: column;
+                align-items: center;
+            }
+            .side-panel {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                min-width: auto;
+                width: 100%;
+            }
+            .info-box {
+                padding: 10px 14px;
+                flex: 1;
+                min-width: 70px;
+            }
+            .info-box .value {
+                font-size: 1.3rem;
+            }
+            .controls {
+                display: none;
+            }
+            .mobile-controls {
+                display: flex;
+            }
+            :root {
+                --cell-size: 26px;
+            }
+        }
+        @media (max-width: 400px) {
+            :root {
+                --cell-size: 22px;
+            }
+            .game-container {
+                padding: 10px;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <!-- Bảng chơi -->
+        <div class="board-wrapper" id="boardWrapper">
+            <canvas id="board"></canvas>
+            <!-- Overlay -->
+            <div class="overlay" id="overlay">
+                <div class="title" id="overlayTitle">TETRIS</div>
+                <div class="subtitle" id="overlaySubtitle">Nhấn nút để bắt đầu</div>
+                <button class="btn" id="overlayBtn">Bắt đầu</button>
+            </div>
+        </div>
+
+        <!-- Bảng thông tin -->
+        <div class="side-panel">
+            <div class="info-box score">
+                <h3>Điểm</h3>
+                <div class="value" id="score">0</div>
+            </div>
+            <div class="info-box level">
+                <h3>Cấp độ</h3>
+                <div class="value" id="level">1</div>
+            </div>
+            <div class="info-box lines">
+                <h3>Hàng</h3>
+                <div class="value" id="lines">0</div>
+            </div>
+            <div class="next-box">
+                <canvas id="nextCanvas"></canvas>
+            </div>
+            <div class="controls">
+                <div class="key-row">
+                    <span class="key">←</span>
+                    <span class="key">→</span>
+                    <span class="key">↓</span>
+                </div>
+                <div class="key-row">
+                    <span class="key">↑</span>
+                    <span class="key">Space</span>
+                    <span class="key">P</span>
+                </div>
+                <div class="key-row" style="margin-top:4px;">
+                    <span class="key">← →</span>
+                    <span class="key">↑ xoay</span>
+                    <span class="key">↓ xuống</span>
+                </div>
+            </div>
+            <button class="btn" id="restartBtn">Chơi lại</button>
+
+            <!-- Điều khiển mobile -->
+            <div class="mobile-controls">
+                <button class="m-btn" id="mLeft">◀</button>
+                <button class="m-btn" id="mRotate">↻</button>
+                <button class="m-btn" id="mDown">▼</button>
+                <button class="m-btn" id="mRight">▶</button>
+                <button class="m-btn" id="mDrop">⤓</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ===== KÍCH THƯỚC =====
+            const COLS = 10;
+            const ROWS = 20;
+            const CELL = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size')) || 30;
+
+            const boardCanvas = document.getElementById('board');
+            const boardCtx = boardCanvas.getContext('2d');
+            const nextCanvas = document.getElementById('nextCanvas');
+            const nextCtx = nextCanvas.getContext('2d');
+
+            boardCanvas.width = COLS * CELL;
+            boardCanvas.height = ROWS * CELL;
+            nextCanvas.width = 4 * CELL;
+            nextCanvas.height = 4 * CELL;
+
+            // ===== MÀU SẮC CÁC KHỐI =====
+            const COLORS = {
+                I: '#00f0f0',
+                O: '#f0f000',
+                T: '#a000f0',
+                S: '#00f000',
+                Z: '#f00000',
+                J: '#0000f0',
+                L: '#f0a000',
+                ghost: 'rgba(255,255,255,0.15)',
+            };
+
+            // ===== ĐỊNH NGHĨA CÁC KHỐI =====
+            const SHAPES = {
+                I: [
+                    [0, 0, 0, 0],
+                    [1, 1, 1, 1],
+                    [0, 0, 0, 0],
+                    [0, 0, 0, 0],
+                ],
+                O: [
+                    [1, 1],
+                    [1, 1],
+                ],
+                T: [
+                    [0, 1, 0],
+                    [1, 1, 1],
+                    [0, 0, 0],
+                ],
+                S: [
+                    [0, 1, 1],
+                    [1, 1, 0],
+                    [0, 0, 0],
+                ],
+                Z: [
+                    [1, 1, 0],
+                    [0, 1, 1],
+                    [0, 0, 0],
+                ],
+                J: [
+                    [1, 0, 0],
+                    [1, 1, 1],
+                    [0, 0, 0],
+                ],
+                L: [
+                    [0, 0, 1],
+                    [1, 1, 1],
+                    [0, 0, 0],
+                ],
+            };
+
+            const SHAPE_NAMES = Object.keys(SHAPES);
+
+            // ===== STATE =====
+            let board = []; // 20x10, lưu tên màu (null nếu trống)
+            let currentPiece = null; // { shape, x, y, name }
+            let nextPiece = null;
+            let score = 0;
+            let level = 1;
+            let lines = 0;
+            let gameRunning = false;
+            let gamePaused = false;
+            let gameOver = false;
+            let dropInterval = null;
+            let animationId = null;
+
+            // ===== KHỞI TẠO =====
+            function createBoard() {
+                board = [];
+                for (let r = 0; r < ROWS; r++) {
+                    board.push(new Array(COLS).fill(null));
+                }
+            }
+
+            function randomPiece() {
+                const name = SHAPE_NAMES[Math.floor(Math.random() * SHAPE_NAMES.length)];
+                const shape = SHAPES[name].map(row => [...row]);
+                return { name, shape };
+            }
+
+            function getInitialPiecePosition(piece) {
+                const shape = piece.shape;
+                const width = shape[0].length;
+                return {
+                    x: Math.floor((COLS - width) / 2),
+                    y: piece.name === 'I' ? -1 : 0,
+                };
+            }
+
+            function spawnNewPiece() {
+                if (!nextPiece) {
+                    nextPiece = randomPiece();
+                }
+                currentPiece = {
+                    ...nextPiece,
+                    ...getInitialPiecePosition(nextPiece),
+                };
+                nextPiece = randomPiece();
+
+                // Kiểm tra game over ngay khi spawn
+                if (collides(currentPiece.shape, currentPiece.x, currentPiece.y)) {
+                    gameOver = true;
+                    gameRunning = false;
+                    clearInterval(dropInterval);
+                    showOverlay('GAME OVER', 'Không thể tạo khối mới', 'Chơi lại');
+                    return false;
+                }
+                return true;
+            }
+
+            function collides(shape, posX, posY) {
+                for (let r = 0; r < shape.length; r++) {
+                    for (let c = 0; c < shape[r].length; c++) {
+                        if (shape[r][c]) {
+                            const boardX = posX + c;
+                            const boardY = posY + r;
+                            if (boardX < 0 || boardX >= COLS || boardY >= ROWS) {
+                                return true;
+                            }
+                            if (boardY >= 0 && board[boardY][boardX] !== null) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+                return false;
+            }
+
+            function mergePiece() {
+                const { shape, x, y, name } = currentPiece;
+                for (let r = 0; r < shape.length; r++) {
+                    for (let c = 0; c < shape[r].length; c++) {
+                        if (shape[r][c]) {
+                            const boardY = y + r;
+                            const boardX = x + c;
+                            if (boardY >= 0 && boardY < ROWS && boardX >= 0 && boardX < COLS) {
+                                board[boardY][boardX] = name;
+                            }
+                        }
+                    }
+                }
+            }
+
+            function clearLines() {
+                let cleared = 0;
+                for (let r = ROWS - 1; r >= 0; r--) {
+                    if (board[r].every(cell => cell !== null)) {
+                        board.splice(r, 1);
+                        board.unshift(new Array(COLS).fill(null));
+                        cleared++;
+                        r++; // kiểm tra lại hàng mới chuyển xuống
+                    }
+                }
+                if (cleared > 0) {
+                    // Tính điểm
+                    const points = [0, 100, 300, 500, 800];
+                    const addScore = points[Math.min(cleared, 4)] * level;
+                    score += addScore;
+                    lines += cleared;
+                    level = Math.floor(lines / 10) + 1;
+                    updateUI();
+                    // Tăng tốc độ
+                    resetDropInterval();
+                }
+            }
+
+            function movePiece(dx, dy) {
+                if (!gameRunning || gamePaused || gameOver || !currentPiece) return false;
+                const newX = currentPiece.x + dx;
+                const newY = currentPiece.y + dy;
+                if (!collides(currentPiece.shape, newX, newY)) {
+                    currentPiece.x = newX;
+                    currentPiece.y = newY;
+                    return true;
+                }
+                // Nếu đang cố đi xuống và bị chặn -> lock
+                if (dy === 1 && dx === 0) {
+                    lockPiece();
+                }
+                return false;
+            }
+
+            function rotatePiece() {
+                if (!gameRunning || gamePaused || gameOver || !currentPiece) return;
+                const shape = currentPiece.shape;
+                // Xoay ma trận 90 độ theo chiều kim đồng hồ
+                const rotated = shape[0].map((_, idx) => shape.map(row => row[idx]).reverse());
+                // Thử xoay ở vị trí hiện tại, nếu va chạm thử wall kicks (dịch trái/phải 1-2 ô)
+                const kicks = [0, -1, 1, -2, 2];
+                for (const kick of kicks) {
+                    if (!collides(rotated, currentPiece.x + kick, currentPiece.y)) {
+                        currentPiece.shape = rotated;
+                        currentPiece.x += kick;
+                        return;
+                    }
+                }
+            }
+
+            function hardDrop() {
+                if (!gameRunning || gamePaused || gameOver || !currentPiece) return;
+                let dropDistance = 0;
+                while (!collides(currentPiece.shape, currentPiece.x, currentPiece.y + 1)) {
+                    currentPiece.y++;
+                    dropDistance++;
+                }
+                score += dropDistance * 2;
+                updateUI();
+                lockPiece();
+            }
+
+            function getGhostY() {
+                if (!currentPiece) return 0;
+                let gy = currentPiece.y;
+                while (!collides(currentPiece.shape, currentPiece.x, gy + 1)) {
+                    gy++;
+                }
+                return gy;
+            }
+
+            function lockPiece() {
+                if (!currentPiece) return;
+                mergePiece();
+                clearLines();
+                const spawned = spawnNewPiece();
+                if (!spawned) {
+                    // game over
+                    showOverlay('GAME OVER', `Điểm: ${score}`, 'Chơi lại');
+                }
+                updateUI();
+            }
+
+            function resetDropInterval() {
+                if (dropInterval) clearInterval(dropInterval);
+                const speed = Math.max(100, 800 - (level - 1) * 60);
+                dropInterval = setInterval(() => {
+                    if (gameRunning && !gamePaused && !gameOver) {
+                        movePiece(0, 1);
+                        updateUI();
+                    }
+                }, speed);
+            }
+
+            function updateUI() {
+                document.getElementById('score').textContent = score;
+                document.getElementById('level').textContent = level;
+                document.getElementById('lines').textContent = lines;
+            }
+
+            function showOverlay(title, subtitle, btnText) {
+                const overlay = document.getElementById('overlay');
+                document.getElementById('overlayTitle').textContent = title;
+                document.getElementById('overlaySubtitle').textContent = subtitle;
+                document.getElementById('overlayBtn').textContent = btnText;
+                overlay.classList.add('show');
+            }
+
+            function hideOverlay() {
+                document.getElementById('overlay').classList.remove('show');
+            }
+
+            function startGame() {
+                createBoard();
+                score = 0;
+                level = 1;
+                lines = 0;
+                gameOver = false;
+                gamePaused = false;
+                gameRunning = true;
+                nextPiece = randomPiece();
+                updateUI();
+                hideOverlay();
+                const spawned = spawnNewPiece();
+                if (!spawned) {
+                    gameRunning = false;
+                    showOverlay('GAME OVER', 'Không thể bắt đầu', 'Thử lại');
+                }
+                resetDropInterval();
+                draw();
+            }
+
+            function togglePause() {
+                if (!gameRunning || gameOver) return;
+                gamePaused = !gamePaused;
+                if (gamePaused) {
+                    showOverlay('TẠM DỪNG', 'Nhấn P để tiếp tục', 'Tiếp tục');
+                } else {
+                    hideOverlay();
+                }
+                draw();
+            }
+
+            // ===== VẼ =====
+            function draw() {
+                // Vẽ bảng
+                boardCtx.clearRect(0, 0, boardCanvas.width, boardCanvas.height);
+                // Nền lưới
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        const x = c * CELL;
+                        const y = r * CELL;
+                        if (board[r][c]) {
+                            drawCell(boardCtx, x, y, COLORS[board[r][c]], 1);
+                        } else {
+                            drawCell(boardCtx, x, y, 'rgba(255,255,255,0.03)', 0.15);
+                        }
+                    }
+                }
+
+                // Vẽ ghost piece
+                if (currentPiece && gameRunning && !gameOver) {
+                    const ghostY = getGhostY();
+                    for (let r = 0; r < currentPiece.shape.length; r++) {
+                        for (let c = 0; c < currentPiece.shape[r].length; c++) {
+                            if (currentPiece.shape[r][c]) {
+                                const x = (currentPiece.x + c) * CELL;
+                                const y = (ghostY + r) * CELL;
+                                if (ghostY + r >= 0) {
+                                    drawCell(boardCtx, x, y, COLORS.ghost, 0.4);
+                                    boardCtx.strokeStyle = 'rgba(255,255,255,0.3)';
+                                    boardCtx.lineWidth = 1;
+                                    boardCtx.strokeRect(x, y, CELL, CELL);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Vẽ current piece
+                if (currentPiece && gameRunning) {
+                    for (let r = 0; r < currentPiece.shape.length; r++) {
+                        for (let c = 0; c < currentPiece.shape[r].length; c++) {
+                            if (currentPiece.shape[r][c]) {
+                                const x = (currentPiece.x + c) * CELL;
+                                const y = (currentPiece.y + r) * CELL;
+                                if (currentPiece.y + r >= 0) {
+                                    drawCell(boardCtx, x, y, COLORS[currentPiece.name], 1);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Vẽ next piece
+                nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+                if (nextPiece) {
+                    const shape = nextPiece.shape;
+                    const w = shape[0].length;
+                    const h = shape.length;
+                    const offsetX = (nextCanvas.width - w * CELL) / 2;
+                    const offsetY = (nextCanvas.height - h * CELL) / 2;
+                    for (let r = 0; r < h; r++) {
+                        for (let c = 0; c < w; c++) {
+                            if (shape[r][c]) {
+                                drawCell(nextCtx, offsetX + c * CELL, offsetY + r * CELL, COLORS[nextPiece.name],
+                                    1);
+                            }
+                        }
+                    }
+                }
+
+                if (!gameRunning && !gameOver && !gamePaused) {
+                    // Trạng thái chưa bắt đầu
+                }
+            }
+
+            function drawCell(ctx, x, y, color, alpha) {
+                ctx.fillStyle = color;
+                ctx.globalAlpha = alpha;
+                ctx.fillRect(x + 1, y + 1, CELL - 2, CELL - 2);
+                ctx.globalAlpha = 1;
+                // Hiệu ứng 3D nhẹ
+                if (alpha > 0.5) {
+                    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                    ctx.fillRect(x + 1, y + 1, CELL - 2, 3);
+                    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                    ctx.fillRect(x + 1, y + CELL - 4, CELL - 2, 3);
+                }
+            }
+
+            function gameLoop() {
+                draw();
+                animationId = requestAnimationFrame(gameLoop);
+            }
+
+            // ===== XỬ LÝ PHÍM =====
+            function handleKeyDown(e) {
+                const key = e.key;
+                if (key === 'ArrowLeft' || key === 'a' || key === 'A') {
+                    e.preventDefault();
+                    movePiece(-1, 0);
+                    highlightKey('ArrowLeft');
+                } else if (key === 'ArrowRight' || key === 'd' || key === 'D') {
+                    e.preventDefault();
+                    movePiece(1, 0);
+                    highlightKey('ArrowRight');
+                } else if (key === 'ArrowDown' || key === 's' || key === 'S') {
+                    e.preventDefault();
+                    movePiece(0, 1);
+                    highlightKey('ArrowDown');
+                } else if (key === 'ArrowUp' || key === 'w' || key === 'W') {
+                    e.preventDefault();
+                    rotatePiece();
+                    highlightKey('ArrowUp');
+                } else if (key === ' ') {
+                    e.preventDefault();
+                    hardDrop();
+                    highlightKey(' ');
+                } else if (key === 'p' || key === 'P') {
+                    e.preventDefault();
+                    togglePause();
+                }
+                draw();
+            }
+
+            function highlightKey(key) {
+                const keys = document.querySelectorAll('.key');
+                keys.forEach(k => {
+                    if (k.textContent.trim() === key) {
+                        k.classList.add('active');
+                        setTimeout(() => k.classList.remove('active'), 150);
+                    }
+                });
+            }
+
+            // ===== KHỞI TẠO SỰ KIỆN =====
+            window.addEventListener('keydown', handleKeyDown);
+
+            document.getElementById('restartBtn').addEventListener('click', () => {
+                startGame();
+            });
+
+            document.getElementById('overlayBtn').addEventListener('click', () => {
+                if (gameOver) {
+                    startGame();
+                } else if (gamePaused) {
+                    togglePause();
+                } else {
+                    startGame();
+                }
+            });
+
+            // Mobile controls
+            document.getElementById('mLeft').addEventListener('click', () => movePiece(-1, 0));
+            document.getElementById('mRight').addEventListener('click', () => movePiece(1, 0));
+            document.getElementById('mDown').addEventListener('click', () => movePiece(0, 1));
+            document.getElementById('mRotate').addEventListener('click', rotatePiece);
+            document.getElementById('mDrop').addEventListener('click', hardDrop);
+
+            // Touch events cho mobile
+            let touchStartX = 0;
+            let touchStartY = 0;
+            let touchStartTime = 0;
+            document.addEventListener('touchstart', (e) => {
+                if (e.target.closest('.m-btn')) return;
+                const touch = e.touches[0];
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
+                touchStartTime = Date.now();
+            }, { passive: true });
+
+            document.addEventListener('touchend', (e) => {
+                if (e.target.closest('.m-btn')) return;
+                if (!touchStartX || !touchStartY) return;
+                const touch = e.changedTouches[0];
+                const dx = touch.clientX - touchStartX;
+                const dy = touch.clientY - touchStartY;
+                const dt = Date.now() - touchStartTime;
+                const absDx = Math.abs(dx);
+                const absDy = Math.abs(dy);
+                if (absDx < 20 && absDy < 20 && dt < 300) {
+                    // Tap -> xoay
+                    rotatePiece();
+                } else if (absDx > absDy && absDx > 30) {
+                    if (dx > 0) movePiece(1, 0);
+                    else movePiece(-1, 0);
+                } else if (absDy > absDx && absDy > 30) {
+                    if (dy > 0) hardDrop();
+                    else movePiece(0, -1);
+                }
+                touchStartX = 0;
+                touchStartY = 0;
+                draw();
+            }, { passive: true });
+
+            // ===== KHỞI ĐỘNG =====
+            createBoard();
+            updateUI();
+            showOverlay('TETRIS', 'Nhấn nút để bắt đầu', 'Bắt đầu');
+            gameLoop();
+
+            // Vẽ bảng ban đầu
+            draw();
+
+            console.log('🎮 Tetris đã sẵn sàng! Sử dụng phím mũi tên để chơi.');
+        })();
+    </script>
+</body>
+</html>
