@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="../assets/brand.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>End of Module Review - Math Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --text:#1e3a8a; /* Deep rich navy blue for better readability */
+      --blue:#0ea5e9; --blue-dark:#0284c7; --pink:#ec4899;
+      --yellow:#f59e0b; --green:#10b981; --green-dark:#059669; --purple:#8b5cf6;
+      --orange:#f97316; --red:#ef4444; --red-dark:#dc2626; --slate:#475569;
+      --dark-border: #334155;
+      --shadow:0 12px 30px rgba(15,23,42,.13); --radius:30px;
+    }
+    *{box-sizing:border-box;outline:none;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+    html,body{width:100%;height:100%;font-family:"Poppins",sans-serif;color:var(--text);overflow:hidden;background:#8ed8f8}
+    button{font-family:inherit; color:inherit}
+    
+    #backgroundCanvas{display:block;position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none}
+    #confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9999}
+    
+    .game-container{position:absolute;inset:0;z-index:10;overflow:auto;padding:26px 16px; scroll-behavior:smooth;}
+    .wrap{width:min(1320px,100%);min-height:100%;margin:auto;display:grid;grid-template-columns:440px minmax(0,1fr);gap:24px}
+    
+    /* V6 Update: Yellow paper background with math pattern */
+    .card{
+      background-color: #fefce8; /* Soft yellow paper */
+      background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23fde047' fill-opacity='0.4' font-family='Arial' font-weight='bold' font-size='18'%3E%3Ctext x='15' y='25' transform='rotate(15 15 25)'%3E%2B%3C/text%3E%3Ctext x='65' y='20' transform='rotate(-20 65 20)'%3E1%3C/text%3E%3Ctext x='35' y='75' transform='rotate(-10 35 75)'%3E-%3C/text%3E%3Ctext x='80' y='70' transform='rotate(25 80 70)'%3E%3D%3C/text%3E%3Ccircle cx='50' cy='45' r='4' fill='none' stroke='%23fde047' stroke-width='2'/%3E%3Cpath d='M80 85 L86 91 L92 85 L86 79 Z' fill='none' stroke='%23fde047' stroke-width='2'/%3E%3C/g%3E%3C/svg%3E");
+      border:5px solid rgba(255,255,255,.95);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column
+    }
+    
+    .card-header{padding:18px 22px;background:rgba(255,255,255,.75);border-bottom:4px dashed rgba(203,213,225,.7);display:flex;align-items:center;justify-content:space-between;gap:12px;backdrop-filter:blur(5px);}
+    .brand{display:flex;align-items:center;gap:12px;min-width:0}
+    .brand-icon{font-size:38px;filter:drop-shadow(0 4px 2px rgba(0,0,0,.12))}
+    .brand-copy{min-width:0; color:var(--text)}.brand-copy b{display:block;font-size:20px;line-height:1.15;font-weight:900}.brand-copy span{display:block;color:var(--slate);font-size:12px;font-weight:800;margin-top:3px}
+    .chips{display:grid;gap:8px;justify-items:end}.chip{white-space:nowrap;background:#fef08a;color:#854d0e;border:3px solid #eab308;border-radius:999px;padding:6px 13px;font-size:13px;font-weight:900;box-shadow:0 4px 0 #ca8a04}
+    
+    .left-body{padding:22px;display:flex;flex-direction:column;flex:1;background:rgba(255,255,255,0.4)}.big{font-size:25px;color:var(--pink);font-weight:900}.sub{font-size:14px;color:var(--slate);font-weight:700;line-height:1.5;margin-top:3px}
+    
+    .progress-card{margin-top:15px;background:rgba(255,255,255,.9);border:4px solid #fff;border-radius:22px;padding:15px;box-shadow:0 8px 20px rgba(15,23,42,.08)}
+    .progress-line{display:flex;justify-content:space-between;gap:8px;margin-bottom:9px;font-size:14px;color:#1e3a8a;font-weight:900}.meter{height:20px;background:#e2e8f0;border:3px solid #cbd5e1;border-radius:999px;overflow:hidden;box-shadow:inset 0 3px 6px rgba(0,0,0,.08)}
+    .bar{height:100%;width:0;background:repeating-linear-gradient(45deg,#34d399,#34d399 12px,#10b981 12px,#10b981 24px);border-radius:999px;transition:width .45s cubic-bezier(.34,1.56,.64,1)}
+    .skills{margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:9px}
+    
+    .skill{position:relative; background:rgba(255,255,255,.95);border:3px solid #e2e8f0;border-radius:18px;padding:10px 9px;display:flex;align-items:center;gap:8px;min-width:0;transition:.18s;box-shadow:0 4px 9px rgba(15,23,42,.06); cursor:pointer}
+    .skill:hover{border-color:#cbd5e1; transform:translateY(-2px)}
+    .skill:active{transform:translateY(1px); box-shadow:0 2px 4px rgba(15,23,42,.06)}
+    .skill.active{border-color:var(--blue);background:#f0f9ff;box-shadow:0 0 0 4px rgba(14,165,233,.18);transform:translateY(-2px)}
+    .skill.answered{border-color:#86efac;background:#f0fdf4}
+    .skill.pending{opacity:.82}
+    .skill-flag{position:absolute; top:-8px; right:-8px; font-size:17px; background:#fff; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 5px rgba(0,0,0,0.15); border:2px solid #f97316; display:none}
+    .skill.flagged .skill-flag{display:flex; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)}
+    
+    .sico{width:39px;height:39px;flex:0 0 39px;border-radius:11px;background:#fff;border:2px solid #e2e8f0;display:grid;place-items:center;font-size:19px;box-shadow:0 3px 0 #f1f5f9}.skill b{display:block;font-size:11px;line-height:1.18;font-weight:900;color:var(--text)}.skill span{display:block;font-size:9px;line-height:1.25;color:var(--slate);font-weight:700;margin-top:2px}
+    
+    .start-wrap{margin-top:auto;padding-top:18px}
+    .btn{border:0;border-radius:19px;padding:14px 22px;font-size:16px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-transform:uppercase;letter-spacing:.04em;transition:.1s}.btn:active{transform:translateY(6px);box-shadow:none!important}.btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
+    .btn.green{background:var(--green);color:#fff;box-shadow:0 6px 0 var(--green-dark)}.btn.blue{background:#38bdf8;color:#fff;box-shadow:0 6px 0 var(--blue-dark)}.btn.pink{background:#f472b6;color:#fff;box-shadow:0 6px 0 #be185d}.btn.orange{background:#fb923c;color:#fff;box-shadow:0 6px 0 #c2410c}.btn.purple{background:#a855f7;color:#fff;box-shadow:0 6px 0 #7e22ce}.btn.ghost{background:#e2e8f0;color:#475569;box-shadow:0 6px 0 #94a3b8}.btn.ghost.active{background:#fef3c7; border:2px solid #f59e0b; color:#b45309; box-shadow:0 6px 0 #d97706} .btn.full{width:100%}
+    
+    .right-stage{padding:22px;display:flex;align-items:center;justify-content:center;flex:1;position:relative}
+    
+    /* V6 Update: Yellow paper background with math pattern for panel */
+    .panel{
+      width:100%;max-width:820px;
+      background-color: #fefce8;
+      background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23fde047' fill-opacity='0.4' font-family='Arial' font-weight='bold' font-size='18'%3E%3Ctext x='15' y='25' transform='rotate(15 15 25)'%3E%2B%3C/text%3E%3Ctext x='65' y='20' transform='rotate(-20 65 20)'%3E1%3C/text%3E%3Ctext x='35' y='75' transform='rotate(-10 35 75)'%3E-%3C/text%3E%3Ctext x='80' y='70' transform='rotate(25 80 70)'%3E%3D%3C/text%3E%3Ccircle cx='50' cy='45' r='4' fill='none' stroke='%23fde047' stroke-width='2'/%3E%3Cpath d='M80 85 L86 91 L92 85 L86 79 Z' fill='none' stroke='%23fde047' stroke-width='2'/%3E%3C/g%3E%3C/svg%3E");
+      border:5px solid #fff;border-radius:28px;padding:28px;box-shadow:var(--shadow)
+    }
+    
+    .welcome,.finish{text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:560px;background:rgba(255,255,255,0.5);border-radius:20px;padding:20px;}.welcome-icon,.finish-icon{font-size:105px;filter:drop-shadow(0 13px 12px rgba(0,0,0,.14));animation:bob 2.8s ease-in-out infinite}.welcome h1{font-size:clamp(28px,4vw,43px);line-height:1.15;color:var(--purple);font-weight:900;margin-top:12px}.welcome h2{font-size:clamp(20px,3vw,29px);color:var(--blue-dark);font-weight:900;margin-top:7px}.welcome p{font-size:17px;color:var(--slate);font-weight:700;margin:17px auto 28px;max-width:580px;line-height:1.55}.welcome-badges{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-bottom:26px}.welcome-badge{padding:9px 15px;border-radius:999px;background:#f8fafc;border:3px solid #e2e8f0;font-size:13px;font-weight:900;color:var(--slate)}
+    
+    #quiz{display:none}.qtop{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}.qtitle{font-size:clamp(20px,3vw,27px);font-weight:900;color:var(--text); background:rgba(255,255,255,0.7); padding:4px 12px; border-radius:12px;}.qtop-right{display:flex; gap:10px; align-items:center;} .tag{background:#e0f2fe;color:var(--blue-dark);padding:7px 16px;border-radius:999px;border:3px solid #38bdf8;font-size:14px;font-weight:900;display:flex;align-items:center;gap:7px;text-align:center}
+    .question-card{background:rgba(255,255,255,.92);border:4px solid #e2e8f0;border-radius:26px;padding:24px;margin-bottom:20px;transition:.2s;box-shadow:0 4px 15px rgba(0,0,0,0.05);}.prompt-row{display:flex;align-items:flex-start;gap:14px}.prompt{font-size:clamp(20px,3.1vw,28px);font-weight:900;color:var(--text);line-height:1.36;flex:1}.speak-btn{width:60px;height:60px;flex:0 0 60px;border:3px solid #fff;border-radius:50%;background:#38bdf8;color:white;font-size:27px;box-shadow:0 6px 0 var(--blue-dark);cursor:pointer}.speak-btn:active{transform:translateY(6px);box-shadow:none}
+    
+    .vis-box{width:100%;margin-top:18px;display:flex;justify-content:center;align-items:center;gap:15px;flex-wrap:wrap}
+    .choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+    
+    /* V6 Update: Distinct vibrant colors for choices */
+    .choice{min-height:85px; border:3px solid; border-radius:22px; font-size:clamp(19px,2.8vw,25px); font-weight:900; color:#fff; display:flex; align-items:center; justify-content:center; text-align:center; cursor:pointer; transition:0.2s cubic-bezier(0.34, 1.56, 0.64, 1); position:relative; text-shadow:0 2px 4px rgba(0,0,0,0.25)}
+    .choice.c-0{background:#8b5cf6; box-shadow:0 8px 0 #6d28d9; border-color:#a78bfa}
+    .choice.c-1{background:#06b6d4; box-shadow:0 8px 0 #0891b2; border-color:#22d3ee}
+    .choice.c-2{background:#ec4899; box-shadow:0 8px 0 #be185d; border-color:#f472b6}
+    .choice.c-3{background:#f97316; box-shadow:0 8px 0 #c2410c; border-color:#fb923c}
+    
+    .choice:hover{transform:translateY(-3px); filter:brightness(1.1)}
+    .choice:active{transform:translateY(6px); box-shadow:0 2px 0 transparent}
+    .choice.selected{transform:translateY(4px); box-shadow:0 0 0 5px #fff, 0 0 0 9px #1e293b, 0 7px 15px rgba(0,0,0,0.2); filter:brightness(1.15); z-index:2; border-color:#fff}
+    .choice.selected::after{content:'✓'; position:absolute; top:-10px; right:-10px; background:#fff; color:#1e293b; width:28px; height:28px; border-radius:50%; border:3px solid #1e293b; display:flex; align-items:center; justify-content:center; font-size:16px; box-shadow:0 2px 5px rgba(0,0,0,0.2); text-shadow:none;}
+    
+    /* V6 Update: Ordinal strip scaling to guarantee 12 items */
+    .object-strip{display:flex; flex-wrap:nowrap; justify-content:space-between; gap:2px; width:100%; padding: 5px 0;}
+    .object-btn{border:3px solid #e2e8f0;border-radius:14px;background:white;box-shadow:0 4px 0 #cbd5e1;display:grid;place-items:center;cursor:pointer;position:relative; transition:0.1s;}
+    .object-btn:active{transform:translateY(4px); box-shadow:0 0 0 transparent;}
+    .ordinal-btn{width:min(6vw, 42px); height:min(6vw, 42px); flex:0 0 min(6vw, 42px); font-size:min(3.2vw, 24px);}
+    .object-btn.selected{border-color:var(--blue);box-shadow:0 4px 0 var(--blue-dark);background:#e0f2fe}.object-btn.selected::after{content:"";position:absolute;inset:-6px;border:3px solid var(--pink);border-radius:50%;pointer-events:none}
+    
+    .set-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%}.set-card{background:#fff;border:4px solid #cbd5e1;border-radius:22px;padding:13px;text-align:center}.set-title{font-size:20px;font-weight:900;color:var(--text);margin-bottom:9px}.icon-cloud{display:flex;flex-wrap:wrap;justify-content:center;align-content:center;gap:6px;min-height:105px;font-size:32px}.set-count{font-size:14px;color:var(--slate);font-weight:800;margin-top:8px}
+    
+    .number-bonds{display:flex;justify-content:center;gap:35px;flex-wrap:wrap; padding: 10px 0;}
+    .bond{position:relative;width:130px;height:120px;}
+    .bond-whole,.bond-part{position:absolute;border:4px solid #334155;border-radius:50%;background:#fff;display:grid;place-items:center;font-weight:900;color:var(--text);}
+    .bond-whole{width:65px;height:65px;left:32px;top:0;font-size:24px;z-index:2;}
+    .bond-part{width:55px;height:55px;bottom:0;font-size:20px;z-index:2;}
+    .bond-part.left{left:0px;}
+    .bond-part.right{right:0px;}
+    .bond-line{position:absolute;height:4px;background:#334155;top:50px;width:55px;z-index:1;}
+    .bond-line.l{left:12px;transform:rotate(120deg);}
+    .bond-line.r{right:12px;transform:rotate(-120deg);}
+    
+    .tenframes{display:flex;justify-content:center;gap:15px;flex-wrap:wrap;}
+    .tenframe{display:grid;grid-template-columns:repeat(5,36px);grid-template-rows:repeat(2,36px);border:4px solid #38bdf8;border-radius:8px;background:#e0f2fe; gap:2px; padding:2px;}
+    .tf-cell{width:100%;height:100%;border:2px dashed #bae6fd;border-radius:4px;display:grid;place-items:center;position:relative;}
+    .dot{width:22px;height:22px;border-radius:50%;background:#f472b6;box-shadow:0 3px 0 #be185d;transition:0.2s cubic-bezier(0.34, 1.56, 0.64, 1); position:relative;}
+    .interactive-dot{cursor:pointer;}
+    .interactive-dot:hover{transform:scale(1.15);}
+    .interactive-dot:active{transform:scale(0.9) translateY(3px); box-shadow:0 0 0 transparent;}
+    .dot.crossed::before,.dot.crossed::after{content:"";position:absolute;width:28px;height:4px;background:#1e293b;top:50%;left:50%;border-radius:2px;}
+    .dot.crossed::before{transform:translate(-50%, -50%) rotate(45deg);}
+    .dot.crossed::after{transform:translate(-50%, -50%) rotate(-45deg);}
+    
+    .decomp{background:#fff;border:4px dashed #cbd5e1;border-radius:20px;padding:14px 18px;font-size:clamp(17px,2.4vw,23px);font-weight:900;color:var(--text);line-height:1.8;text-align:center}.highlight{color:var(--pink)}
+    
+    .number-strip{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;}
+    .number-cell{min-width:48px;height:52px;border:3px solid #64748b;background:white;border-radius:12px;display:grid;place-items:center;font-size:18px;font-weight:900;color:var(--text);cursor:pointer;box-shadow:0 5px 0 #cbd5e1; transition:0.1s;}
+    .number-cell:active{transform:translateY(5px); box-shadow:0 0 0 transparent;}
+    .number-cell.selected{background:#e0f2fe;border-color:var(--blue);color:var(--blue-dark);box-shadow:0 5px 0 var(--blue-dark);}
+    
+    .jump-line{width:100%; display:flex; justify-content:center; padding:15px 0;}
+    .jump-track{display:flex;align-items:center; justify-content:center; flex-wrap:nowrap; gap: 2px;}
+    .jump-node{display:flex;flex-direction:column;align-items:center;font-weight:900;color:#64748b; z-index:2;}
+    .jump-bubble{width:38px;height:38px;border:3px solid #cbd5e1;border-radius:50%;background:#fff;display:grid;place-items:center;transition:.3s; font-size: 16px;}
+    .jump-node.reached .jump-bubble{border-color:var(--green); background:#dcfce7; color:var(--green-dark); font-weight:900;}
+    .jump-arrow{display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.4s ease-in; margin-top:-20px; z-index:1; width:22px; margin-left:-5px; margin-right:-5px;}
+    
+    .to-table{border-collapse:collapse;background:#fff;min-width:380px;max-width:100%;font-size:18px;font-weight:900;text-align:center;border:4px solid var(--dark-border); margin:auto;}
+    .to-table th,.to-table td{border:2px solid var(--dark-border);padding:10px 16px; color:var(--text);}
+    .to-table th{background:#e0f2fe;color:var(--blue-dark);}
+    .blank-cell{color:var(--pink);font-size:24px;}
+    
+    .pattern-row{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap}
+    .pattern-cell{min-width:59px;height:56px;border:3px solid #94a3b8;border-radius:14px;background:#fff;display:grid;place-items:center;font-size:21px;font-weight:900; color:var(--text)}.pattern-cell.missing{border-style:dashed;color:var(--pink);background:#fff1f2}
+    
+    .story-icon { display:inline-block; margin:4px; cursor:pointer; transition:all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); user-select:none; -webkit-user-select:none; filter: grayscale(0%); font-size:38px;}
+    .story-icon:active { transform:scale(0.8); }
+    .story-icon.faded { opacity:0.25; filter:grayscale(100%); transform:scale(0.85); }
+    
+    .action-row{display:flex;justify-content:space-between;align-items:center;gap:11px;margin-top:22px;padding-top:20px;border-top:3px dashed #e2e8f0;flex-wrap:wrap}
+    .action-group{display:flex;gap:10px;flex-wrap:wrap;flex:1}
+    #submitBtn{font-size: 20px; padding: 18px 24px; animation: pulseSubmit 2s infinite; display: none; margin-top:15px}
+    .teacher-toggle{width:100%;margin-top:13px;text-align:center}.teacher-panel{display:none;margin-top:12px;padding:13px;background:#fff7ed;border:3px solid #fdba74;border-radius:18px}.teacher-panel.show{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}.teacher-note{font-size:12px;color:#9a3412;font-weight:800;text-align:center;width:100%;margin-bottom:3px}
+    
+    .finish{display:none;min-height:570px;background:rgba(255,255,255,0.85)}.finish h2{font-size:clamp(30px,5vw,49px);font-weight:900;color:var(--blue-dark);margin-top:10px}.finish p{font-size:18px;font-weight:800;color:var(--slate);margin-top:8px}.score-ring{width:150px;height:150px;border-radius:50%;background:#fef3c7;border:8px solid #f59e0b;display:grid;place-items:center;margin:19px auto;box-shadow:0 8px 0 #d97706}.score-ring b{font-size:42px;color:#b45309}.summary-container{width:100%;max-height:300px;overflow:auto;border:4px solid #bae6fd;border-radius:20px;background:#fff;margin-top:15px}.summary-table{border-collapse:collapse;width:100%;text-align:left}.summary-table th{position:sticky;top:0;background:#e0f2fe;color:var(--blue-dark);padding:12px;font-size:14px}.summary-table td{padding:11px 12px;border-top:2px solid #f1f5f9;font-size:13px;font-weight:700; color:var(--text)}.result-star{font-size:22px;text-align:center}.finish-actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:20px}
+    
+    @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-13px)}}
+    @keyframes popIn{0%{transform:scale(0)}80%{transform:scale(1.2)}100%{transform:scale(1)}}
+    @keyframes pulseSubmit{0%{box-shadow:0 6px 0 #7e22ce, 0 0 0 0 rgba(168,85,247,0.4)}70%{box-shadow:0 6px 0 #7e22ce, 0 0 0 15px rgba(168,85,247,0)}100%{box-shadow:0 6px 0 #7e22ce, 0 0 0 0 rgba(168,85,247,0)}}
+    
+
+    /* --- End of Module Review custom visual components --- */
+    .revision-groups{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;width:100%}
+    .revision-group{background:#fff;border:4px solid #bae6fd;border-radius:20px;padding:12px 16px;box-shadow:0 5px 0 #7dd3fc;font-size:34px;min-width:110px;text-align:center}
+    .math-line{font-size:clamp(26px,4vw,40px);font-weight:900;color:#1e3a8a;text-align:center;width:100%;margin-top:12px}
+    .measure-board{width:100%;max-width:650px;background:#fff;border:4px solid #e2e8f0;border-radius:22px;padding:18px 22px;display:grid;gap:22px}
+    .measure-row{display:grid;grid-template-columns:86px 1fr;gap:14px;align-items:center}
+    .measure-label{font-weight:900;color:#475569;text-align:left}
+    .measure-object{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0}
+    .measure-track{height:40px;display:flex;align-items:center;justify-content:flex-start}
+    .measure-svg{display:block;height:40px;filter:drop-shadow(0 3px 0 rgba(15,23,42,.10))}
+    .measure-cubes{display:flex;gap:0;align-items:center;justify-content:flex-start;margin:0;padding:0}
+    .measure-cube{width:32px;height:30px;flex:0 0 32px;border:2px solid #475569;border-right-width:1px;border-radius:0;background:linear-gradient(180deg,#dbeafe 0%,#bfdbfe 58%,#60a5fa 100%);box-shadow:inset 0 -4px 0 rgba(14,165,233,.18)}
+    .measure-cube:first-child{border-radius:7px 0 0 7px;border-left-width:2px}
+    .measure-cube:last-child{border-radius:0 7px 7px 0;border-right-width:2px}
+    .weekday-strip{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;width:100%}
+    .day-card{min-width:82px;padding:12px 10px;background:#fff;border:3px solid #cbd5e1;border-radius:16px;text-align:center;font-weight:900;color:#475569;box-shadow:0 5px 0 #cbd5e1}
+    .day-card.today{background:#fef3c7;border-color:#f59e0b;color:#b45309;box-shadow:0 5px 0 #d97706}
+    .day-arrow{display:grid;place-items:center;font-size:30px;color:#ec4899;font-weight:900}
+     .graph-board{width:100%;max-width:680px;background:#fff;border:4px solid #cbd5e1;border-radius:20px;overflow:hidden;box-shadow:0 6px 0 #cbd5e1}
+    .graph-row{display:grid;grid-template-columns:92px 1fr;border-bottom:3px solid #e2e8f0;min-height:72px;align-items:center}.graph-row:last-child{border-bottom:0}
+    .graph-name{height:100%;display:grid;place-items:center;font-weight:900;text-align:center;color:#1e3a8a;background:#f8fafc;border-right:3px solid #e2e8f0}.graph-icons{display:flex;align-items:center;flex-wrap:wrap;gap:7px;padding:8px 12px}
+    .sticker-icon{width:42px;height:42px;border:2px solid rgba(148,163,184,.45);border-radius:12px;display:grid;place-items:center;background:linear-gradient(180deg,#fff,#f8fafc);box-shadow:0 3px 0 #e2e8f0;overflow:hidden}
+    .sticker-icon svg{width:30px;height:30px;display:block}
+    .money-scene{display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap;width:100%}
+    .money-note{background:linear-gradient(135deg,#bbf7d0,#4ade80);border:4px solid #15803d;border-radius:18px;padding:18px 30px;font-size:36px;font-weight:900;color:#166534;box-shadow:0 7px 0 #15803d}
+    .shop-card{background:#fff7ed;border:4px solid #fb923c;border-radius:20px;padding:15px 24px;text-align:center;box-shadow:0 7px 0 #ea580c}.shop-card .toy{font-size:52px}.shop-card b{display:block;font-size:25px;color:#c2410c}
+    .pattern-big{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;width:100%}.pattern-big span{width:66px;height:60px;border-radius:15px;background:#fff;border:3px solid #94a3b8;display:grid;place-items:center;font-size:25px;font-weight:900;box-shadow:0 5px 0 #cbd5e1}.pattern-big span.missing{border-style:dashed;background:#fff1f2;color:#ec4899}
+     .cube-train-wrap{width:100%;display:flex;justify-content:center;align-items:center;padding:14px 4px}
+    .cube-train{position:relative;display:flex;align-items:center;filter:drop-shadow(0 6px 0 rgba(51,65,85,.16))}
+    .train-cube{width:clamp(20px,4vw,40px);height:clamp(28px,4vw,40px);border:2.5px solid #334155;display:grid;place-items:center;margin-left:-2.5px}
+    .train-cube:first-child{margin-left:0}.train-cube:first-child{border-radius:7px 0 0 7px}.train-cube:last-of-type{border-radius:0 7px 7px 0}
+    .train-cube::after{content:'';width:clamp(10px,1.5vw,15px);height:clamp(10px,1.5vw,15px);border:2px solid rgba(51,65,85,.75);border-radius:50%;background:rgba(255,255,255,.10)}
+    .train-cube.left{background:#14b8a6}.train-cube.right{background:#ec4899}
+    .train-tab{width:9px;height:clamp(14px,2.3vw,22px);border:2.5px solid #334155;border-left:0;border-radius:0 3px 3px 0;background:#ec4899;margin-left:-1px}
+    .cube-hint{width:100%;text-align:center;font-size:16px;font-weight:900;color:#64748b;margin-top:4px}
+    .base-ten-scene{display:flex;align-items:flex-end;justify-content:center;gap:30px;flex-wrap:wrap;width:100%}.base-num{text-align:center;background:#fff;border:4px solid #bae6fd;border-radius:20px;padding:14px;min-width:220px}.base-num b{display:block;font-size:25px;color:#0284c7;margin-bottom:10px}
+    .rods{display:flex;gap:5px;justify-content:center;align-items:flex-end;flex-wrap:wrap}.rod{width:18px;height:112px;border:2px solid #475569;background:repeating-linear-gradient(to bottom,#fde68a 0,#fde68a 9px,#475569 9px,#475569 10px);border-radius:3px}.units{display:flex;gap:4px;flex-wrap:wrap;max-width:100px;justify-content:center}.unit{width:18px;height:18px;border:2px solid #475569;background:#fef3c7;border-radius:3px}
+     .place-table{border-collapse:collapse;background:#fff;font-size:22px;font-weight:900;text-align:center;border:4px solid #334155;box-shadow:0 7px 0 #94a3b8}.place-table th,.place-table td{border:2px solid #334155;padding:10px 18px}.place-table th{background:#e0f2fe;color:#0369a1}.place-table .sign-col{width:46px;min-width:46px;padding-left:10px;padding-right:10px;background:#fff}.place-table th.sign-col{background:#e0f2fe}.place-table .op{color:#ec4899}.place-table .answer-row td{background:#f0fdf4;color:#059669}.place-table .answer-row .sign-col{color:transparent}
+    .clock-svg{width:min(270px,70vw);height:auto;filter:drop-shadow(0 8px 8px rgba(0,0,0,.10))}
+
+    @media(max-width:950px){.wrap{grid-template-columns:1fr}.left{order:2}.right{order:1}.skills{grid-template-columns:repeat(2,1fr)}.welcome,.finish{min-height:450px}}
+    @media(max-width:620px){.game-container{padding:10px}.card{border-width:3px;border-radius:23px}.card-header{padding:13px}.brand-copy b{font-size:15px}.brand-copy span{font-size:10px}.brand-icon{font-size:31px}.chip{font-size:10px;padding:5px 9px}.right-stage{padding:10px}.panel{padding:15px;border-radius:21px}.question-card{padding:15px}.prompt-row{gap:9px}.speak-btn{width:50px;height:50px;flex-basis:50px;font-size:22px}.choices{grid-template-columns:1fr}.choice{min-height:70px}.set-grid{grid-template-columns:1fr}.icon-cloud{min-height:70px}.object-btn{width:51px;height:51px;font-size:29px;flex-basis:51px}.skills{grid-template-columns:1fr 1fr}.action-row,.action-group{width:100%}.action-group .btn{flex:1}.to-table{min-width:0;width:100%;font-size:14px}.to-table th,.to-table td{padding:7px 6px}.tenframe{grid-template-columns:repeat(5,30px);grid-template-rows:repeat(2,30px); gap:1px;}.tf-cell{width:100%;height:100%}.dot{width:18px;height:18px}.qtop{align-items:flex-start;flex-direction:column;gap:10px}.tag{font-size:12px}}
+  </style>
+</head>
+<body>
+  <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+  <canvas id="backgroundCanvas" aria-label="Background with sky, rainbow, grass, flowers, butterflies, and trees"></canvas>
+  <canvas id="confetti"></canvas>
+
+  <div class="game-container" id="gameContainer">
+    <div class="wrap">
+      <section class="card left">
+        <div class="card-header">
+          <div class="brand"><div class="brand-icon">🌟</div><div class="brand-copy"><b>End of Module Review</b><span>Math Review • 10 Math Topics</span></div></div>
+          <div class="chips"><div class="chip" id="timerChip">⏱ 00:00</div><div class="chip" id="questionChip">📝 0/10</div></div>
+        </div>
+        <div class="left-body">
+          <div class="big">End of Module Review Challenge! 🌟</div>
+          <div class="sub">Review 10 key math topics. You get new questions each time.</div>
+          <div class="progress-card">
+            <div class="progress-line"><span id="progressText">Ready to begin</span><span id="starText"></span></div>
+            <div class="meter"><div class="bar" id="progressBar"></div></div>
+          </div>
+          <div class="skills" id="skillGrid"></div>
+          <div class="start-wrap" id="startWrap"><button class="btn green full" id="startBtn">▶ Start Review</button></div>
+        </div>
+      </section>
+
+      <section class="card right">
+        <div class="right-stage">
+          <div class="panel">
+            <div class="welcome" id="welcome">
+              <div class="welcome-icon">📚</div>
+              <h1>End of Module Review</h1>
+              <h2>Math Review</h2>
+              <p>Answer 10 questions. You get new questions each time. You can flag a question and come back to it later.</p>
+              <div class="welcome-badges"><div class="welcome-badge">🧩 10 Questions</div><div class="welcome-badge">📚 10 Topics</div><div class="welcome-badge">🚩 Flag to Review</div></div>
+              <button class="btn green" id="welcomeStartBtn">Start Review 🚀</button>
+            </div>
+
+            <div id="quiz">
+              <div class="qtop">
+                <div class="qtitle" id="qTitle">Question 1 of 10</div>
+                <div class="qtop-right">
+                  <div class="tag" id="qTag">Topic</div>
+                  <button class="btn ghost" id="flagBtn" aria-label="Flag question" style="padding:7px 14px; font-size:14px; border-radius:12px; gap:5px">🚩 Flag</button>
+                </div>
+              </div>
+              <div class="question-card" id="questionCard">
+                <div class="prompt-row"><div class="prompt" id="qPrompt"></div><button class="speak-btn" id="speakBtn" aria-label="Read the question">🔊</button></div>
+                <div class="vis-box" id="visBox"></div>
+              </div>
+              <div class="choices" id="choices"></div>
+              
+              <div class="action-row">
+                <div class="action-group">
+                  <button class="btn ghost" id="prevBtn">⬅ Previous</button>
+                  <button class="btn blue" id="nextBtn" style="flex:1">Next Question ➡</button>
+                </div>
+              </div>
+              
+              <button class="btn purple full" id="submitBtn">✅ Finish Review</button>
+
+              <div class="teacher-toggle"><button class="btn orange" id="teacherToggle" style="padding:10px 16px; font-size:14px">👩‍🏫 Teacher Controls</button></div>
+              <div class="teacher-panel" id="teacherPanel">
+                <div class="teacher-note">Optional teacher controls.</div>
+                <button class="btn green" id="teacherCorrect">✓ Mark Correct</button>
+                <button class="btn ghost" id="teacherSupport">Needs Support</button>
+              </div>
+            </div>
+
+            <div class="finish" id="finish">
+              <div class="finish-icon">🏅</div><h2 id="finishTitle">Great Job!</h2><p id="finishText"></p>
+              <div class="score-ring"><b id="finalScore">0/10</b></div>
+              <div class="summary-container" id="summary"></div>
+              <div class="finish-actions"><button class="btn pink" id="playAgainBtn">🔄 Try Again</button><button class="btn ghost" id="homeBtn">🏠 Home</button></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+  (() => {
+    const bgCanvas = document.getElementById('backgroundCanvas');
+    const bgCtx = bgCanvas.getContext('2d', { alpha: false });
+    let bgWidth = 0; let bgHeight = 0;
+    let bgClouds = []; let bgTrees = []; let bgFlowers = []; let bgButterflies = [];
+    const flowerColors = ['#ff4b4b', '#ffc800', '#ce82ff', '#ffffff', '#1cb0f6', '#ff8fab'];
+
+    function resizeBackgroundCanvas() {
+        const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+        bgWidth = window.innerWidth; bgHeight = window.innerHeight;
+        bgCanvas.width = Math.floor(bgWidth * dpr); bgCanvas.height = Math.floor(bgHeight * dpr);
+        bgCanvas.style.width = bgWidth + 'px'; bgCanvas.style.height = bgHeight + 'px';
+        bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        generateBackgroundEnvironment();
+    }
+
+    function generateBackgroundEnvironment() {
+        bgClouds = []; bgTrees = []; bgFlowers = []; bgButterflies = [];
+        const cloudCount = bgWidth < 600 ? 3 : 5;
+        for (let i = 0; i < cloudCount; i++) {
+            bgClouds.push({ x: Math.random() * bgWidth, y: bgHeight * (0.08 + Math.random() * 0.34), size: 28 + Math.random() * (bgWidth < 600 ? 34 : 52), speed: Math.random() * 0.16 + 0.05, opacity: 0.72 + Math.random() * 0.24 });
+        }
+        const treeCount = bgWidth < 600 ? 6 : 11;
+        for (let i = 0; i < treeCount; i++) {
+            bgTrees.push({ x: (i / Math.max(1, treeCount - 1)) * bgWidth + (Math.random() * 70 - 35), y: bgHeight * (0.66 + Math.random() * 0.04), scale: 0.48 + Math.random() * 0.56 });
+        }
+        const flowerCount = bgWidth < 600 ? 10 : 18;
+        for (let i = 0; i < flowerCount; i++) {
+            bgFlowers.push({ x: Math.random() * bgWidth, y: bgHeight * 0.80 + Math.random() * (bgHeight * 0.16), color: flowerColors[Math.floor(Math.random() * flowerColors.length)], scale: 0.42 + Math.random() * 0.42, sway: Math.random() * Math.PI * 2, petals: Math.random() > 0.45 ? 6 : 5 });
+        }
+        for (let i = 0; i < 4; i++) {
+            bgButterflies.push({ x: Math.random() * bgWidth, y: bgHeight * (0.28 + Math.random() * 0.24), size: 5 + Math.random() * 4, speed: 0.18 + Math.random() * 0.18, phase: Math.random() * Math.PI * 2, color: ['#ff6b9d', '#ffd93d', '#9b5de5', '#00bbf9'][i % 4] });
+        }
+    }
+
+    function updateBackground() {
+        bgClouds.forEach(cloud => { cloud.x -= cloud.speed; if (cloud.x + cloud.size * 2.4 < 0) { cloud.x = bgWidth + cloud.size * 2.4; cloud.y = bgHeight * (0.08 + Math.random() * 0.34); } });
+        bgButterflies.forEach(b => { b.x += b.speed; b.phase += 0.08; if (b.x > bgWidth + 30) { b.x = -30; b.y = bgHeight * (0.28 + Math.random() * 0.24); } });
+    }
+
+    function drawRoundedCloud(cloud) {
+        bgCtx.save(); bgCtx.globalAlpha = cloud.opacity; bgCtx.fillStyle = '#ffffff'; bgCtx.beginPath();
+        bgCtx.arc(cloud.x, cloud.y, cloud.size, 0, Math.PI * 2);
+        bgCtx.arc(cloud.x + cloud.size * 0.82, cloud.y + cloud.size * 0.2, cloud.size * 0.72, 0, Math.PI * 2);
+        bgCtx.arc(cloud.x - cloud.size * 0.85, cloud.y + cloud.size * 0.22, cloud.size * 0.68, 0, Math.PI * 2);
+        bgCtx.arc(cloud.x + cloud.size * 0.15, cloud.y - cloud.size * 0.28, cloud.size * 0.72, 0, Math.PI * 2);
+        bgCtx.fill(); bgCtx.restore();
+    }
+
+    function drawSun() {
+        const x = Math.min(90, bgWidth * 0.12); const y = Math.min(92, bgHeight * 0.13); const r = Math.max(35, Math.min(bgWidth, bgHeight) * 0.055);
+        bgCtx.save(); bgCtx.translate(x, y);
+        bgCtx.fillStyle = 'rgba(255, 213, 82, 0.22)'; bgCtx.beginPath(); bgCtx.arc(0, 0, r * 1.75, 0, Math.PI * 2); bgCtx.fill();
+        bgCtx.fillStyle = '#FFD369'; bgCtx.beginPath(); bgCtx.arc(0, 0, r, 0, Math.PI * 2); bgCtx.fill();
+        bgCtx.fillStyle = '#D35400'; bgCtx.beginPath(); bgCtx.arc(-r * 0.32, -r * 0.1, r * 0.08, 0, Math.PI * 2); bgCtx.arc(r * 0.32, -r * 0.1, r * 0.08, 0, Math.PI * 2); bgCtx.fill();
+        bgCtx.strokeStyle = '#D35400'; bgCtx.lineWidth = Math.max(3, r * 0.07); bgCtx.lineCap = 'round'; bgCtx.beginPath(); bgCtx.arc(0, r * 0.12, r * 0.36, 0.15 * Math.PI, 0.85 * Math.PI); bgCtx.stroke(); bgCtx.restore();
+    }
+
+    function drawRainbow() {
+        bgCtx.save(); bgCtx.translate(bgWidth * 0.5, bgHeight * 0.67); bgCtx.lineWidth = Math.max(13, Math.min(22, bgWidth * 0.015)); bgCtx.lineCap = 'round';
+        const rainbowColors = ['#ff4b4b', '#ff9900', '#ffc800', '#58cc02', '#1cb0f6', '#ce82ff'];
+        const baseRadius = Math.min(bgWidth * 0.34, bgHeight * 0.46, 420);
+        for (let i = 0; i < rainbowColors.length; i++) { bgCtx.strokeStyle = rainbowColors[i]; bgCtx.globalAlpha = 0.82; bgCtx.beginPath(); bgCtx.arc(0, 0, baseRadius - i * bgCtx.lineWidth, Math.PI, 0); bgCtx.stroke(); }
+        bgCtx.restore();
+    }
+
+    function drawTree(tree) {
+        bgCtx.save(); bgCtx.translate(tree.x, tree.y); bgCtx.scale(tree.scale, tree.scale);
+        bgCtx.fillStyle = '#8B5A2B'; bgCtx.fillRect(-9, 0, 18, 56);
+        bgCtx.fillStyle = '#4ade80'; bgCtx.beginPath(); bgCtx.arc(0, -24, 38, 0, Math.PI * 2); bgCtx.arc(-25, -12, 29, 0, Math.PI * 2); bgCtx.arc(24, -10, 30, 0, Math.PI * 2); bgCtx.fill();
+        bgCtx.fillStyle = 'rgba(255,255,255,0.28)'; bgCtx.beginPath(); bgCtx.arc(-12, -34, 12, 0, Math.PI * 2); bgCtx.fill(); bgCtx.restore();
+    }
+
+    function drawFlower(flower, time) {
+        bgCtx.save(); const sway = Math.sin(time * 0.0015 + flower.sway) * 1.4; bgCtx.translate(flower.x + sway, flower.y); bgCtx.scale(flower.scale, flower.scale);
+        bgCtx.strokeStyle = '#259a3f'; bgCtx.lineWidth = 2.4; bgCtx.lineCap = 'round'; bgCtx.beginPath(); bgCtx.moveTo(0, 5); bgCtx.quadraticCurveTo(2, 14, 0, 23); bgCtx.stroke();
+        bgCtx.fillStyle = '#55d85a'; bgCtx.beginPath(); bgCtx.ellipse(-6, 15, 4, 8, -0.8, 0, Math.PI * 2); bgCtx.ellipse(6, 18, 4, 8, 0.75, 0, Math.PI * 2); bgCtx.fill();
+        const petalCount = flower.petals || 6; bgCtx.fillStyle = flower.color;
+        for (let petal = 0; petal < petalCount; petal++) { bgCtx.save(); bgCtx.rotate((Math.PI * 2 * petal) / petalCount); bgCtx.beginPath(); bgCtx.ellipse(0, -9, 5.2, 9.5, 0, 0, Math.PI * 2); bgCtx.fill(); bgCtx.restore(); }
+        bgCtx.fillStyle = '#ffe066'; bgCtx.beginPath(); bgCtx.arc(0, 0, 5, 0, Math.PI * 2); bgCtx.fill(); bgCtx.strokeStyle = 'rgba(154,103,0,0.28)'; bgCtx.lineWidth = 1; bgCtx.stroke(); bgCtx.restore();
+    }
+
+    function drawButterfly(b) {
+        const y = b.y + Math.sin(b.phase) * 10; bgCtx.save(); bgCtx.translate(b.x, y); bgCtx.fillStyle = b.color; bgCtx.globalAlpha = 0.88;
+        bgCtx.beginPath(); bgCtx.ellipse(-b.size, 0, b.size, b.size * 1.35, Math.sin(b.phase) * 0.5, 0, Math.PI * 2); bgCtx.ellipse(b.size, 0, b.size, b.size * 1.35, -Math.sin(b.phase) * 0.5, 0, Math.PI * 2); bgCtx.fill();
+        bgCtx.strokeStyle = '#334155'; bgCtx.lineWidth = 1.4; bgCtx.beginPath(); bgCtx.moveTo(0, -b.size * 1.1); bgCtx.lineTo(0, b.size * 1.2); bgCtx.stroke(); bgCtx.restore();
+    }
+
+    function drawBackground(time = 0) {
+        const skyGradient = bgCtx.createLinearGradient(0, 0, 0, bgHeight * 0.72); skyGradient.addColorStop(0, '#7dd3fc'); skyGradient.addColorStop(0.62, '#bae6fd'); skyGradient.addColorStop(1, '#e0f8ff');
+        bgCtx.fillStyle = skyGradient; bgCtx.fillRect(0, 0, bgWidth, bgHeight);
+        drawSun(); drawRainbow(); bgClouds.forEach(drawRoundedCloud); bgButterflies.forEach(drawButterfly);
+        bgCtx.fillStyle = '#65a30d'; bgCtx.beginPath(); bgCtx.moveTo(0, bgHeight); bgCtx.lineTo(0, bgHeight * 0.66); for (let x = 0; x <= bgWidth + 280; x += 280) { bgCtx.quadraticCurveTo(x - 140, bgHeight * 0.55, x, bgHeight * 0.66); } bgCtx.lineTo(bgWidth, bgHeight); bgCtx.fill();
+        bgTrees.forEach(drawTree);
+        bgCtx.fillStyle = '#58cc02'; bgCtx.beginPath(); bgCtx.moveTo(0, bgHeight); bgCtx.lineTo(0, bgHeight * 0.72); bgCtx.quadraticCurveTo(bgWidth * 0.5, bgHeight * 0.66, bgWidth, bgHeight * 0.72); bgCtx.lineTo(bgWidth, bgHeight); bgCtx.fill();
+        bgCtx.strokeStyle = '#84cc16'; bgCtx.lineWidth = Math.max(10, Math.min(18, bgWidth * 0.014)); bgCtx.lineCap = 'round'; bgCtx.beginPath(); bgCtx.moveTo(-20, bgHeight * 0.72); bgCtx.quadraticCurveTo(bgWidth * 0.5, bgHeight * 0.66, bgWidth + 20, bgHeight * 0.72); bgCtx.stroke();
+        bgFlowers.forEach(flower => drawFlower(flower, time));
+    }
+
+    function backgroundAnimationLoop(time) { updateBackground(); drawBackground(time); requestAnimationFrame(backgroundAnimationLoop); }
+    window.addEventListener('resize', resizeBackgroundCanvas); resizeBackgroundCanvas(); requestAnimationFrame(backgroundAnimationLoop);
+  })();
+  </script>
+
+  <script>
+  (() => {
+    'use strict';
+    const $ = (id) => document.getElementById(id);
+    const rand = (min,max) => Math.floor(Math.random()*(max-min+1))+min;
+    function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+    
+    // Updated ordinal format helper
+    function ordinalWord(n){ return ['','1st','2nd','3rd','4th','5th','6th','7th','8th','9th','10th','11th','12th'][n] || String(n); }
+    
+    function uniqueChoices(correct, candidates, count=4){ const out=[String(correct)]; for(const c of shuffle(candidates.map(String))){ if(!out.includes(c)) out.push(c); if(out.length===count) break; } let bump=1; while(out.length<count){ const v=String(Number(correct)+bump++); if(!out.includes(v)) out.push(v); } return shuffle(out); }
+    
+    // Format "1 ten and 3 ones" nicely
+    const fmtTens = (t, o) => `${t} ${t === 1 ? 'ten' : 'tens'} and ${o} ${o === 1 ? 'one' : 'ones'}`;
+    
+    // UI Helpers with interactive options
+    function tenFramesHTML(total, crossed=0, iconMode=false, interactive=false){
+      let remainingCross = crossed; let html='<div class="tenframes">'; const frames=Math.ceil(total/10);
+      for(let f=0;f<frames;f++){ 
+        html+='<div class="tenframe">'; 
+        for(let i=0;i<10;i++){
+          const idx=f*10+i; const filled=idx<total; 
+          const cross = (!interactive && filled && remainingCross>0 && idx>=total-crossed); 
+          if(!interactive && cross) remainingCross--;
+          
+          const classes = `dot${cross?' crossed':''}${interactive && filled?' interactive-dot':''}`;
+          html+='<div class="tf-cell">'+(filled?(iconMode?`<span style="font-size:21px;${cross?'filter:grayscale(.2)':''}">${cross?'❌':'🍬'}</span>`:`<span class="${classes}"></span>`):'')+'</div>';
+        } 
+        html+='</div>'; 
+      } 
+      return html+'</div>';
+    }
+    
+    // Beautiful Number Bonds
+    function bondHTML(whole,left,right, themeColor='blue'){ 
+      const themes = {
+        blue: { border: '#0284c7', bg: '#f0f9ff', text: '#0369a1' },
+        pink: { border: '#be185d', bg: '#fdf2f8', text: '#9d174d' },
+        green: { border: '#059669', bg: '#ecfdf5', text: '#064e3b' }
+      };
+      const t = themes[themeColor] || themes.blue;
+      return `<div class="bond">
+        <div class="bond-line l" style="background:${t.border}"></div>
+        <div class="bond-line r" style="background:${t.border}"></div>
+        <div class="bond-whole" style="border-color:${t.border};background:${t.bg};color:${t.text}">${whole}</div>
+        <div class="bond-part left" style="border-color:${t.border};background:${t.bg};color:${t.text}">${left}</div>
+        <div class="bond-part right" style="border-color:${t.border};background:${t.bg};color:${t.text}">${right}</div>
+      </div>`; 
+    }
+    function expressionSignature(op,a,b){ return `${op}:${a}:${b}`; }
+
+    const redJumpSVG = `<svg width="24" height="20" viewBox="0 0 34 24" style="overflow:visible; display:inline-block;"><path d="M 2,20 Q 17,-5 32,20" fill="none" stroke="#ef4444" stroke-width="4.5" stroke-linecap="round"/><path d="M 23,19 L 32,20 L 30,11" fill="none" stroke="#ef4444" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+    const skills = [
+      {key:'groups',icon:'🧦',name:'Equal Groups',sub:'Repeated addition'},
+      {key:'length',icon:'📏',name:'Length',sub:'Measure with cubes'},
+      {key:'calendar',icon:'📅',name:'Calendar & Days',sub:'Before and after'},
+      {key:'time',icon:'⏰',name:'Time',sub:'Read an analog clock'},
+      {key:'graph',icon:'📊',name:'Picture Graphs',sub:'Read a picture graph'},
+      {key:'money',icon:'💵',name:'Money',sub:'Find the change'},
+      {key:'pattern',icon:'🔢',name:'Patterns',sub:'Find the next number'},
+      {key:'oddeven',icon:'🟣',name:'Odd & Even',sub:'Classify a quantity'},
+      {key:'addition',icon:'➕',name:'Addition within 100',sub:'Tens and ones'},
+      {key:'subtraction',icon:'➖',name:'Subtraction within 100',sub:'Tens and ones'}
+    ];
+
+    function fixedChoices(values){ return values.map(String); }
+    function makeRodHTML(tens, ones){
+      return `<div class="rods">${Array.from({length:tens},()=>'<span class="rod"></span>').join('')}<div class="units">${Array.from({length:ones},()=>'<span class="unit"></span>').join('')}</div></div>`;
+    }
+
+    function makeUnitCubes(count){
+      return `<div class="measure-cubes" style="width:${count*32}px">${Array.from({length:count},()=>'<span class="measure-cube"></span>').join('')}</div>`;
+    }
+
+    function pencilSVG(units){
+      const w=units*32, h=40;
+      const eraser=18, ferrule=10, tip=Math.min(28, Math.max(22, w*0.18));
+      const bodyEnd=w-tip;
+      return `<svg class="measure-svg pencil" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">
+        <defs>
+          <linearGradient id="pencilBody${units}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#fde047"/><stop offset="0.55" stop-color="#facc15"/><stop offset="1" stop-color="#eab308"/></linearGradient>
+          <clipPath id="pencilClip${units}"><path d="M10 5 H${bodyEnd} L${w} 20 L${bodyEnd} 35 H10 Q3 35 3 28 V12 Q3 5 10 5 Z"/></clipPath>
+        </defs>
+        <path d="M10 5 H${bodyEnd} L${w} 20 L${bodyEnd} 35 H10 Q3 35 3 28 V12 Q3 5 10 5 Z" fill="url(#pencilBody${units})" stroke="#9a6700" stroke-width="2.5" stroke-linejoin="round"/>
+        <g clip-path="url(#pencilClip${units})">
+          <rect x="0" y="5" width="${eraser}" height="30" fill="#f6b7c8"/>
+          <rect x="${eraser}" y="5" width="${ferrule}" height="30" fill="#d1d5db"/>
+          <rect x="${eraser+3}" y="5" width="2" height="30" fill="#94a3b8" opacity=".65"/>
+          <rect x="${eraser+7}" y="5" width="2" height="30" fill="#94a3b8" opacity=".65"/>
+          <polygon points="${bodyEnd},5 ${w},20 ${bodyEnd},35" fill="#d8a46b"/>
+          <polygon points="${w-10},15 ${w},20 ${w-10},25" fill="#2f241d"/>
+          <rect x="${eraser+ferrule+5}" y="9" width="${Math.max(12,bodyEnd-(eraser+ferrule+14))}" height="6" rx="3" fill="rgba(255,255,255,.26)"/>
+        </g>
+      </svg>`;
+    }
+
+    function crayonSVG(units){
+      const w=units*32, h=40;
+      const point=Math.min(26, Math.max(20, w*0.14));
+      const bodyEnd=w-point;
+      return `<svg class="measure-svg crayon" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">
+        <defs>
+          <linearGradient id="crayonBody${units}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#fb7185"/><stop offset="0.58" stop-color="#ef4444"/><stop offset="1" stop-color="#dc2626"/></linearGradient>
+          <clipPath id="crayonClip${units}"><path d="M10 5 H${bodyEnd} L${w} 20 L${bodyEnd} 35 H10 Q3 35 3 28 V12 Q3 5 10 5 Z"/></clipPath>
+        </defs>
+        <path d="M10 5 H${bodyEnd} L${w} 20 L${bodyEnd} 35 H10 Q3 35 3 28 V12 Q3 5 10 5 Z" fill="url(#crayonBody${units})" stroke="#b91c1c" stroke-width="2.5" stroke-linejoin="round"/>
+        <g clip-path="url(#crayonClip${units})">
+          <rect x="24" y="7" width="${Math.max(30,bodyEnd-48)}" height="26" rx="5" fill="#f87171" opacity=".78"/>
+          <rect x="24" y="10" width="${Math.max(26,bodyEnd-52)}" height="6" rx="3" fill="rgba(255,255,255,.18)"/>
+          <line x1="24" y1="6" x2="24" y2="34" stroke="#b91c1c" stroke-width="2" opacity=".6"/>
+          <line x1="${bodyEnd-24}" y1="6" x2="${bodyEnd-24}" y2="34" stroke="#b91c1c" stroke-width="2" opacity=".6"/>
+          <polygon points="${bodyEnd},5 ${w},20 ${bodyEnd},35" fill="#ef4444"/>
+          <polygon points="${w-7},16 ${w},20 ${w-7},24" fill="#991b1b"/>
+        </g>
+      </svg>`;
+    }
+
+    function clockSVG(hour, minute){
+      const hourAngle=(hour%12)*30+minute*0.5;
+      const minuteAngle=minute*6;
+      return `<svg class="clock-svg" viewBox="0 0 200 200" role="img" aria-label="Analog clock">
+        <circle cx="100" cy="100" r="88" fill="#fff" stroke="#ef6b73" stroke-width="9"/>
+        <g font-family="Poppins" font-size="14" font-weight="900" fill="#334155" text-anchor="middle" dominant-baseline="middle">
+          <text x="100" y="27">12</text><text x="137" y="37">1</text><text x="164" y="64">2</text><text x="174" y="101">3</text><text x="163" y="138">4</text><text x="137" y="165">5</text><text x="100" y="175">6</text><text x="63" y="165">7</text><text x="37" y="138">8</text><text x="26" y="101">9</text><text x="37" y="64">10</text><text x="63" y="37">11</text>
+        </g>
+        <line x1="100" y1="100" x2="100" y2="54" stroke="#334155" stroke-width="8" stroke-linecap="round" transform="rotate(${hourAngle} 100 100)"/>
+        <line x1="100" y1="100" x2="100" y2="34" stroke="#0ea5e9" stroke-width="6" stroke-linecap="round" transform="rotate(${minuteAngle} 100 100)"/>
+        <circle cx="100" cy="100" r="7" fill="#334155"/>
+      </svg>`;
+    }
+
+    function stickerSVG(type){
+      const svgs={
+        watermelon:`<svg viewBox="0 0 32 32"><path d="M4 17a12 12 0 0 0 24 0Z" fill="#ef4444"/><path d="M3 17h26a13 13 0 0 1-26 0Z" fill="#22c55e"/><path d="M6 17h20a10 10 0 0 1-20 0Z" fill="#fb7185"/><circle cx="11" cy="20" r="1.2" fill="#111827"/><circle cx="16" cy="23" r="1.2" fill="#111827"/><circle cx="21" cy="20" r="1.2" fill="#111827"/></svg>`,
+        orange:`<svg viewBox="0 0 32 32"><circle cx="16" cy="18" r="10" fill="#fb923c"/><ellipse cx="20" cy="10" rx="5" ry="3" fill="#22c55e" transform="rotate(-25 20 10)"/><rect x="14.8" y="7" width="2.4" height="4.5" rx="1.2" fill="#92400e"/></svg>`,
+        strawberry:`<svg viewBox="0 0 32 32"><path d="M16 10c6 0 9 5 9 9 0 6-4 10-9 10s-9-4-9-10c0-4 3-9 9-9Z" fill="#ef4444"/><path d="M10 10c1-3 3-4 6-4s5 1 6 4c-3 1-9 1-12 0Z" fill="#16a34a"/><circle cx="12" cy="17" r="1" fill="#fde68a"/><circle cx="17" cy="15" r="1" fill="#fde68a"/><circle cx="20" cy="20" r="1" fill="#fde68a"/><circle cx="14" cy="23" r="1" fill="#fde68a"/></svg>`,
+        car:`<svg viewBox="0 0 32 32"><rect x="5" y="14" width="22" height="8" rx="3" fill="#ef4444"/><path d="M10 14l3-4h6l4 4" fill="#60a5fa"/><circle cx="11" cy="23" r="3" fill="#1f2937"/><circle cx="22" cy="23" r="3" fill="#1f2937"/><circle cx="11" cy="23" r="1.3" fill="#e5e7eb"/><circle cx="22" cy="23" r="1.3" fill="#e5e7eb"/></svg>`,
+        chick:`<svg viewBox="0 0 32 32"><circle cx="16" cy="17" r="9" fill="#fde047"/><circle cx="16" cy="8.5" r="4" fill="#fde047"/><polygon points="16,15 20,17.5 16,20 12,17.5" fill="#f97316"/><circle cx="13.5" cy="8.5" r="1" fill="#111827"/><circle cx="18.5" cy="8.5" r="1" fill="#111827"/><line x1="13" y1="26" x2="11" y2="29" stroke="#92400e" stroke-width="2"/><line x1="19" y1="26" x2="21" y2="29" stroke="#92400e" stroke-width="2"/></svg>`,
+        icecream:`<svg viewBox="0 0 32 32"><path d="M16 6c5 0 8 3 8 7 0 3-2 6-5 7h-6c-4-1-5-4-5-7 0-4 3-7 8-7Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.4"/><path d="M13 20h6l-2 8h-2Z" fill="#f59e0b"/><circle cx="13" cy="11" r="1" fill="#111827"/><circle cx="17" cy="9.5" r="1" fill="#111827"/></svg>`,
+        book:`<svg viewBox="0 0 32 32"><path d="M9 8h11a3 3 0 0 1 3 3v13H12a3 3 0 0 0-3 3Z" fill="#60a5fa"/><path d="M9 8h11a3 3 0 0 1 3 3v13H12a3 3 0 0 0-3 3Z" fill="none" stroke="#1d4ed8" stroke-width="1.8"/><path d="M9 8v19" stroke="#1e3a8a" stroke-width="2"/><path d="M12 12h8" stroke="#dbeafe" stroke-width="1.8"/></svg>`,
+        bag:`<svg viewBox="0 0 32 32"><rect x="7" y="11" width="18" height="15" rx="4" fill="#92400e"/><path d="M11 11a5 5 0 0 1 10 0" fill="none" stroke="#7c2d12" stroke-width="2.2"/><rect x="12" y="16" width="8" height="5" rx="2" fill="#fde68a"/></svg>`,
+        bow:`<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="3.2" fill="#db2777"/><path d="M13 16c-6-6-9-6-10-4-1 2 1 8 10 6Z" fill="#f472b6"/><path d="M19 16c6-6 9-6 10-4 1 2-1 8-10 6Z" fill="#f472b6"/><path d="M15 19l-2 7 3-2 3 2-2-7" fill="#ec4899"/></svg>`,
+        bike:`<svg viewBox="0 0 32 32"><circle cx="10" cy="22" r="5" fill="none" stroke="#1f2937" stroke-width="2"/><circle cx="23" cy="22" r="5" fill="none" stroke="#1f2937" stroke-width="2"/><path d="M10 22l5-8 4 0 4 8M15 14l-3 5h8" fill="none" stroke="#16a34a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+        duck:`<svg viewBox="0 0 32 32"><path d="M8 18c0-5 4-8 8-8 5 0 8 3 8 7 0 5-5 8-10 8-4 0-6-2-6-7Z" fill="#facc15"/><circle cx="18.5" cy="12" r="1" fill="#111827"/><path d="M23 15h5l-3 2.5Z" fill="#fb923c"/><path d="M11 9c1-2 3-4 5-4" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"/></svg>`,
+        dinosaur:`<svg viewBox="0 0 32 32"><path d="M8 22c0-7 5-12 12-12 4 0 7 2 7 6 0 3-1 5-4 6v4h-4v-4h-4v4h-4v-4Z" fill="#b45309"/><circle cx="22" cy="12" r="1" fill="#111827"/><path d="M6 17h4" stroke="#92400e" stroke-width="2.2" stroke-linecap="round"/><path d="M14 9l2-3 2 3" stroke="#7c2d12" stroke-width="1.5" fill="none"/></svg>`
+      };
+      return `<span class="sticker-icon">${svgs[type]||svgs.orange}</span>`;
+    }
+
+    function makeStickerRow(count, palette){
+      return Array.from({length:count},(_,i)=>stickerSVG(palette[i%palette.length])).join('');
+    }
+
+    function numericChoices(correct, spread=5){
+      const pool=[];
+      for(let d=1;d<=spread;d++){ pool.push(correct-d,correct+d); }
+      return uniqueChoices(correct,pool.filter(v=>v>=0),4);
+    }
+
+    const BUILDERS = {
+      groups(){
+        const groupCount=rand(3,5), groupSize=rand(2,4), total=groupCount*groupSize;
+        const icons=['🧦','🍎','⭐','🧸']; const icon=icons[rand(0,icons.length-1)];
+        const prompt=`There are ${groupCount} groups of ${groupSize}. How many items are there in all?`;
+        const groupHtml=Array.from({length:groupCount},()=>`<div class="revision-group">${Array.from({length:groupSize},()=>icon).join(' ')}</div>`).join('');
+        const vis=`<div class="revision-groups">${groupHtml}</div><div class="math-line">${Array(groupCount).fill(groupSize).join(' + ')} = ?</div>`;
+        return {skill:'groups',tag:'🧦 Equal Groups',prompt,speak:prompt,vis,answer:String(total),choices:numericChoices(total,4),signature:`groups:${groupCount}x${groupSize}:${icon}`};
+      },
+      length(){
+        const pencil=rand(4,6), crayon=rand(pencil+1,9), diff=crayon-pencil;
+        const prompt=`The pencil is ${pencil} cubes long. The crayon is ${crayon} cubes long. How many cubes longer is the crayon?`;
+        const vis=`<div class="measure-board">
+          <div class="measure-row"><div class="measure-label">Pencil</div><div class="measure-object"><div class="measure-track" style="width:${pencil*32}px">${pencilSVG(pencil)}</div>${makeUnitCubes(pencil)}</div></div>
+          <div class="measure-row"><div class="measure-label">Crayon</div><div class="measure-object"><div class="measure-track" style="width:${crayon*32}px">${crayonSVG(crayon)}</div>${makeUnitCubes(crayon)}</div></div>
+        </div>`;
+        return {skill:'length',tag:'📏 Length & Measurement',prompt,speak:prompt,vis,answer:String(diff),choices:numericChoices(diff,3),signature:`length:${pencil}:${crayon}`};
+      },
+      calendar(){
+        const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+        const todayIndex=rand(0,6), askTomorrow=Math.random()>.5;
+        const today=days[todayIndex];
+        const answer=days[(todayIndex+(askTomorrow?1:6))%7];
+        const direction=askTomorrow?'tomorrow':'yesterday';
+        const prompt=`Today is ${today}. What day is ${direction}?`;
+        const neighbour=days[(todayIndex+(askTomorrow?6:1))%7];
+        const vis=askTomorrow
+          ? `<div class="weekday-strip"><div class="day-card">${neighbour}</div><div class="day-card today">${today}<br><small>TODAY</small></div><div class="day-arrow">➜</div><div class="day-card">?</div></div>`
+          : `<div class="weekday-strip"><div class="day-card">?</div><div class="day-arrow">⬅</div><div class="day-card today">${today}<br><small>TODAY</small></div><div class="day-card">${neighbour}</div></div>`;
+        const wrong=shuffle(days.filter(d=>d!==answer)).slice(0,3);
+        return {skill:'calendar',tag:'📅 Calendar & Days',prompt,speak:prompt,vis,answer,choices:shuffle([answer,...wrong]),signature:`calendar:${today}:${direction}`};
+      },
+      time(){
+        const hour=rand(1,11), minute=Math.random()>.5?30:0;
+        const answer=`${hour}:${String(minute).padStart(2,'0')}`;
+        const prompt='Look at the clock. What time is it?';
+        const candidates=[`${(hour%12)+1}:${String(minute).padStart(2,'0')}`,`${hour}:${minute===0?'30':'00'}`,`${((hour+10)%12)+1}:${minute===0?'30':'00'}`];
+        return {skill:'time',tag:'⏰ Reading Time',prompt,speak:prompt,vis:clockSVG(hour,minute),answer,choices:shuffle([answer,...candidates.filter((x,i,a)=>x!==answer&&a.indexOf(x)===i).slice(0,3)]),signature:`time:${hour}:${minute}`};
+      },
+      graph(){
+        const names=['Emma','Noah','Mia','Liam'];
+        const palettes=[['watermelon','orange','strawberry'],['car','chick','icecream'],['book','bag','bow'],['bike','duck','dinosaur']];
+        const counts=[]; while(counts.length<4){ const n=rand(4,9); if(!counts.includes(n)) counts.push(n); }
+        let a=rand(0,3), b=rand(0,3); while(b===a)b=rand(0,3);
+        const bigger=counts[a]>counts[b]?a:b, smaller=bigger===a?b:a, diff=counts[bigger]-counts[smaller];
+        const prompt=`How many more stickers does ${names[bigger]} have than ${names[smaller]}?`;
+        const rows=names.map((name,i)=>`<div class="graph-row"><div class="graph-name">${name}</div><div class="graph-icons">${makeStickerRow(counts[i],palettes[i])}</div></div>`).join('');
+        const vis=`<div class="graph-board">${rows}</div>`;
+        return {skill:'graph',tag:'📊 Picture Graphs',prompt,speak:prompt,vis,answer:String(diff),choices:numericChoices(diff,4),signature:`graph:${counts.join('-')}:${bigger}:${smaller}`};
+      },
+      money(){
+        const have=Math.random()>.5?10:20, price=rand(3,have-2), change=have-price;
+        const prompt=`You have $${have}. You buy a toy for $${price}. How much change do you get?`;
+        const vis=`<div class="money-scene"><div class="money-note">$${have}</div><div style="font-size:42px;font-weight:900;color:#ec4899">−</div><div class="shop-card"><div class="toy">${['🧸','🚗','🪀','⚽'][rand(0,3)]}</div><b>$${price}</b></div></div><div class="math-line">$${have} − $${price} = ?</div>`;
+        const nums=numericChoices(change,5).map(v=>`$${v}`);
+        return {skill:'money',tag:'💵 Money & Change',prompt,speak:prompt,vis,answer:`$${change}`,choices:nums,signature:`money:${have}:${price}`};
+      },
+      pattern(){
+        const step=rand(2,4), decreasing=Math.random()>.45;
+        let seq, answer;
+        if(decreasing){
+          const answerBase=rand(0,4); answer=answerBase; seq=[answer+step*4,answer+step*3,answer+step*2,answer+step];
+        }else{
+          const start=rand(1,6); seq=[start,start+step,start+step*2,start+step*3]; answer=start+step*4;
+        }
+        const verb=decreasing?'Subtract':'Add';
+        const prompt=`Look at the number pattern: ${seq.join(', ')}, __. What number comes next?`;
+        const speakText=`Look at the number pattern: ${seq.join(', ')}. What number comes next?`;
+        const vis=`<div class="pattern-big">${seq.map(n=>`<span>${n}</span>`).join('')}<span class="missing">?</span></div><div class="math-line" style="font-size:24px;color:#64748b">${verb} ${step} each time.</div>`;
+        return {skill:'pattern',tag:'🔢 Number Pattern',prompt,speak:speakText,vis,answer:String(answer),choices:numericChoices(answer,4),signature:`pattern:${seq.join('-')}:${step}`};
+      },
+      oddeven(){
+        const total=rand(6,18), left=Math.floor(total/2), right=total-left;
+        const parity=total%2===0?'even':'odd';
+        const prompt='Count the cubes. How many cubes are there? Is the number odd or even?';
+        const cubes=`${Array.from({length:left},()=>'<span class="train-cube left"></span>').join('')}${Array.from({length:right},()=>'<span class="train-cube right"></span>').join('')}<span class="train-tab"></span>`;
+        const vis=`<div class="cube-train-wrap"><div class="cube-train">${cubes}</div></div><div class="cube-hint">Compare the two color groups.</div>`;
+        const correct=`${total}, ${parity}`;
+        const opposite=`${total}, ${parity==='even'?'odd':'even'}`;
+        const n1=total===18?total-1:total+1, n2=total===6?total+2:total-2;
+        const choices=shuffle([correct,opposite,`${n1}, ${n1%2===0?'even':'odd'}`,`${n2}, ${n2%2===0?'even':'odd'}`]);
+        return {skill:'oddeven',tag:'🟣 Odd & Even Numbers',prompt,speak:prompt,vis,answer:correct,choices,signature:`odd-even:${total}`};
+      },
+      addition(){
+        let a,b; do{a=rand(21,48);b=rand(12,49);}while(a+b>99);
+        const sum=a+b, aT=Math.floor(a/10),aO=a%10,bT=Math.floor(b/10),bO=b%10;
+        const prompt=`Add ${a} and ${b}. Use tens and ones to help you.`;
+        const vis=`<div class="base-ten-scene"><div class="base-num"><b>${a} = ${aT} tens + ${aO} ones</b>${makeRodHTML(aT,aO)}</div><div style="font-size:48px;font-weight:900;color:#0ea5e9">+</div><div class="base-num"><b>${b} = ${bT} tens + ${bO} ones</b>${makeRodHTML(bT,bO)}</div></div>`;
+        return {skill:'addition',tag:'➕ Addition within 100',prompt,speak:prompt,vis,answer:String(sum),choices:numericChoices(sum,10),signature:`add:${a}:${b}`};
+      },
+      subtraction(){
+        let a,b; do{a=rand(42,89);b=rand(12,39);}while(a<=b || a%10>=b%10);
+        const result=a-b, aT=Math.floor(a/10),aO=a%10,bT=Math.floor(b/10),bO=b%10;
+        const prompt=`Subtract ${b} from ${a}. Use tens and ones to help you.`;
+        const vis=`<table class="place-table"><tr><th class="sign-col"></th><th>Tens</th><th>Ones</th></tr><tr><td class="sign-col"></td><td>${aT}</td><td>${aO}</td></tr><tr><td class="sign-col op">−</td><td class="op">${bT}</td><td class="op">${bO}</td></tr><tr class="answer-row"><td class="sign-col"></td><td>?</td><td>?</td></tr></table>`;
+        return {skill:'subtraction',tag:'➖ Subtraction within 100',prompt,speak:prompt,vis,answer:String(result),choices:numericChoices(result,10),signature:`sub:${a}:${b}`};
+      }
+    };
+
+    const els={
+      welcome:$('welcome'),quiz:$('quiz'),finish:$('finish'),startBtn:$('startBtn'),welcomeStartBtn:$('welcomeStartBtn'),startWrap:$('startWrap'),
+      qTitle:$('qTitle'),qTag:$('qTag'),qPrompt:$('qPrompt'),visBox:$('visBox'),choices:$('choices'),speakBtn:$('speakBtn'),questionCard:$('questionCard'),
+      prevBtn:$('prevBtn'),nextBtn:$('nextBtn'),submitBtn:$('submitBtn'),flagBtn:$('flagBtn'),
+      teacherToggle:$('teacherToggle'),teacherPanel:$('teacherPanel'),teacherCorrect:$('teacherCorrect'),teacherSupport:$('teacherSupport'),
+      skillGrid:$('skillGrid'),progressText:$('progressText'),starText:$('starText'),progressBar:$('progressBar'),
+      timerChip:$('timerChip'),questionChip:$('questionChip'),finishTitle:$('finishTitle'),finishText:$('finishText'),finalScore:$('finalScore'),summary:$('summary'),playAgainBtn:$('playAgainBtn'),homeBtn:$('homeBtn')
+    };
+
+    let questions=[], answers=[], flags=[], index=0, seconds=0, timer=null, speechTimer=null;
+
+    const audio={ctx:null,enabled:true,ensure(){if(!this.ctx){const C=window.AudioContext||window.webkitAudioContext;if(C)this.ctx=new C()}if(this.ctx?.state==='suspended')this.ctx.resume()},tone(freq,dur=.12,type='sine',vol=.06,delay=0){this.ensure();if(!this.ctx||!this.enabled)return;const t=this.ctx.currentTime+delay,o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.015);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(this.ctx.destination);o.start(t);o.stop(t+dur+.03)},click(){this.tone(420,.08,'triangle',.04)},jump(){this.tone(420,.07,'triangle',.045);this.tone(650,.08,'triangle',.04,.06)},finish(){[523,659,784,1046].forEach((f,i)=>this.tone(f,.25,'triangle',.055,i*.12))},flag(){this.tone(600,.1,'square',.03)}};
+    function speak(text){ if(!('speechSynthesis' in window))return; window.speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang='en-US';u.rate=.88;u.pitch=1.05;window.speechSynthesis.speak(u); }
+
+    function generateQuestions(){
+      const used=new Set(), generated=[];
+      for(const s of skills){
+        let q;
+        for(let tries=0;tries<80;tries++){
+          q=BUILDERS[s.key]();
+          if(!used.has(q.signature)) break;
+        }
+        used.add(q.signature);
+        q.meta=s;
+        generated.push(q);
+      }
+      return shuffle(generated);
+    }
+
+    function startAssessment(){
+      audio.click(); clearTimeout(speechTimer); window.speechSynthesis?.cancel(); 
+      questions=generateQuestions(); answers=Array(10).fill(null); flags=Array(10).fill(false);
+      index=0; seconds=0;
+      els.welcome.style.display='none';els.finish.style.display='none';els.quiz.style.display='block';els.startWrap.style.display='none';els.teacherPanel.classList.remove('show');
+      clearInterval(timer); updateTimer(); timer=setInterval(()=>{seconds++;updateTimer()},1000); 
+      renderQuestion();
+    }
+    
+    function updateTimer(){ const m=String(Math.floor(seconds/60)).padStart(2,'0'),s=String(seconds%60).padStart(2,'0');els.timerChip.textContent=`⏱ ${m}:${s}`; }
+    
+    function updateSidebar(){
+      const answeredCount = answers.filter(v=>v!==null).length;
+      els.progressText.textContent=answeredCount?`Answered: ${answeredCount}/10`:'Ready to begin';
+      els.progressBar.style.width=`${answeredCount*10}%`;
+      els.questionChip.textContent=`📝 ${answeredCount}/10`;
+      
+      els.skillGrid.innerHTML='';
+      skills.forEach(s=>{ 
+        const qIndex=questions.findIndex(q=>q.skill===s.key);
+        const hasAnswer=answers[qIndex]!==null;
+        const isFlagged=flags[qIndex];
+        
+        const div=document.createElement('div');
+        div.className='skill '+(qIndex===index&&els.quiz.style.display!=='none'?'active ':hasAnswer?'answered ':'pending ')+(isFlagged?'flagged':'');
+        div.onclick = () => { if(qIndex !== index) jumpToQuestion(qIndex); };
+        
+        div.innerHTML=`<div class="sico">${s.icon}</div><div><b>${s.name}</b><span>${hasAnswer?'Answered ✓':'Unanswered'}</span></div><div class="skill-flag">🚩</div>`;
+        els.skillGrid.appendChild(div); 
+      });
+    }
+
+    function jumpToQuestion(newIndex){
+      audio.click(); index = newIndex; renderQuestion();
+    }
+    
+    function toggleFlag(){
+      audio.flag(); flags[index] = !flags[index];
+      updateFlagUI(); updateSidebar();
+    }
+    
+    function updateFlagUI(){
+      if(flags[index]){ els.flagBtn.classList.add('active'); els.flagBtn.innerHTML = '🚩 Flagged'; }
+      else{ els.flagBtn.classList.remove('active'); els.flagBtn.innerHTML = '🚩 Flag'; }
+    }
+
+    function checkSubmitVisibility(){
+      const allAnswered = answers.filter(a => a !== null).length === 10;
+      els.submitBtn.style.display = allAnswered ? 'block' : 'none';
+      if(allAnswered && index === 9) els.nextBtn.style.display = 'none';
+      else els.nextBtn.style.display = 'block';
+    }
+
+    function bindInteractive(q){
+      const currentAns = answers[index];
+      const selectedValue = typeof currentAns === 'object' ? currentAns?.value : currentAns;
+      
+      if(q.interactive==='objects'||q.interactive==='numbers'){
+        els.visBox.querySelectorAll('[data-value]').forEach(btn=>{
+          if(String(btn.dataset.value) === String(selectedValue)) btn.classList.add('selected');
+          btn.addEventListener('click',()=>{
+            audio.click();
+            els.visBox.querySelectorAll('[data-value]').forEach(b=>b.classList.remove('selected'));
+            btn.classList.add('selected');
+            answers[index] = String(btn.dataset.value);
+            afterAnswerUpdate();
+          });
+        });
+      }
+      
+      if(q.interactive==='subframes'){
+          els.visBox.querySelectorAll('.interactive-dot').forEach(dot => {
+              dot.addEventListener('click', () => {
+                  audio.click();
+                  dot.classList.toggle('crossed');
+              });
+          });
+      }
+      
+      if(q.interactive==='jump'){
+        let jumpProgress = currentAns?.jumpProgress || 0;
+        const updateJumpVisual = () => {
+          els.visBox.querySelectorAll('.jump-node').forEach(node=>node.classList.toggle('reached',Number(node.dataset.step)<=jumpProgress));
+          els.visBox.querySelectorAll('.jump-arrow').forEach((arrow, idx)=>{
+             arrow.style.opacity = (idx < jumpProgress) ? '1' : '0';
+          });
+          const count=$('jumpCount'); if(count)count.textContent=`${jumpProgress} / ${q.jumps}`;
+        };
+        updateJumpVisual();
+        
+        const btn=$('jumpBtn'); 
+        if(btn){
+          if(jumpProgress >= q.jumps) btn.style.display = 'none';
+          btn.addEventListener('click',()=>{
+            if(jumpProgress>=q.jumps)return;
+            audio.jump(); jumpProgress++;
+            const computedVal = String(Number(q.answer)-q.jumps+jumpProgress);
+            
+            if(jumpProgress===q.jumps){
+               answers[index]={value:q.answer, jumpProgress};
+               btn.style.display = 'none';
+               afterAnswerUpdate();
+            } else {
+               answers[index]={value:computedVal, jumpProgress};
+            }
+            updateJumpVisual();
+          });
+        }
+      }
+    }
+
+    function afterAnswerUpdate(){
+      updateSidebar(); checkSubmitVisibility();
+    }
+
+    function renderQuestion(){
+      const q=questions[index]; 
+      const currentAns = answers[index];
+      const selectedVal = typeof currentAns === 'object' ? currentAns?.value : currentAns;
+      
+      els.qTitle.textContent=`Question ${index+1} of 10`; 
+      els.qTag.textContent=q.tag; 
+      els.qPrompt.textContent=q.prompt;
+      els.visBox.innerHTML=q.vis; els.choices.innerHTML='';
+      
+      els.prevBtn.disabled=index===0; els.nextBtn.disabled=index===questions.length-1;
+      updateFlagUI();
+      
+      if(q.choices){ 
+        q.choices.forEach((c, i)=>{
+          const b=document.createElement('button');
+          // V6 Update: Distinct vibrant color classes c-0 to c-3
+          b.className=`choice c-${i}`+(selectedVal===String(c)?' selected':'');
+          b.textContent=c; b.dataset.value=String(c);
+          
+          b.addEventListener('click',()=>{
+            audio.click();
+            els.choices.querySelectorAll('.choice').forEach(x=>x.classList.remove('selected'));
+            b.classList.add('selected');
+            answers[index]=String(c);
+            afterAnswerUpdate();
+          });
+          els.choices.appendChild(b);
+        }); 
+      }
+      
+      // Update teacher panel states
+      els.teacherCorrect.style.opacity = selectedVal === '__teacher_correct__' ? '0.5' : '1';
+      els.teacherSupport.style.opacity = selectedVal === '__teacher_support__' ? '0.5' : '1';
+      
+      bindInteractive(q); updateSidebar(); checkSubmitVisibility(); $('gameContainer').scrollTo({top:0,behavior:'smooth'});
+      clearTimeout(speechTimer);
+      speechTimer=setTimeout(()=>speak(q.speak||q.prompt||''),220);
+    }
+
+    function submitTest(){
+      if(answers.filter(a => a !== null).length < 10) return; // Guard
+      
+      clearInterval(timer); clearTimeout(speechTimer); window.speechSynthesis?.cancel();
+      audio.finish();
+      
+      // Grade test
+      const results = questions.map((q, i) => {
+        let ans = answers[i];
+        if(typeof ans === 'object') ans = ans?.value;
+        if(ans === '__teacher_correct__') return true;
+        if(ans === '__teacher_support__') return false;
+        return String(ans) === String(q.answer);
+      });
+      
+      const stars = results.filter(Boolean).length;
+      els.quiz.style.display='none'; els.finish.style.display='flex';
+      
+      let title=stars>=9?'Review Superstar!':stars>=7?'Great Review!':stars>=5?'Good Work!':'Keep Practising!';
+      els.finishTitle.textContent=title; 
+      els.finishText.textContent=`You completed the review in ${formatTime(seconds)}.`; 
+      els.finalScore.textContent=`${stars}/10`;
+      
+      els.summary.innerHTML=`<table class="summary-table"><thead><tr><th>Topic</th><th>Your Answer</th><th>Result</th></tr></thead><tbody>
+        ${questions.map((q,i)=>{
+           let displayAns = answers[i];
+           if(typeof displayAns === 'object') displayAns = displayAns.value;
+           if(displayAns === '__teacher_correct__') displayAns = 'Marked Correct (Teacher)';
+           if(displayAns === '__teacher_support__') displayAns = 'Needs Support (Teacher)';
+           return `<tr><td>${q.meta.icon} ${q.meta.name}</td><td>${displayAns||'No answer'}</td><td class="result-star">${results[i]?'⭐':'❌'}</td></tr>`;
+        }).join('')}
+      </tbody></table>`;
+      
+      burstConfetti(220); $('gameContainer').scrollTo({top:0,behavior:'smooth'});
+    }
+
+    function formatTime(s){return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`}
+    function nextQuestion(){audio.click(); if(index<questions.length-1) jumpToQuestion(index+1);}
+    function prevQuestion(){if(index<=0)return; jumpToQuestion(index-1);}
+    
+    function home(){
+      clearInterval(timer);clearTimeout(speechTimer);window.speechSynthesis?.cancel();els.finish.style.display='none';els.quiz.style.display='none';els.welcome.style.display='flex';els.startWrap.style.display='block';
+      questions=[];answers=[];flags=[];index=0;seconds=0;updateTimer();renderInitialSkills();els.progressText.textContent='Ready to begin';els.progressBar.style.width='0%';els.questionChip.textContent='📝 0/10';
+    }
+    function renderInitialSkills(){els.skillGrid.innerHTML=skills.map(s=>`<div class="skill pending"><div class="sico">${s.icon}</div><div><b>${s.name}</b><span>${s.sub}</span></div></div>`).join('')}
+
+    const confettiCanvas=$('confetti'),cctx=confettiCanvas.getContext('2d');let pieces=[];
+    function resizeConfetti(){const dpr=Math.min(2,window.devicePixelRatio||1);confettiCanvas.width=innerWidth*dpr;confettiCanvas.height=innerHeight*dpr;confettiCanvas.style.width=innerWidth+'px';confettiCanvas.style.height=innerHeight+'px';cctx.setTransform(dpr,0,0,dpr,0,0)}
+    function burstConfetti(count=100){const colors=['#58cc02','#1cb0f6','#ff4b4b','#ffc800','#ce82ff','#ff8fab'];for(let i=0;i<count;i++)pieces.push({x:innerWidth/2,y:innerHeight*.35,vx:(Math.random()-.5)*15,vy:-Math.random()*12-4,g:.25+Math.random()*.14,w:5+Math.random()*7,h:4+Math.random()*7,r:Math.random()*6,color:colors[rand(0,colors.length-1)],life:160+rand(0,80)});}
+    function animateConfetti(){cctx.clearRect(0,0,innerWidth,innerHeight);pieces.forEach(p=>{p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.r+=.15;p.life--;cctx.save();cctx.translate(p.x,p.y);cctx.rotate(p.r);cctx.fillStyle=p.color;cctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);cctx.restore()});pieces=pieces.filter(p=>p.life>0&&p.y<innerHeight+50);requestAnimationFrame(animateConfetti)}
+
+    els.startBtn.addEventListener('click',startAssessment); els.welcomeStartBtn.addEventListener('click',startAssessment);
+    els.speakBtn.addEventListener('click',()=>speak(questions[index]?.speak||questions[index]?.prompt||''));
+    els.nextBtn.addEventListener('click',nextQuestion); els.prevBtn.addEventListener('click',prevQuestion);
+    els.flagBtn.addEventListener('click',toggleFlag); els.submitBtn.addEventListener('click',submitTest);
+    
+    // Teacher Controls integration
+    els.teacherToggle.addEventListener('click',()=>els.teacherPanel.classList.toggle('show'));
+    els.teacherCorrect.addEventListener('click',()=> { answers[index] = '__teacher_correct__'; afterAnswerUpdate(); renderQuestion(); });
+    els.teacherSupport.addEventListener('click',()=> { answers[index] = '__teacher_support__'; afterAnswerUpdate(); renderQuestion(); });
+    
+    els.playAgainBtn.addEventListener('click',startAssessment); els.homeBtn.addEventListener('click',home);
+    window.addEventListener('resize',resizeConfetti);resizeConfetti();animateConfetti();renderInitialSkills();updateTimer();
+  })();
+  </script>
+</body>
+</html>
