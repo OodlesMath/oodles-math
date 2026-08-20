@@ -4,7 +4,7 @@
     <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Math Fun Battle - Ver 5</title>
+    <title>Math Fun Battle - Ver 6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
@@ -89,7 +89,7 @@
         .power-bar-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #1cb0f6 0%, #58cc02 50%, #ff4b4b 100%); }
         .power-indicator { position: absolute; top: -4px; bottom: -4px; width: 12px; background: white; border: 3px solid #374151; border-radius: 6px; left: 0%; transform: translateX(-50%); box-shadow: 0 0 10px rgba(0,0,0,0.3);}
 
-        .dmg-popup { position: absolute; font-size: 4.5rem; font-weight: 900; color: #ff4b4b; -webkit-text-stroke: 3px white; animation: floatUp 1s forwards; pointer-events: none; z-index: 60; text-shadow: 0 6px 0px rgba(0,0,0,0.25); }
+        .dmg-popup { position: absolute; font-size: 4.5rem; font-weight: 900; color: #f97316; -webkit-text-stroke: 3px white; animation: floatUp 1s forwards; pointer-events: none; z-index: 60; text-shadow: 0 6px 0px rgba(0,0,0,0.25); }
         .heal-popup { color: #58cc02; }
         @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5) rotate(-10deg); } 20% { transform: translate(-50%, calc(-50% - 25px)) scale(1.3) rotate(5deg); } 100% { opacity: 0; transform: translate(-50%, calc(-50% - 120px)) scale(1) rotate(0deg); } }
 
@@ -230,14 +230,64 @@
             width: 72%;
             box-shadow: 0 2px 0 rgba(15, 23, 42, 0.18);
         }
+        /* Ver 6: clearer subtraction instruction for 2 Player mode */
         .player-tenframes-note {
-            min-height: 13px;
-            margin-top: 5px;
-            color: #64748b;
-            font-size: 9px;
-            line-height: 1.15;
-            font-weight: 800;
+            min-height: 30px;
+            margin-top: 7px;
+            color: #ef4444;
+            font-size: clamp(13px, 1.15vw, 17px);
+            line-height: 1.2;
+            font-weight: 900;
             text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.9);
+        }
+        .player-tenframes-note:empty { min-height: 0; margin-top: 0; }
+        .hint-speaker-btn {
+            width: 30px;
+            height: 30px;
+            flex: 0 0 30px;
+            border: 2px solid #bae6fd;
+            border-radius: 50%;
+            background: #eff6ff;
+            color: #1cb0f6;
+            display: inline-grid;
+            place-items: center;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #bfdbfe;
+            transition: transform .1s ease, box-shadow .1s ease;
+        }
+        .hint-speaker-btn:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+        .hint-speaker-btn svg { width: 17px; height: 17px; }
+
+        /* Ver 6: removed dots stay visible as faded counters with a strong red X. */
+        .player-tenframes .visual-tenframe-dot.dimmed {
+            position: relative;
+            opacity: 1;
+            background: #e5e7eb !important;
+            border: 2px solid #cbd5e1;
+            filter: none;
+            transform: scale(0.86);
+            box-shadow: none;
+        }
+        .player-tenframes .visual-tenframe-dot.dimmed::after {
+            content: '×';
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            color: #ef4444;
+            font-size: clamp(18px, 2vw, 27px);
+            line-height: 1;
+            font-weight: 900;
+            text-shadow: 0 1px 0 #ffffff;
+            pointer-events: none;
         }
         @media (max-width: 760px) {
             #game-screen.pvp-mode #answers-container-girl,
@@ -825,6 +875,62 @@
             }
         }
 
+        // Ver 6: subtraction hints in 2 Player mode are spoken automatically.
+        let pvpHintSpeechQueue = [];
+        let pvpHintSpeechTimer = null;
+
+        function speakPvpHint(event, text) {
+            if (event) event.stopPropagation();
+            if (!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.82;
+            utterance.pitch = 1.18;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function queuePvpHintSpeech(text) {
+            if (gameMode !== 'pvp' || !text || !('speechSynthesis' in window)) return;
+            pvpHintSpeechQueue.push(text);
+            if (pvpHintSpeechTimer) return;
+
+            // A short delay lets both players' newly generated subtraction hints join one speech queue.
+            pvpHintSpeechTimer = setTimeout(() => {
+                pvpHintSpeechTimer = null;
+                const items = pvpHintSpeechQueue.splice(0);
+                if (!items.length) return;
+                window.speechSynthesis.cancel();
+                items.forEach(textToRead => {
+                    const utterance = new SpeechSynthesisUtterance(textToRead);
+                    utterance.lang = 'en-US';
+                    utterance.rate = 0.82;
+                    utterance.pitch = 1.18;
+                    window.speechSynthesis.speak(utterance);
+                });
+            }, 260);
+        }
+
+        function setPlayerTenFrameNote(playerId, text, autoSpeak = false) {
+            const note = document.getElementById(`player-tenframes-note-${playerId}`);
+            if (!note) return;
+            note.innerHTML = '';
+            if (!text) return;
+
+            const label = document.createElement('span');
+            label.textContent = text;
+
+            const speaker = document.createElement('button');
+            speaker.type = 'button';
+            speaker.className = 'hint-speaker-btn speaker-anim';
+            speaker.setAttribute('aria-label', `Read instruction: ${text}`);
+            speaker.innerHTML = '<svg fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>';
+            speaker.addEventListener('click', (event) => speakPvpHint(event, text));
+
+            note.append(label, speaker);
+            if (autoSpeak) queuePvpHintSpeech(text);
+        }
+
         async function getAICheer(winnerName) {
             const aiMessageEl = document.getElementById('ai-message');
             aiMessageEl.innerText = "✨ Magic AI is thinking... ✨";
@@ -1089,7 +1195,12 @@
             state.subtractCount = isAddition ? 0 : num2;
             state.dimmed = 0;
 
-            note.textContent = isAddition ? '' : `Tap ${num2} dot${num2 === 1 ? '' : 's'} to take away`;
+            if (isAddition) {
+                setPlayerTenFrameNote(p.id, '');
+            } else {
+                const hintText = `Tap ${num2} dot${num2 === 1 ? '' : 's'} to take away`;
+                setPlayerTenFrameNote(p.id, hintText, true);
+            }
 
             const totalDots = isAddition ? Math.min(20, num1 + num2) : Math.min(20, num1);
             const cells = [];
@@ -1144,11 +1255,11 @@
 
             dot.classList.add('dimmed');
             state.dimmed++;
-            const note = document.getElementById(`player-tenframes-note-${playerId}`);
             const remaining = state.subtractCount - state.dimmed;
-            note.textContent = remaining > 0
+            const nextHint = remaining > 0
                 ? `Tap ${remaining} more dot${remaining === 1 ? '' : 's'}`
                 : `Great! ${state.total} − ${state.subtractCount} = ${state.total - state.subtractCount}`;
+            setPlayerTenFrameNote(playerId, nextHint, false);
         }
 
         function dimNextSubtractionDot() {
