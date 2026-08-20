@@ -167,12 +167,21 @@
             box-shadow: none;
         }
         .tenframe-tap-note {
-            color: #64748b;
-            font-size: 10px;
-            font-weight: 800;
-            text-align: center;
-            margin-top: 7px;
-            min-height: 14px;
+            min-height: 30px;
+    margin-top: 7px;
+    color: #ff7a00;
+    font-size: clamp(13px, 1.15vw, 17px);
+    line-height: 1.2;
+    font-weight: 900;
+    text-align: center;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    text-shadow: 0 1px 0 rgba(255,255,255,0.9);
+    animation: hintBlink 0.9s ease-in-out infinite alternate;
         }
         @media (max-width: 1180px) {
             #tenframe-helper {
@@ -281,7 +290,8 @@
         .hint-speaker-btn svg { width: 17px; height: 17px; }
 
         /* Ver 6: removed dots stay visible as faded counters with a strong red X. */
-        .player-tenframes .visual-tenframe-dot.dimmed {
+        .player-tenframes .visual-tenframe-dot.dimmed,
+        #tenframe-helper .visual-tenframe-dot.dimmed {
             position: relative;
             opacity: 1;
             background: #e5e7eb !important;
@@ -290,7 +300,8 @@
             transform: scale(0.86);
             box-shadow: none;
         }
-        .player-tenframes .visual-tenframe-dot.dimmed::after {
+        .player-tenframes .visual-tenframe-dot.dimmed::after,
+        #tenframe-helper .visual-tenframe-dot.dimmed::after {
             content: '×';
             position: absolute;
             inset: 0;
@@ -1158,7 +1169,33 @@
             title.innerHTML = isAddition
                 ? `<span class="text-[#ff4b4b]">${num1}</span><span>+</span><span class="text-[#228be6]">${num2}</span><span>= ?</span>`
                 : `<span class="text-[#ff4b4b]">${num1}</span><span>−</span><span>${num2}</span><span>= ?</span>`;
-            note.textContent = isAddition ? '' : `Tap ${num2} dot${num2 === 1 ? '' : 's'} to take away`;
+            
+            if (isAddition) {
+    note.innerHTML = '';
+} else {
+    const hintText = `Tap ${num2} dot${num2 === 1 ? '' : 's'} to take away`;
+
+    note.innerHTML = `
+        <span>${hintText}</span>
+        <button
+            type="button"
+            class="hint-speaker-btn speaker-anim"
+            aria-label="Read instruction"
+        >
+            <svg fill="currentColor" viewBox="0 0 24 24">
+                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+            </svg>
+        </button>
+    `;
+
+    note.querySelector('button').addEventListener('click', (event) => {
+        speakPvpHint(event, hintText);
+    });
+
+    setTimeout(() => {
+        speakPvpHint(null, hintText);
+    }, 250);
+}
 
             const totalDots = isAddition ? Math.min(20, num1 + num2) : Math.min(20, num1);
             const cells = [];
@@ -1297,10 +1334,11 @@
             tenFrameState.dimmed++;
 
             const note = document.getElementById('tenframe-tap-note');
-            const remaining = tenFrameState.subtractCount - tenFrameState.dimmed;
-            note.textContent = remaining > 0
-                ? `Tap ${remaining} more dot${remaining === 1 ? '' : 's'}`
-                : `Great! ${tenFrameState.total} − ${tenFrameState.subtractCount} = ${tenFrameState.total - tenFrameState.subtractCount}`;
+const remaining = tenFrameState.subtractCount - tenFrameState.dimmed;
+
+if (remaining === 0) {
+    note.innerHTML = '';
+                     }
         }
 
         function checkAnswer(selectedAnswer, btnElement, p) {
