@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="../assets/brand.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Odd and Even Game - Ver 7</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#efefef;
+      --ink:#22252d;
+      --muted:#666b77;
+      --purple:#7c2ae8;
+      --purple-dark:#5a16b7;
+      --line:#d9d9de;
+      --card:#f5f5f7;
+      --green:#28c86f;
+      --green-dark:#16924f;
+      --pink:#d85aa2;
+      --blue:#5a86c9;
+      --cyan:#73cdc9;
+      --green-cube:#7da521;
+      --lavender:#a3a1c7;
+      --yellow:#e6c65e;
+      --teal:#2897bf;
+      --orange:#dc8d23;
+    }
+
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{
+      margin:0;
+      min-height:100%;
+      font-family:"Poppins",sans-serif;
+      color:var(--ink);
+    }
+    body{
+      overflow-x:hidden;
+      background:
+        linear-gradient(180deg,#bfe9ff 0%,#e9f8ff 58%,#f7fbff 74%,#dff5c8 100%);
+      position:relative;
+    }
+
+    .scene-bg{
+      position:fixed;
+      inset:0;
+      overflow:hidden;
+      pointer-events:none;
+      z-index:-1;
+    }
+    .sun{
+      position:absolute;
+      width:92px;height:92px;
+      border-radius:50%;
+      left:6%;top:8%;
+      background:radial-gradient(circle at 35% 30%,#fff7b8 0 18%,#ffe06d 50%,#ffbf2e 100%);
+      box-shadow:0 0 0 18px rgba(255,224,109,.22),0 0 54px rgba(255,196,51,.34);
+    }
+    .cloud{
+      position:absolute;
+      height:28px;
+      border-radius:999px;
+      background:rgba(255,255,255,.8);
+      filter:drop-shadow(0 5px 9px rgba(81,149,183,.08));
+    }
+    .cloud::before,.cloud::after{
+      content:"";
+      position:absolute;
+      border-radius:50%;
+      background:inherit;
+      bottom:0;
+    }
+    .cloud::before{width:42px;height:42px;left:16px}
+    .cloud::after{width:54px;height:54px;right:15px}
+    .cloud.c1{width:120px;right:8%;top:12%;transform:scale(.8)}
+    .cloud.c2{width:105px;left:15%;top:28%;transform:scale(.58);opacity:.8}
+    .cloud.c3{width:130px;right:20%;top:38%;transform:scale(.5);opacity:.65}
+    .hill{
+      position:absolute;
+      left:-10%;
+      width:120%;
+      border-radius:50% 50% 0 0 / 100% 100% 0 0;
+    }
+    .hill.back{
+      height:24vh;bottom:-11vh;
+      background:#bfe88d;
+      opacity:.92;
+    }
+    .hill.front{
+      height:18vh;bottom:-9vh;
+      left:-4%;width:108%;
+      background:linear-gradient(180deg,#85d95d 0%,#67c345 100%);
+      opacity:.98;
+    }
+    .spark{
+      position:absolute;
+      width:9px;height:9px;border-radius:50%;
+      background:rgba(255,255,255,.58);
+      box-shadow:90px 30px rgba(255,255,255,.48),180px -20px rgba(255,255,255,.42),260px 50px rgba(255,255,255,.40);
+      top:20%;left:28%;
+    }
+    .flower{
+      position:absolute;
+      width:10px;height:10px;border-radius:50%;
+      background:#ffd84d;
+      box-shadow:
+        0 -9px 0 0 var(--petal),
+        0 9px 0 0 var(--petal),
+        -9px 0 0 0 var(--petal),
+        9px 0 0 0 var(--petal),
+        -6px -6px 0 0 var(--petal),
+        6px -6px 0 0 var(--petal),
+        -6px 6px 0 0 var(--petal),
+        6px 6px 0 0 var(--petal);
+      filter:drop-shadow(0 2px 0 rgba(0,0,0,.05));
+    }
+    .flower::after{
+      content:"";
+      position:absolute;
+      width:2px;height:14px;
+      background:#54b33e;
+      left:4px;top:8px;
+      z-index:-1;
+    }
+    .flower.f1{left:10%;bottom:8.5vh;--petal:#ff7fb0;transform:scale(.9)}
+    .flower.f2{left:19%;bottom:5.8vh;--petal:#ffffff;transform:scale(.7)}
+    .flower.f3{left:29%;bottom:7vh;--petal:#a988ff;transform:scale(.8)}
+    .flower.f4{right:28%;bottom:7.2vh;--petal:#ffffff;transform:scale(.82)}
+    .flower.f5{right:18%;bottom:5.5vh;--petal:#ff95c3;transform:scale(.76)}
+    .flower.f6{right:8%;bottom:8.4vh;--petal:#fff6b2;transform:scale(.88)}
+
+    .app{
+      width:min(760px, calc(100% - 18px));
+      margin:0 auto;
+      padding:10px 0 12px;
+      min-height:100vh;
+      min-height:100dvh;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .top-strip{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .progress-track{
+      flex:1;
+      height:18px;
+      background:#d7bae9;
+      border-radius:0;
+      position:relative;
+      overflow:hidden;
+    }
+    .progress-fill{
+      position:absolute;left:0;top:0;bottom:0;
+      width:10%;
+      background:var(--purple);
+      transition:width .3s ease;
+    }
+    .tiny-status{
+      font-size:12px;
+      font-weight:700;
+      color:var(--muted);
+      white-space:nowrap;
+    }
+
+    .screen{
+      flex:1;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      padding:10px 12px 12px;
+      background:rgba(255,255,255,.78);
+      border:1px solid rgba(255,255,255,.85);
+      border-radius:22px;
+      box-shadow:0 12px 30px rgba(72,123,154,.10);
+      backdrop-filter:blur(5px);
+    }
+
+    .number-wrap{
+      text-align:center;
+      margin-top:2px;
+    }
+    .big-number{
+      font-size:clamp(64px, 12vw, 92px);
+      line-height:1;
+      font-weight:900;
+      color:var(--purple);
+      letter-spacing:-0.04em;
+      margin:0;
+    }
+
+    .play-area{
+      position:relative;
+      min-height:300px;
+      width:100%;
+      touch-action:none;
+      user-select:none;
+      overflow:hidden;
+      padding-top:6px;
+    }
+
+    .tool-row{
+      display:flex;
+      justify-content:flex-end;
+      gap:8px;
+      margin-top:-2px;
+      margin-bottom:-2px;
+    }
+    .tool-btn{
+      border:1px solid #cdb7e8;
+      background:rgba(244,236,252,.92);
+      color:#623792;
+      border-radius:999px;
+      padding:7px 12px;
+      font-family:inherit;
+      font-size:12px;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow:0 1px 0 rgba(255,255,255,.8) inset;
+    }
+    .tool-btn:active{transform:translateY(1px)}
+
+    .cube{
+      --c:#999;
+      --c-shadow:#777;
+      position:absolute;
+      width:62px;
+      height:62px;
+      border-radius:6px;
+      background:
+        linear-gradient(180deg, color-mix(in srgb, white 14%, var(--c)) 0%, var(--c) 78%);
+      box-shadow:
+        inset 0 -5px 0 rgba(0,0,0,.08),
+        0 2px 0 var(--c-shadow);
+      border:1px solid rgba(0,0,0,.05);
+      cursor:grab;
+      touch-action:none;
+      transition:transform .1s ease, box-shadow .1s ease, opacity .2s ease;
+      z-index:2;
+    }
+    .cube::before{
+      content:"";
+      position:absolute;
+      width:34px;
+      height:8px;
+      left:50%;
+      transform:translateX(-50%);
+      top:-4px;
+      border-radius:4px 4px 2px 2px;
+      background:color-mix(in srgb, black 15%, var(--c));
+      opacity:.85;
+    }
+    .cube::after{
+      content:"";
+      position:absolute;
+      width:23px;
+      height:23px;
+      left:50%;
+      top:50%;
+      transform:translate(-50%,-50%);
+      border-radius:50%;
+      background:rgba(0,0,0,.08);
+      box-shadow:inset 0 0 0 6px rgba(255,255,255,.07);
+    }
+    .cube.dragging{
+      cursor:grabbing;
+      transform:scale(1.06);
+      box-shadow:inset 0 -5px 0 rgba(0,0,0,.08),0 7px 18px rgba(0,0,0,.18);
+      z-index:12;
+    }
+    .cube.candidate{
+      outline:4px solid rgba(124,42,232,.16);
+      outline-offset:4px;
+    }
+    .cube.pairing{animation:pop .28s ease}
+    .cube.paired{
+      cursor:default;
+      box-shadow:inset 0 -5px 0 rgba(0,0,0,.08),0 2px 0 var(--c-shadow),0 0 0 2px rgba(255,255,255,.35);
+    }
+    .cube.leftover{animation:leftoverBounce 1.1s ease-in-out infinite}
+    @keyframes leftoverBounce{
+      0%,100%{transform:translateY(0)}
+      50%{transform:translateY(-7px)}
+    }
+    @keyframes pop{
+      0%{transform:scale(.92)}
+      55%{transform:scale(1.1)}
+      100%{transform:scale(1)}
+    }
+
+    .pair-shelf{display:none !important;}
+    .pair-chip{
+      display:flex;
+      gap:4px;
+      align-items:center;
+      justify-content:center;
+      padding:4px 8px;
+      border-radius:12px;
+      background:#f6f6f7;
+      border:1px solid #dfdfe4;
+    }
+    .mini-cube{
+      width:32px;
+      height:32px;
+      border-radius:5px;
+      background:linear-gradient(180deg, color-mix(in srgb, white 14%, var(--c)) 0%, var(--c) 78%);
+      box-shadow:inset 0 -3px 0 rgba(0,0,0,.08),0 1px 0 color-mix(in srgb, black 20%, var(--c));
+      position:relative;
+    }
+    .mini-cube::after{
+      content:"";
+      position:absolute;
+      width:12px;
+      height:12px;
+      left:50%;
+      top:50%;
+      transform:translate(-50%,-50%);
+      border-radius:50%;
+      background:rgba(0,0,0,.08);
+    }
+    .leftover-note{display:none !important;}
+    .leftover-cube{
+      animation:bounce 1.2s ease-in-out infinite;
+    }
+    @keyframes bounce{
+      0%,100%{transform:translateY(0)}
+      50%{transform:translateY(-6px)}
+    }
+
+    .question{
+      font-size:16px;
+      color:#151922;
+      font-weight:600;
+      margin-top:2px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .question-text{
+      flex:1;
+      min-width:0;
+    }
+    .question-speaker{
+      flex:0 0 32px;
+      width:32px;height:32px;
+      border:0;
+      border-radius:50%;
+      background:#dcc7f6;
+      color:#6430a6;
+      display:grid;
+      place-items:center;
+      font-size:16px;
+      cursor:pointer;
+      box-shadow:0 2px 0 #b999df;
+    }
+    .question-speaker:active{transform:translateY(2px);box-shadow:none}
+
+    .answers{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .answer-btn{
+      border:1px solid #bca4db;
+      background:linear-gradient(180deg,#decdf3 0%,#d1b9ed 100%);
+      min-height:34px;
+      padding:0 14px;
+      font-family:inherit;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      font-size:13px;
+      font-weight:700;
+      color:#48236f;
+      cursor:pointer;
+      text-align:left;
+      box-shadow:0 2px 0 #b89bd9;
+    }
+    .answer-label{pointer-events:none}
+    .radio{
+      width:16px;height:16px;border-radius:50%;
+      border:1.8px solid #7c5aa5;
+      background:#f6f0fb;
+      flex:0 0 16px;
+      margin-left:10px;
+      position:relative;
+    }
+    .answer-btn:hover{filter:brightness(1.035)}
+    .answer-btn.correct{
+      background:linear-gradient(180deg,#85e19f 0%,#58c777 100%);
+      border-color:#37a85b;
+      color:#fff;
+      box-shadow:0 2px 0 #2d9150;
+    }
+    .answer-btn.correct .radio{
+      border-color:#fff;
+      background:rgba(255,255,255,.96);
+    }
+    .answer-btn.correct .radio::after{
+      content:"";
+      position:absolute; inset:3px;
+      border-radius:50%;
+      background:#2fa054;
+    }
+    .answer-btn.wrong{
+      background:linear-gradient(180deg,#ffb0b0 0%,#f27474 100%);
+      border-color:#dc5858;
+      color:#fff;
+      box-shadow:0 2px 0 #c34b4b;
+    }
+    .answer-btn.wrong .radio{
+      border-color:#fff;
+      background:rgba(255,255,255,.96);
+    }
+    .answer-btn.wrong .radio::after{
+      content:"";
+      position:absolute; inset:3px;
+      border-radius:50%;
+      background:#db5454;
+    }
+
+    .feedback{
+      min-height:40px;
+      font-size:13px;
+      color:#5d6270;
+      font-weight:600;
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+    }
+
+    .next-btn{
+      display:none;
+      align-self:flex-start;
+      border:0;
+      background:var(--purple);
+      color:white;
+      border-radius:10px;
+      padding:8px 16px;
+      font-family:inherit;
+      font-size:14px;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow:0 2px 0 var(--purple-dark);
+    }
+    .next-btn.show{display:inline-flex}
+    .next-btn:active{transform:translateY(2px);box-shadow:none}
+
+    .summary{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:rgba(0,0,0,.28);
+      padding:20px;
+      z-index:100;
+    }
+    .summary.show{display:flex}
+    .summary-card{
+      background:#fafafa;
+      border-radius:18px;
+      padding:24px 22px;
+      width:min(340px,100%);
+      text-align:center;
+      box-shadow:0 15px 40px rgba(0,0,0,.18);
+    }
+    .summary-card h2{
+      margin:6px 0 4px;
+      color:var(--purple);
+      font-size:28px;
+    }
+    .summary-card p{
+      margin:0;
+      color:#656a75;
+      font-size:14px;
+      font-weight:600;
+    }
+    .final-score{
+      margin:16px 0;
+      font-size:36px;
+      color:var(--purple);
+      font-weight:900;
+    }
+    .summary-actions{
+      display:flex;
+      justify-content:center;
+      gap:10px;
+    }
+    .summary-actions button{
+      border:0;
+      border-radius:10px;
+      padding:10px 14px;
+      font-family:inherit;
+      font-size:13px;
+      font-weight:700;
+      cursor:pointer;
+    }
+    .again{background:var(--purple);color:white}
+    .home{background:#e2e2e5;color:#39404b}
+
+    #confetti{
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100%;
+      pointer-events:none;
+      z-index:200;
+    }
+    /* ---------------------------------------------------------
+       LANDSCAPE SCREENS
+       Always keep the same single-column composition as the reference:
+       progress bar
+       number
+       hint / make pairs
+       cubes
+       question
+       answers
+       feedback / next
+       --------------------------------------------------------- */
+
+    @media (orientation:landscape) and (min-width:700px){
+      html,body{
+        overflow-x:hidden;
+      }
+
+      .app{
+        width:min(760px, calc(100% - 18px));
+        min-height:100vh;
+        min-height:100dvh;
+        padding-top:7px;
+        padding-bottom:8px;
+        gap:7px;
+      }
+
+      .top-strip{
+        min-height:18px;
+        gap:8px;
+      }
+
+      .progress-track{height:15px}
+      .tiny-status{font-size:11px}
+
+      .screen{
+        display:flex;
+        flex-direction:column;
+        height:auto;
+        min-height:0;
+        gap:7px;
+        padding:8px 12px 10px;
+        overflow:hidden;
+      }
+
+      .number-wrap{
+        margin-top:0;
+      }
+
+      .big-number{
+        font-size:clamp(58px, 8vh, 76px);
+      }
+
+      .tool-row{
+        margin-top:-2px;
+        margin-bottom:-2px;
+        gap:8px;
+      }
+
+      .tool-btn{
+        padding:5px 10px;
+        font-size:11px;
+      }
+
+      .play-area{
+        min-height:clamp(180px, 33vh, 245px);
+        height:clamp(180px, 33vh, 245px);
+        padding-top:2px;
+      }
+
+      .question{
+        margin-top:0;
+        font-size:15px;
+      }
+
+      .question-speaker{
+        width:30px;
+        height:30px;
+        flex-basis:30px;
+        font-size:15px;
+      }
+
+      .answers{
+        gap:5px;
+      }
+
+      .answer-btn{
+        min-height:34px;
+        font-size:13px;
+      }
+
+      .feedback{
+        min-height:28px;
+        font-size:12px;
+      }
+
+      .next-btn{
+        width:100%;
+        justify-content:center;
+        align-self:stretch;
+        padding:8px 14px;
+        font-size:13px;
+      }
+    }
+
+    /* Extra-short laptop/browser viewport */
+    @media (orientation:landscape) and (max-height:520px) and (min-width:700px){
+      .app{
+        padding-top:4px;
+        padding-bottom:5px;
+        gap:5px;
+      }
+
+      .top-strip{
+        min-height:14px;
+      }
+
+      .progress-track{height:13px}
+      .tiny-status{font-size:10px}
+
+      .screen{
+        gap:5px;
+        padding:6px 10px 7px;
+      }
+
+      .big-number{
+        font-size:50px;
+      }
+
+      .tool-row{
+        gap:6px;
+      }
+
+      .tool-btn{
+        padding:4px 9px;
+        font-size:10px;
+      }
+
+      .play-area{
+        min-height:145px;
+        height:145px;
+      }
+
+      .question{
+        font-size:14px;
+      }
+
+      .question-speaker{
+        width:28px;
+        height:28px;
+        flex-basis:28px;
+        font-size:14px;
+      }
+
+      .answer-btn{
+        min-height:30px;
+        font-size:12px;
+      }
+
+      .feedback{
+        min-height:22px;
+        font-size:11px;
+      }
+
+      .next-btn{
+        padding:7px 12px;
+        font-size:12px;
+      }
+    }
+
+    @media (max-width:699px){
+      html,body{overflow-x:hidden}
+
+      .app{
+        width:min(100% - 14px, 540px);
+        padding-top:7px;
+        padding-bottom:10px;
+      }
+
+      .screen{
+        gap:8px;
+        padding:9px 10px 11px;
+      }
+
+      .big-number{
+        font-size:clamp(56px,18vw,76px);
+      }
+
+      .tool-row{
+        gap:6px;
+      }
+
+      .tool-btn{
+        padding:6px 10px;
+        font-size:11px;
+      }
+
+      .play-area{
+        min-height:clamp(220px,38vh,300px);
+      }
+
+      .question{
+        font-size:15px;
+      }
+
+      .answer-btn{
+        min-height:38px;
+        font-size:14px;
+      }
+
+      .feedback{
+        min-height:34px;
+        font-size:12px;
+      }
+
+      .next-btn{
+        width:100%;
+        justify-content:center;
+        align-self:stretch;
+        padding:10px 14px;
+      }
+    }
+
+    @media (max-width:420px){
+      .app{width:calc(100% - 10px)}
+      .screen{border-radius:18px;padding:8px}
+      .top-strip{gap:6px}
+      .progress-track{height:14px}
+      .tiny-status{font-size:10px}
+      .big-number{font-size:58px}
+      .play-area{min-height:220px}
+      .question{font-size:14px}
+      .question-speaker{width:30px;height:30px;flex-basis:30px}
+      .answer-btn{min-height:36px;font-size:13px}
+    }
+
+    /* Very short portrait phones: compress vertical spacing but keep
+       the same order and all controls visible. */
+    @media (orientation:portrait) and (max-height:700px) and (max-width:699px){
+      .app{gap:6px;padding-top:5px;padding-bottom:6px}
+      .screen{gap:6px;padding-top:7px;padding-bottom:8px}
+      .big-number{font-size:52px}
+      .tool-btn{padding:5px 9px}
+      .play-area{min-height:190px;height:30vh}
+      .feedback{min-height:28px}
+      .next-btn{padding:8px 12px}
+    }
+  </style>
+</head>
+<body>
+  <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+  <div class="scene-bg" aria-hidden="true">
+    <div class="sun"></div>
+    <div class="cloud c1"></div>
+    <div class="cloud c2"></div>
+    <div class="cloud c3"></div>
+    <div class="spark"></div>
+    <div class="hill back"></div>
+    <div class="hill front"></div>
+    <div class="flower f1"></div>
+    <div class="flower f2"></div>
+    <div class="flower f3"></div>
+    <div class="flower f4"></div>
+    <div class="flower f5"></div>
+    <div class="flower f6"></div>
+  </div>
+  <canvas id="confetti"></canvas>
+
+  <main class="app">
+    <div class="top-strip">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="tiny-status" id="qLabel">1/10</div>
+      <div class="tiny-status">⭐ <span id="score">0</span></div>
+    </div>
+
+    <section class="screen">
+      <div class="number-wrap">
+        <div class="big-number" id="bigNumber">10</div>
+      </div>
+
+      <div class="tool-row">
+        <button class="tool-btn" id="hintBtn">💡 Hint</button>
+        <button class="tool-btn" id="autoPairBtn">Make pairs</button>
+      </div>
+
+      <div class="play-area" id="playArea" aria-label="Cubes area"></div>
+
+      <div class="pair-shelf" id="pairsGrid"></div>
+      <div class="leftover-note" id="leftoverWrap"></div>
+
+      <div class="question">
+        <span class="question-text" id="questionText">Is 10 an odd or even number?</span>
+        <button class="question-speaker" id="speakBtn" aria-label="Read the question">🔊</button>
+      </div>
+
+      <div class="answers">
+        <button class="answer-btn" data-answer="odd">
+          <span class="answer-label">Odd</span>
+          <span class="radio"></span>
+        </button>
+        <button class="answer-btn" data-answer="even">
+          <span class="answer-label">Even</span>
+          <span class="radio"></span>
+        </button>
+      </div>
+
+      <div class="feedback" id="feedback">Drag the cubes to make pairs of 2 if you need help.</div>
+
+      <button class="next-btn" id="nextBtn">Next</button>
+    </section>
+  </main>
+
+  <div class="summary" id="summary">
+    <div class="summary-card">
+      <div style="font-size:54px;">🌟</div>
+      <h2>Amazing!</h2>
+      <p>You finished the game.</p>
+      <div class="final-score" id="finalScore">0 / 10</div>
+      <div class="summary-actions">
+        <button class="again" id="playAgainBtn">Play again</button>
+        <button class="home" id="homeBtn">Home</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+
+  const $ = id => document.getElementById(id);
+  const playArea = $("playArea");
+  const pairsGrid = $("pairsGrid");
+  const leftoverWrap = $("leftoverWrap");
+  const feedback = $("feedback");
+  const nextBtn = $("nextBtn");
+  const answerButtons = [...document.querySelectorAll(".answer-btn")];
+
+  const palette = [
+    ["var(--pink)","#a2457d"],
+    ["var(--orange)","#aa6114"],
+    ["var(--blue)","#456ba7"],
+    ["var(--cyan)","#4ea19e"],
+    ["var(--green-cube)","#617f16"],
+    ["var(--lavender)","#7f7da8"],
+    ["var(--yellow)","#b49431"],
+    ["var(--teal)","#1d7998"],
+    ["#b05be7","#8845b4"]
+  ];
+
+  let questions = [];
+  let qIndex = 0;
+  let score = 0;
+  let currentNumber = 10;
+  let firstTry = true;
+  let answered = false;
+  let cubeState = [];
+  let drag = null;
+  let audioCtx = null;
+
+  function shuffle(arr){
+    const a = [...arr];
+    for(let i = a.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function buildQuestionSet(){
+    const pool = Array.from({length:20}, (_, i) => i + 1);
+    for(let i = pool.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    return pool.slice(0, 10);
+  }
+
+  function resetGame(){
+    questions = buildQuestionSet();
+    qIndex = 0;
+    score = 0;
+    $("score").textContent = score;
+    $("summary").classList.remove("show");
+    loadQuestion();
+  }
+
+  function cubeSize(){
+    const w = playArea.clientWidth;
+    const h = window.innerHeight;
+    const n = currentNumber;
+
+    // Short landscape screens need slightly smaller cubes so all
+    // rows fit without pushing the Question / Next controls below view.
+    if(h <= 520 && w >= 500){
+      return n >= 16 ? 40 : n >= 12 ? 44 : 48;
+    }
+    if(h <= 720 && w >= 500){
+      return n >= 16 ? 44 : n >= 12 ? 48 : 54;
+    }
+
+    if(w < 460) return n >= 16 ? 42 : n >= 12 ? 47 : 52;
+    return n >= 16 ? 50 : 62;
+  }
+
+  function loadQuestion(){
+    currentNumber = questions[qIndex];
+    firstTry = true;
+    answered = false;
+    cubeState = [];
+    $("bigNumber").textContent = currentNumber;
+    $("questionText").textContent = `Is ${currentNumber} an odd or even number?`;
+    $("qLabel").textContent = `${qIndex + 1}/10`;
+    $("progressFill").style.width = `${((qIndex + 1) / 10) * 100}%`;
+    feedback.textContent = "Drag the cubes to make pairs of 2 if you need help.";
+    nextBtn.classList.remove("show");
+    answerButtons.forEach(btn => {
+      btn.disabled = false;
+      btn.classList.remove("correct", "wrong");
+    });
+    pairsGrid.innerHTML = "";
+    leftoverWrap.innerHTML = "";
+    renderCubes();
+    setTimeout(speakQuestion, 250);
+  }
+
+  function renderCubes(){
+    playArea.innerHTML = "";
+    const size = cubeSize();
+    const usableW = playArea.clientWidth - 28;
+    const topPad = window.innerHeight <= 720 ? 8 : 14;
+    const preferredGap = window.innerHeight <= 720 ? 16 : 22;
+    const cols = Math.max(3, Math.floor(usableW / (size + preferredGap)));
+    const rows = Math.ceil(currentNumber / cols);
+    const gapX = cols > 1
+      ? Math.min(window.innerHeight <= 720 ? 24 : 32,
+                 Math.max(10, (usableW - cols * size) / (cols - 1)))
+      : 0;
+    const totalW = cols * size + (cols - 1) * gapX;
+    const startX = Math.max(14, (playArea.clientWidth - totalW) / 2);
+    const availableH = Math.max(size, playArea.clientHeight - topPad - 6);
+    const gapY = rows > 1
+      ? Math.max(6, Math.min(window.innerHeight <= 720 ? 14 : 20,
+                            (availableH - rows * size) / (rows - 1)))
+      : 0;
+
+    for(let i = 0; i < currentNumber; i++){
+      const row = Math.floor(i / cols);
+      const col = i % cols;
+      const [color, shadow] = palette[i % palette.length];
+      const x = startX + col * (size + gapX);
+      const y = topPad + row * (size + gapY);
+      const el = document.createElement("div");
+      el.className = "cube";
+      el.dataset.id = i;
+      el.style.width = size + "px";
+      el.style.height = size + "px";
+      el.style.left = x + "px";
+      el.style.top = y + "px";
+      el.style.setProperty("--c", color);
+      el.style.setProperty("--c-shadow", shadow);
+      el.addEventListener("pointerdown", startDrag);
+      playArea.appendChild(el);
+      cubeState.push({ id:i, paired:false, color, shadow, el });
+    }
+  }
+
+  function startDrag(e){
+    if(answered) return;
+    const el = e.currentTarget;
+    const id = Number(el.dataset.id);
+    const item = cubeState.find(c => c.id === id);
+    if(!item || item.paired) return;
+
+    const r = el.getBoundingClientRect();
+    const areaRect = playArea.getBoundingClientRect();
+
+    drag = {
+      id,
+      el,
+      areaRect,
+      offsetX: e.clientX - r.left,
+      offsetY: e.clientY - r.top
+    };
+
+    el.setPointerCapture(e.pointerId);
+    el.classList.add("dragging");
+    el.addEventListener("pointermove", moveDrag);
+    el.addEventListener("pointerup", endDrag, { once:true });
+    el.addEventListener("pointercancel", endDrag, { once:true });
+    Sound.tap();
+  }
+
+  function moveDrag(e){
+    if(!drag) return;
+    const maxX = playArea.clientWidth - drag.el.offsetWidth;
+    const maxY = playArea.clientHeight - drag.el.offsetHeight;
+    let x = e.clientX - drag.areaRect.left - drag.offsetX;
+    let y = e.clientY - drag.areaRect.top - drag.offsetY;
+    x = Math.max(0, Math.min(maxX, x));
+    y = Math.max(0, Math.min(maxY, y));
+    drag.el.style.left = x + "px";
+    drag.el.style.top = y + "px";
+    markCandidate();
+  }
+
+  function getClosestTarget(){
+    if(!drag) return null;
+    const r1 = drag.el.getBoundingClientRect();
+    const c1 = { x:r1.left + r1.width/2, y:r1.top + r1.height/2 };
+    let best = null;
+    let bestD = Infinity;
+    for(const item of cubeState){
+      if(item.id === drag.id || item.paired) continue;
+      const r = item.el.getBoundingClientRect();
+      const c = { x:r.left + r.width/2, y:r.top + r.height/2 };
+      const d = Math.hypot(c.x - c1.x, c.y - c1.y);
+      if(d < bestD){
+        bestD = d;
+        best = item;
+      }
+    }
+    const threshold = Math.max(70, drag.el.offsetWidth * 1.2);
+    return bestD <= threshold ? best : null;
+  }
+
+  function markCandidate(){
+    cubeState.forEach(c => c.el.classList.remove("candidate"));
+    const target = getClosestTarget();
+    if(target) target.el.classList.add("candidate");
+  }
+
+  function endDrag(){
+    if(!drag) return;
+    const el = drag.el;
+    const sourceId = drag.id;
+    const target = getClosestTarget();
+    el.classList.remove("dragging");
+    el.removeEventListener("pointermove", moveDrag);
+    cubeState.forEach(c => c.el.classList.remove("candidate"));
+    drag = null;
+    if(target) createPair(sourceId, target.id);
+  }
+
+  function layoutPairedAndSingleCubes(){
+    const size = cubeSize();
+    const innerGap = 4;
+    const compact = window.innerHeight <= 720;
+    const groupGap = compact ? 14 : 20;
+    const rowGap = compact ? 10 : 18;
+    const topPad = compact ? 8 : 18;
+    const sidePad = compact ? 12 : 20;
+    const maxW = playArea.clientWidth - sidePad * 2;
+
+    const pairedItems = [];
+    const visited = new Set();
+    for(const item of cubeState){
+      if(item.paired && item.partnerId != null && !visited.has(item.id)){
+        const partner = cubeState.find(c => c.id === item.partnerId);
+        if(partner){
+          const leftCube = item.id < partner.id ? item : partner;
+          const rightCube = item.id < partner.id ? partner : item;
+          pairedItems.push({type:"pair", cubes:[leftCube, rightCube], width:size*2 + innerGap});
+          visited.add(item.id);
+          visited.add(partner.id);
+        }
+      }
+    }
+    const singles = cubeState.filter(c => !c.paired).map(c => ({type:"single", cubes:[c], width:size}));
+
+    const items = [...pairedItems, ...singles];
+    const rows = [];
+    let currentRow = [];
+    let currentWidth = 0;
+
+    for(const item of items){
+      const addWidth = currentRow.length ? groupGap + item.width : item.width;
+      if(currentRow.length && currentWidth + addWidth > maxW){
+        rows.push({items: currentRow, width: currentWidth});
+        currentRow = [item];
+        currentWidth = item.width;
+      } else {
+        currentRow.push(item);
+        currentWidth += addWidth;
+      }
+    }
+    if(currentRow.length) rows.push({items: currentRow, width: currentWidth});
+
+    rows.forEach((row, rowIndex) => {
+      let x = Math.max(sidePad, (playArea.clientWidth - row.width) / 2);
+      const y = topPad + rowIndex * (size + rowGap);
+
+      row.items.forEach(item => {
+        if(item.type === "pair"){
+          const [a, b] = item.cubes;
+          a.el.style.left = x + "px";
+          a.el.style.top = y + "px";
+          b.el.style.left = (x + size + innerGap) + "px";
+          b.el.style.top = y + "px";
+        } else {
+          const [a] = item.cubes;
+          a.el.style.left = x + "px";
+          a.el.style.top = y + "px";
+        }
+        x += item.width + groupGap;
+      });
+    });
+  }
+
+  function createPair(id1, id2){
+    const a = cubeState.find(c => c.id === id1);
+    const b = cubeState.find(c => c.id === id2);
+    if(!a || !b || a.paired || b.paired) return;
+
+    a.paired = true;
+    b.paired = true;
+    a.partnerId = b.id;
+    b.partnerId = a.id;
+
+    a.el.classList.add("pairing", "paired");
+    b.el.classList.add("pairing", "paired");
+
+    layoutPairedAndSingleCubes();
+
+    setTimeout(() => {
+      a.el.classList.remove("pairing");
+      b.el.classList.remove("pairing");
+      updateLeftoverVisual();
+    }, 280);
+
+    Sound.pair();
+  }
+
+  function unpairedItems(){
+    return cubeState.filter(c => !c.paired);
+  }
+
+  function updateLeftoverVisual(){
+    cubeState.forEach(c => c.el.classList.remove("leftover"));
+    layoutPairedAndSingleCubes();
+    const rem = unpairedItems();
+    leftoverWrap.innerHTML = "";
+    if(rem.length === 1){
+      rem[0].el.classList.add("leftover");
+    }
+  }
+
+  function pairOne(){
+    const rem = unpairedItems();
+    if(rem.length >= 2){
+      createPair(rem[0].id, rem[1].id);
+    }else if(rem.length === 1){
+      updateLeftoverVisual();
+      rem[0].el.classList.add("leftover");
+    }
+  }
+
+  async function autoPair(force = false){
+    $("autoPairBtn").disabled = true;
+    while(unpairedItems().length >= 2 && (!answered || force)){
+      pairOne();
+      await wait(220);
+    }
+    updateLeftoverVisual();
+    $("autoPairBtn").disabled = false;
+  }
+
+  function useHint(){
+    if(answered) return;
+    pairOne();
+    feedback.textContent = "Make pairs of 2. Look for a cube without a partner.";
+    speak("Put the cubes into pairs of two.");
+  }
+
+  function submitAnswer(answer, btn){
+    if(answered) return;
+    answerButtons.forEach(b => {
+      if(b !== btn) b.classList.remove("wrong");
+    });
+    const correct = currentNumber % 2 === 0 ? "even" : "odd";
+
+    if(answer === correct){
+      answered = true;
+      if(firstTry){
+        score++;
+        $("score").textContent = score;
+      }
+      answerButtons.forEach(b => {
+        b.disabled = true;
+        b.classList.remove("wrong");
+      });
+      btn.classList.add("correct");
+
+      if(unpairedItems().length > 1) autoPair(true);
+      else updateLeftoverVisual();
+
+      if(correct === "even"){
+        feedback.textContent = `Great job! ${currentNumber} is even. Every cube has a partner.`;
+      }else{
+        feedback.textContent = `Great job! ${currentNumber} is odd. One cube is left over.`;
+      }
+
+      nextBtn.classList.add("show");
+      Sound.correct();
+    } else {
+      firstTry = false;
+      btn.classList.remove("correct");
+      btn.classList.add("wrong");
+      feedback.textContent = "Try again! Make pairs of 2 if you need help.";
+      Sound.wrong();
+      [...playArea.querySelectorAll(".cube")].forEach((el, i) => {
+        setTimeout(() => {
+          el.animate(
+            [{transform:"translateX(0)"},{transform:"translateX(-3px)"},{transform:"translateX(3px)"},{transform:"translateX(0)"}],
+            {duration:240}
+          );
+        }, i * 10);
+      });
+    }
+  }
+
+  function nextQuestion(){
+    if(!answered) return;
+    qIndex++;
+    if(qIndex >= questions.length){
+      showSummary();
+    } else {
+      loadQuestion();
+    }
+  }
+
+  function showSummary(){
+    $("finalScore").textContent = `${score} / 10`;
+    $("summary").classList.add("show");
+    if(score >= 8) confettiBurst();
+    Sound.finish();
+  }
+
+  function wait(ms){
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function speak(text){
+    if(!("speechSynthesis" in window)) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "en-US";
+    u.rate = 0.88;
+    u.pitch = 1.05;
+    speechSynthesis.speak(u);
+  }
+
+  function speakQuestion(){
+    speak(`Is ${currentNumber} an odd or even number?`);
+  }
+
+  const Sound = {
+    ensure(){
+      if(!audioCtx){
+        const A = window.AudioContext || window.webkitAudioContext;
+        if(A) audioCtx = new A();
+      }
+      if(audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    },
+    beep(freq, dur=.08, type="sine", gain=.035, delay=0){
+      this.ensure();
+      if(!audioCtx) return;
+      const t = audioCtx.currentTime + delay;
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = type;
+      o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(gain, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g);
+      g.connect(audioCtx.destination);
+      o.start(t);
+      o.stop(t + dur + 0.03);
+    },
+    tap(){ this.beep(300,.04,"triangle",.02); },
+    pair(){ this.beep(520,.06,"triangle",.03); this.beep(700,.07,"triangle",.028,.06); },
+    correct(){ this.beep(523,.08,"sine",.05); this.beep(659,.08,"sine",.05,.10); this.beep(784,.12,"sine",.05,.20); },
+    wrong(){ this.beep(170,.12,"sawtooth",.025); this.beep(125,.11,"sawtooth",.02,.08); },
+    finish(){ this.beep(523,.08,"triangle",.045); this.beep(659,.08,"triangle",.045,.12); this.beep(784,.1,"triangle",.045,.24); this.beep(1046,.16,"triangle",.05,.36); }
+  };
+
+  function confettiBurst(){
+    const canvas = $("confetti");
+    const ctx = canvas.getContext("2d");
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = innerWidth, h = innerHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + "px";
+    canvas.style.height = h + "px";
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    const colors = ["#7c2ae8","#ec4899","#5a86c9","#73cdc9","#e6c65e","#dc8d23"];
+    const pieces = Array.from({length:120}, () => ({
+      x:w/2 + (Math.random() - .5) * 120,
+      y:h * .34,
+      vx:(Math.random() - .5) * 9,
+      vy:-4 - Math.random() * 7,
+      g:.15 + Math.random() * .07,
+      rot:Math.random() * Math.PI,
+      vr:(Math.random() - .5) * .22,
+      s:5 + Math.random() * 4,
+      c:colors[Math.floor(Math.random() * colors.length)]
+    }));
+    const start = performance.now();
+
+    function frame(t){
+      ctx.clearRect(0,0,w,h);
+      pieces.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += p.g;
+        p.rot += p.vr;
+        ctx.save();
+        ctx.translate(p.x,p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.c;
+        ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.55);
+        ctx.restore();
+      });
+      if(t - start < 2400) requestAnimationFrame(frame);
+      else ctx.clearRect(0,0,w,h);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  answerButtons.forEach(btn => btn.addEventListener("click", () => submitAnswer(btn.dataset.answer, btn)));
+  $("hintBtn").addEventListener("click", useHint);
+  $("autoPairBtn").addEventListener("click", () => autoPair(false));
+  $("speakBtn").addEventListener("click", () => { Sound.ensure(); speakQuestion(); });
+  nextBtn.addEventListener("click", nextQuestion);
+  $("playAgainBtn").addEventListener("click", resetGame);
+  $("homeBtn").addEventListener("click", resetGame);
+
+  let resizeTimer = null;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if(!drag && !answered){
+        // Reflow the current question after rotation / resizing.
+        loadQuestion();
+      } else if(!drag && answered){
+        layoutPairedAndSingleCubes();
+      }
+    }, 120);
+  });
+
+  resetGame();
+})();
+</script>
+</body>
+</html>
