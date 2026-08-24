@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Animated Nature Background - Ver 3</title>
+    
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #7dd3fc;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
+
+        let canvasWidth, canvasHeight;
+        let WATER_LEVEL;
+        
+        // Background entities arrays
+        let clouds = [];
+        let bgTrees = [];
+        let mountains = [];
+        let shoreMounds = []; // Array for the dark green shoreline mounds
+        let decorFishes = [];
+        let standingLotuses = [];
+        let floatingLeaves = [];
+        
+        let backgroundTime = 0;
+
+        function resize() {
+            canvasWidth = window.innerWidth;
+            canvasHeight = window.innerHeight;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            
+            WATER_LEVEL = canvasHeight * 0.7;
+
+            generateEnvironment();
+        }
+        window.addEventListener('resize', resize);
+
+        function generateEnvironment() {
+            clouds = []; 
+            bgTrees = []; 
+            decorFishes = []; 
+            standingLotuses = []; 
+            floatingLeaves = []; 
+            mountains = [];
+            shoreMounds = [];
+            
+            // Reduced clouds by 50% (from 8 to 4) and made them smaller
+            for(let i=0; i<4; i++) { 
+                clouds.push({ 
+                    x: Math.random() * canvasWidth, 
+                    y: Math.random() * (WATER_LEVEL * 0.5), 
+                    size: 15 + Math.random() * 25, // Smaller size (half of original)
+                    speed: Math.random() * 0.2 + 0.1 
+                }); 
+            }
+            
+            for(let i=0; i<8; i++) { 
+                bgTrees.push({ 
+                    x: Math.random() * canvasWidth, 
+                    y: WATER_LEVEL - (10 + Math.random() * 20), 
+                    scale: 0.4 + Math.random() * 0.5 
+                }); 
+            }
+            
+            mountains.push({ x: canvasWidth * 0.2, h: 250, w: 500, c1: "#8cd136", c2: "#5cb823" });
+            mountains.push({ x: canvasWidth * 0.8, h: 220, w: 450, c1: "#a1e535", c2: "#7ab823" });
+            mountains.push({ x: canvasWidth * 0.5, h: 300, w: 600, c1: "#b5ea54", c2: "#499b2e" });
+
+            // Generate dark green shoreline mounds behind the trees but front of mountains
+            let numMounds = Math.ceil(canvasWidth / 60) + 2;
+            for(let i = -1; i < numMounds; i++) {
+                shoreMounds.push({
+                    x: i * 60 + (Math.random() * 30),
+                    y: WATER_LEVEL,
+                    w: 100 + Math.random() * 60,
+                    h: 15 + Math.random() * 25,
+                    color: Math.random() > 0.5 ? "#1a4d0f" : "#236316" // Dark green alternates
+                });
+            }
+
+            let fishColors = [ 
+                {body: '#ff9900', stripe: '#ffd633'}, 
+                {body: '#00b4d8', stripe: '#74c69d'}, 
+                {body: '#ce82ff', stripe: '#ffb2d1'}, 
+                {body: '#ff4b4b', stripe: '#ffc800'} 
+            ];
+            
+            for(let i=0; i<15; i++) {
+                decorFishes.push({ 
+                    x: Math.random() * canvasWidth, 
+                    y: WATER_LEVEL + 40 + Math.random() * (canvasHeight - WATER_LEVEL - 60), 
+                    speed: 0.5 + Math.random(), 
+                    dir: Math.random() > 0.5 ? 1 : -1, 
+                    scale: 0.4 + Math.random() * 0.3, 
+                    bobOffset: Math.random() * Math.PI * 2, 
+                    colorObj: fishColors[Math.floor(Math.random() * fishColors.length)] 
+                });
+            }
+            
+            for(let i=0; i<10; i++) {
+                standingLotuses.push({ 
+                    x: Math.random()*canvasWidth, 
+                    y: WATER_LEVEL - 10 + Math.random() * 10, 
+                    height: 40 + Math.random() * 30, 
+                    scale: 0.5 + Math.random() * 0.3, 
+                    swayOffset: Math.random() * Math.PI * 2 
+                });
+                floatingLeaves.push({ 
+                    x: Math.random()*canvasWidth, 
+                    y: WATER_LEVEL + Math.random() * 20, 
+                    scale: 0.3 + Math.random() * 0.4, 
+                    rotation: Math.random() * Math.PI * 2 
+                });
+            }
+        }
+
+        function update(timeScale = 1) {
+            backgroundTime += 0.03 * timeScale;
+
+            clouds.forEach(el => { 
+                el.x -= el.speed * timeScale; 
+                if (el.x + el.size * 2 < 0) { 
+                    el.x = canvasWidth + el.size * 2; 
+                    el.y = Math.random() * (WATER_LEVEL * 0.4); 
+                } 
+            });
+            
+            decorFishes.forEach(f => {
+                f.x += f.speed * f.dir * timeScale;
+                if(f.dir === 1 && f.x > canvasWidth + 100) { 
+                    f.x = -100; 
+                    f.y = WATER_LEVEL + 40 + Math.random()*(canvasHeight - WATER_LEVEL - 60); 
+                } else if(f.dir === -1 && f.x < -100) { 
+                    f.x = canvasWidth + 100; 
+                    f.y = WATER_LEVEL + 40 + Math.random()*(canvasHeight - WATER_LEVEL - 60); 
+                }
+            });
+        }
+
+        function drawMountain(ctx, mx, my, mw, mh, colorLight, colorDark) {
+            let peakX = mx; 
+            let peakY = my - mh;
+            
+            ctx.fillStyle = colorLight; 
+            ctx.beginPath(); 
+            ctx.moveTo(mx - mw/2, my); 
+            ctx.lineTo(peakX, peakY); 
+            ctx.lineTo(peakX, my); 
+            ctx.fill();
+            
+            ctx.fillStyle = colorDark; 
+            ctx.beginPath(); 
+            ctx.moveTo(peakX, peakY); 
+            ctx.lineTo(mx + mw/2, my); 
+            ctx.lineTo(peakX, my); 
+            ctx.fill();
+            
+            ctx.fillStyle = "#ffffff"; 
+            ctx.beginPath();
+            let sH = mh * 0.2; 
+            ctx.moveTo(peakX, peakY); 
+            ctx.lineTo(peakX - (mw/2)*(sH/mh), peakY + sH);
+            let wStep = (mw/2)*(sH/mh) / 3;
+            ctx.lineTo(peakX - wStep*2, peakY + sH + 15); 
+            ctx.lineTo(peakX - wStep, peakY + sH - 5); 
+            ctx.lineTo(peakX, peakY + sH + 20); 
+            ctx.lineTo(peakX + wStep, peakY + sH - 5); 
+            ctx.lineTo(peakX + wStep*2, peakY + sH + 15); 
+            ctx.lineTo(peakX + (mw/2)*(sH/mh), peakY + sH);
+            ctx.closePath(); 
+            ctx.fill();
+        }
+
+        function drawStandingLotus(ctx, px, py, h, scale, sway) {
+            ctx.save(); 
+            ctx.translate(px, py); 
+            ctx.rotate(sway); 
+            ctx.scale(scale, scale);
+            
+            ctx.strokeStyle = "#276b1f"; 
+            ctx.lineWidth = 6; 
+            ctx.beginPath(); 
+            ctx.moveTo(0, 0); 
+            ctx.quadraticCurveTo(-10, -h/2, 0, -h); 
+            ctx.stroke();
+            
+            ctx.translate(0, -h);
+            ctx.fillStyle = "#ff63a5"; 
+            ctx.beginPath(); ctx.ellipse(-18, -10, 16, 28, -Math.PI/4, 0, Math.PI*2); ctx.fill(); 
+            ctx.beginPath(); ctx.ellipse(18, -10, 16, 28, Math.PI/4, 0, Math.PI*2); ctx.fill();
+            
+            ctx.fillStyle = "#ff9ec4"; 
+            ctx.beginPath(); ctx.ellipse(-10, -15, 14, 32, -Math.PI/8, 0, Math.PI*2); ctx.fill(); 
+            ctx.beginPath(); ctx.ellipse(10, -15, 14, 32, Math.PI/8, 0, Math.PI*2); ctx.fill();
+            
+            ctx.fillStyle = "#ffe0ec"; 
+            ctx.beginPath(); ctx.ellipse(0, -20, 14, 34, 0, 0, Math.PI*2); ctx.fill();
+            
+            ctx.fillStyle = "#ffc800"; 
+            ctx.beginPath(); ctx.ellipse(0, 0, 14, 6, 0, 0, Math.PI*2); ctx.fill();
+            
+            ctx.restore();
+        }
+
+        function drawFloatingLeaf(ctx, px, py, scale, rot) {
+            ctx.save(); 
+            ctx.translate(px, py); 
+            ctx.scale(scale, scale * 0.5); 
+            ctx.rotate(rot);
+            let w = 120;
+            
+            ctx.fillStyle = "#1e7a1e"; 
+            ctx.beginPath(); 
+            ctx.arc(0, 10, w/2, Math.PI * 0.1, Math.PI * 1.9); 
+            ctx.lineTo(0, 10); 
+            ctx.fill();
+            
+            let leafGrad = ctx.createLinearGradient(-w/2, -w/2, w/2, w/2); 
+            leafGrad.addColorStop(0, "#58cc02"); 
+            leafGrad.addColorStop(1, "#3ba302"); 
+            
+            ctx.fillStyle = leafGrad; 
+            ctx.beginPath(); 
+            ctx.arc(0, 0, w/2, Math.PI * 0.1, Math.PI * 1.9); 
+            ctx.lineTo(0, 0); 
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        function drawBackground(ctx) {
+            let skyGrad = ctx.createLinearGradient(0, 0, 0, WATER_LEVEL);
+            skyGrad.addColorStop(0, "#7dd3fc"); 
+            skyGrad.addColorStop(1, "#bae6fd");
+            ctx.fillStyle = skyGrad; 
+            ctx.fillRect(0, 0, canvasWidth, WATER_LEVEL);
+
+            // Rainbow 
+            ctx.save(); 
+            ctx.translate(canvasWidth / 2, WATER_LEVEL);
+            ctx.lineWidth = Math.min(25, canvasWidth * 0.02);
+            let rbColors = ['#ff4b4b', '#ff9900', '#ffc800', '#58cc02', '#1cb0f6', '#ce82ff'];
+            let baseRad = Math.min(canvasWidth * 0.45, 600);
+            for(let i=0; i<rbColors.length; i++) { 
+                ctx.strokeStyle = rbColors[i]; 
+                ctx.beginPath(); 
+                ctx.arc(0, 0, baseRad - i*(ctx.lineWidth), Math.PI, 0); 
+                ctx.stroke(); 
+            }
+            ctx.restore();
+
+            // Mountains
+            mountains.forEach(m => { 
+                drawMountain(ctx, m.x, WATER_LEVEL, m.w, m.h, m.c1, m.c2); 
+            });
+
+            // Shore Mounds (Dark green hills/land at the water boundary)
+            shoreMounds.forEach(m => {
+                ctx.fillStyle = m.color;
+                ctx.beginPath();
+                ctx.ellipse(m.x, m.y, m.w / 2, m.h, 0, Math.PI, Math.PI * 2); // Draw upper half of ellipse
+                ctx.fill();
+            });
+
+            // Clouds
+            ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+            clouds.forEach(el => { 
+                ctx.beginPath(); 
+                ctx.arc(el.x, el.y, el.size, 0, Math.PI*2); 
+                ctx.arc(el.x + el.size*0.8, el.y + el.size*0.2, el.size*0.7, 0, Math.PI*2); 
+                ctx.arc(el.x - el.size*0.8, el.y + el.size*0.2, el.size*0.7, 0, Math.PI*2); 
+                ctx.fill(); 
+            });
+            
+            // Trees
+            bgTrees.forEach(t => {
+                ctx.save(); 
+                ctx.translate(t.x, t.y); 
+                ctx.scale(t.scale, t.scale);
+                ctx.fillStyle = "#78350f"; 
+                ctx.fillRect(-10, 0, 20, 60);
+                
+                ctx.fillStyle = "#4ade80"; 
+                ctx.beginPath(); ctx.arc(0, -20, 40, 0, Math.PI*2); ctx.fill(); 
+                ctx.beginPath(); ctx.arc(-25, -10, 30, 0, Math.PI*2); ctx.fill(); 
+                ctx.beginPath(); ctx.arc(25, -10, 30, 0, Math.PI*2); ctx.fill();
+                ctx.restore();
+            });
+
+            // Water base
+            let waterGrad = ctx.createLinearGradient(0, WATER_LEVEL, 0, canvasHeight);
+            waterGrad.addColorStop(0, "#1ca3ec"); 
+            waterGrad.addColorStop(1, "#0f5e9c");
+            ctx.fillStyle = waterGrad; 
+            ctx.fillRect(0, WATER_LEVEL, canvasWidth, canvasHeight - WATER_LEVEL);
+
+            // Background water details
+            ctx.fillStyle = "rgba(0, 40, 80, 0.4)";
+            for(let x = 0; x < canvasWidth; x+= 120) { 
+                ctx.beginPath(); 
+                ctx.ellipse(x + Math.sin(x)*40, canvasHeight - 30, 30 + Math.sin(x)*10, 15, 0, 0, Math.PI*2); 
+                ctx.fill(); 
+            }
+
+            // Back wave
+            ctx.fillStyle = "rgba(100, 200, 255, 0.4)"; 
+            ctx.beginPath(); 
+            ctx.moveTo(0, canvasHeight);
+            let speed1 = backgroundTime * 0.8;
+            for(let x = 0; x <= canvasWidth + 50; x += 50) { 
+                let wave = Math.sin(x/120 + speed1) * 6; 
+                ctx.lineTo(x, WATER_LEVEL + 10 + wave); 
+            }
+            ctx.lineTo(canvasWidth, canvasHeight); 
+            ctx.fill();
+
+            // Florals
+            standingLotuses.forEach(lotus => { 
+                drawStandingLotus(ctx, lotus.x, lotus.y, lotus.height, lotus.scale, Math.sin(backgroundTime * 1.5 + lotus.swayOffset) * 0.15); 
+            });
+            
+            floatingLeaves.forEach(leaf => { 
+                drawFloatingLeaf(ctx, leaf.x, leaf.y + Math.sin(leaf.x/120 + speed1)*6, leaf.scale, leaf.rotation + Math.sin(backgroundTime)*0.05); 
+            });
+
+            // Front wave
+            ctx.fillStyle = "rgba(40, 180, 240, 0.8)"; 
+            ctx.beginPath(); 
+            ctx.moveTo(0, canvasHeight);
+            let speed2 = backgroundTime * 1.0;
+            for(let x = 0; x <= canvasWidth + 50; x += 50) { 
+                let wave = Math.sin(x/150 + speed2) * 10; 
+                ctx.lineTo(x, WATER_LEVEL + 30 + wave); 
+            }
+            ctx.lineTo(canvasWidth, canvasHeight); 
+            ctx.fill();
+            
+            // Front wave stroke
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.5)"; 
+            ctx.lineWidth = 4; 
+            ctx.beginPath();
+            for(let x = 0; x <= canvasWidth + 50; x += 50) { 
+                let wave = Math.sin(x/150 + speed2) * 10; 
+                if(x===0) ctx.moveTo(x, WATER_LEVEL + 30 + wave); 
+                else ctx.lineTo(x, WATER_LEVEL + 30 + wave); 
+            }
+            ctx.stroke();
+
+            // Decor Fishes
+            decorFishes.forEach(f => {
+                ctx.save(); 
+                ctx.translate(f.x, f.y + Math.sin(backgroundTime * 5 + f.bobOffset) * 15); 
+                ctx.scale(f.scale * f.dir, f.scale);
+                
+                ctx.fillStyle = f.colorObj.body; 
+                ctx.beginPath(); ctx.ellipse(0, 0, 25, 15, 0, 0, Math.PI*2); ctx.fill();
+                
+                ctx.fillStyle = f.colorObj.stripe; 
+                ctx.beginPath(); ctx.moveTo(-20, 0); ctx.lineTo(-40, -15); ctx.lineTo(-35, 0); ctx.lineTo(-40, 15); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(0, -15); ctx.lineTo(-10, -25); ctx.lineTo(-15, -10); ctx.fill(); 
+                ctx.beginPath(); ctx.moveTo(0, 15); ctx.lineTo(-10, 25); ctx.lineTo(-15, 10); ctx.fill();
+                
+                ctx.fillStyle = f.colorObj.stripe; 
+                ctx.beginPath(); ctx.ellipse(-5, 0, 4, 18, 0, 0, Math.PI*2); ctx.fill(); 
+                ctx.beginPath(); ctx.ellipse(-15, 0, 3, 14, 0, 0, Math.PI*2); ctx.fill();
+                
+                ctx.fillStyle = "#ffffff"; 
+                ctx.beginPath(); ctx.arc(15, -5, 8, 0, Math.PI*2); ctx.fill();
+                
+                ctx.fillStyle = "#000000"; 
+                ctx.beginPath(); ctx.arc(18, -5, 4, 0, Math.PI*2); ctx.fill(); 
+                
+                ctx.fillStyle = "#ffffff"; 
+                ctx.beginPath(); ctx.arc(19, -6, 1.5, 0, Math.PI*2); ctx.fill();
+                ctx.restore();
+            });
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackground(ctx);
+        }
+
+        let lastTime = 0;
+        function loop(timestamp) { 
+            if (!lastTime) lastTime = timestamp;
+            let dt = timestamp - lastTime;
+            lastTime = timestamp;
+            
+            if (dt > 100) dt = 16.66; // Prevent large delta-time skips
+            let timeScale = dt / 16.666;
+            
+            update(timeScale); 
+            render(); 
+            requestAnimationFrame(loop); 
+        }
+
+        // Start everything
+        resize(); 
+        requestAnimationFrame(loop);
+    </script>
+</body>
+</html>
