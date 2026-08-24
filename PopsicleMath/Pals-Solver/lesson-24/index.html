@@ -4,7 +4,7 @@
     <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Odd or Even - Ver 2</title>
+    <title>Odd or Even - Ver 3</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -218,7 +218,7 @@
         <div id="screen-welcome" class="flex-1 flex flex-col items-center justify-center text-center">
             <div class="text-7xl mb-6 pop-animation">🎭</div>
             <h1 class="text-5xl md:text-6xl font-black text-duoText mb-6 tracking-tight">Odd or Even?</h1>
-            <p class="text-xl text-gray-500 mb-10 max-w-lg font-semibold">Let's learn odd and even numbers! Make pairs to find out.</p>
+            <p class="text-xl text-gray-500 mb-10 max-w-lg font-semibold">Let's learn odd and even numbers! Make pairs or choose the answer.</p>
             <button onclick="startGame()" class="duo-btn duo-btn-green text-3xl py-4 px-16 rounded-2xl">Play Now</button>
         </div>
 
@@ -434,7 +434,6 @@
             setTimeout(() => { toast.style.transition = ''; }, 50);
 
             document.getElementById('instruction-container').classList.remove('hidden');
-            setBottomPanelState('none'); 
             
             canvas.style.pointerEvents = 'auto'; 
             
@@ -452,12 +451,10 @@
             }
 
             setTimeout(playInstruction, 600);
+            
+            // Setup Multiple Choice immediately so user can choose to bypass drawing
+            setupMultipleChoice();
             setTimeout(resizeCanvas, 50); 
-
-            // Edge case: if total is 1, maxGroups is 0, proceed immediately.
-            if (currentFact.maxGroups === 0) {
-                setTimeout(showMultipleChoice, 1500);
-            }
         }
 
         function setupGrid() {
@@ -615,14 +612,12 @@
             
             groupsFound++;
             if (groupsFound === currentFact.maxGroups) {
-                setTimeout(showMultipleChoice, 600);
+                Sounds.complete();
             }
         }
 
-        function showMultipleChoice() {
-            canvas.style.pointerEvents = 'none'; Sounds.complete();
+        function setupMultipleChoice() {
             setBottomPanelState('mc');
-            setTimeout(resizeCanvas, 50); 
             
             questionText.innerText = `Is ${currentFact.total} even or odd?`;
             const mcButtons = document.getElementById('mc-buttons');
@@ -636,13 +631,13 @@
                 btn.onclick = () => checkAnswer(opt, btn);
                 mcButtons.appendChild(btn);
             });
-            speak(`Is ${currentFact.total} even or odd?`);
         }
 
         function checkAnswer(selected, btnEl) {
             const correctAnswer = currentFact.isEven ? 'Even' : 'Odd';
             
             if (selected === correctAnswer) {
+                canvas.style.pointerEvents = 'none'; // Lock canvas on correct answer
                 Sounds.correct();
                 btnEl.classList.remove('duo-btn-purple');
                 btnEl.classList.add('duo-btn-blue', 'scale-105');
