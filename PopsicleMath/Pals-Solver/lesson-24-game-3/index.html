@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="stylesheet" href="../assets/brand.css">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Odd and Even Game - Ver 7</title>
+  <title>Odd and Even Game - Ver 9</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -234,11 +233,11 @@
       height:62px;
       border-radius:6px;
       background:
-        linear-gradient(180deg, color-mix(in srgb, white 14%, var(--c)) 0%, var(--c) 78%);
+        linear-gradient(180deg, color-mix(in srgb, white 20%, var(--c)) 0%, var(--c) 76%);
       box-shadow:
         inset 0 -5px 0 rgba(0,0,0,.08),
         0 2px 0 var(--c-shadow);
-      border:1px solid rgba(0,0,0,.05);
+      border:1px solid rgba(255,255,255,.16);
       cursor:grab;
       touch-action:none;
       transition:transform .1s ease, box-shadow .1s ease, opacity .2s ease;
@@ -253,8 +252,8 @@
       transform:translateX(-50%);
       top:-4px;
       border-radius:4px 4px 2px 2px;
-      background:color-mix(in srgb, black 15%, var(--c));
-      opacity:.85;
+      background:color-mix(in srgb, black 12%, var(--c));
+      opacity:.92;
     }
     .cube::after{
       content:"";
@@ -762,7 +761,6 @@
   </style>
 </head>
 <body>
-  <img src="../assets/logo-oodles-math.png" class="oodles-logo">
   <div class="scene-bg" aria-hidden="true">
     <div class="sun"></div>
     <div class="cloud c1"></div>
@@ -850,15 +848,13 @@
   const answerButtons = [...document.querySelectorAll(".answer-btn")];
 
   const palette = [
-    ["var(--pink)","#a2457d"],
-    ["var(--orange)","#aa6114"],
-    ["var(--blue)","#456ba7"],
-    ["var(--cyan)","#4ea19e"],
-    ["var(--green-cube)","#617f16"],
-    ["var(--lavender)","#7f7da8"],
-    ["var(--yellow)","#b49431"],
-    ["var(--teal)","#1d7998"],
-    ["#b05be7","#8845b4"]
+    ["#ff4fa3","#c83478"],
+    ["#ff8a1f","#c86410"],
+    ["#ffd84a","#c8a52d"],
+    ["#7ed63f","#5a9e24"],
+    ["#4fd3da","#2f9ba0"],
+    ["#4f89e8","#335fb3"],
+    ["#ae5cff","#8040bf"]
   ];
 
   let questions = [];
@@ -878,6 +874,13 @@
       [a[i], a[j]] = [a[j], a[i]];
     }
     return a;
+  }
+
+  function paintCube(item, color, shadow){
+    item.color = color;
+    item.shadow = shadow;
+    item.el.style.setProperty("--c", color);
+    item.el.style.setProperty("--c-shadow", shadow);
   }
 
   function buildQuestionSet(){
@@ -960,7 +963,10 @@
     for(let i = 0; i < currentNumber; i++){
       const row = Math.floor(i / cols);
       const col = i % cols;
-      const [color, shadow] = palette[i % palette.length];
+      // Cubes are already colored in matching pairs from the start:
+      // 0-1 same color, 2-3 same color, 4-5 same color, etc.
+      const pairColorIndex = Math.floor(i / 2) % palette.length;
+      const [color, shadow] = palette[pairColorIndex];
       const x = startX + col * (size + gapX);
       const y = topPad + row * (size + gapY);
       const el = document.createElement("div");
@@ -1025,6 +1031,8 @@
     let bestD = Infinity;
     for(const item of cubeState){
       if(item.id === drag.id || item.paired) continue;
+      const source = cubeState.find(c => c.id === drag.id);
+      if(!source || item.color !== source.color) continue;
       const r = item.el.getBoundingClientRect();
       const c = { x:r.left + r.width/2, y:r.top + r.height/2 };
       const d = Math.hypot(c.x - c1.x, c.y - c1.y);
@@ -1057,7 +1065,7 @@
 
   function layoutPairedAndSingleCubes(){
     const size = cubeSize();
-    const innerGap = 4;
+    const innerGap = 0;
     const compact = window.innerHeight <= 720;
     const groupGap = compact ? 14 : 20;
     const rowGap = compact ? 10 : 18;
@@ -1125,6 +1133,10 @@
     const b = cubeState.find(c => c.id === id2);
     if(!a || !b || a.paired || b.paired) return;
 
+    // A valid pair must already have the same color.
+    // Colors never change before or after pairing.
+    if(a.color !== b.color) return;
+
     a.paired = true;
     b.paired = true;
     a.partnerId = b.id;
@@ -1160,9 +1172,16 @@
 
   function pairOne(){
     const rem = unpairedItems();
-    if(rem.length >= 2){
-      createPair(rem[0].id, rem[1].id);
-    }else if(rem.length === 1){
+
+    for(let i = 0; i < rem.length; i++){
+      const mate = rem.find((item, j) => j > i && item.color === rem[i].color);
+      if(mate){
+        createPair(rem[i].id, mate.id);
+        return;
+      }
+    }
+
+    if(rem.length === 1){
       updateLeftoverVisual();
       rem[0].el.classList.add("leftover");
     }
