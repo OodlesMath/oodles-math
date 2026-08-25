@@ -112,7 +112,6 @@
 </head>
 <body class="text-gray-800 antialiased selection:bg-blue-200">
     <img src="../assets/logo-oodles-math.png" class="oodles-logo">
-    <!-- Scenery Background -->
     <div class="fixed inset-0 z-[-1] bg-gradient-to-b from-[#60C9FE] to-[#D5F0FF] overflow-hidden w-full h-full">
         <!-- Sun -->
         <div class="absolute top-4 left-4 md:top-8 md:left-8 w-20 h-20 md:w-24 md:h-24 bg-[#FFD700] rounded-full shadow-[0_0_60px_rgba(255,215,0,0.8)] animate-float"></div>
@@ -202,11 +201,6 @@
                         <!-- Box 1 -->
                         <div class="flex flex-col items-center gap-1 md:gap-2">
                             <div id="box1-val" class="box-size rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center font-black shadow-inner transition-all bg-gray-200 text-gray-400 border-4 border-transparent">?</div>
-                            
-                            <div id="box1-choice" class="hidden flex gap-1 md:gap-2">
-                                <button onclick="selectMysteryType(1, 'Odd')" class="box1-opt px-2 py-1 md:px-4 md:py-2 text-[10px] md:text-sm font-black uppercase rounded-lg md:rounded-xl btn-3d border-b-4 bg-gray-200 border-gray-300 text-gray-500">Odd</button>
-                                <button onclick="selectMysteryType(1, 'Even')" class="box1-opt px-2 py-1 md:px-4 md:py-2 text-[10px] md:text-sm font-black uppercase rounded-lg md:rounded-xl btn-3d border-b-4 bg-gray-200 border-gray-300 text-gray-500">Even</button>
-                            </div>
                             <span id="box1-label" class="font-black text-xs md:text-sm uppercase px-2 py-1 md:px-3 md:py-1.5 rounded-xl md:rounded-2xl bg-orange-100 text-orange-600">Odd</span>
                         </div>
 
@@ -215,11 +209,6 @@
                         <!-- Box 2 -->
                         <div class="flex flex-col items-center gap-1 md:gap-2">
                             <div id="box2-val" class="box-size rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center font-black shadow-inner transition-all bg-gray-200 text-gray-400 border-4 border-transparent">?</div>
-                            
-                            <div id="box2-choice" class="hidden flex gap-1 md:gap-2">
-                                <button onclick="selectMysteryType(2, 'Odd')" class="box2-opt px-2 py-1 md:px-4 md:py-2 text-[10px] md:text-sm font-black uppercase rounded-lg md:rounded-xl btn-3d border-b-4 bg-gray-200 border-gray-300 text-gray-500">Odd</button>
-                                <button onclick="selectMysteryType(2, 'Even')" class="box2-opt px-2 py-1 md:px-4 md:py-2 text-[10px] md:text-sm font-black uppercase rounded-lg md:rounded-xl btn-3d border-b-4 bg-gray-200 border-gray-300 text-gray-500">Even</button>
-                            </div>
                             <span id="box2-label" class="font-black text-xs md:text-sm uppercase px-2 py-1 md:px-3 md:py-1.5 rounded-xl md:rounded-2xl bg-purple-100 text-purple-600">Odd</span>
                         </div>
 
@@ -308,7 +297,6 @@
         let num1 = null;
         let num2 = null;
         let starPoints = 0;
-        let mysteryTypes = { t1: null, t2: null };
         
         let bonusTimerInterval;
         let timeLeft = 0;
@@ -324,11 +312,9 @@
         
         const elBox1Val = document.getElementById('box1-val');
         const elBox1Label = document.getElementById('box1-label');
-        const elBox1Choice = document.getElementById('box1-choice');
         
         const elBox2Val = document.getElementById('box2-val');
         const elBox2Label = document.getElementById('box2-label');
-        const elBox2Choice = document.getElementById('box2-choice');
         
         const elSumVal = document.getElementById('sum-val');
         const elSumLabel = document.getElementById('sum-label');
@@ -406,6 +392,7 @@
             ];
             
             let pool = [];
+            // Generate standard rounds
             for (let i = 0; i < 20; i++) {
                 const type = baseTypes[Math.floor(Math.random() * baseTypes.length)];
                 const isBig = Math.random() > 0.5;
@@ -417,6 +404,7 @@
                 });
             }
             
+            // Generate missing number rounds
             for (let i = 0; i < 5; i++) {
                 const fixedVal = Math.floor(Math.random() * 10) + 2;
                 const target = fixedVal + Math.floor(Math.random() * 10) + 5;
@@ -432,21 +420,11 @@
                 });
             }
 
-            for (let i = 0; i < 5; i++) {
-                pool.push({
-                    id: Math.random(),
-                    title: "Mystery Choice Round!",
-                    t1: 'Choice',
-                    t2: 'Choice',
-                    goal: '?',
-                    range: [1, 15]
-                });
-            }
+            // Notice: Mystery Choice Rounds have been removed from the pool entirely.
 
             return pool.sort(() => 0.5 - Math.random()).slice(0, 10);
         };
 
-        // UI Update Functions
         const updateFeedback = (type, message) => {
             elFeedbackMsg.innerText = message;
             elFeedbackContainer.className = `p-3 md:p-5 rounded-2xl md:rounded-3xl flex items-center gap-3 md:gap-4 transition-colors duration-300 border-b-4 feedback-box shrink-0 ${
@@ -459,6 +437,9 @@
                 type === 'error' ? 'text-red-700' : 
                 'text-[#1CB0F6]'
             }`;
+
+            // Auto-speak feedback when it updates
+            speakFeedback();
         };
 
         const updateBoxColors = () => {
@@ -498,44 +479,15 @@
         const updateLabels = () => {
             const currentRound = roundsList[currentRoundIndex];
             
-            if (currentRound.t1 === 'Choice') {
-                elBox1Label.classList.add('hidden');
-                elBox1Choice.classList.remove('hidden');
-                document.querySelectorAll('.box1-opt').forEach(btn => {
-                    btn.disabled = step !== 'first';
-                    btn.className = `box1-opt px-2 py-1 md:px-4 md:py-2 text-[10px] md:text-sm font-black uppercase rounded-lg md:rounded-xl btn-3d border-b-4 ${
-                        btn.innerText === mysteryTypes.t1 ? 
-                        (mysteryTypes.t1 === 'Odd' ? 'bg-[#FF851B] border-[#E07010] text-white' : 'bg-[#B10DC9] border-[#9A0BB0] text-white') : 
-                        'bg-gray-200 border-gray-300 text-gray-500'
-                    }`;
-                });
-            } else {
-                elBox1Choice.classList.add('hidden');
-                elBox1Label.classList.remove('hidden');
-                elBox1Label.innerText = currentRound.t1;
-                elBox1Label.className = `font-black text-xs md:text-sm uppercase px-2 py-1 md:px-3 md:py-1.5 rounded-xl md:rounded-2xl ${currentRound.t1 === 'Odd' ? 'bg-orange-100 text-orange-600' : 'bg-purple-100 text-purple-600'}`;
-            }
+            // Labels are now always fixed based on the round type, no choices.
+            elBox1Label.innerText = currentRound.t1;
+            elBox1Label.className = `font-black text-xs md:text-sm uppercase px-2 py-1 md:px-3 md:py-1.5 rounded-xl md:rounded-2xl ${currentRound.t1 === 'Odd' ? 'bg-orange-100 text-orange-600' : 'bg-purple-100 text-purple-600'}`;
 
-            if (currentRound.t2 === 'Choice') {
-                elBox2Label.classList.add('hidden');
-                elBox2Choice.classList.remove('hidden');
-                document.querySelectorAll('.box2-opt').forEach(btn => {
-                    btn.disabled = step !== 'first';
-                    btn.className = `box2-opt px-2 py-1 md:px-4 md:py-2 text-[10px] md:text-sm font-black uppercase rounded-lg md:rounded-xl btn-3d border-b-4 ${
-                        btn.innerText === mysteryTypes.t2 ? 
-                        (mysteryTypes.t2 === 'Odd' ? 'bg-[#FF851B] border-[#E07010] text-white' : 'bg-[#B10DC9] border-[#9A0BB0] text-white') : 
-                        'bg-gray-200 border-gray-300 text-gray-500'
-                    }`;
-                });
-            } else {
-                elBox2Choice.classList.add('hidden');
-                elBox2Label.classList.remove('hidden');
-                elBox2Label.innerText = currentRound.t2 === 'Fixed' ? 'Number' : currentRound.t2;
-                elBox2Label.className = `font-black text-xs md:text-sm uppercase px-2 py-1 md:px-3 md:py-1.5 rounded-xl md:rounded-2xl ${
-                    currentRound.t2 === 'Odd' ? 'bg-orange-100 text-orange-600' : 
-                    currentRound.t2 === 'Fixed' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
-                }`;
-            }
+            elBox2Label.innerText = currentRound.t2 === 'Fixed' ? 'Number' : currentRound.t2;
+            elBox2Label.className = `font-black text-xs md:text-sm uppercase px-2 py-1 md:px-3 md:py-1.5 rounded-xl md:rounded-2xl ${
+                currentRound.t2 === 'Odd' ? 'bg-orange-100 text-orange-600' : 
+                currentRound.t2 === 'Fixed' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
+            }`;
 
             elSumLabel.innerText = currentRound.t2 === 'Fixed' ? 'Target: ' + currentRound.target : 'Sum';
         };
@@ -557,14 +509,6 @@
         const switchView = (viewId) => {
             [vNumbers, vGuess, vBonus, vResult].forEach(v => v.classList.add('hidden'));
             document.getElementById(viewId).classList.remove('hidden');
-        };
-
-        // Game Logic Handlers
-        const selectMysteryType = (boxNum, type) => {
-            playSound('click');
-            if (boxNum === 1) mysteryTypes.t1 = type;
-            if (boxNum === 2) mysteryTypes.t2 = type;
-            updateLabels();
         };
 
         const handleNumberClick = (n) => {
@@ -589,24 +533,18 @@
                 return;
             }
 
-            if (currentRound.t1 === 'Choice' && (!mysteryTypes.t1 || !mysteryTypes.t2)) {
-                playSound('error');
-                updateFeedback('error', "Please pick ODD or EVEN for the boxes first!");
-                return;
-            }
-
             if (step === 'first') {
-                const type = currentRound.t1 === 'Choice' ? mysteryTypes.t1 : currentRound.t1;
+                const type = currentRound.t1;
                 if ((type === 'Odd' && isOdd(n)) || (type === 'Even' && isEven(n))) {
                     playSound('click'); num1 = n; step = 'second';
-                    updateFeedback('success', `Great! ${n} is ${type}. Now pick an ${currentRound.t2 === 'Choice' ? mysteryTypes.t2 : currentRound.t2} number!`);
+                    updateFeedback('success', `Great! ${n} is ${type}. Now pick an ${currentRound.t2} number!`);
                     updateUI();
                 } else {
                     playSound('error');
                     updateFeedback('error', `Oops! ${n} is ${isOdd(n) ? 'Odd' : 'Even'}. We need an ${type} number.`);
                 }
             } else if (step === 'second') {
-                const type = currentRound.t2 === 'Choice' ? mysteryTypes.t2 : currentRound.t2;
+                const type = currentRound.t2;
                 if ((type === 'Odd' && isOdd(n)) || (type === 'Even' && isEven(n))) {
                     playSound('click'); num2 = n; step = 'guess';
                     updateFeedback('info', `Awesome! Now, is ${num1} + ${n} ODD or EVEN?`);
@@ -730,14 +668,11 @@
             step = 'first';
             num1 = null;
             num2 = null;
-            mysteryTypes = { t1: null, t2: null };
             const currentRound = roundsList[currentRoundIndex];
             
             if (currentRound.t2 === 'Fixed') {
                 num2 = currentRound.fixedVal;
                 updateFeedback('info', `Find the ${currentRound.t1} number plus ${currentRound.fixedVal} that makes ${currentRound.target}!`);
-            } else if (currentRound.t1 === 'Choice') {
-                updateFeedback('info', "First, choose if each box is ODD or EVEN!");
             } else {
                 updateFeedback('info', `Pick an ${currentRound.t1} number!`);
             }
