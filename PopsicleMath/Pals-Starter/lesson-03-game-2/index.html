@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Odd & Even Math Adventure</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            overflow: hidden; /* Prevent scrolling, force fit */
+            background-color: #D5F0FF;
+            touch-action: manipulation; /* Better touch handling */
+        }
+
+        .btn-3d {
+            transition: all 0.1s ease;
+        }
+        .btn-3d:active {
+            transform: translateY(4px);
+            border-bottom-width: 0px !important;
+            margin-bottom: 4px;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes drift {
+            from { transform: translateX(-10vw); }
+            to { transform: translateX(10vw); }
+        }
+        .animate-drift {
+            animation: drift 20s alternate ease-in-out infinite;
+        }
+
+        @keyframes confetti-fall {
+            0% { top: -10%; transform: rotate(0deg) translateX(0); opacity: 1; }
+            100% { top: 110%; transform: rotate(720deg) translateX(100px); opacity: 1; }
+        }
+        .confetti-piece {
+            position: fixed;
+            animation: confetti-fall linear forwards;
+            z-index: 99999;
+        }
+
+        @keyframes starFall {
+            0% { top: -80px; opacity: 0; transform: scale(0.5); }
+            10% { opacity: 1; transform: scale(1); }
+            90% { opacity: 1; transform: scale(1); }
+            100% { top: 100%; opacity: 0; transform: scale(0.5); }
+        }
+
+        .star-btn {
+            position: absolute;
+            transition: transform 0.2s;
+            cursor: pointer;
+            user-select: none;
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
+        }
+        .star-btn:hover {
+            transform: scale(1.3) !important;
+        }
+        .star-btn.hidden-star {
+            transform: scale(0) !important;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Optimize layout for smaller height screens (laptops) */
+        @media (max-height: 800px) {
+            .main-container {
+                padding: 1rem;
+                gap: 0.75rem;
+            }
+            .header-box { padding: 0.5rem 1rem; }
+            .feedback-box { padding: 0.5rem 1rem; }
+            .equation-box { padding: 1rem; gap: 0.5rem; }
+            .box-size { width: 4rem; height: 4rem; font-size: 2rem; }
+            @media (min-width: 768px) {
+                .box-size { width: 5rem; height: 5rem; font-size: 2.5rem; }
+            }
+            .plus-equals { font-size: 2.5rem; }
+            .interaction-area { min-height: 200px; }
+            .number-btn { height: 3rem; font-size: 1.5rem; }
+            .guess-btn { padding: 1rem; font-size: 2rem; }
+        }
+        
+        /* Default sizes for taller screens */
+        @media (min-height: 801px) {
+            .main-container { gap: 1.5rem; padding: 2.5rem; }
+            .box-size { width: 5rem; height: 5rem; font-size: 2.25rem; }
+            @media (min-width: 768px) {
+                .box-size { width: 7rem; height: 7rem; font-size: 3.5rem; }
+            }
+            .plus-equals { font-size: 4rem; }
+            .interaction-area { min-height: 280px; }
+            .number-btn { height: 4rem; font-size: 1.875rem; }
+            .guess-btn { padding: 2rem; font-size: 3rem; }
+        }
+    </style>
+</head>
+<body class="text-gray-800 antialiased selection:bg-blue-200">
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- Scenery Background -->
+    <div class="fixed inset-0 z-[-1] bg-gradient-to-b from-[#60C9FE] to-[#D5F0FF] overflow-hidden w-full h-full">
+        <!-- Sun -->
+        <div class="absolute top-4 left-4 md:top-8 md:left-8 w-20 h-20 md:w-24 md:h-24 bg-[#FFD700] rounded-full shadow-[0_0_60px_rgba(255,215,0,0.8)] animate-float"></div>
+        
+        <!-- Rainbow -->
+        <div class="absolute top-10 left-1/2 -translate-x-1/2 w-[90vw] max-w-[600px] aspect-[2/1] border-[15px] md:border-[30px] border-t-red-400 border-l-orange-400 border-r-yellow-400 border-b-transparent rounded-t-full opacity-30"></div>
+        <div class="absolute top-16 left-1/2 -translate-x-1/2 w-[80vw] max-w-[540px] aspect-[2/1] border-[15px] md:border-[30px] border-t-green-400 border-l-blue-400 border-r-purple-400 border-b-transparent rounded-t-full opacity-30"></div>
+
+        <!-- Clouds -->
+        <div class="absolute top-8 right-[10%] text-5xl md:text-8xl text-white opacity-90 animate-drift" style="filter: drop-shadow(0 10px 10px rgba(0,0,0,0.05))">☁️</div>
+        <div class="absolute top-24 left-[15%] text-4xl md:text-7xl text-white opacity-80 animate-drift" style="filter: drop-shadow(0 10px 10px rgba(0,0,0,0.05)); animation-delay: -5s">☁️</div>
+        <div class="absolute top-12 left-[60%] text-6xl md:text-9xl text-white opacity-95 animate-drift" style="filter: drop-shadow(0 10px 10px rgba(0,0,0,0.05)); animation-delay: -10s">☁️</div>
+
+        <!-- Grass (Wavy SVG) -->
+        <div class="absolute bottom-0 w-full h-[25vh] md:h-[30vh]">
+            <svg viewBox="0 0 1440 320" class="absolute bottom-0 w-full h-full object-cover" preserveAspectRatio="none">
+                <path fill="#58CC02" fillOpacity="1" d="M0,160L48,165.3C96,171,192,181,288,165.3C384,149,480,107,576,117.3C672,128,768,192,864,208C960,224,1056,192,1152,176C1248,160,1344,160,1392,160L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+            </svg>
+            <!-- Decorative Elements -->
+            <div class="absolute bottom-4 left-[10%] text-4xl md:text-6xl">🌳</div>
+            <div class="absolute bottom-[20%] left-[5%] text-2xl md:text-4xl">🌸</div>
+            <div class="absolute bottom-2 left-[20%] text-3xl md:text-5xl">🌼</div>
+            <div class="absolute bottom-8 right-[15%] text-5xl md:text-7xl">🌳</div>
+            <div class="absolute bottom-1 right-[25%] text-3xl md:text-5xl">🌻</div>
+            <div class="absolute bottom-[10%] right-[5%] text-xl md:text-3xl">🍄</div>
+        </div>
+    </div>
+
+    <!-- Confetti Container -->
+    <div id="confetti-container" class="pointer-events-none"></div>
+
+    <!-- Empty Top Right for Logo -->
+    <div class="absolute top-0 right-0 w-32 h-32 md:w-48 md:h-48 pointer-events-none z-50"></div>
+
+    <!-- Main Game UI -->
+    <div id="game-ui" class="h-screen w-screen flex items-center justify-center p-2 md:p-4 relative z-10 box-border">
+        <div class="bg-white/95 backdrop-blur-sm rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] w-full max-w-4xl border-b-[8px] md:border-b-[12px] border-gray-200 flex flex-col main-container max-h-[95vh] overflow-y-auto custom-scrollbar">
+            
+            <!-- Completion Screen (Initially Hidden) -->
+            <div id="completion-screen" class="hidden flex-col items-center justify-center p-8 space-y-6 text-center h-full min-h-[400px]">
+                <i data-lucide="trophy" class="w-24 h-24 md:w-32 md:h-32 text-[#FFD700] mx-auto animate-bounce" style="filter: drop-shadow(0 10px 15px rgba(255,215,0,0.5))"></i>
+                <h1 class="text-4xl md:text-5xl font-black text-[#FF851B] uppercase tracking-wide" style="text-shadow: 2px 2px 0px #FFDC00;">Amazing!</h1>
+                <p class="text-lg md:text-xl font-bold text-gray-600">You completed all 10 challenges!</p>
+                <div class="bg-amber-50 rounded-3xl p-4 md:p-6 border-4 border-amber-200 shadow-inner w-full max-w-sm">
+                    <p class="text-2xl md:text-3xl font-black text-amber-500 flex items-center justify-center gap-2">
+                        <i data-lucide="star" fill="#F59E0B" class="w-8 h-8 md:w-10 md:h-10 text-amber-500"></i> <span id="final-score">0</span> Stars
+                    </p>
+                </div>
+                <button onclick="resetGame()" class="w-full max-w-sm py-4 md:py-5 bg-[#58CC02] hover:bg-[#46A302] border-b-8 border-[#46A302] text-white rounded-[2rem] text-2xl md:text-3xl font-black shadow-lg flex items-center justify-center gap-3 btn-3d">
+                    <i data-lucide="rotate-ccw" stroke-width="3"></i> PLAY AGAIN
+                </button>
+            </div>
+
+            <!-- Active Gameplay Area -->
+            <div id="active-game-area" class="flex flex-col h-full gap-y-2 md:gap-y-4">
+                
+                <div class="flex justify-between items-center bg-gray-50 rounded-2xl md:rounded-3xl p-3 md:p-4 border-2 border-gray-100 header-box shrink-0">
+                    <div class="flex items-center gap-2 md:gap-3">
+                        <div class="bg-[#FFD700] p-2 md:p-3 rounded-xl md:rounded-2xl shadow-sm">
+                            <i data-lucide="star" fill="white" class="w-6 h-6 md:w-7 md:h-7"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <h2 class="text-lg md:text-2xl font-black text-gray-800 tracking-tight leading-none">Challenge <span id="round-counter">1</span>/10</h2>
+                            <span class="text-xs md:text-sm font-bold text-amber-500"><span id="star-points">0</span> Stars Earned</span>
+                        </div>
+                    </div>
+                    <div class="w-1/3 min-w-[100px] md:min-w-[120px]">
+                        <div class="h-4 md:h-5 bg-gray-200 rounded-full overflow-hidden border border-gray-300 shadow-inner">
+                            <div id="progress-bar" class="h-full bg-[#58CC02] transition-all duration-700 ease-out rounded-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="feedback-container" class="p-3 md:p-5 rounded-2xl md:rounded-3xl flex items-center gap-3 md:gap-4 transition-colors duration-300 border-b-4 bg-[#E5F3FF] border-[#BBE0FF] feedback-box shrink-0">
+                    <div class="text-3xl md:text-5xl drop-shadow-md">🦉</div>
+                    <p id="feedback-message" class="text-sm md:text-xl font-bold flex-1 text-[#1CB0F6] leading-tight">Pick an Odd number!</p>
+                    <button onclick="speakFeedback()" class="p-2 md:p-3 bg-white rounded-xl md:rounded-2xl hover:bg-gray-100 text-[#1CB0F6] btn-3d border-b-4 border-gray-200 shadow-sm shrink-0" aria-label="Read text out loud">
+                        <i data-lucide="volume-2" class="w-6 h-6 md:w-7 md:h-7" stroke-width="3"></i>
+                    </button>
+                </div>
+
+                <div class="bg-gray-50 rounded-2xl md:rounded-[2.5rem] p-4 md:p-6 flex flex-col items-center gap-3 md:gap-4 border-4 border-dashed border-gray-300 equation-box shrink-0">
+                    <h3 id="round-title" class="text-lg md:text-xl font-black text-gray-400 uppercase tracking-widest text-center m-0">Odd + Odd</h3>
+                    
+                    <div class="flex flex-wrap justify-center items-center gap-2 md:gap-6 w-full">
+                        
+                        <!-- Box 1 -->
+                        <div class="flex flex-col items-center gap-1 md:gap-2">
+                            <div id="box1-val" class="box-size rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center font-black shadow-inner transition-all bg-gray-200 text-gray-400 border-4 border-transparent">?</div>
+                            
+                            <div id="box1-choice" class="hidden flex gap-1 md:gap-2">
+                                <button onclick="selectMysteryType(1, 'Odd')" class="box1-opt px-2 py-1 md:px-4 md:py-2 text-[10px] md:text-sm font-black uppercase rounded-lg md:rounded-xl btn-3d border-b-4 bg-gray-200 border-gray-300 text-gray-500">Odd</button>
+                                <button onclick="selectMysteryType(1, 'Even')" class="box1-opt px-2 py-1 md:px-4 md:py-2 text-[10px] md:text-sm font-black uppercase rounded-lg md:rounded-xl btn-3d border-b-4 bg-gray-200 border-gray-300 text-gray-500">Even</button>
+                            </div>
+                            <span id="box1-label" class="font-black text-xs md:text-sm uppercase px-2 py-1 md:px-3 md:py-1.5 rounded-xl md:rounded-2xl bg-orange-100 text-orange-600">Odd</span>
+                        </div>
+
+                        <span class="plus-equals font-black text-gray-300">+</span>
+
+                        <!-- Box 2 -->
+                        <div class="flex flex-col items-center gap-1 md:gap-2">
+                            <div id="box2-val" class="box-size rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center font-black shadow-inner transition-all bg-gray-200 text-gray-400 border-4 border-transparent">?</div>
+                            
+                            <div id="box2-choice" class="hidden flex gap-1 md:gap-2">
+                                <button onclick="selectMysteryType(2, 'Odd')" class="box2-opt px-2 py-1 md:px-4 md:py-2 text-[10px] md:text-sm font-black uppercase rounded-lg md:rounded-xl btn-3d border-b-4 bg-gray-200 border-gray-300 text-gray-500">Odd</button>
+                                <button onclick="selectMysteryType(2, 'Even')" class="box2-opt px-2 py-1 md:px-4 md:py-2 text-[10px] md:text-sm font-black uppercase rounded-lg md:rounded-xl btn-3d border-b-4 bg-gray-200 border-gray-300 text-gray-500">Even</button>
+                            </div>
+                            <span id="box2-label" class="font-black text-xs md:text-sm uppercase px-2 py-1 md:px-3 md:py-1.5 rounded-xl md:rounded-2xl bg-purple-100 text-purple-600">Odd</span>
+                        </div>
+
+                        <span class="plus-equals font-black text-gray-300">=</span>
+
+                        <!-- Sum Box -->
+                        <div class="flex flex-col items-center gap-1 md:gap-2">
+                            <div id="sum-val" class="box-size rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center font-black shadow-inner transition-all bg-gray-200 text-gray-400">?</div>
+                            <span id="sum-label" class="font-black text-xs md:text-sm uppercase text-gray-400">Sum</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative flex-1 flex items-center justify-center interaction-area w-full">
+                    
+                    <!-- View 1: Number Grid -->
+                    <div id="view-numbers" class="grid grid-cols-5 md:grid-cols-10 gap-2 md:gap-3 w-full w-full">
+                        <!-- Numbers will be injected here -->
+                    </div>
+
+                    <!-- View 2: ODD/EVEN Guess -->
+                    <div id="view-guess" class="hidden flex gap-4 md:gap-6 w-full max-w-xl mx-auto px-4">
+                        <button onclick="handleGuess('Odd')" class="guess-btn flex-1 bg-[#FF851B] hover:bg-[#FF7000] border-b-[8px] md:border-b-[10px] border-[#E06510] text-white rounded-[2rem] md:rounded-[2.5rem] font-black shadow-xl btn-3d uppercase tracking-widest">
+                            ODD
+                        </button>
+                        <button onclick="handleGuess('Even')" class="guess-btn flex-1 bg-[#B10DC9] hover:bg-[#9A0BB0] border-b-[8px] md:border-b-[10px] border-[#8A0A9E] text-white rounded-[2rem] md:rounded-[2.5rem] font-black shadow-xl btn-3d uppercase tracking-widest">
+                            EVEN
+                        </button>
+                    </div>
+
+                    <!-- View 3: Bonus Minigame (Enhanced) -->
+                    <div id="view-bonus" class="hidden w-full h-full min-h-[200px] bg-gradient-to-b from-[#1A1A2E] to-[#16213E] rounded-2xl md:rounded-[2.5rem] p-4 border-[6px] md:border-[8px] border-[#0F172A] relative overflow-hidden shadow-inner">
+                        <!-- Background scenery for night sky -->
+                        <div class="absolute bottom-0 w-full h-[30%] opacity-20">
+                            <svg viewBox="0 0 1440 320" class="absolute bottom-0 w-full h-full object-cover" preserveAspectRatio="none">
+                                <path fill="#ffffff" fillOpacity="1" d="M0,160L48,165.3C96,171,192,181,288,165.3C384,149,480,107,576,117.3C672,128,768,192,864,208C960,224,1056,192,1152,176C1248,160,1344,160,1392,160L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+                            </svg>
+                        </div>
+                        
+                        <!-- HUD -->
+                        <div class="absolute top-2 left-2 md:top-4 md:left-4 flex gap-2 md:gap-4 z-10">
+                            <div class="flex items-center gap-1 md:gap-2 bg-white/20 backdrop-blur text-white px-2 py-1 md:px-4 md:py-2 rounded-xl md:rounded-2xl font-black text-sm md:text-xl border border-white/30 shadow-sm">
+                                <i data-lucide="timer" class="w-4 h-4 md:w-6 md:h-6"></i> <span id="bonus-timer">7</span>s
+                            </div>
+                            <div class="flex items-center gap-1 md:gap-2 bg-white/20 backdrop-blur text-yellow-300 px-2 py-1 md:px-4 md:py-2 rounded-xl md:rounded-2xl font-black text-sm md:text-xl border border-white/30 shadow-sm">
+                                <i data-lucide="star" fill="#FDE047" class="w-4 h-4 md:w-6 md:h-6 text-yellow-300"></i> <span id="bonus-score">0</span>
+                            </div>
+                        </div>
+                        <h4 class="absolute top-2 right-2 md:top-4 md:right-4 text-sm md:text-xl font-black text-white/50 flex items-center gap-1 md:gap-2 z-10">
+                            <i data-lucide="cloud-moon" class="w-4 h-4 md:w-6 md:h-6"></i> Catch Stars!
+                        </h4>
+                        
+                        <div id="stars-container" class="absolute inset-0 z-20">
+                            <!-- Stars generated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- View 4: Result -->
+                    <div id="view-result" class="hidden flex flex-col items-center justify-center gap-4 md:gap-6 w-full h-full">
+                        <div class="bg-[#FFDC00] text-[#D87000] px-6 py-3 md:px-8 md:py-4 rounded-full font-black text-xl md:text-3xl shadow-[0_8px_0_#E5C600] animate-bounce flex items-center gap-2 md:gap-3">
+                            <i data-lucide="heart" fill="#FF4136" class="text-[#FF4136] w-6 h-6 md:w-8 md:h-8"></i> 
+                            <span id="result-bonus-text">CAUGHT 0 STARS!</span>
+                        </div>
+                        <p id="result-equation" class="text-xl md:text-3xl font-bold text-gray-700 bg-gray-100 px-6 py-3 md:px-8 md:py-4 rounded-2xl md:rounded-3xl border-4 border-gray-200">
+                            Odd + Odd = <span class="text-[#58CC02] font-black ml-2 uppercase">Even</span>
+                        </p>
+                        <button onclick="nextRound()" id="next-btn" class="w-full max-w-sm flex items-center justify-center gap-3 py-4 md:py-5 bg-[#1CB0F6] hover:bg-[#1899D6] border-b-[6px] md:border-b-[8px] border-[#1899D6] text-white rounded-[1.5rem] md:rounded-[2rem] text-2xl md:text-3xl font-black shadow-lg btn-3d">
+                            <span>NEXT ROUND</span>
+                            <i data-lucide="arrow-right" stroke-width="3" class="w-6 h-6 md:w-8 md:h-8"></i>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Game State Variables
+        let roundsList = [];
+        let currentRoundIndex = 0;
+        let step = 'first'; // 'first', 'second', 'guess', 'bonus', 'result', 'complete'
+        let num1 = null;
+        let num2 = null;
+        let starPoints = 0;
+        let mysteryTypes = { t1: null, t2: null };
+        
+        let bonusTimerInterval;
+        let timeLeft = 0;
+        let starsCaught = 0;
+        
+        // DOM Elements
+        const elProgress = document.getElementById('progress-bar');
+        const elRoundCounter = document.getElementById('round-counter');
+        const elStarPoints = document.getElementById('star-points');
+        const elFeedbackContainer = document.getElementById('feedback-container');
+        const elFeedbackMsg = document.getElementById('feedback-message');
+        const elRoundTitle = document.getElementById('round-title');
+        
+        const elBox1Val = document.getElementById('box1-val');
+        const elBox1Label = document.getElementById('box1-label');
+        const elBox1Choice = document.getElementById('box1-choice');
+        
+        const elBox2Val = document.getElementById('box2-val');
+        const elBox2Label = document.getElementById('box2-label');
+        const elBox2Choice = document.getElementById('box2-choice');
+        
+        const elSumVal = document.getElementById('sum-val');
+        const elSumLabel = document.getElementById('sum-label');
+        
+        const vNumbers = document.getElementById('view-numbers');
+        const vGuess = document.getElementById('view-guess');
+        const vBonus = document.getElementById('view-bonus');
+        const vResult = document.getElementById('view-result');
+        const vActiveGame = document.getElementById('active-game-area');
+        const vCompletion = document.getElementById('completion-screen');
+
+        // Helper Functions
+        const isOdd = (n) => n % 2 !== 0;
+        const isEven = (n) => n % 2 === 0;
+
+        // Sound System
+        const playSound = (type) => {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                const now = ctx.currentTime;
+
+                switch (type) {
+                    case 'click':
+                        osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+                        gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                        osc.start(now); osc.stop(now + 0.1); break;
+                    case 'correct':
+                        osc.type = 'triangle'; osc.frequency.setValueAtTime(500, now); osc.frequency.exponentialRampToValueAtTime(1000, now + 0.2);
+                        gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                        osc.start(now); osc.stop(now + 0.4); break;
+                    case 'error':
+                        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, now); osc.frequency.linearRampToValueAtTime(150, now + 0.3);
+                        gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                        osc.start(now); osc.stop(now + 0.3); break;
+                    case 'pop':
+                        osc.type = 'sine'; osc.frequency.setValueAtTime(1000, now); osc.frequency.exponentialRampToValueAtTime(2000, now + 0.05);
+                        gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                        osc.start(now); osc.stop(now + 0.1); break;
+                    case 'victory':
+                        [440, 554, 659, 880].forEach((freq, i) => {
+                            const o = ctx.createOscillator(); const g = ctx.createGain();
+                            o.type = 'triangle'; o.connect(g); g.connect(ctx.destination);
+                            o.frequency.setValueAtTime(freq, now + i * 0.15);
+                            g.gain.setValueAtTime(0, now + i * 0.15); g.gain.linearRampToValueAtTime(0.15, now + i * 0.15 + 0.05); g.gain.linearRampToValueAtTime(0, now + i * 0.15 + 0.4);
+                            o.start(now + i * 0.15); o.stop(now + i * 0.15 + 0.5);
+                        }); break;
+                }
+            } catch (e) { console.log("Audio disabled"); }
+        };
+
+        const speakFeedback = () => {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const text = elFeedbackMsg.innerText;
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.9;
+                utterance.pitch = 1.1;
+                window.speechSynthesis.speak(utterance);
+            }
+        };
+
+        const generateUniqueRounds = () => {
+            const baseTypes = [
+                { t1: 'Odd', t2: 'Odd', goal: 'Even', title: 'Odd + Odd' },
+                { t1: 'Even', t2: 'Even', goal: 'Even', title: 'Even + Even' },
+                { t1: 'Odd', t2: 'Even', goal: 'Odd', title: 'Odd + Even' },
+                { t1: 'Even', t2: 'Odd', goal: 'Odd', title: 'Even + Odd' },
+            ];
+            
+            let pool = [];
+            for (let i = 0; i < 20; i++) {
+                const type = baseTypes[Math.floor(Math.random() * baseTypes.length)];
+                const isBig = Math.random() > 0.5;
+                pool.push({
+                    id: Math.random(),
+                    ...type,
+                    title: `${type.title}${isBig ? ' (Big!)' : ''}`,
+                    range: isBig ? [11, 20] : [1, 10],
+                });
+            }
+            
+            for (let i = 0; i < 5; i++) {
+                const fixedVal = Math.floor(Math.random() * 10) + 2;
+                const target = fixedVal + Math.floor(Math.random() * 10) + 5;
+                pool.push({
+                    id: Math.random(),
+                    title: "Find the Missing Number!",
+                    t1: (target - fixedVal) % 2 === 0 ? 'Even' : 'Odd',
+                    t2: 'Fixed',
+                    fixedVal,
+                    target,
+                    goal: '?',
+                    range: [1, 20]
+                });
+            }
+
+            for (let i = 0; i < 5; i++) {
+                pool.push({
+                    id: Math.random(),
+                    title: "Mystery Choice Round!",
+                    t1: 'Choice',
+                    t2: 'Choice',
+                    goal: '?',
+                    range: [1, 15]
+                });
+            }
+
+            return pool.sort(() => 0.5 - Math.random()).slice(0, 10);
+        };
+
+        // UI Update Functions
+        const updateFeedback = (type, message) => {
+            elFeedbackMsg.innerText = message;
+            elFeedbackContainer.className = `p-3 md:p-5 rounded-2xl md:rounded-3xl flex items-center gap-3 md:gap-4 transition-colors duration-300 border-b-4 feedback-box shrink-0 ${
+                type === 'success' ? 'bg-green-100 border-green-300' : 
+                type === 'error' ? 'bg-red-100 border-red-300' : 
+                'bg-[#E5F3FF] border-[#BBE0FF]'
+            }`;
+            elFeedbackMsg.className = `text-sm md:text-xl font-bold flex-1 leading-tight ${
+                type === 'success' ? 'text-green-700' : 
+                type === 'error' ? 'text-red-700' : 
+                'text-[#1CB0F6]'
+            }`;
+        };
+
+        const updateBoxColors = () => {
+            const currentRound = roundsList[currentRoundIndex];
+            
+            // Box 1
+            if (num1 !== null) {
+                elBox1Val.className = "box-size rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center font-black shadow-inner transition-all bg-[#1CB0F6] text-white border-4 border-[#1899D6] shadow-lg scale-105";
+                elBox1Val.innerText = num1;
+            } else {
+                elBox1Val.className = "box-size rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center font-black shadow-inner transition-all bg-gray-200 text-gray-400 border-4 border-transparent";
+                elBox1Val.innerText = "?";
+            }
+
+            // Box 2
+            if (num2 !== null) {
+                elBox2Val.className = "box-size rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center font-black shadow-inner transition-all bg-[#FF4136] text-white border-4 border-[#E03A30] shadow-lg scale-105";
+                elBox2Val.innerText = num2;
+            } else {
+                elBox2Val.className = "box-size rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center font-black shadow-inner transition-all bg-gray-200 text-gray-400 border-4 border-transparent";
+                elBox2Val.innerText = "?";
+            }
+
+            // Sum Box
+            if (['bonus', 'result', 'guess'].includes(step)) {
+                elSumVal.className = "box-size rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center font-black shadow-inner transition-all bg-[#FFDC00] text-[#D87000] border-4 border-[#E5C600] scale-110 shadow-[0_0_20px_rgba(255,220,0,0.5)] rotate-3";
+                elSumVal.innerText = (num1 + num2);
+            } else if (num1 !== null && num2 !== null) {
+                elSumVal.className = "box-size rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center font-black shadow-inner transition-all bg-white text-gray-600 border-4 border-gray-300";
+                elSumVal.innerText = "?";
+            } else {
+                elSumVal.className = "box-size rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center font-black shadow-inner transition-all bg-gray-200 text-gray-400";
+                elSumVal.innerText = "?";
+            }
+        };
+
+        const updateLabels = () => {
+            const currentRound = roundsList[currentRoundIndex];
+            
+            if (currentRound.t1 === 'Choice') {
+                elBox1Label.classList.add('hidden');
+                elBox1Choice.classList.remove('hidden');
+                document.querySelectorAll('.box1-opt').forEach(btn => {
+                    btn.disabled = step !== 'first';
+                    btn.className = `box1-opt px-2 py-1 md:px-4 md:py-2 text-[10px] md:text-sm font-black uppercase rounded-lg md:rounded-xl btn-3d border-b-4 ${
+                        btn.innerText === mysteryTypes.t1 ? 
+                        (mysteryTypes.t1 === 'Odd' ? 'bg-[#FF851B] border-[#E07010] text-white' : 'bg-[#B10DC9] border-[#9A0BB0] text-white') : 
+                        'bg-gray-200 border-gray-300 text-gray-500'
+                    }`;
+                });
+            } else {
+                elBox1Choice.classList.add('hidden');
+                elBox1Label.classList.remove('hidden');
+                elBox1Label.innerText = currentRound.t1;
+                elBox1Label.className = `font-black text-xs md:text-sm uppercase px-2 py-1 md:px-3 md:py-1.5 rounded-xl md:rounded-2xl ${currentRound.t1 === 'Odd' ? 'bg-orange-100 text-orange-600' : 'bg-purple-100 text-purple-600'}`;
+            }
+
+            if (currentRound.t2 === 'Choice') {
+                elBox2Label.classList.add('hidden');
+                elBox2Choice.classList.remove('hidden');
+                document.querySelectorAll('.box2-opt').forEach(btn => {
+                    btn.disabled = step !== 'first';
+                    btn.className = `box2-opt px-2 py-1 md:px-4 md:py-2 text-[10px] md:text-sm font-black uppercase rounded-lg md:rounded-xl btn-3d border-b-4 ${
+                        btn.innerText === mysteryTypes.t2 ? 
+                        (mysteryTypes.t2 === 'Odd' ? 'bg-[#FF851B] border-[#E07010] text-white' : 'bg-[#B10DC9] border-[#9A0BB0] text-white') : 
+                        'bg-gray-200 border-gray-300 text-gray-500'
+                    }`;
+                });
+            } else {
+                elBox2Choice.classList.add('hidden');
+                elBox2Label.classList.remove('hidden');
+                elBox2Label.innerText = currentRound.t2 === 'Fixed' ? 'Number' : currentRound.t2;
+                elBox2Label.className = `font-black text-xs md:text-sm uppercase px-2 py-1 md:px-3 md:py-1.5 rounded-xl md:rounded-2xl ${
+                    currentRound.t2 === 'Odd' ? 'bg-orange-100 text-orange-600' : 
+                    currentRound.t2 === 'Fixed' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
+                }`;
+            }
+
+            elSumLabel.innerText = currentRound.t2 === 'Fixed' ? 'Target: ' + currentRound.target : 'Sum';
+        };
+
+        const renderNumbers = () => {
+            const currentRound = roundsList[currentRoundIndex];
+            const start = currentRound.range[0];
+            const end = currentRound.range[1];
+            vNumbers.innerHTML = '';
+            for (let n = start; n <= end; n++) {
+                const btn = document.createElement('button');
+                btn.className = "number-btn font-black rounded-xl md:rounded-[1.5rem] bg-white border-2 border-gray-200 border-b-[4px] md:border-b-[6px] border-b-gray-300 hover:bg-[#F0F9FF] hover:border-[#1CB0F6] hover:border-b-[#1899D6] hover:text-[#1CB0F6] active:border-b-2 active:translate-y-1 transition-all flex items-center justify-center text-gray-700 w-full";
+                btn.innerText = n;
+                btn.onclick = () => handleNumberClick(n);
+                vNumbers.appendChild(btn);
+            }
+        };
+
+        const switchView = (viewId) => {
+            [vNumbers, vGuess, vBonus, vResult].forEach(v => v.classList.add('hidden'));
+            document.getElementById(viewId).classList.remove('hidden');
+        };
+
+        // Game Logic Handlers
+        const selectMysteryType = (boxNum, type) => {
+            playSound('click');
+            if (boxNum === 1) mysteryTypes.t1 = type;
+            if (boxNum === 2) mysteryTypes.t2 = type;
+            updateLabels();
+        };
+
+        const handleNumberClick = (n) => {
+            if (step === 'result' || step === 'bonus') return;
+            const currentRound = roundsList[currentRoundIndex];
+            
+            if (currentRound.t2 === 'Fixed') {
+                if (n + currentRound.fixedVal === currentRound.target) {
+                    const typeNeeded = currentRound.t1;
+                    if ((typeNeeded === 'Odd' && isOdd(n)) || (typeNeeded === 'Even' && isEven(n))) {
+                        playSound('click'); num1 = n; step = 'guess';
+                        updateFeedback('success', `Perfect! ${n} + ${currentRound.fixedVal} is ${currentRound.target}. Now guess if the sum is odd or even!`);
+                        updateUI();
+                    } else {
+                        playSound('error');
+                        updateFeedback('error', `That makes ${currentRound.target}, but is ${n} ${typeNeeded.toUpperCase()}?`);
+                    }
+                } else {
+                    playSound('error');
+                    updateFeedback('error', "Not quite the target! Try another number.");
+                }
+                return;
+            }
+
+            if (currentRound.t1 === 'Choice' && (!mysteryTypes.t1 || !mysteryTypes.t2)) {
+                playSound('error');
+                updateFeedback('error', "Please pick ODD or EVEN for the boxes first!");
+                return;
+            }
+
+            if (step === 'first') {
+                const type = currentRound.t1 === 'Choice' ? mysteryTypes.t1 : currentRound.t1;
+                if ((type === 'Odd' && isOdd(n)) || (type === 'Even' && isEven(n))) {
+                    playSound('click'); num1 = n; step = 'second';
+                    updateFeedback('success', `Great! ${n} is ${type}. Now pick an ${currentRound.t2 === 'Choice' ? mysteryTypes.t2 : currentRound.t2} number!`);
+                    updateUI();
+                } else {
+                    playSound('error');
+                    updateFeedback('error', `Oops! ${n} is ${isOdd(n) ? 'Odd' : 'Even'}. We need an ${type} number.`);
+                }
+            } else if (step === 'second') {
+                const type = currentRound.t2 === 'Choice' ? mysteryTypes.t2 : currentRound.t2;
+                if ((type === 'Odd' && isOdd(n)) || (type === 'Even' && isEven(n))) {
+                    playSound('click'); num2 = n; step = 'guess';
+                    updateFeedback('info', `Awesome! Now, is ${num1} + ${n} ODD or EVEN?`);
+                    updateUI();
+                } else {
+                    playSound('error');
+                    updateFeedback('error', `Wait! ${n} is ${isOdd(n) ? 'Odd' : 'Even'}. We need an ${type} number.`);
+                }
+            }
+        };
+
+        const handleGuess = (type) => {
+            const sum = num1 + num2;
+            const correctType = isOdd(sum) ? 'Odd' : 'Even';
+            if (type === correctType) {
+                playSound('correct');
+                step = 'bonus';
+                starsCaught = 0;
+                timeLeft = 5;
+                document.getElementById('bonus-score').innerText = '0';
+                document.getElementById('bonus-timer').innerText = timeLeft;
+                updateFeedback('success', "Correct! Catch the falling stars!");
+                startBonusGame();
+                updateUI();
+            } else {
+                playSound('error');
+                updateFeedback('error', "Try again! Check if the sum is odd or even.");
+            }
+        };
+
+        const startBonusGame = () => {
+            const container = document.getElementById('stars-container');
+            container.innerHTML = '';
+            
+            // Enhanced visual stars for better appeal
+            const starData = [
+                { left: '10%', dur: '1.8s', del: '0s', em: '⭐', size: 'text-4xl md:text-6xl' },
+                { left: '30%', dur: '2.2s', del: '0.3s', em: '✨', size: 'text-3xl md:text-5xl text-yellow-200' },
+                { left: '50%', dur: '1.5s', del: '0.8s', em: '🌟', size: 'text-5xl md:text-7xl' },
+                { left: '70%', dur: '2.0s', del: '0.2s', em: '⭐', size: 'text-4xl md:text-6xl' },
+                { left: '90%', dur: '1.7s', del: '0.6s', em: '✨', size: 'text-3xl md:text-5xl text-yellow-200' },
+                { left: '20%', dur: '2.5s', del: '1.0s', em: '🌟', size: 'text-4xl md:text-6xl' },
+                { left: '60%', dur: '1.6s', del: '0.5s', em: '⭐', size: 'text-5xl md:text-7xl' },
+                { left: '80%', dur: '2.1s', del: '1.2s', em: '✨', size: 'text-3xl md:text-5xl text-yellow-200' }
+            ];
+
+            starData.forEach((s, i) => {
+                const btn = document.createElement('div');
+                btn.className = `star-btn ${s.size}`;
+                btn.innerHTML = s.em;
+                btn.style.left = s.left;
+                btn.style.animation = `starFall ${s.dur} linear infinite`;
+                btn.style.animationDelay = s.del;
+                
+                // Touch/Click handler
+                const clickHandler = (e) => {
+                    e.preventDefault();
+                    if(btn.classList.contains('hidden-star')) return;
+                    playSound('pop');
+                    starsCaught++;
+                    document.getElementById('bonus-score').innerText = starsCaught;
+                    btn.classList.add('hidden-star');
+                    setTimeout(() => {
+                        if(step === 'bonus') btn.classList.remove('hidden-star');
+                    }, 500);
+                };
+                
+                btn.addEventListener('mousedown', clickHandler);
+                btn.addEventListener('touchstart', clickHandler, {passive: false});
+                
+                container.appendChild(btn);
+            });
+
+            clearInterval(bonusTimerInterval);
+            bonusTimerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('bonus-timer').innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(bonusTimerInterval);
+                    step = 'result';
+                    starPoints += (starsCaught * 10);
+                    playSound('victory');
+                    updateUI();
+                }
+            }, 1000);
+        };
+
+        const createConfetti = () => {
+            const container = document.getElementById('confetti-container');
+            container.innerHTML = '';
+            const colors = ['#FF4136', '#FF851B', '#FFDC00', '#2ECC40', '#0074D9', '#B10DC9', '#F012BE', '#7FDBFF'];
+            for (let i = 0; i < 100; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                piece.style.left = `${Math.random() * 100}%`;
+                piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                piece.style.animationDuration = `${Math.random() * 3 + 2}s`;
+                piece.style.animationDelay = `${Math.random() * 0.5}s`;
+                piece.style.width = `${Math.random() * 10 + 8}px`;
+                piece.style.height = `${Math.random() * 10 + 8}px`;
+                piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '4px';
+                container.appendChild(piece);
+            }
+        };
+
+        const nextRound = () => {
+            playSound('click');
+            if (currentRoundIndex >= 9) {
+                playSound('victory');
+                step = 'complete';
+                createConfetti();
+                updateUI();
+            } else {
+                currentRoundIndex++;
+                resetRoundState();
+                updateUI();
+            }
+        };
+
+        const resetRoundState = () => {
+            step = 'first';
+            num1 = null;
+            num2 = null;
+            mysteryTypes = { t1: null, t2: null };
+            const currentRound = roundsList[currentRoundIndex];
+            
+            if (currentRound.t2 === 'Fixed') {
+                num2 = currentRound.fixedVal;
+                updateFeedback('info', `Find the ${currentRound.t1} number plus ${currentRound.fixedVal} that makes ${currentRound.target}!`);
+            } else if (currentRound.t1 === 'Choice') {
+                updateFeedback('info', "First, choose if each box is ODD or EVEN!");
+            } else {
+                updateFeedback('info', `Pick an ${currentRound.t1} number!`);
+            }
+        };
+
+        const resetGame = () => {
+            playSound('click');
+            document.getElementById('confetti-container').innerHTML = '';
+            roundsList = generateUniqueRounds();
+            currentRoundIndex = 0;
+            starPoints = 0;
+            resetRoundState();
+            updateUI();
+        };
+
+        // Main UI Controller
+        const updateUI = () => {
+            if (step === 'complete') {
+                vActiveGame.classList.add('hidden');
+                vCompletion.classList.remove('hidden');
+                vCompletion.classList.add('flex');
+                document.getElementById('final-score').innerText = starPoints;
+                return;
+            }
+
+            vActiveGame.classList.remove('hidden');
+            vCompletion.classList.add('hidden');
+            vCompletion.classList.remove('flex');
+
+            const currentRound = roundsList[currentRoundIndex];
+            elRoundCounter.innerText = currentRoundIndex + 1;
+            elStarPoints.innerText = starPoints;
+            elProgress.style.width = `${((currentRoundIndex) / 10) * 100}%`;
+            elRoundTitle.innerText = currentRound.title;
+
+            updateBoxColors();
+            updateLabels();
+
+            if (step === 'first' || step === 'second') {
+                renderNumbers();
+                switchView('view-numbers');
+            } else if (step === 'guess') {
+                switchView('view-guess');
+            } else if (step === 'bonus') {
+                switchView('view-bonus');
+            } else if (step === 'result') {
+                document.getElementById('result-bonus-text').innerText = starsCaught > 0 ? `CAUGHT ${starsCaught} STARS!` : "GOOD EFFORT!";
+                document.getElementById('result-equation').innerHTML = `${isOdd(num1) ? 'Odd' : 'Even'} + ${isOdd(num2) ? 'Odd' : 'Even'} = <span class="text-[#58CC02] font-black ml-2 uppercase">${(num1 + num2) % 2 === 0 ? 'Even' : 'Odd'}</span>`;
+                
+                const btn = document.getElementById('next-btn');
+                btn.innerHTML = currentRoundIndex >= 9 
+                    ? `<span>FINISH</span><i data-lucide="arrow-right" stroke-width="3" class="w-6 h-6 md:w-8 md:h-8"></i>` 
+                    : `<span>NEXT ROUND</span><i data-lucide="arrow-right" stroke-width="3" class="w-6 h-6 md:w-8 md:h-8"></i>`;
+                lucide.createIcons();
+                switchView('view-result');
+            }
+        };
+
+        // Initialize Game
+        window.onload = () => {
+            roundsList = generateUniqueRounds();
+            resetRoundState();
+            updateUI();
+        };
+
+    </script>
+</body>
+</html>
