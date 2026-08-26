@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="../assets/brand.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Ordinal Numbers – Find the Fruit!</title>
+  <style>
+    :root{
+      --navy:#123b72;
+      --blue:#2fa7e8;
+      --blue-dark:#167bb8;
+      --green:#42bf57;
+      --green-dark:#23943a;
+      --red:#f15b5d;
+      --orange:#ff9f43;
+      --yellow:#ffd75e;
+      --paper:#fffef9;
+      --ink:#23324a;
+      --muted:#6e7d93;
+      --line:#dfe8f1;
+      --shadow:0 16px 42px rgba(37,74,116,.18);
+    }
+
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden}
+    body{
+      font-family:"Trebuchet MS","Arial Rounded MT Bold",Arial,sans-serif;
+      color:var(--ink);
+      background:#9bdcf8;
+      user-select:none;
+      -webkit-user-select:none;
+      touch-action:manipulation;
+    }
+    button{font:inherit}
+
+    .bg{
+      position:fixed;inset:0;overflow:hidden;z-index:0;
+      background:
+        radial-gradient(circle at 12% 11%, rgba(255,255,255,.95) 0 24px, transparent 25px),
+        linear-gradient(180deg,#9bdcf8 0%,#dff5ff 67%,#9bdd72 67%,#72c94f 100%);
+    }
+    .sun{
+      position:absolute;left:5vw;top:5vh;width:72px;height:72px;border-radius:50%;
+      background:#ffd85b;box-shadow:0 0 0 16px rgba(255,216,91,.18),0 0 40px rgba(255,216,91,.45)
+    }
+    .cloud{position:absolute;width:112px;height:36px;background:#fff;border-radius:999px;opacity:.88}
+    .cloud:before,.cloud:after{content:"";position:absolute;background:#fff;border-radius:50%}
+    .cloud:before{width:52px;height:52px;left:18px;top:-23px}
+    .cloud:after{width:64px;height:64px;right:15px;top:-31px}
+    .c1{top:11%;left:22%;transform:scale(.75)}
+    .c2{top:20%;right:12%;transform:scale(.95)}
+    .c3{top:35%;left:3%;transform:scale(.6)}
+    .hill{position:absolute;bottom:12vh;border-radius:50% 50% 0 0/100% 100% 0 0}
+    .h1{left:-8%;width:58%;height:25vh;background:#78cc56}
+    .h2{right:-10%;width:68%;height:30vh;background:#66bd45}
+    .tree{position:absolute;bottom:10vh;width:18px;height:80px;background:#8c5a35;border-radius:9px}
+    .tree:before{content:"";position:absolute;width:82px;height:72px;border-radius:50%;background:#42b954;left:-32px;top:-45px;box-shadow:-28px 15px 0 -8px #52c865,28px 15px 0 -8px #3eaa4e}
+    .t1{left:9%;transform:scale(.8)} .t2{right:8%;transform:scale(.95)}
+    .flower{position:absolute;bottom:4vh;font-size:22px;filter:drop-shadow(0 2px 0 rgba(0,0,0,.06))}
+    .f1{left:15%}.f2{left:36%}.f3{right:23%}.f4{right:8%}
+
+    #app{position:relative;z-index:5;width:100%;height:100dvh;padding:clamp(8px,1.5vw,18px)}
+    .game-card{
+      width:min(1100px,100%);height:min(720px,calc(100dvh - 16px));margin:auto;
+      background:rgba(255,254,249,.97);border:5px solid rgba(255,255,255,.95);
+      border-radius:30px;box-shadow:var(--shadow);
+      display:grid;grid-template-rows:auto auto 1fr auto;overflow:hidden;
+      position:absolute;inset:50% auto auto 50%;transform:translate(-50%,-50%);
+    }
+    .topbar{
+      display:flex;align-items:center;justify-content:space-between;gap:14px;
+      padding:14px 20px;border-bottom:3px dashed #d8e8f3;background:rgba(255,255,255,.78)
+    }
+    .brand h1{font-size:clamp(22px,3vw,34px);margin:0;color:var(--blue-dark);font-weight:900;letter-spacing:-.5px}
+    .brand p{margin:3px 0 0;font-size:clamp(11px,1.5vw,15px);font-weight:800;color:var(--muted)}
+    .badges{display:flex;gap:9px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+    .badge{
+      padding:8px 13px;border-radius:999px;font-size:clamp(11px,1.5vw,15px);
+      font-weight:900;background:#fff;border:3px solid #d8e8f3;box-shadow:0 4px 0 #c8dae8;white-space:nowrap
+    }
+    .badge.score{color:#b77b00;background:#fff9d9;border-color:#ffe17c;box-shadow:0 4px 0 #e6c64e}
+    .sound-btn{
+      width:44px;height:44px;border-radius:50%;border:0;background:var(--blue);color:white;
+      box-shadow:0 5px 0 var(--blue-dark);cursor:pointer;font-size:20px
+    }
+    .sound-btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--blue-dark)}
+
+    .progress-wrap{padding:10px 20px 0}
+    .progress-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;font-weight:900;color:var(--navy);font-size:13px}
+    .progress{height:14px;background:#e5edf4;border-radius:999px;overflow:hidden;border:2px solid #d2e1ec}
+    .progress > div{height:100%;width:10%;background:linear-gradient(90deg,var(--blue),var(--green));transition:width .35s ease;border-radius:999px}
+
+    .stage{
+      padding:clamp(8px,1.7vw,18px) clamp(12px,2.3vw,24px);
+      display:grid;grid-template-rows:auto 1fr auto;gap:clamp(8px,1.4vh,14px);min-height:0;
+    }
+    .prompt-row{display:flex;align-items:center;justify-content:center;gap:10px}
+    .prompt{
+      font-size:clamp(20px,3.1vw,34px);font-weight:900;color:var(--navy);text-align:center;
+      line-height:1.12
+    }
+    .speak{
+      flex:0 0 auto;width:46px;height:46px;border-radius:50%;border:0;background:#54b9ec;color:#fff;
+      box-shadow:0 5px 0 #2e8fbe;font-size:20px;cursor:pointer
+    }
+    .speak:active{transform:translateY(4px);box-shadow:0 1px 0 #2e8fbe}
+
+    .fruit-zone{
+      min-height:0;background:#f8fbfd;border:4px solid #e6eef4;border-radius:24px;
+      display:flex;flex-direction:column;justify-content:center;align-items:center;padding:clamp(8px,1.5vw,16px);
+      position:relative;overflow:hidden;
+    }
+    .left-hint{
+      position:absolute;left:16px;top:12px;background:#fff4cf;color:#9a6900;border:2px solid #ffd866;
+      border-radius:999px;padding:5px 10px;font-size:12px;font-weight:900;opacity:0;transform:translateX(-8px);
+      transition:.25s ease
+    }
+    .left-hint.show{opacity:1;transform:translateX(0)}
+    .fruit-row{
+      width:100%;display:flex;justify-content:center;align-items:flex-end;
+      gap:clamp(3px,1.15vw,14px);padding:4px 2px 0;min-width:0
+    }
+    .fruit-item{
+      width:min(9vw,86px);max-width:86px;min-width:42px;
+      display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+      transform:scale(.85);opacity:0;animation:pop .36s forwards;
+    }
+    .fruit-item svg{width:100%;height:auto;display:block;filter:drop-shadow(0 5px 3px rgba(35,50,74,.12))}
+    .fruit-item.target.bounce{animation:targetBounce .6s ease 1}
+    .index-label{
+      min-height:22px;margin-top:2px;font-size:clamp(12px,1.7vw,16px);font-weight:900;color:#68768a;
+      opacity:0;transition:.2s
+    }
+    .fruit-zone.show-index .index-label{opacity:1}
+    @keyframes pop{to{transform:scale(1);opacity:1}}
+    @keyframes targetBounce{0%,100%{transform:translateY(0)}35%{transform:translateY(-13px)}65%{transform:translateY(-5px)}}
+
+    .feedback{
+      min-height:30px;text-align:center;font-weight:900;font-size:clamp(15px,2vw,20px);line-height:1.2;
+      color:var(--muted);display:flex;align-items:center;justify-content:center
+    }
+    .feedback.good{color:var(--green-dark)}
+    .feedback.bad{color:#d45243}
+
+    .answers{
+      display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(7px,1vw,12px);
+      padding:0 clamp(2px,1vw,8px)
+    }
+    .answer{
+      min-height:clamp(52px,8vh,72px);border-radius:18px;border:3px solid #8fa4b9;background:#fff;
+      color:var(--navy);font-weight:900;font-size:clamp(22px,3.3vw,34px);cursor:pointer;
+      box-shadow:0 6px 0 #b9c6d1;transition:.12s ease;touch-action:manipulation
+    }
+    .answer:hover{transform:translateY(-2px)}
+    .answer:active{transform:translateY(5px);box-shadow:0 1px 0 #b9c6d1}
+    .answer.correct{background:#e9faec;border-color:#55bd66;color:#228a36;box-shadow:0 6px 0 #78c985}
+    .answer.wrong{background:#fff0ed;border-color:#ef7669;color:#ca493e;box-shadow:0 6px 0 #ef9c92;animation:shake .28s}
+    .answer.locked{pointer-events:none}
+    @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+
+    .footer{
+      min-height:68px;padding:8px 20px 14px;display:flex;align-items:center;justify-content:center;
+      border-top:3px dashed #e1ebf2;background:rgba(255,255,255,.72)
+    }
+    .next-btn{
+      display:none;border:0;border-radius:18px;padding:12px 28px;background:var(--green);color:#fff;
+      font-size:18px;font-weight:900;box-shadow:0 6px 0 var(--green-dark);cursor:pointer
+    }
+    .next-btn.show{display:inline-flex;align-items:center;gap:8px}
+    .next-btn:active{transform:translateY(5px);box-shadow:0 1px 0 var(--green-dark)}
+
+    .overlay{
+      position:absolute;inset:0;background:rgba(20,45,74,.34);backdrop-filter:blur(5px);
+      display:none;align-items:center;justify-content:center;z-index:20;padding:18px
+    }
+    .overlay.show{display:flex}
+    .finish-card{
+      width:min(500px,100%);background:#fff;border:5px solid #fff;border-radius:30px;box-shadow:0 24px 65px rgba(16,38,70,.3);
+      text-align:center;padding:24px
+    }
+    .finish-card .icon{font-size:68px;line-height:1}
+    .finish-card h2{margin:10px 0 6px;color:var(--blue-dark);font-size:clamp(28px,5vw,42px)}
+    .finish-card p{margin:6px 0;color:var(--muted);font-weight:800}
+    .final-score{
+      margin:18px auto;width:160px;padding:14px 10px;border-radius:22px;background:#fff8d8;border:3px solid #ffe07a;
+      color:#a66e00;font-size:34px;font-weight:900;box-shadow:0 6px 0 #e5c95c
+    }
+    .play-again{
+      border:0;border-radius:18px;padding:14px 28px;background:var(--green);color:#fff;font-weight:900;font-size:18px;
+      box-shadow:0 6px 0 var(--green-dark);cursor:pointer
+    }
+    .play-again:active{transform:translateY(5px);box-shadow:0 1px 0 var(--green-dark)}
+
+    #confetti{position:fixed;inset:0;pointer-events:none;z-index:999;width:100%;height:100%}
+
+    @media(max-width:720px){
+      .game-card{width:calc(100% - 12px);height:calc(100dvh - 12px);border-radius:24px;border-width:3px}
+      .topbar{padding:10px 12px}
+      .brand p{display:none}
+      .badges{gap:5px}
+      .badge{padding:6px 9px;border-width:2px;box-shadow:0 3px 0 #c8dae8}
+      .badge.score{box-shadow:0 3px 0 #e6c64e}
+      .sound-btn{width:38px;height:38px;font-size:17px}
+      .progress-wrap{padding:7px 12px 0}
+      .stage{padding:7px 9px;gap:7px}
+      .fruit-zone{border-radius:18px;border-width:3px}
+      .fruit-row{gap:2px}
+      .fruit-item{width:min(9.1vw,62px);min-width:30px}
+      .answers{gap:6px}
+      .answer{border-radius:14px;border-width:2px;box-shadow:0 4px 0 #b9c6d1;min-height:50px}
+      .footer{min-height:58px;padding:6px 10px 10px}
+      .next-btn{padding:10px 22px}
+    }
+    @media(max-height:690px){
+      .game-card{height:calc(100dvh - 10px)}
+      .topbar{padding:8px 16px}
+      .brand h1{font-size:24px}
+      .progress-wrap{padding-top:6px}
+      .stage{gap:6px;padding-top:6px;padding-bottom:6px}
+      .prompt{font-size:24px}
+      .speak{width:40px;height:40px}
+      .fruit-zone{padding:5px 10px}
+      .fruit-item{max-width:70px}
+      .feedback{min-height:22px;font-size:15px}
+      .answer{min-height:48px;font-size:25px}
+      .footer{min-height:55px}
+    }
+  </style>
+</head>
+<body>
+  <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+  <div class="bg" aria-hidden="true">
+    <div class="sun"></div>
+    <div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
+    <div class="hill h1"></div><div class="hill h2"></div>
+    <div class="tree t1"></div><div class="tree t2"></div>
+    <div class="flower f1">🌼</div><div class="flower f2">🌷</div><div class="flower f3">🌻</div><div class="flower f4">🌸</div>
+  </div>
+
+  <div id="app">
+    <main class="game-card" aria-label="Ordinal number game">
+      <header class="topbar">
+        <div class="brand">
+          <h1>Ordinal Numbers</h1>
+          <p>Find the position of the coloured fruit!</p>
+        </div>
+        <div class="badges">
+          <div class="badge score" id="scoreBadge">⭐ Score: 0</div>
+          <div class="badge" id="questionBadge">🧩 Question 1/10</div>
+          <button class="sound-btn" id="soundToggle" aria-label="Toggle sound">🔊</button>
+        </div>
+      </header>
+
+      <div class="progress-wrap">
+        <div class="progress-label"><span id="progressText">Question 1 of 10</span><span>Count left → right</span></div>
+        <div class="progress"><div id="progressBar"></div></div>
+      </div>
+
+      <section class="stage">
+        <div class="prompt-row">
+          <div class="prompt">Which position is the coloured fruit?</div>
+          <button class="speak" id="speakBtn" aria-label="Read question">🔊</button>
+        </div>
+
+        <div class="fruit-zone" id="fruitZone">
+          <div class="left-hint" id="leftHint">Start here →</div>
+          <div class="fruit-row" id="fruitRow"></div>
+        </div>
+
+        <div>
+          <div class="feedback" id="feedback">Choose the ordinal number below.</div>
+          <div class="answers" id="answers"></div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <button class="next-btn" id="nextBtn">NEXT <span>→</span></button>
+      </footer>
+
+      <div class="overlay" id="finishOverlay" role="dialog" aria-modal="true">
+        <div class="finish-card">
+          <div class="icon">🏆</div>
+          <h2>Amazing Job!</h2>
+          <p>You completed the Ordinal Number Challenge!</p>
+          <div class="final-score" id="finalScore">10 / 10</div>
+          <p id="finalMessage">Ordinal Number Superstar! 🌟</p>
+          <button class="play-again" id="playAgainBtn">PLAY AGAIN 🔄</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <canvas id="confetti"></canvas>
+
+<script>
+(() => {
+  const ordinalLabels = ["1st","2nd","3rd","4th","5th","6th","7th","8th","9th","10th"];
+  const fruitTypes = ["orange","apple","strawberry","pear","banana","mango","watermelon","peach","lemon","cherry"];
+
+  const fruitRow = document.getElementById("fruitRow");
+  const answers = document.getElementById("answers");
+  const feedback = document.getElementById("feedback");
+  const nextBtn = document.getElementById("nextBtn");
+  const scoreBadge = document.getElementById("scoreBadge");
+  const questionBadge = document.getElementById("questionBadge");
+  const progressText = document.getElementById("progressText");
+  const progressBar = document.getElementById("progressBar");
+  const fruitZone = document.getElementById("fruitZone");
+  const leftHint = document.getElementById("leftHint");
+  const speakBtn = document.getElementById("speakBtn");
+  const soundToggle = document.getElementById("soundToggle");
+  const finishOverlay = document.getElementById("finishOverlay");
+  const finalScore = document.getElementById("finalScore");
+  const finalMessage = document.getElementById("finalMessage");
+  const playAgainBtn = document.getElementById("playAgainBtn");
+
+  let questionIndex = 0;
+  let score = 0;
+  let current = null;
+  let wrongAttempts = 0;
+  let answered = false;
+  let soundOn = true;
+  let targetPlan = [];
+
+  function shuffle(arr){
+    const a = [...arr];
+    for(let i=a.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [a[i],a[j]]=[a[j],a[i]];
+    }
+    return a;
+  }
+
+  function makeTargetPlan(){
+    // Spread target positions across the 10 questions and avoid putting the coloured fruit
+    // at the last position too often, especially in the first few questions.
+    const easy = shuffle([0,1,2,3,4]);
+    const medium = shuffle([5,6,7]);
+    const hard = shuffle([8,9]);
+    return [
+      easy[0],
+      easy[1],
+      easy[2],
+      medium[0],
+      easy[3],
+      medium[1],
+      easy[4],
+      hard[0],
+      medium[2],
+      hard[1]
+    ];
+  }
+
+  function svgFruit(type, colored){
+    const stroke = "#515967";
+    const pale = "#fffdf8";
+    const g = colored;
+    const leafFill = colored ? "#22a64d" : pale;
+    const seed = colored ? "#ffe598" : "#d6d9de";
+    const smile = colored ? `
+      <circle cx="43" cy="60" r="2.3" fill="#2b2b2b"/>
+      <circle cx="57" cy="60" r="2.3" fill="#2b2b2b"/>
+      <path d="M42 68c4 4 12 4 16 0" fill="none" stroke="#2b2b2b" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="36" cy="66" r="2.8" fill="rgba(255,255,255,.35)"/>
+      <circle cx="64" cy="66" r="2.8" fill="rgba(255,255,255,.35)"/>
+    ` : ``;
+    const wrap = (inner, viewBox='0 0 100 100') => `
+      <svg viewBox="${viewBox}" aria-hidden="true">
+        <defs>
+          <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="rgba(255,255,255,.9)"/>
+            <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+          </linearGradient>
+        </defs>
+        ${inner}
+      </svg>`;
+    const stem = `<path d="M50 24c1-8 4-13 8-18" fill="none" stroke="${stroke}" stroke-width="3.2" stroke-linecap="round"/>`;
+    const leaf = `<path d="M53 18c9-13 19-10 25-8-4 9-13 15-25 14z" fill="${leafFill}" stroke="${stroke}" stroke-width="2.4"/>`;
+    const gloss = `<ellipse cx="39" cy="41" rx="10" ry="16" fill="rgba(255,255,255,.3)" transform="rotate(-20 39 41)"/>`;
+
+    switch(type){
+      case "orange":
+        return wrap(`${leaf}${stem}
+          <circle cx="50" cy="58" r="31" fill="${g?"#ff951f":pale}" stroke="${stroke}" stroke-width="3"/>
+          ${gloss}
+          <path d="M27 56c3-15 14-25 29-28" fill="none" stroke="${g?"#ffc06a":"#d6d9de"}" stroke-width="3" opacity=".9"/>
+          ${smile}`);
+      case "apple":
+        return wrap(`${stem}${leaf}
+          <path d="M50 35c-13-10-31-2-31 19 0 24 18 36 31 30 13 6 31-6 31-30 0-21-18-29-31-19z" fill="${g?"#7ecb2f":pale}" stroke="${stroke}" stroke-width="3"/>
+          ${gloss}
+          <path d="M49 36c-4-7-9-9-15-9" fill="none" stroke="${stroke}" stroke-width="2.4"/>
+          ${smile}`);
+      case "strawberry":
+        return wrap(`
+          <path d="M50 30c-8-10-18-9-28-5 7 2 9 7 10 12" fill="${g?"#4fb442":pale}" stroke="${stroke}" stroke-width="2.4"/>
+          <path d="M50 30c8-10 18-9 28-5-7 2-9 7-10 12" fill="${g?"#4fb442":pale}" stroke="${stroke}" stroke-width="2.4"/>
+          <path d="M22 38c0 30 17 47 28 53 11-6 28-23 28-53-15-8-41-8-56 0z" fill="${g?"#ff3f3f":pale}" stroke="${stroke}" stroke-width="3"/>
+          <ellipse cx="40" cy="45" rx="9" ry="13" fill="rgba(255,255,255,.2)" transform="rotate(-20 40 45)"/>
+          ${[["37","50"],["55","47"],["65","61"],["43","67"],["53","77"],["32","62"]].map(p=>`<ellipse cx="${p[0]}" cy="${p[1]}" rx="2.2" ry="3.6" fill="${seed}"/>`).join("")}
+          ${smile}`);
+      case "pear":
+        return wrap(`${stem}${leaf}
+          <path d="M51 25c-9 0-11 14-12 25-1 5-7 10-12 17-13 19 0 30 23 30 24 0 38-11 24-31-5-7-11-11-12-17-1-11-2-24-11-24z" fill="${g?"#a7d52f":pale}" stroke="${stroke}" stroke-width="3"/>
+          <ellipse cx="39" cy="47" rx="10" ry="18" fill="rgba(255,255,255,.28)" transform="rotate(-20 39 47)"/>
+          ${smile}`);
+      case "banana":
+        return wrap(`
+          <path d="M29 18c13 15 13 41 2 56-7 9-2 19 9 20 27 1 48-21 50-51 1-10-4-17-10-20-4 26-19 45-35 50 8-16 5-38-8-55z" fill="${g?"#ffd52d":pale}" stroke="${stroke}" stroke-width="3"/>
+          <path d="M27 17l11 2 3-7-11-3z" fill="${g?"#8ea63d":pale}" stroke="${stroke}" stroke-width="2.3"/>
+          <path d="M41 31c13 9 17 27 10 42" fill="none" stroke="${g?"rgba(255,255,255,.45)":"#d6d9de"}" stroke-width="3" stroke-linecap="round"/>
+          ${colored ? '<circle cx="58" cy="58" r="2.1" fill="#2b2b2b"/><circle cx="69" cy="53" r="2.1" fill="#2b2b2b"/><path d="M57 63c4 3 9 2 12-1" fill="none" stroke="#2b2b2b" stroke-width="2.2" stroke-linecap="round"/>' : ''}`);
+      case "mango":
+        return wrap(`${leaf}${stem}
+          <path d="M56 25c-20-4-37 8-39 30-2 22 12 38 32 38 21 0 35-18 35-40 0-16-10-25-28-28z" fill="${g?"#ffb52a":pale}" stroke="${stroke}" stroke-width="3"/>
+          <ellipse cx="37" cy="44" rx="11" ry="18" fill="rgba(255,255,255,.28)" transform="rotate(-16 37 44)"/>
+          <path d="M24 65c7 12 18 18 31 17" fill="none" stroke="${g?"#ff7c3c":"#d6d9de"}" stroke-width="3"/>
+          ${smile}`);
+      case "watermelon":
+        return wrap(`
+          <path d="M12 62c7-34 67-43 80-4-8 24-26 35-43 34-19-1-31-11-37-30z" fill="${g?"#53bc5c":pale}" stroke="${stroke}" stroke-width="3"/>
+          <path d="M22 61c11-22 49-28 61-3-7 16-19 24-34 24-13 0-22-6-27-21z" fill="${g?"#ff5f67":pale}" stroke="${stroke}" stroke-width="3"/>
+          <ellipse cx="37" cy="54" rx="10" ry="12" fill="rgba(255,255,255,.18)" transform="rotate(-15 37 54)"/>
+          <circle cx="42" cy="59" r="2.3" fill="${stroke}"/><circle cx="58" cy="54" r="2.3" fill="${stroke}"/><circle cx="67" cy="65" r="2.3" fill="${stroke}"/>
+          ${smile}`);
+      case "peach":
+        return wrap(`${leaf}${stem}
+          <path d="M50 31c-17-17-38-1-35 23 2 20 18 37 35 39 17-2 33-19 35-39 3-24-18-40-35-23z" fill="${g?"#ffac86":pale}" stroke="${stroke}" stroke-width="3"/>
+          <ellipse cx="39" cy="43" rx="10" ry="16" fill="rgba(255,255,255,.25)" transform="rotate(-18 39 43)"/>
+          <path d="M50 34c-5 18-4 35 1 52" fill="none" stroke="${g?"#df775d":"#d6d9de"}" stroke-width="2.4"/>
+          ${smile}`);
+      case "lemon":
+        return wrap(`${leaf}
+          <path d="M49 25c-19 0-34 15-34 34 0 18 15 34 34 34 18 0 34-16 34-34 0-19-16-34-34-34z" fill="${g?"#ffe34a":pale}" stroke="${stroke}" stroke-width="3"/>
+          <path d="M14 59l-6 5 8 2M83 55l8-5-1 9" fill="${g?"#ffe34a":pale}" stroke="${stroke}" stroke-width="2.4"/>
+          <ellipse cx="36" cy="43" rx="10" ry="16" fill="rgba(255,255,255,.28)" transform="rotate(-18 36 43)"/>
+          ${smile}`);
+      case "cherry":
+        return wrap(`
+          <path d="M48 46c3-16 9-27 19-34M53 47c0-15-5-26-13-34" fill="none" stroke="${stroke}" stroke-width="3"/>
+          <path d="M43 15c10-8 19-7 28-2-8 8-17 10-28 2z" fill="${g?"#47b34b":pale}" stroke="${stroke}" stroke-width="2.4"/>
+          <circle cx="37" cy="66" r="20" fill="${g?"#ef3f45":pale}" stroke="${stroke}" stroke-width="3"/>
+          <circle cx="67" cy="68" r="20" fill="${g?"#ef3f45":pale}" stroke="${stroke}" stroke-width="3"/>
+          <ellipse cx="31" cy="59" rx="6" ry="9" fill="rgba(255,255,255,.24)" transform="rotate(-20 31 59)"/>
+          <ellipse cx="61" cy="61" rx="6" ry="9" fill="rgba(255,255,255,.24)" transform="rotate(-20 61 61)"/>
+          ${colored ? '<circle cx="45" cy="68" r="2.1" fill="#2b2b2b"/><circle cx="58" cy="68" r="2.1" fill="#2b2b2b"/><path d="M45 76c3 3 10 3 13 0" fill="none" stroke="#2b2b2b" stroke-width="2.3" stroke-linecap="round"/>' : ''}`);
+      default:
+        return wrap(`${leaf}${stem}<circle cx="50" cy="58" r="31" fill="${g?"#ff951f":pale}" stroke="${stroke}" stroke-width="3"/>${gloss}${smile}`);
+    }
+  }
+
+  function generateQuestion(){
+    const targetIndex = targetPlan[questionIndex];
+    let minCount = questionIndex < 3 ? 5 : questionIndex < 6 ? 6 : 7;
+    let maxCount = questionIndex < 3 ? 7 : questionIndex < 6 ? 8 : 10;
+    let count = Math.max(minCount, targetIndex + 1);
+    count = Math.max(count, Math.floor(Math.random() * (maxCount - minCount + 1)) + minCount);
+
+    // If the coloured fruit would land in the final slot, try to add more fruits
+    // so the target can appear in the middle or near the front instead.
+    if (targetIndex === count - 1 && count < 10) {
+      const extra = Math.min(10 - count, 1 + Math.floor(Math.random() * 2));
+      count += extra;
+    }
+    if(count < targetIndex + 1) count = targetIndex + 1;
+
+    current = {
+      fruit: fruitTypes[Math.floor(Math.random()*fruitTypes.length)],
+      count,
+      targetIndex,
+      answer: ordinalLabels[targetIndex]
+    };
+    wrongAttempts = 0;
+    answered = false;
+  }
+
+  function renderQuestion(){
+    feedback.textContent = "Choose the ordinal number below.";
+    feedback.className = "feedback";
+    nextBtn.classList.remove("show");
+    leftHint.classList.remove("show");
+    fruitZone.classList.remove("show-index");
+    fruitRow.innerHTML = "";
+    answers.innerHTML = "";
+
+    for(let i=0;i<current.count;i++){
+      const div = document.createElement("div");
+      div.className = "fruit-item" + (i===current.targetIndex ? " target" : "");
+      div.style.animationDelay = (i*45)+"ms";
+      div.innerHTML = svgFruit(current.fruit, i===current.targetIndex) + `<div class="index-label">${i+1}</div>`;
+      fruitRow.appendChild(div);
+    }
+
+    ordinalLabels.forEach((label, idx)=>{
+      const btn=document.createElement("button");
+      btn.className="answer";
+      btn.textContent=label;
+      btn.dataset.index=idx;
+      btn.addEventListener("click",()=>selectAnswer(idx,btn));
+      answers.appendChild(btn);
+    });
+
+    const n = questionIndex+1;
+    scoreBadge.textContent=`⭐ Score: ${score}`;
+    questionBadge.textContent=`🧩 Question ${n}/10`;
+    progressText.textContent=`Question ${n} of 10`;
+    progressBar.style.width=`${n*10}%`;
+  }
+
+  function selectAnswer(index, btn){
+    if(answered) return;
+    SoundFX.click();
+
+    if(index===current.targetIndex){
+      answered=true;
+      score++;
+      btn.classList.add("correct");
+      [...answers.children].forEach(b=>b.classList.add("locked"));
+      feedback.textContent=`Great job! 🎉 It is the ${current.answer} fruit!`;
+      feedback.className="feedback good";
+      scoreBadge.textContent=`⭐ Score: ${score}`;
+      const target=document.querySelector(".fruit-item.target");
+      if(target){target.classList.add("bounce");setTimeout(()=>target.classList.remove("bounce"),700)}
+      SoundFX.correct();
+      confetti.burst(70);
+      setTimeout(()=>nextBtn.classList.add("show"),350);
+    }else{
+      wrongAttempts++;
+      btn.classList.add("wrong");
+      setTimeout(()=>btn.classList.remove("wrong"),550);
+      feedback.textContent="Try again! Count from the left. 👈";
+      feedback.className="feedback bad";
+      SoundFX.wrong();
+      if(wrongAttempts>=1) leftHint.classList.add("show");
+      if(wrongAttempts>=2) fruitZone.classList.add("show-index");
+    }
+  }
+
+  function nextQuestion(){
+    SoundFX.click();
+    if(questionIndex>=9){finishGame();return}
+    questionIndex++;
+    generateQuestion();
+    renderQuestion();
+  }
+
+  function speakQuestion(){
+    if(!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const utter=new SpeechSynthesisUtterance("Which position is the coloured fruit? Count from left to right.");
+    utter.rate=.88; utter.pitch=1.06; utter.lang="en-US";
+    window.speechSynthesis.speak(utter);
+  }
+
+  const SoundFX={
+    ctx:null,
+    ensure(){
+      if(!soundOn) return false;
+      const AC=window.AudioContext||window.webkitAudioContext;
+      if(!AC) return false;
+      if(!this.ctx) this.ctx=new AC();
+      if(this.ctx.state==="suspended") this.ctx.resume();
+      return true;
+    },
+    tone(freq,dur=.12,type="sine",gain=.06,delay=0){
+      if(!this.ensure()) return;
+      const t=this.ctx.currentTime+delay;
+      const o=this.ctx.createOscillator(),g=this.ctx.createGain();
+      o.type=type;o.frequency.setValueAtTime(freq,t);
+      g.gain.setValueAtTime(.0001,t);
+      g.gain.exponentialRampToValueAtTime(gain,t+.015);
+      g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+      o.connect(g);g.connect(this.ctx.destination);o.start(t);o.stop(t+dur+.03);
+    },
+    click(){this.tone(420,.07,"triangle",.035)},
+    correct(){this.tone(523,.12,"triangle",.055);this.tone(659,.12,"triangle",.05,.11);this.tone(784,.17,"triangle",.05,.22)},
+    wrong(){this.tone(180,.16,"sawtooth",.04);this.tone(140,.18,"sawtooth",.03,.08)},
+    finish(){[523,659,784,1046].forEach((f,i)=>this.tone(f,.2,"triangle",.055,i*.13))}
+  };
+
+  class Confetti{
+    constructor(){
+      this.canvas=document.getElementById("confetti");
+      this.ctx=this.canvas.getContext("2d");
+      this.parts=[];
+      this.colors=["#2fa7e8","#42bf57","#ffd75e","#ff7f6e","#a56de2"];
+      this.resize();
+      addEventListener("resize",()=>this.resize());
+      requestAnimationFrame(()=>this.loop());
+    }
+    resize(){this.canvas.width=innerWidth;this.canvas.height=innerHeight}
+    burst(count=100){
+      for(let i=0;i<count;i++){
+        this.parts.push({
+          x:innerWidth/2+(Math.random()-.5)*120,y:innerHeight*.42,
+          vx:(Math.random()-.5)*12,vy:-5-Math.random()*8,
+          g:.18+Math.random()*.08,r:3+Math.random()*4,
+          rot:Math.random()*Math.PI,c:this.colors[Math.floor(Math.random()*this.colors.length)],
+          life:0,max:85+Math.random()*45
+        });
+      }
+    }
+    loop(){
+      this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
+      for(let i=this.parts.length-1;i>=0;i--){
+        const p=this.parts[i];p.life++;p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.rot+=.18;
+        this.ctx.save();this.ctx.translate(p.x,p.y);this.ctx.rotate(p.rot);
+        this.ctx.fillStyle=p.c;this.ctx.fillRect(-p.r,-p.r,p.r*2,p.r*1.2);this.ctx.restore();
+        if(p.life>p.max||p.y>innerHeight+30)this.parts.splice(i,1);
+      }
+      requestAnimationFrame(()=>this.loop());
+    }
+  }
+  const confetti=new Confetti();
+
+  function finishGame(){
+    finalScore.textContent=`${score} / 10`;
+    finalMessage.textContent = score===10 ? "Ordinal Number Superstar! 🌟" :
+                               score>=8 ? "Great Job! 🎉" :
+                               score>=6 ? "Good Work! Keep Practising! 👍" :
+                               "Nice try! Let's practise again! 💪";
+    finishOverlay.classList.add("show");
+    SoundFX.finish();
+    confetti.burst(220);
+  }
+
+  function restartGame(){
+    questionIndex=0;score=0;targetPlan=makeTargetPlan();
+    finishOverlay.classList.remove("show");
+    generateQuestion();renderQuestion();
+  }
+
+  soundToggle.addEventListener("click",()=>{
+    soundOn=!soundOn;
+    soundToggle.textContent=soundOn?"🔊":"🔇";
+    soundToggle.setAttribute("aria-label",soundOn?"Mute sound":"Unmute sound");
+    if(!soundOn && "speechSynthesis" in window) speechSynthesis.cancel();
+  });
+  speakBtn.addEventListener("click",()=>{SoundFX.click();speakQuestion()});
+  nextBtn.addEventListener("click",nextQuestion);
+  playAgainBtn.addEventListener("click",restartGame);
+
+  targetPlan=makeTargetPlan();
+  generateQuestion();
+  renderQuestion();
+
+  // Browsers often block autoplay speech. Try once; if blocked, speaker button still works.
+  setTimeout(()=>{ if(soundOn) { try{speakQuestion()}catch(e){} } },450);
+})();
+</script>
+</body>
+</html>
