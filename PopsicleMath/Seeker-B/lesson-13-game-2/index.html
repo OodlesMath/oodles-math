@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="../assets/brand.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Daytime or Nighttime? (Ver 3)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --ink:#24324a;
+      --sky:#86d9ff;
+      --day:#42b9f5;
+      --day-dark:#168bc9;
+      --night:#5848b9;
+      --night-dark:#352b7f;
+      --good:#58cc02;
+      --good-dark:#3fa800;
+      --bad:#ff4b4b;
+      --bad-dark:#d93535;
+      --yellow:#ffd84d;
+      --paper:#fff9dc;
+      --paper2:#fff3b6;
+      --shadow:0 12px 28px rgba(33,58,90,.18);
+    }
+
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{
+      margin:0;
+      width:100%;
+      height:100%;
+      overflow:hidden;
+      font-family:"Poppins",system-ui,sans-serif;
+      color:var(--ink);
+      background:#95dcfb;
+      user-select:none;
+      touch-action:manipulation;
+    }
+    button{font:inherit}
+
+    /* ===== Animated background ===== */
+    .world{
+      position:fixed; inset:0; overflow:hidden;
+      background:linear-gradient(#96e0ff 0 57%, #d8f3a4 57% 100%);
+      z-index:0;
+    }
+    .sun-bg{
+      position:absolute; width:78px; height:78px; border-radius:50%;
+      left:4vw; top:6vh; background:#ffd857;
+      box-shadow:0 0 0 14px rgba(255,216,87,.22),0 0 40px rgba(255,216,87,.6);
+    }
+    .cloud{position:absolute;width:120px;height:34px;background:rgba(255,255,255,.86);border-radius:40px;filter:drop-shadow(0 5px 8px rgba(70,120,150,.08));animation:drift 40s linear infinite}
+    .cloud:before,.cloud:after{content:"";position:absolute;background:inherit;border-radius:50%}
+    .cloud:before{width:48px;height:48px;left:18px;top:-23px}
+    .cloud:after{width:62px;height:62px;right:13px;top:-33px}
+    .c1{top:12vh;left:-140px;animation-duration:48s}
+    .c2{top:25vh;left:35vw;transform:scale(.72);opacity:.85;animation-duration:64s;animation-delay:-18s}
+    .c3{top:8vh;left:72vw;transform:scale(.55);opacity:.7;animation-duration:75s;animation-delay:-33s}
+    @keyframes drift{to{transform:translateX(calc(100vw + 260px))}}
+    .mountain{position:absolute;bottom:25vh;width:0;height:0;border-left:18vw solid transparent;border-right:18vw solid transparent;border-bottom:32vh solid #7eaf9a;opacity:.42}
+    .m1{left:-9vw}.m2{left:25vw;transform:scale(.8);bottom:24vh;border-bottom-color:#5f8c85}.m3{right:-8vw;transform:scale(1.1);border-bottom-color:#91b98e}
+    .hill{
+      position:absolute;bottom:0;border-radius:50% 50% 0 0 / 100% 100% 0 0;
+      background:#8ed05d;
+    }
+    .h1{left:-10vw;width:60vw;height:29vh}
+    .h2{right:-14vw;width:72vw;height:31vh;background:#71bd59}
+    .tree{position:absolute;bottom:7vh;font-size:clamp(42px,5vw,72px);filter:saturate(.9);opacity:.72}
+    .t1{left:4vw}.t2{right:5vw}.t3{left:20vw;transform:scale(.65);bottom:15vh}.t4{right:23vw;transform:scale(.6);bottom:14vh}
+
+    /* ===== Main shell ===== */
+    .app{
+      position:relative; z-index:5;
+      width:100%; height:100dvh;
+      display:flex; flex-direction:column;
+      padding:clamp(10px,1.4vw,18px);
+      gap:clamp(10px,1.2vw,16px);
+    }
+    .hud{
+      height:clamp(54px,7vh,72px);
+      display:flex; align-items:center; gap:12px;
+    }
+    .pill{
+      background:rgba(255,255,255,.93);
+      border:3px solid rgba(255,255,255,.95);
+      border-radius:22px;
+      padding:9px 16px;
+      font-weight:900;
+      box-shadow:0 7px 0 rgba(41,92,120,.13);
+      white-space:nowrap;
+    }
+    .progress-wrap{
+      flex:1;height:18px;background:rgba(255,255,255,.68);border:3px solid white;border-radius:999px;overflow:hidden;box-shadow:inset 0 3px 6px rgba(0,0,0,.08)
+    }
+    .progress{height:100%;width:10%;background:linear-gradient(90deg,#ffda4f,#ff9e45);border-radius:999px;transition:width .4s ease}
+    .score-pill{color:#0b7cb8}
+    .q-pill{color:#6848b6}
+
+    .game-card{
+      flex:1; min-height:0;
+      background-color:rgba(255,249,220,.95);
+      background-image:
+        radial-gradient(circle at 18px 18px,rgba(238,198,64,.16) 2px,transparent 2.2px),
+        linear-gradient(45deg,transparent 48%,rgba(238,198,64,.08) 49%,rgba(238,198,64,.08) 51%,transparent 52%);
+      background-size:36px 36px,84px 84px;
+      border:5px solid rgba(255,255,255,.95);
+      border-radius:34px;
+      box-shadow:var(--shadow);
+      padding:clamp(12px,1.7vw,22px);
+      display:flex;flex-direction:column;min-height:0;
+    }
+
+    .question-line{
+      min-height:clamp(60px,9vh,84px);
+      display:flex;align-items:center;justify-content:center;gap:10px;
+      text-align:center;
+    }
+    .question{
+      font-size:clamp(26px,3vw,46px);
+      line-height:1.08;
+      color:#165f9f;
+      font-weight:900;
+      letter-spacing:-.03em;
+    }
+    .speaker{
+      width:clamp(48px,5vw,62px);height:clamp(48px,5vw,62px);
+      border:none;border-radius:50%;
+      background:#fff;
+      box-shadow:0 5px 0 #d8d3bd,0 8px 12px rgba(0,0,0,.12);
+      cursor:pointer;font-size:clamp(22px,2.4vw,30px);
+      transition:.12s;
+    }
+    .speaker:active{transform:translateY(5px);box-shadow:0 0 0 #d8d3bd}
+
+    .content{
+      flex:1;min-height:0;
+      display:grid;
+      grid-template-columns:minmax(0,1.28fr) minmax(320px,.72fr);
+      gap:clamp(14px,2vw,26px);
+      align-items:stretch;
+    }
+
+    /* ===== Scene card ===== */
+    .scene-card{
+      position:relative; min-height:0;
+      background:white;
+      border:5px solid #fff;
+      border-radius:28px;
+      box-shadow:0 9px 0 #d7d2b7,0 14px 28px rgba(44,62,88,.13);
+      overflow:hidden;
+      display:flex; flex-direction:column;
+    }
+    .scene-art{
+      flex:1;min-height:0;position:relative;overflow:hidden;
+      background:linear-gradient(#81d8ff 0 65%,#8fd65d 65% 100%);
+      transition:background .55s ease;
+    }
+    .scene-art.night{
+      background:linear-gradient(#192553 0%,#38458b 62%,#263856 62%,#263856 100%);
+    }
+    .scene-stars{position:absolute;inset:0;opacity:0;transition:.5s;pointer-events:none}
+    .night .scene-stars{opacity:1}
+    .star{position:absolute;color:#fff7b8;animation:twinkle 1.7s ease-in-out infinite alternate}
+    @keyframes twinkle{from{opacity:.35;transform:scale(.75)}to{opacity:1;transform:scale(1.18)}}
+    .orb{
+      position:absolute;right:8%;top:9%;
+      width:clamp(54px,7vw,92px);aspect-ratio:1;border-radius:50%;
+      background:#ffe15d;box-shadow:0 0 0 12px rgba(255,225,93,.18),0 0 28px rgba(255,225,93,.6);
+    }
+    .night .orb{
+      background:#fff2a8;
+      box-shadow:18px -7px 0 0 #344186,0 0 28px rgba(255,242,168,.46);
+    }
+    .scene-cloud{position:absolute;top:18%;left:10%;font-size:clamp(42px,6vw,78px);opacity:.92}
+    .night .scene-cloud{opacity:.22}
+    .grass-strip{
+      position:absolute;left:0;right:0;bottom:0;height:34%;
+      background:linear-gradient(#7fcf56,#5eaf43);
+      border-top:8px solid rgba(183,234,126,.7);
+    }
+    .night .grass-strip{background:linear-gradient(#35584a,#243f3a);border-top-color:rgba(90,126,101,.55)}
+    .activity{
+      position:absolute;inset:18% 7% 9% 7%;
+      display:flex;align-items:flex-end;justify-content:center;
+      gap:clamp(12px,3vw,42px);
+      z-index:3;
+      filter:drop-shadow(0 7px 4px rgba(20,50,70,.12));
+    }
+    .activity-emoji{
+      font-size:clamp(68px,11vw,155px);
+      line-height:1;
+      transform-origin:bottom center;
+      animation:bob 3s ease-in-out infinite;
+    }
+    .activity-emoji.small{font-size:clamp(52px,8vw,112px);animation-delay:-1.1s}
+    @keyframes bob{50%{transform:translateY(-6px)}}
+    .scene-caption{
+      background:#fff;
+      min-height:clamp(58px,8vh,76px);
+      display:flex;align-items:center;justify-content:center;
+      text-align:center;padding:8px 14px;
+      font-size:clamp(16px,1.6vw,23px);
+      font-weight:800;color:#4b5870;
+      border-top:3px dashed #e6e2d0;
+    }
+
+
+    
+    /* ===== Ver 3: online cartoon illustration scenes ===== */
+    .scene-svg{display:none}
+    .scene-art{
+      background:#dff4ff;
+      padding:0;
+      overflow:hidden;
+    }
+    .scene-art.night{background:#21325f}
+    .scene-photo-stage{
+      position:absolute; inset:0;
+      overflow:hidden;
+      background:linear-gradient(#7bd2fb 0 68%, #8fd86a 68% 100%);
+    }
+    .scene-photo-stage.theme-night{
+      background:linear-gradient(#13214d 0%, #415596 62%, #42596f 62%, #42596f 100%);
+    }
+    .scene-sun, .scene-moon{
+      position:absolute; right:6%; top:7%;
+      width:84px; height:84px; border-radius:50%;
+      display:block;
+    }
+    .scene-sun{
+      background:#ffe064;
+      box-shadow:0 0 0 18px rgba(255,224,100,.18), 0 0 32px rgba(255,224,100,.42);
+    }
+    .scene-moon{
+      background:#fff3ae;
+      box-shadow:18px -8px 0 #22315f, 0 0 28px rgba(255,243,174,.22);
+    }
+    .scene-clouds{
+      position:absolute; left:7%; top:9%;
+      font-size:clamp(34px,4vw,56px); letter-spacing:16px;
+      filter:drop-shadow(0 5px 7px rgba(0,0,0,.08));
+    }
+    .scene-stars{
+      position:absolute; inset:0;
+      font-size:clamp(14px,1.4vw,18px);
+      color:#fff3b0;
+      opacity:.95;
+      pointer-events:none;
+    }
+    .scene-stars span{
+      position:absolute;
+      animation:twinkle 1.8s ease-in-out infinite alternate;
+    }
+    .scene-ground{
+      position:absolute; left:0; right:0; bottom:0; height:34%;
+      background:linear-gradient(#77c756,#5daf42);
+      border-top:6px solid rgba(195,245,140,.7);
+    }
+    .theme-night .scene-ground{
+      background:linear-gradient(#49645a,#31453f);
+      border-top-color:rgba(120,156,132,.55);
+    }
+    .scene-soft-hills{
+      position:absolute; left:-5%; right:-5%; bottom:22%;
+      height:22%;
+      background:
+        radial-gradient(70% 120% at 15% 100%, #99cf7a 0 58%, transparent 60%),
+        radial-gradient(80% 120% at 52% 100%, #89c36d 0 58%, transparent 60%),
+        radial-gradient(70% 120% at 88% 100%, #7ebc67 0 58%, transparent 60%);
+      opacity:.95;
+    }
+    .theme-night .scene-soft-hills{opacity:.35}
+    .scene-room-floor{
+      position:absolute; left:0; right:0; bottom:0; height:31%;
+      background:linear-gradient(#c7a882,#ad875f);
+      border-top:8px solid #ead2b7;
+    }
+    .theme-night .scene-room-floor{display:block}
+    .scene-frame{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      padding:20px 28px 24px;
+      gap:16px;
+      z-index:3;
+    }
+    .scene-asset{
+      max-width:48%;
+      max-height:76%;
+      object-fit:contain;
+      filter:drop-shadow(0 10px 14px rgba(15,23,42,.18));
+      animation:floaty 3.2s ease-in-out infinite;
+      image-rendering:auto;
+    }
+    .scene-asset.small{
+      max-width:30%;
+      max-height:48%;
+      align-self:flex-end;
+      margin-bottom:8px;
+      animation-delay:-1.1s;
+      opacity:.98;
+    }
+    .scene-badge{
+      position:absolute; left:14px; top:14px;
+      background:rgba(255,255,255,.94);
+      border:3px solid #fff;
+      border-radius:999px;
+      padding:7px 13px;
+      font-size:13px;
+      font-weight:900;
+      box-shadow:0 5px 0 rgba(59,80,101,.12);
+      color:#42526a;
+      z-index:5;
+    }
+    .theme-night .scene-badge{background:rgba(255,255,255,.92)}
+    .scene-fallback{
+      font-size:clamp(72px,10vw,130px);
+      filter:drop-shadow(0 8px 10px rgba(0,0,0,.15));
+    }
+    @keyframes floaty{50%{transform:translateY(-6px)}}
+
+    /* ===== Answer cards ===== */
+
+    .answers{display:grid;grid-template-rows:1fr 1fr;gap:clamp(14px,2vh,22px);min-height:0}
+    .answer{
+      position:relative;border:none;border-radius:28px;
+      cursor:pointer;
+      overflow:hidden;
+      padding:clamp(12px,1.5vw,20px);
+      display:grid;
+      grid-template-columns:minmax(100px,.9fr) 1.1fr;
+      align-items:center;
+      color:white;
+      transition:transform .14s ease,filter .14s ease,box-shadow .14s ease;
+      border:5px solid rgba(255,255,255,.86);
+    }
+    .answer:hover{transform:translateY(-4px);filter:brightness(1.035)}
+    .answer:active{transform:translateY(4px)}
+    .day-answer{background:linear-gradient(145deg,#63d2ff,#289fdf);box-shadow:0 9px 0 #157fb8,0 15px 23px rgba(18,91,128,.24)}
+    .night-answer{background:linear-gradient(145deg,#6d64d9,#43379f);box-shadow:0 9px 0 #2d256f,0 15px 23px rgba(39,30,99,.25)}
+    .answer-visual{
+      position:relative;width:min(100%,150px);aspect-ratio:1;margin:auto;
+      border-radius:24px;
+      display:grid;place-items:center;
+      overflow:hidden;
+      border:4px solid rgba(255,255,255,.55);
+      box-shadow:inset 0 0 24px rgba(255,255,255,.16);
+    }
+    .day-answer .answer-visual{background:#4ebcf1}
+    .night-answer .answer-visual{background:#242944}
+    .sun-icon{font-size:clamp(50px,6vw,82px);filter:drop-shadow(0 5px 4px rgba(0,0,0,.12))}
+    .moon-icon{font-size:clamp(48px,5.6vw,78px);filter:drop-shadow(0 5px 4px rgba(0,0,0,.18))}
+    .answer-text{text-align:center}
+    .answer-label{font-size:clamp(24px,2.8vw,40px);font-weight:900;line-height:1.05;text-shadow:0 3px 0 rgba(0,0,0,.16)}
+    .answer-sub{margin-top:6px;font-size:clamp(11px,1.1vw,15px);font-weight:700;opacity:.88}
+    .mini-speak{
+      position:absolute;right:12px;bottom:12px;width:38px;height:38px;border-radius:50%;
+      border:none;background:rgba(255,255,255,.9);font-size:18px;cursor:pointer;
+      box-shadow:0 3px 0 rgba(0,0,0,.16);
+    }
+
+    .answer.correct{
+      background:linear-gradient(145deg,#79dc28,#50b900)!important;
+      box-shadow:0 9px 0 #3b9300,0 15px 23px rgba(46,125,0,.26)!important;
+      animation:correctBounce .48s ease;
+    }
+    @keyframes correctBounce{35%{transform:scale(1.05)}70%{transform:scale(.98)}}
+    .answer.wrong{animation:shake .42s ease;background:linear-gradient(145deg,#ff7777,#ef4444)!important;box-shadow:0 9px 0 #c82d2d!important}
+    @keyframes shake{20%,60%{transform:translateX(-9px)}40%,80%{transform:translateX(9px)}}
+
+    .feedback{
+      position:absolute;left:50%;bottom:17px;transform:translateX(-50%) translateY(120px);
+      z-index:20;
+      min-width:220px;text-align:center;
+      background:white;border:4px solid white;border-radius:22px;
+      padding:10px 18px;font-size:clamp(18px,2vw,26px);font-weight:900;
+      box-shadow:0 8px 0 rgba(0,0,0,.15),0 15px 30px rgba(0,0,0,.16);
+      opacity:0;transition:.3s ease;
+    }
+    .feedback.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    .feedback.good{color:#43a900}
+    .feedback.bad{color:#e23b3b}
+
+    /* ===== Start/finish overlays ===== */
+    .overlay{
+      position:fixed;inset:0;z-index:50;
+      display:grid;place-items:center;padding:18px;
+      background:rgba(34,61,88,.34);
+      backdrop-filter:blur(8px);
+    }
+    .overlay.hidden{display:none}
+    .modal{
+      width:min(520px,94vw);
+      background:#fffdf1;border:6px solid white;border-radius:34px;
+      box-shadow:0 18px 60px rgba(0,0,0,.25);
+      text-align:center;padding:28px;
+    }
+    .modal-icon{font-size:86px;line-height:1}
+    .modal h1{margin:8px 0 6px;font-size:clamp(30px,5vw,48px);color:#4c41a9;line-height:1;font-weight:900}
+    .modal p{font-size:17px;color:#627087;font-weight:700;margin:10px auto 20px}
+    .score-big{font-size:56px;color:#f2a900;font-weight:900;margin:8px 0}
+    .play-btn{
+      width:100%;border:none;border-radius:22px;background:#58cc02;color:white;
+      padding:16px 22px;font-weight:900;font-size:22px;
+      box-shadow:0 7px 0 #3fa800;cursor:pointer;
+    }
+    .play-btn:active{transform:translateY(7px);box-shadow:none}
+    .secondary-btn{
+      margin-top:11px;width:100%;border:none;border-radius:20px;background:#e9edf2;color:#4b5870;
+      padding:13px 18px;font-weight:900;font-size:17px;box-shadow:0 6px 0 #cbd2da;cursor:pointer;
+    }
+    .secondary-btn:active{transform:translateY(6px);box-shadow:none}
+
+    #confetti{position:fixed;inset:0;z-index:100;pointer-events:none;width:100%;height:100%}
+
+    @media(max-width:820px){
+      .app{padding:8px;gap:8px}
+      .hud{height:52px}
+      .pill{padding:7px 10px;border-radius:16px;font-size:13px}
+      .game-card{border-radius:24px;border-width:4px;padding:10px}
+      .question-line{min-height:50px}
+      .content{
+        grid-template-columns:1fr;
+        grid-template-rows:minmax(0,1.25fr) minmax(150px,.75fr);
+        gap:10px;
+      }
+      .scene-card{border-radius:20px;border-width:4px}
+      .scene-caption{min-height:42px;font-size:13px;padding:5px 10px}
+      .answers{grid-template-columns:1fr 1fr;grid-template-rows:1fr;gap:10px}
+      .answer{grid-template-columns:72px 1fr;border-radius:20px;border-width:4px;padding:8px}
+      .answer-visual{border-radius:16px;border-width:3px}
+      .answer-sub{display:none}
+      .mini-speak{display:none}
+      .feedback{bottom:8px}
+    }
+
+    @media(max-width:520px){
+      .q-pill{display:none}
+      .progress-wrap{height:14px}
+      .score-pill{font-size:12px}
+      .question{font-size:clamp(20px,6vw,28px)}
+      .speaker{width:42px;height:42px;font-size:20px}
+      .content{grid-template-rows:minmax(0,1.3fr) minmax(125px,.7fr)}
+      .activity{inset:22% 3% 7%}
+      .answer{grid-template-columns:58px 1fr;padding:6px;border-radius:17px}
+      .answer-label{font-size:clamp(17px,5vw,24px)}
+      .sun-icon,.moon-icon{font-size:42px}
+      .scene-caption{font-size:12px}
+      .modal{padding:22px}
+    }
+
+    @media(max-height:650px) and (orientation:landscape){
+      .hud{height:46px}
+      .game-card{padding:8px}
+      .question-line{min-height:45px}
+      .question{font-size:26px}
+      .content{grid-template-columns:minmax(0,1.25fr) minmax(270px,.75fr);grid-template-rows:1fr}
+      .scene-caption{min-height:42px;font-size:13px}
+      .answer{padding:8px}
+      .answer-label{font-size:25px}
+      .answer-sub{display:none}
+    }
+  </style>
+</head>
+<body>
+  <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+  <div class="world" aria-hidden="true">
+    <div class="sun-bg"></div>
+    <div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
+    <div class="mountain m1"></div><div class="mountain m2"></div><div class="mountain m3"></div>
+    <div class="hill h1"></div><div class="hill h2"></div>
+    <div class="tree t1">🌳</div><div class="tree t2">🌲</div><div class="tree t3">🌳</div><div class="tree t4">🌲</div>
+  </div>
+
+  <main class="app" id="app">
+    <div class="hud">
+      <div class="pill q-pill" id="questionCounter">Question 1/10</div>
+      <div class="progress-wrap" aria-label="Game progress"><div class="progress" id="progressBar"></div></div>
+      <div class="pill score-pill">⭐ Score: <span id="score">0</span></div>
+    </div>
+
+    <section class="game-card">
+      <div class="question-line">
+        <div class="question">What time of day is it?</div>
+        <button class="speaker" id="questionSpeaker" aria-label="Read question aloud">🔊</button>
+      </div>
+
+      <div class="content">
+        <article class="scene-card">
+          <div class="scene-art" id="sceneArt">
+            <div class="scene-stars" id="sceneStars"></div>
+            <div class="orb"></div>
+            <div class="scene-cloud">☁️</div>
+            <div class="grass-strip"></div>
+            <div class="activity" id="activity"></div>
+          </div>
+          <div class="scene-caption" id="sceneCaption"></div>
+        </article>
+
+        <div class="answers">
+          <div class="answer day-answer" data-answer="Daytime" role="button" tabindex="0" aria-label="Daytime">
+            <div class="answer-visual"><div class="sun-icon">☀️</div></div>
+            <div class="answer-text">
+              <div class="answer-label">Daytime</div>
+              <div class="answer-sub">Sun • Bright sky</div>
+            </div>
+            <button class="mini-speak" type="button" data-speak="Daytime" aria-label="Hear Daytime">🔊</button>
+          </div>
+
+          <div class="answer night-answer" data-answer="Nighttime" role="button" tabindex="0" aria-label="Nighttime">
+            <div class="answer-visual"><div class="moon-icon">🌙✨</div></div>
+            <div class="answer-text">
+              <div class="answer-label">Nighttime</div>
+              <div class="answer-sub">Moon • Stars</div>
+            </div>
+            <button class="mini-speak" type="button" data-speak="Nighttime" aria-label="Hear Nighttime">🔊</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="feedback" id="feedback"></div>
+  </main>
+
+  <div class="overlay" id="startOverlay">
+    <div class="modal">
+      <div class="modal-icon">☀️🌙</div>
+      <h1>Daytime or Nighttime?</h1>
+      <p>Look at the picture and choose the correct time of day.</p>
+      <button class="play-btn" id="startBtn">START GAME 🚀</button>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="finishOverlay">
+    <div class="modal">
+      <div class="modal-icon">🏆</div>
+      <h1>AMAZING!</h1>
+      <p>You know Daytime and Nighttime!</p>
+      <div class="score-big" id="finalScore">10/10</div>
+      <div style="font-size:34px;letter-spacing:8px;margin-bottom:18px">⭐⭐⭐</div>
+      <button class="play-btn" id="playAgainBtn">PLAY AGAIN 🔄</button>
+      <button class="secondary-btn" id="homeBtn">🏠 HOME</button>
+    </div>
+  </div>
+
+  <canvas id="confetti"></canvas>
+
+<script>
+(() => {
+  "use strict";
+
+  const DAY = "Daytime";
+  const NIGHT = "Nighttime";
+
+  const asset = (id, slug) => `https://www.svgrepo.com/show/${id}/${slug}.svg`;
+
+  const scenes = [
+    {id:"park",answer:DAY,caption:"The children are playing in the park.",speak:"The children are playing in the park. What time of day is it?",tag:"Playtime",imgMain:asset(243418,"playground-child"),imgExtra:asset(46141,"playground"),fallback:"🛝"},
+    {id:"kite",answer:DAY,caption:"A child is flying a kite under the bright sun.",speak:"A child is flying a kite under the bright sun. What time of day is it?",tag:"Flying a kite",imgMain:asset(59777,"kite-flying"),imgExtra:asset(322651,"kite"),fallback:"🪁"},
+    {id:"picnic",answer:DAY,caption:"The family is having a picnic outside.",speak:"The family is having a picnic outside. What time of day is it?",tag:"Picnic time",imgMain:asset(459557,"picnic-basket-4"),imgExtra:asset(297786,"picnic-basket-picnic"),fallback:"🧺"},
+    {id:"bike",answer:DAY,caption:"A child is riding a bicycle.",speak:"A child is riding a bicycle. What time of day is it?",tag:"Riding a bike",imgMain:asset(267684,"bicycle"),imgExtra:asset(415950,"bicycle-bike-cycle"),fallback:"🚲"},
+    {id:"football",answer:DAY,caption:"The children are playing football.",speak:"The children are playing football outside. What time of day is it?",tag:"Playing football",imgMain:asset(323288,"soccer-ball"),imgExtra:asset(39841,"kids"),fallback:"⚽"},
+    {id:"school",answer:DAY,caption:"The children are going to school.",speak:"The children are going to school under a bright blue sky. What time of day is it?",tag:"Going to school",imgMain:asset(55163,"school-building"),imgExtra:asset(382170,"building-education-school-university"),fallback:"🏫"},
+    {id:"beach",answer:DAY,caption:"A child is swimming at the beach.",speak:"A child is swimming at the beach under the sun. What time of day is it?",tag:"Beach time",imgMain:asset(476838,"beach"),imgExtra:asset(307050,"beach-with-sun"),fallback:"🏖️"},
+    {id:"garden",answer:DAY,caption:"A child is watering the flowers.",speak:"A child is watering flowers in the garden. What time of day is it?",tag:"In the garden",imgMain:asset(477149,"watering-can-4"),imgExtra:asset(2212,"watering-can"),fallback:"🌷"},
+    {id:"walk",answer:DAY,caption:"The children are walking outside.",speak:"The children are walking outside under the bright sun. What time of day is it?",tag:"Walking outside",imgMain:asset(39841,"kids"),imgExtra:asset(494102,"house"),fallback:"🚶"},
+    {id:"playground",answer:DAY,caption:"A child is playing on the playground.",speak:"A child is playing on the playground. What time of day is it?",tag:"Playground",imgMain:asset(225021,"playground"),imgExtra:asset(243418,"playground-child"),fallback:"🛝"},
+
+    {id:"sleep",answer:NIGHT,caption:"A child is sleeping in bed.",speak:"A child is sleeping in bed under the moon and stars. What time of day is it?",tag:"Sleeping",imgMain:asset(102033,"sleeping-baby"),imgExtra:asset(456001,"bed-sleep"),fallback:"😴"},
+    {id:"pajamas",answer:NIGHT,caption:"A child is wearing pajamas.",speak:"A child is wearing pajamas and getting ready for bed. What time of day is it?",tag:"Pajamas",imgMain:asset(267620,"pajamas"),imgExtra:asset(86164,"moon-and-stars"),fallback:"🧸"},
+    {id:"bedstory",answer:NIGHT,caption:"A parent is reading a bedtime story.",speak:"A parent is reading a bedtime story. What time of day is it?",tag:"Bedtime story",imgMain:asset(306805,"storybook"),imgExtra:asset(288123,"double-bed-sleep"),fallback:"📖"},
+    {id:"moon",answer:NIGHT,caption:"A child is looking at the moon.",speak:"A child is looking at the moon and stars. What time of day is it?",tag:"Looking at the moon",imgMain:asset(7357,"man-looking-by-a-telescope"),imgExtra:asset(86164,"moon-and-stars"),fallback:"🌙"},
+    {id:"familyhome",answer:NIGHT,caption:"The family is inside while the stars are out.",speak:"The family is inside while the stars are out. What time of day is it?",tag:"At home",imgMain:asset(308574,"family-home-household-family-single-family-home"),imgExtra:asset(494102,"house"),fallback:"🏠"},
+    {id:"brush",answer:NIGHT,caption:"A child is brushing teeth before bed.",speak:"A child is brushing teeth before bed. What time of day is it?",tag:"Brush before bed",imgMain:asset(19833,"tooth-brush-and-paste"),imgExtra:asset(86164,"moon-and-stars"),fallback:"🪥"},
+    {id:"teddy",answer:NIGHT,caption:"A child is hugging a teddy bear in bed.",speak:"A child is hugging a teddy bear in bed. What time of day is it?",tag:"Teddy in bed",imgMain:asset(338007,"accommodation-hotel-bed-sleeping"),imgExtra:asset(102033,"sleeping-baby"),fallback:"🧸"},
+    {id:"stargaze",answer:NIGHT,caption:"The children are looking at the stars.",speak:"The children are looking at the stars. What time of day is it?",tag:"Star gazing",imgMain:asset(307926,"look-into-telescope-see-watch-view"),imgExtra:asset(344285,"moon-stars-fill"),fallback:"✨"},
+    {id:"lightsout",answer:NIGHT,caption:"The bedroom light is turned off.",speak:"The bedroom light is off and the moon is outside. What time of day is it?",tag:"Lights out",imgMain:asset(456001,"bed-sleep"),imgExtra:asset(365558,"moon-stars-thin"),fallback:"💤"},
+    {id:"listenstory",answer:NIGHT,caption:"A child is listening to a bedtime story.",speak:"A child is listening to a bedtime story under the moon and stars. What time of day is it?",tag:"Listening to a story",imgMain:asset(354397,"storybook-icon"),imgExtra:asset(86164,"moon-and-stars"),fallback:"📚"}
+  ];
+
+  function starField(){
+    return `
+      <div class="scene-stars">
+        <span style="left:8%;top:11%;animation-delay:-.2s">✦</span>
+        <span style="left:19%;top:24%;animation-delay:-1s">★</span>
+        <span style="left:31%;top:12%;animation-delay:-.6s">✦</span>
+        <span style="left:45%;top:27%;animation-delay:-1.4s">★</span>
+        <span style="left:57%;top:16%;animation-delay:-.9s">✦</span>
+        <span style="left:71%;top:25%;animation-delay:-.3s">★</span>
+        <span style="left:84%;top:13%;animation-delay:-1.1s">✦</span>
+      </div>`;
+  }
+
+  function cloudRow(){
+    return `<div class="scene-clouds">☁️ ☁️ ☁️</div>`;
+  }
+
+  function renderRemoteImg(src, cls, fallback){
+    return `<img class="scene-asset ${cls}" src="${src}" alt="" referrerpolicy="no-referrer" crossorigin="anonymous"
+      onerror="this.style.display='none'; if(this.nextElementSibling){ this.nextElementSibling.style.display='block'; }">
+      <div class="scene-fallback" style="display:none">${fallback}</div>`;
+  }
+
+  function renderPhotoScene(item){
+    const isNight = item.answer === NIGHT;
+    const baseTop = isNight
+      ? `${starField()}<div class="scene-moon"></div>`
+      : `${cloudRow()}<div class="scene-sun"></div>`;
+
+    const baseMiddle = isNight
+      ? `<div class="scene-room-floor"></div>`
+      : `<div class="scene-soft-hills"></div><div class="scene-ground"></div>`;
+
+    return `
+      <div class="scene-photo-stage ${isNight ? "theme-night" : "theme-day"}">
+        ${baseTop}
+        ${baseMiddle}
+        <div class="scene-badge">${isNight ? "🌙 Nighttime" : "☀️ Daytime"} • ${item.tag}</div>
+        <div class="scene-frame">
+          ${item.imgExtra ? renderRemoteImg(item.imgExtra, "small", item.fallback) : ""}
+          ${renderRemoteImg(item.imgMain, "", item.fallback)}
+        </div>
+      </div>`;
+  }
+
+  let round = [];
+  let index = 0;
+  let score = 0;
+  let locked = false;
+  let started = false;
+
+  const sceneArt = document.getElementById("sceneArt");
+  const activity = document.getElementById("activity");
+  const sceneCaption = document.getElementById("sceneCaption");
+  const qCounter = document.getElementById("questionCounter");
+  const scoreEl = document.getElementById("score");
+  const progressBar = document.getElementById("progressBar");
+  const feedback = document.getElementById("feedback");
+  const startOverlay = document.getElementById("startOverlay");
+  const finishOverlay = document.getElementById("finishOverlay");
+  const finalScore = document.getElementById("finalScore");
+  const answerButtons = [...document.querySelectorAll(".answer[data-answer]")];
+
+  function shuffle(arr){
+    const a=[...arr];
+    for(let i=a.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [a[i],a[j]]=[a[j],a[i]];
+    }
+    return a;
+  }
+
+  function buildRound(){
+    const days = shuffle(scenes.filter(s=>s.answer===DAY)).slice(0,5);
+    const nights = shuffle(scenes.filter(s=>s.answer===NIGHT)).slice(0,5);
+    let candidate = shuffle([...days,...nights]);
+
+    // Guarantee every round contains exactly 10 different scene IDs.
+    const uniqueIds = new Set(candidate.map(s=>s.id));
+    if(uniqueIds.size !== 10){
+      candidate = shuffle([...new Map(scenes.map(s=>[s.id,s])).values()]).slice(0,10);
+    }
+
+    // Avoid 3 answers of the same type in a row while keeping all 10 unique.
+    for(let tries=0;tries<80;tries++){
+      let ok=true;
+      for(let i=2;i<candidate.length;i++){
+        if(candidate[i].answer===candidate[i-1].answer && candidate[i-1].answer===candidate[i-2].answer){
+          ok=false; break;
+        }
+      }
+      if(ok) break;
+      candidate=shuffle([...candidate]);
+    }
+    round=candidate;
+  }
+
+  function makeStars(){}
+
+  function renderQuestion(){
+    locked=false;
+    answerButtons.forEach(b=>b.classList.remove("correct","wrong"));
+    feedback.className="feedback";
+    const item=round[index];
+
+    sceneArt.classList.toggle("night",item.answer===NIGHT);
+    sceneArt.innerHTML = renderPhotoScene(item);
+    sceneCaption.textContent=item.caption;
+    qCounter.textContent=`Question ${index+1}/10`;
+    scoreEl.textContent=score;
+    progressBar.style.width=`${((index+1)/10)*100}%`;
+
+    setTimeout(()=>speak(item.speak),260);
+  }
+
+  function showFeedback(text,type){
+    feedback.textContent=text;
+    feedback.className=`feedback ${type} show`;
+  }
+
+  function choose(answer,btn){
+    if(!started || locked) return;
+    const item=round[index];
+
+    clickSound();
+
+    if(answer===item.answer){
+      locked=true;
+      btn.classList.add("correct");
+      score++;
+      scoreEl.textContent=score;
+      showFeedback("Great job! ⭐","good");
+      correctSound();
+      speak(`Great job! It is ${item.answer.toLowerCase()}.`);
+      confettiBurst(48);
+
+      setTimeout(()=>{
+        index++;
+        if(index>=round.length) finishGame();
+        else renderQuestion();
+      },1250);
+    }else{
+      btn.classList.add("wrong");
+      showFeedback("Try again!","bad");
+      wrongSound();
+      speak("Try again.");
+      setTimeout(()=>{
+        btn.classList.remove("wrong");
+        feedback.className="feedback";
+      },850);
+    }
+  }
+
+  /* ===== Speech ===== */
+  function speak(text){
+    if(!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang="en-US"; u.rate=.88; u.pitch=1.08; u.volume=1;
+    const voices=window.speechSynthesis.getVoices();
+    const preferred=voices.find(v=>/en-US/i.test(v.lang) && /Google|Samantha|Microsoft|Jenny|Aria/i.test(v.name))
+      || voices.find(v=>/en-US/i.test(v.lang))
+      || voices.find(v=>/^en/i.test(v.lang));
+    if(preferred) u.voice=preferred;
+    window.speechSynthesis.speak(u);
+  }
+
+  document.getElementById("questionSpeaker").addEventListener("click",()=>{
+    if(started) speak(round[index].speak);
+  });
+
+  document.querySelectorAll(".mini-speak").forEach(btn=>{
+    btn.addEventListener("click",(e)=>{
+      e.stopPropagation();
+      speak(btn.dataset.speak);
+      clickSound();
+    });
+  });
+
+  answerButtons.forEach(btn=>{
+    btn.addEventListener("click",()=>choose(btn.dataset.answer,btn));
+    btn.addEventListener("keydown",(e)=>{
+      if(e.key==="Enter" || e.key===" "){
+        e.preventDefault();
+        choose(btn.dataset.answer,btn);
+      }
+    });
+  });
+
+  /* ===== Lightweight WebAudio SFX ===== */
+  let audioCtx=null;
+  function ensureAudio(){
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC) return null;
+    if(!audioCtx) audioCtx=new AC();
+    if(audioCtx.state==="suspended") audioCtx.resume();
+    return audioCtx;
+  }
+  function tone(freq,dur=.1,type="sine",gain=.06,delay=0){
+    const ac=ensureAudio(); if(!ac) return;
+    const t=ac.currentTime+delay, osc=ac.createOscillator(), g=ac.createGain();
+    osc.type=type; osc.frequency.setValueAtTime(freq,t);
+    g.gain.setValueAtTime(.0001,t);
+    g.gain.exponentialRampToValueAtTime(gain,t+.012);
+    g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    osc.connect(g); g.connect(ac.destination); osc.start(t); osc.stop(t+dur+.03);
+  }
+  function clickSound(){tone(420,.06,"sine",.035)}
+  function correctSound(){tone(660,.1,"triangle",.06);tone(880,.14,"triangle",.06,.09)}
+  function wrongSound(){tone(190,.13,"sawtooth",.045);tone(140,.16,"sawtooth",.035,.08)}
+  function finishSound(){
+    [523,659,784,1046].forEach((f,i)=>tone(f,.16,"triangle",.055,i*.11));
+  }
+
+  /* ===== Confetti ===== */
+  const canvas=document.getElementById("confetti");
+  const ctx=canvas.getContext("2d");
+  let particles=[];
+  function resizeConfetti(){
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    canvas.width=innerWidth*dpr; canvas.height=innerHeight*dpr;
+    canvas.style.width=innerWidth+"px"; canvas.style.height=innerHeight+"px";
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  addEventListener("resize",resizeConfetti); resizeConfetti();
+
+  function confettiBurst(count=100){
+    const colors=["#58cc02","#1cb0f6","#ff4b4b","#ffc800","#a855f7","#ff7bac"];
+    for(let i=0;i<count;i++){
+      particles.push({
+        x:innerWidth/2+(Math.random()-.5)*180,
+        y:innerHeight*.45,
+        vx:(Math.random()-.5)*9,
+        vy:-5-Math.random()*8,
+        g:.14+.12*Math.random(),
+        r:4+Math.random()*5,
+        rot:Math.random()*Math.PI,
+        vr:(Math.random()-.5)*.28,
+        c:colors[Math.floor(Math.random()*colors.length)],
+        life:80+Math.random()*70
+      });
+    }
+  }
+  function confettiLoop(){
+    ctx.clearRect(0,0,innerWidth,innerHeight);
+    particles.forEach(p=>{
+      p.vy+=p.g; p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.life--;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+      ctx.fillStyle=p.c; ctx.fillRect(-p.r/2,-p.r,p.r,p.r*2); ctx.restore();
+    });
+    particles=particles.filter(p=>p.life>0 && p.y<innerHeight+40);
+    requestAnimationFrame(confettiLoop);
+  }
+  requestAnimationFrame(confettiLoop);
+
+  function finishGame(){
+    started=false;
+    finalScore.textContent=`${score}/10`;
+    finishOverlay.classList.remove("hidden");
+    finishSound();
+    confettiBurst(220);
+    setTimeout(()=>confettiBurst(160),500);
+  }
+
+  function startGame(){
+    ensureAudio();
+    window.speechSynthesis?.cancel();
+    buildRound();
+    index=0; score=0; started=true; locked=false;
+    startOverlay.classList.add("hidden");
+    finishOverlay.classList.add("hidden");
+    renderQuestion();
+  }
+
+  document.getElementById("startBtn").addEventListener("click",startGame);
+  document.getElementById("playAgainBtn").addEventListener("click",startGame);
+  document.getElementById("homeBtn").addEventListener("click",()=>{
+    window.speechSynthesis?.cancel();
+    finishOverlay.classList.add("hidden");
+    startOverlay.classList.remove("hidden");
+  });
+
+  makeStars();
+})();
+</script>
+</body>
+</html>
