@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="../assets/brand.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>3D Shape Adventure - Ver 6</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --ink:#17324d;
+      --burgundy:#6a163b;
+      --orange:#ff8a24;
+      --green:#35a853;
+      --green-dark:#258741;
+      --red:#e74c3c;
+      --red-dark:#c9372b;
+      --blue:#45a9e4;
+      --top-h:78px;
+      --bottom-h:66px;
+      --objects-h:minmax(165px,34%);
+    }
+    *{box-sizing:border-box}
+    html,body{
+      width:100%;
+      height:100%;
+      margin:0;
+      overflow:hidden;
+      font-family:"Nunito","Poppins",system-ui,sans-serif;
+      background:#76c9f2;
+      color:var(--ink);
+      -webkit-tap-highlight-color:transparent;
+      user-select:none;
+      touch-action:none;
+    }
+    button{font:inherit}
+
+    #bgCanvas{
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100%;
+      display:block;
+      z-index:0;
+      pointer-events:none;
+    }
+    .bunting{
+      position:fixed; left:0; right:0; top:calc(var(--top-h) + 3px); height:20px; z-index:6;
+      border-top:2px solid rgba(255,245,230,.95);
+      display:flex; justify-content:space-around; pointer-events:none;
+    }
+    .bunting span{
+      display:block; width:0; height:0;
+      border-left:11px solid transparent; border-right:11px solid transparent; border-top:12px solid #ffd943;
+      transform:translateY(-1px);
+      filter:drop-shadow(0 1px 0 rgba(255,255,255,.5));
+    }
+    .bunting span:nth-child(3n+2){border-top-color:#ff8c5b}
+    .bunting span:nth-child(3n){border-top-color:#ffe85f}
+
+    .game{
+      position:relative; z-index:10; width:100%; height:100%;
+      display:grid;
+      grid-template-rows:var(--top-h) minmax(0,1fr) var(--bottom-h);
+    }
+    .feedback-bar{
+      display:grid; grid-template-columns:120px 1fr 120px; align-items:center;
+      padding:0 18px;
+      background:linear-gradient(180deg,rgba(190,222,255,.97),rgba(133,190,241,.90));
+      border-bottom:3px solid rgba(255,237,220,.95);
+      box-shadow:0 4px 12px rgba(20,75,120,.08);
+      backdrop-filter:blur(4px);
+    }
+    .feedback{
+      text-align:center; font-size:clamp(28px,3vw,42px); font-weight:800; color:#172f46;
+      min-height:1em;
+      text-shadow:0 1px 0 rgba(255,255,255,.8);
+    }
+    .score{
+      justify-self:start; font-size:clamp(25px,2.4vw,34px); font-weight:900; display:flex; align-items:center; gap:8px;
+      text-shadow:0 1px 0 rgba(255,255,255,.8);
+    }
+    .score-check{font-size:1.15em}
+
+    .main{
+      min-height:0;
+      display:grid;
+      grid-template-rows:var(--objects-h) minmax(0,1fr);
+      padding:22px clamp(14px,3vw,44px) 12px;
+      gap:18px;
+    }
+
+    .objects-zone{
+      position:relative;
+      border-bottom:2px solid rgba(255,240,220,.92);
+      overflow:hidden;
+    }
+    .objects-track{
+      width:100%;
+      height:100%;
+      position:absolute;
+      left:0; top:0;
+    }
+    .object-slot{
+      position:absolute;
+      left:0; top:50%;
+      transform:translate3d(0,-50%,0);
+      width:clamp(112px,11.5vw,172px);
+      aspect-ratio:1/1;
+      display:grid;
+      place-items:center;
+    }
+
+    .object-card{
+      width:90%;
+      height:90%;
+      border:2px solid rgba(231,124,34,.90);
+      background:
+        radial-gradient(circle at 28% 24%, rgba(255,255,255,.62), transparent 24%),
+        linear-gradient(145deg, rgba(255,192,124,.98), rgba(255,230,152,.96));
+      display:grid;
+      place-items:center;
+      position:relative;
+      box-shadow:
+        0 10px 18px rgba(50,83,106,.10),
+        inset 0 2px 0 rgba(255,255,255,.55);
+      transition:transform .12s ease;
+      overflow:visible;
+      border-radius:6px;
+      cursor:grab;
+      touch-action:none;
+      will-change:transform;
+    }
+    .object-card svg{
+      width:90%;
+      height:90%;
+      overflow:visible;
+      filter:drop-shadow(0 6px 5px rgba(0,0,0,.15));
+      pointer-events:none;
+    }
+    .object-card:hover:not(.dragging){transform:translateY(-3px) scale(1.04)}
+    .object-card.dragging{
+      cursor:grabbing;
+      z-index:250;
+      box-shadow:0 12px 26px rgba(28,89,124,.28),0 0 0 5px rgba(255,255,255,.7),0 0 0 9px rgba(69,169,228,.72);
+    }
+    .object-card.placed{
+      opacity:0;
+      pointer-events:none;
+      transform:scale(.75) !important;
+    }
+    .object-card:after{
+      content:""; position:absolute; inset:0; border-radius:4px;
+      box-shadow:inset 0 -10px 18px rgba(255,255,255,.05); pointer-events:none;
+    }
+    .drag-tip{
+      position:absolute;
+      left:50%;
+      bottom:0px;
+      transform:translateX(-50%);
+      background:rgba(255,255,255,.96);
+      color:#1d7cb0;
+      border:2px solid #4ba9db;
+      box-shadow:0 3px 0 rgba(75,169,219,.22);
+      border-radius:999px;
+      padding:4px 12px;
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.04em;
+      white-space:nowrap;
+      z-index:2;
+      pointer-events:none;
+    }
+
+    .answers-zone{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:0;
+    }
+    .answers{
+      width:100%;
+      max-width:920px; /* Increased from 760px to fit larger blocks */
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:center;
+      gap:clamp(12px, 2vw, 26px);
+    }
+    .shape-card{
+      width:clamp(120px, 26vw, 200px); /* Increased size by ~20% */
+      height:clamp(90px, 19vh, 138px); /* Increased size by ~20% */
+      background:linear-gradient(180deg,rgba(252,255,230,.94),rgba(238,245,210,.95));
+      border:2px dashed rgba(231,124,34,.75);
+      border-radius:6px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding:6px;
+      color:var(--burgundy);
+      box-shadow:0 6px 14px rgba(61,95,80,.07);
+      transition:transform .12s ease,filter .12s ease,background .18s ease,border-color .18s ease, box-shadow .18s ease;
+      position:relative;
+    }
+    .shape-card svg{
+      height:clamp(45px, 9.6vh, 72px); /* Increased size by 20% */
+      width:auto;
+      max-width:90%;
+      transition:transform .18s ease;
+      filter:drop-shadow(0 4px 3px rgba(0,0,0,.12));
+      pointer-events:none;
+      margin-bottom:4px;
+    }
+    .shape-name{
+      font-size:clamp(16px, 2.1vw, 24px); /* Increased slightly for proportion */
+      font-weight:800;
+      line-height:1;
+      text-align:center;
+    }
+    
+    .shape-card.drop-ready{
+      transform:translateY(-4px);
+      background:linear-gradient(180deg,rgba(235,252,255,.98),rgba(217,242,249,.96));
+      border-color:#3fa7d9;
+      box-shadow:0 0 0 4px rgba(255,255,255,.8),0 0 0 6px rgba(63,167,217,.30),0 10px 20px rgba(63,167,217,.15);
+    }
+    .shape-card.correct{
+      border-style:solid;
+      border-color:var(--green);
+      background:linear-gradient(180deg,rgba(230,255,222,.98),rgba(198,240,182,.96));
+      animation:correctPop .6s ease;
+    }
+    .shape-card.correct svg{transform:scale(1.08)}
+    .shape-card.wrong{
+      animation:shake .36s ease;
+      background:rgba(255,218,218,.95);
+      border-color:#ef5b54;
+    }
+
+    @keyframes correctPop{0%{transform:scale(1)}35%{transform:scale(1.08)}100%{transform:scale(1)}}
+    @keyframes shake{
+      0%,100%{transform:translateX(0)}
+      20%{transform:translateX(-10px)}
+      40%{transform:translateX(9px)}
+      60%{transform:translateX(-7px)}
+      80%{transform:translateX(5px)}
+    }
+
+    .bottom-bar{
+      display:flex; justify-content:space-between; align-items:center;
+      padding:0 16px 10px; position:relative; z-index:12;
+    }
+    .icon-row{display:flex;align-items:center;gap:14px}
+    .icon-btn{
+      width:50px; height:50px; border:0; background:rgba(255,255,255,.26); border-radius:13px;
+      display:grid; place-items:center; cursor:pointer; color:#152d25; transition:.12s; box-shadow:0 4px 10px rgba(0,0,0,.04);
+    }
+    .icon-btn:hover{background:rgba(255,255,255,.55);transform:translateY(-2px)}
+    .icon-btn svg{width:34px;height:34px}
+
+    .overlay{
+      position:fixed;inset:0;z-index:50;
+      background:rgba(18,67,99,.35); backdrop-filter:blur(7px);
+      display:grid;place-items:center;padding:20px;
+    }
+    .overlay.hidden{display:none}
+    .modal{
+      width:min(520px,94vw); background:rgba(255,255,255,.97); border:5px solid white;
+      border-radius:28px; box-shadow:0 22px 60px rgba(16,64,97,.28); padding:30px; text-align:center;
+    }
+    .modal h1,.modal h2{ margin:0 0 10px; color:#3160a6; font-size:clamp(34px,5vw,54px); line-height:1; }
+    .modal p{ font-size:19px; color:#506275; font-weight:700; margin:12px auto 24px; max-width:380px; }
+    .hero-icon{width:130px;height:110px;margin:0 auto 16px; filter:drop-shadow(0 10px 10px rgba(0,0,0,.15))}
+    .primary-btn,.secondary-btn{
+      border:0;border-radius:18px;padding:16px 26px;font-size:20px;font-weight:900;cursor:pointer;
+      text-transform:uppercase;letter-spacing:.04em;transition:.1s;margin:5px;
+    }
+    .primary-btn{background:#39b854;color:white;box-shadow:0 6px 0 #268c3d}
+    .secondary-btn{background:#e7edf2;color:#526272;box-shadow:0 6px 0 #c3ccd5}
+    .primary-btn:active,.secondary-btn:active{transform:translateY(5px);box-shadow:none}
+
+    .menu-panel{
+      position:fixed;left:18px;bottom:74px;z-index:45; width:190px;background:white;
+      border-radius:18px;padding:10px;box-shadow:0 16px 45px rgba(20,62,82,.25); border:3px solid rgba(255,255,255,.95);
+    }
+    .menu-panel.hidden{display:none}
+    .menu-panel button{
+      width:100%;border:0;background:#f4f7f9;border-radius:12px;padding:11px 12px;
+      text-align:left;font-weight:800;color:#3f5466;margin:4px 0;cursor:pointer
+    }
+    .menu-panel button:hover{background:#eaf4fa}
+    #confetti{ position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:60; }
+
+    @media (max-height:760px){
+      :root{--top-h:64px;--bottom-h:54px;--objects-h:minmax(128px,29%)}
+      .main{padding-top:12px;gap:10px}
+    }
+    @media (max-width:860px){
+      .main{padding-left:12px;padding-right:12px;gap:12px}
+      .feedback-bar{grid-template-columns:80px 1fr 80px}
+      .object-slot{width:clamp(94px,14vw,140px)}
+      .drag-tip{font-size:9px;padding:3px 8px;bottom:-15px;}
+    }
+    @media (max-width:620px) and (orientation:portrait){
+      :root{--top-h:64px;--bottom-h:58px;--objects-h:minmax(106px,24%)}
+      .main{padding:10px 8px 6px;gap:8px}
+      .objects-zone{padding:0 4px}
+      .object-slot{width:clamp(84px,28vw,102px)}
+      .drag-tip{display:none}
+      .icon-btn{width:42px;height:42px}
+      .icon-btn svg{width:27px;height:27px}
+      .icon-row{gap:5px}
+      .feedback{font-size:27px}
+    }
+  </style>
+</head>
+<body>
+  <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+  <canvas id="bgCanvas" aria-hidden="true"></canvas>
+
+  <div class="bunting" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+
+  <div class="game" id="game">
+    <header class="feedback-bar">
+      <!-- Score moved to top left -->
+      <div class="score" aria-label="Score"><span class="score-check">✓</span><span id="score">0</span></div>
+      <div id="feedback" class="feedback"></div>
+      <div></div>
+    </header>
+
+    <main class="main">
+      <section id="objectsZone" class="objects-zone" aria-label="Moving object icons">
+        <div id="objectsTrack" class="objects-track"></div>
+      </section>
+      <section class="answers-zone">
+        <div id="answers" class="answers" aria-label="3D shape drop zones"></div>
+      </section>
+    </main>
+
+    <footer class="bottom-bar">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 7h14M5 12h14M5 17h14"/></svg>
+      </button>
+      
+      <!-- Progress Text ("1 of 10") is completely removed -->
+      
+      <div class="icon-row">
+        <button class="icon-btn" id="soundBtn" aria-label="Mute or unmute sound"></button>
+        <button class="icon-btn" id="closeBtn" aria-label="End game">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <div id="menuPanel" class="menu-panel hidden">
+    <button id="restartMenuBtn">↻ Restart Game</button>
+    <button id="speakMenuBtn">🔊 Read Instructions</button>
+    <button id="fullscreenBtn">⛶ Fullscreen</button>
+  </div>
+
+  <div id="startOverlay" class="overlay">
+    <div class="modal">
+      <svg class="hero-icon" viewBox="0 0 180 130">
+        <defs>
+          <linearGradient id="hg1" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d6ccff"/><stop offset="1" stop-color="#a793f0"/></linearGradient>
+          <linearGradient id="hg2" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9a7bea"/><stop offset="1" stop-color="#6b4cc2"/></linearGradient>
+          <linearGradient id="hg3" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#835ce5"/><stop offset="1" stop-color="#5530b8"/></linearGradient>
+        </defs>
+        <polygon points="30,28 110,14 154,55 72,70" fill="url(#hg1)"/>
+        <polygon points="30,28 72,70 72,114 30,72" fill="url(#hg3)"/>
+        <polygon points="72,70 154,55 154,97 72,114" fill="url(#hg2)"/>
+        <polyline points="30,28 72,70 154,55" stroke="rgba(255,255,255,0.7)" stroke-width="2" fill="none"/>
+        <line x1="72" y1="70" x2="72" y2="114" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
+        <circle cx="140" cy="25" r="18" fill="url(#hg2)"/>
+        <circle cx="140" cy="25" r="16" fill="#45c7e8"/>
+        <circle cx="134" cy="19" r="6" fill="rgba(255,255,255,0.3)"/>
+        <path d="M126 25h28M140 11v28" stroke="white" stroke-width="5" stroke-linecap="round"/>
+      </svg>
+      <h1>3D Shape Adventure</h1>
+      <p>Drag the moving objects into the correct 3D shapes!</p>
+      <button id="playBtn" class="primary-btn">Play</button>
+    </div>
+  </div>
+
+  <div id="finishOverlay" class="overlay hidden">
+    <div class="modal">
+      <div style="font-size:76px;line-height:1">🏆</div>
+      <h2>Amazing!</h2>
+      <p>You matched all the moving objects!</p>
+      <div id="finalScore" style="font-size:48px;font-weight:900;color:#e0a516;margin:8px 0 16px">30 / 30</div>
+      <button id="playAgainBtn" class="primary-btn">Play Again</button>
+      <button id="homeBtn" class="secondary-btn">Home</button>
+    </div>
+  </div>
+
+  <canvas id="confetti"></canvas>
+
+  <script>
+  (() => {
+    const ROUND_LENGTH = 10;
+    const OBJECTS_PER_ROUND = 3;
+    const AUTO_NEXT_MS = 1050;
+    let conveyorSpeed = 1.15;
+
+    const SHAPE_SVGS = {
+      Sphere: `
+        <svg viewBox="0 0 110 90" aria-hidden="true">
+          <defs>
+            <radialGradient id="spg" cx="35%" cy="25%" r="65%">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="15%" stop-color="#7be9ff"/>
+              <stop offset="45%" stop-color="#21c4ed"/>
+              <stop offset="75%" stop-color="#0b7fcb"/>
+              <stop offset="100%" stop-color="#083887"/>
+            </radialGradient>
+          </defs>
+          <circle cx="55" cy="44" r="34" fill="url(#spg)"/>
+          <path d="M 30,60 C 45,75 75,70 82,48" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="3" stroke-linecap="round"/>
+        </svg>`,
+      Cube: `
+        <svg viewBox="0 0 110 90" aria-hidden="true">
+          <defs>
+            <linearGradient id="cubeT" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#dbd4ff"/></linearGradient>
+            <linearGradient id="cubeL" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#a48eea"/><stop offset="100%" stop-color="#7a63c9"/></linearGradient>
+            <linearGradient id="cubeR" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c1b4f9"/><stop offset="100%" stop-color="#9383db"/></linearGradient>
+          </defs>
+          <polygon points="35,22 69,13 87,28 52,38" fill="url(#cubeT)"/>
+          <polygon points="35,22 52,38 52,72 35,58" fill="url(#cubeL)"/>
+          <polygon points="52,38 87,28 87,61 52,72" fill="url(#cubeR)"/>
+          <polyline points="35,22 52,38 87,28" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" fill="none"/>
+          <line x1="52" y1="38" x2="52" y2="72" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+        </svg>`,
+      Cuboid: `
+        <svg viewBox="0 0 110 90" aria-hidden="true">
+          <defs>
+            <linearGradient id="cuboT" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#a4f3ff"/><stop offset="100%" stop-color="#4fd8f0"/></linearGradient>
+            <linearGradient id="cuboL" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#21a8c4"/><stop offset="100%" stop-color="#0f7c93"/></linearGradient>
+            <linearGradient id="cuboR" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#3bceea"/><stop offset="100%" stop-color="#149eba"/></linearGradient>
+          </defs>
+          <polygon points="23,35 64,27 87,36 45,45" fill="url(#cuboT)"/>
+          <polygon points="23,35 45,45 45,67 23,57" fill="url(#cuboL)"/>
+          <polygon points="45,45 87,36 87,58 45,67" fill="url(#cuboR)"/>
+          <polyline points="23,35 45,45 87,36" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" fill="none"/>
+          <line x1="45" y1="45" x2="45" y2="67" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+        </svg>`,
+      Cone: `
+        <svg viewBox="0 0 110 90" aria-hidden="true">
+          <defs>
+            <linearGradient id="coneB" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#c92a5d"/><stop offset="20%" stop-color="#ef7ba3"/>
+              <stop offset="50%" stop-color="#f4a2c0"/><stop offset="80%" stop-color="#d63469"/>
+              <stop offset="100%" stop-color="#9b1b44"/>
+            </linearGradient>
+            <radialGradient id="coneBase" cx="50%" cy="50%" r="50%">
+              <stop offset="60%" stop-color="#e25d8c"/><stop offset="100%" stop-color="#ba1d51"/>
+            </radialGradient>
+          </defs>
+          <polygon points="55,8 32,64 78,64" fill="url(#coneB)"/>
+          <ellipse cx="55" cy="64" rx="23" ry="9" fill="url(#coneBase)"/>
+          <path d="M 55,8 L 40,64" stroke="rgba(255,255,255,0.4)" stroke-width="2" fill="none"/>
+        </svg>`,
+      Cylinder: `
+        <svg viewBox="0 0 110 90" aria-hidden="true">
+          <defs>
+            <linearGradient id="cylB" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#a6764a"/><stop offset="15%" stop-color="#d3a980"/>
+              <stop offset="40%" stop-color="#ebd0b5"/><stop offset="75%" stop-color="#be9060"/>
+              <stop offset="100%" stop-color="#825228"/>
+            </linearGradient>
+            <linearGradient id="cylT" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffe9d1"/><stop offset="100%" stop-color="#d3a980"/></linearGradient>
+          </defs>
+          <rect x="31" y="22" width="48" height="48" fill="url(#cylB)"/>
+          <ellipse cx="55" cy="70" rx="24" ry="9" fill="#9e6939"/>
+          <ellipse cx="55" cy="22" rx="24" ry="9" fill="url(#cylT)"/>
+        </svg>`,
+      Prism: `
+        <svg viewBox="0 0 130 100" aria-hidden="true">
+          <defs>
+            <linearGradient id="priFront" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#e89bc5"/>
+              <stop offset="100%" stop-color="#c45c99"/>
+            </linearGradient>
+            <linearGradient id="priSide" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#b04381"/>
+              <stop offset="100%" stop-color="#732551"/>
+            </linearGradient>
+          </defs>
+          <polygon points="80,70 45,20 80,5 115,55" fill="url(#priSide)" stroke="#661c47" stroke-width="2" stroke-linejoin="round"/>
+          <polygon points="45,20 15,80 80,70" fill="url(#priFront)" stroke="#8f2d65" stroke-width="2" stroke-linejoin="round"/>
+          <line x1="45" y1="20" x2="15" y2="80" stroke="rgba(255,255,255,0.7)" stroke-width="2" stroke-linecap="round"/>
+          <line x1="45" y1="20" x2="80" y2="5" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round"/>
+          <line x1="45" y1="20" x2="80" y2="70" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round"/>
+        </svg>`,
+      Pyramid: `
+        <svg viewBox="0 0 110 90" aria-hidden="true">
+          <defs>
+            <linearGradient id="pyrB" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#618cb3"/><stop offset="100%" stop-color="#3d6487"/></linearGradient>
+            <linearGradient id="pyrL" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#a4cbef"/><stop offset="100%" stop-color="#76a3cd"/></linearGradient>
+            <linearGradient id="pyrR" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#80afd9"/><stop offset="100%" stop-color="#5581a6"/></linearGradient>
+          </defs>
+          <polygon points="27,68 55,58 83,68 55,74" fill="url(#pyrB)"/>
+          <polygon points="55,11 27,68 55,58" fill="url(#pyrL)"/>
+          <polygon points="55,11 55,58 83,68" fill="url(#pyrR)"/>
+          <polyline points="27,68 55,58 83,68" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" fill="none"/>
+          <line x1="55" y1="11" x2="55" y2="58" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
+        </svg>`
+    };
+
+    const OBJECTS = {
+      ball: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <radialGradient id="ballG" cx="33%" cy="22%" r="65%">
+              <stop offset="0%" stop-color="#ffffff"/><stop offset="20%" stop-color="#e3bfff"/>
+              <stop offset="55%" stop-color="#9345ff"/><stop offset="85%" stop-color="#571aba"/>
+              <stop offset="100%" stop-color="#2a056b"/>
+            </radialGradient>
+          </defs>
+          <circle cx="60" cy="60" r="38" fill="url(#ballG)"/>
+          <path d="M30 55c15-12 46-12 60 3" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="4" stroke-linecap="round"/>
+          <path d="M51 25c9 12 10 45 0 70" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="4" stroke-linecap="round"/>
+          <path d="M 33,83 C 50,105 85,90 92,65" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3" stroke-linecap="round"/>
+          <ellipse cx="44" cy="33" rx="10" ry="6" fill="rgba(255,255,255,.45)" transform="rotate(-20 44 33)"/>
+        </svg>`,
+      orange: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <radialGradient id="orgG" cx="32%" cy="28%" r="65%">
+              <stop offset="0%" stop-color="#fff5cc"/><stop offset="15%" stop-color="#ffd566"/>
+              <stop offset="50%" stop-color="#ff9d00"/><stop offset="85%" stop-color="#d65600"/>
+              <stop offset="100%" stop-color="#8a3000"/>
+            </radialGradient>
+            <linearGradient id="leafG" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8ce37d"/><stop offset="100%" stop-color="#349424"/></linearGradient>
+          </defs>
+          <circle cx="58" cy="66" r="35" fill="url(#orgG)"/>
+          <path d="M 35,85 C 50,105 80,95 87,70" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2" stroke-linecap="round"/>
+          <path d="M58 30c4-9 14-13 26-12-3 12-12 18-26 17Z" fill="url(#leafG)"/>
+          <path d="M59 33c-1-7-2-10-5-15" stroke="#4c7324" stroke-width="4" stroke-linecap="round"/>
+          <g fill="rgba(150,50,0,.25)">
+            <circle cx="50" cy="72" r="1.8"/><circle cx="63" cy="63" r="1.6"/><circle cx="72" cy="79" r="1.7"/>
+            <circle cx="48" cy="85" r="1.4"/><circle cx="78" cy="65" r="1.5"/><circle cx="55" cy="89" r="1.5"/>
+          </g>
+          <ellipse cx="45" cy="50" rx="9" ry="5" fill="rgba(255,255,255,.3)" transform="rotate(-30 45 50)"/>
+        </svg>`,
+      globe: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <radialGradient id="globG" cx="35%" cy="30%" r="65%">
+              <stop offset="0%" stop-color="#a4e7ff"/><stop offset="40%" stop-color="#3cb9e6"/>
+              <stop offset="80%" stop-color="#147ca6"/><stop offset="100%" stop-color="#084a66"/>
+            </radialGradient>
+            <linearGradient id="land1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#93e580"/><stop offset="100%" stop-color="#46a331"/></linearGradient>
+            <linearGradient id="land2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#80d66d"/><stop offset="100%" stop-color="#348a21"/></linearGradient>
+          </defs>
+          <circle cx="57" cy="51" r="34" fill="url(#globG)"/>
+          <path d="M38 32c10-7 18-4 19 3 1 7-3 10-10 11l-8 9-10-4 4-12Z" fill="url(#land1)"/>
+          <path d="M61 49c8-7 22-4 24 7-1 7-8 9-10 14l-10 6-7-6 3-11Z" fill="url(#land2)"/>
+          <path d="M 33,70 C 45,85 75,75 80,55" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-linecap="round"/>
+          <path d="M56 84v13M38 100h38" stroke="#5e381f" stroke-width="5" stroke-linecap="round"/>
+          <path d="M23 51h68M57 17c-8 8-12 21-12 34s4 26 12 34M57 17c8 8 12 21 12 34s-4 26-12 34" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+        </svg>`,
+      marble: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <radialGradient id="mG" cx="32%" cy="22%" r="65%">
+              <stop offset="0%" stop-color="#ffffff"/><stop offset="25%" stop-color="#8dfcf0"/>
+              <stop offset="55%" stop-color="#24a8ab"/><stop offset="85%" stop-color="#0c5673"/>
+              <stop offset="100%" stop-color="#042636"/>
+            </radialGradient>
+          </defs>
+          <circle cx="60" cy="60" r="38" fill="url(#mG)"/>
+          <path d="M29 68c17-17 41-5 57-24" fill="none" stroke="#ffebfd" stroke-width="8" stroke-linecap="round" opacity=".85"/>
+          <path d="M25 50c20-10 40 10 65-10" fill="none" stroke="#a4f7e6" stroke-width="3" stroke-linecap="round" opacity=".6"/>
+          <path d="M36 43c10 6 16 10 28 7" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="4" stroke-linecap="round"/>
+          <path d="M 35,85 C 50,105 85,90 90,65" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="4" stroke-linecap="round"/>
+        </svg>`,
+      dice: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="dTop" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#e3d4ff"/></linearGradient>
+            <linearGradient id="dLeft" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#b48cf0"/><stop offset="100%" stop-color="#8356c9"/></linearGradient>
+            <linearGradient id="dRight" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#d6beff"/><stop offset="100%" stop-color="#a482db"/></linearGradient>
+            <radialGradient id="dotG" cx="30%" cy="30%"><stop offset="0%" stop-color="#815ae8"/><stop offset="100%" stop-color="#391b8a"/></radialGradient>
+          </defs>
+          <polygon points="31,37 67,24 92,42 54,55" fill="url(#dTop)"/>
+          <polygon points="31,37 54,55 54,91 31,72" fill="url(#dLeft)"/>
+          <polygon points="54,55 92,42 92,78 54,91" fill="url(#dRight)"/>
+          <polyline points="31,37 54,55 92,42" stroke="rgba(255,255,255,0.8)" stroke-width="2" fill="none"/>
+          <line x1="54" y1="55" x2="54" y2="91" stroke="rgba(255,255,255,0.5)" stroke-width="2"/>
+          <g fill="url(#dotG)"><circle cx="43" cy="51" r="4.5"/><circle cx="43" cy="71" r="4.5"/><circle cx="68" cy="62" r="4.5"/><circle cx="81" cy="52" r="4.5"/><circle cx="81" cy="72" r="4.5"/></g>
+        </svg>`,
+      block: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="blkT" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#d1f4ff"/><stop offset="100%" stop-color="#72d3f7"/></linearGradient>
+            <linearGradient id="blkL" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#2ebbf2"/><stop offset="100%" stop-color="#0b84b3"/></linearGradient>
+            <linearGradient id="blkR" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#69d4fa"/><stop offset="100%" stop-color="#24a6d6"/></linearGradient>
+          </defs>
+          <polygon points="29,38 64,24 93,40 57,55" fill="url(#blkT)"/>
+          <polygon points="29,38 57,55 57,91 29,72" fill="url(#blkL)"/>
+          <polygon points="57,55 93,40 93,77 57,91" fill="url(#blkR)"/>
+          <polyline points="29,38 57,55 93,40" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" fill="none"/>
+          <line x1="57" y1="55" x2="57" y2="91" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+          <text x="61" y="73" text-anchor="middle" font-size="28" font-weight="900" fill="#fff" filter="drop-shadow(1px 2px 0px rgba(0,0,0,0.25))">A</text>
+        </svg>`,
+      rubik: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="rubT" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fff5cc"/><stop offset="100%" stop-color="#ffcc00"/></linearGradient>
+            <linearGradient id="rubL" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff7b78"/><stop offset="100%" stop-color="#db231f"/></linearGradient>
+            <linearGradient id="rubR" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#63de96"/><stop offset="100%" stop-color="#20914e"/></linearGradient>
+          </defs>
+          <polygon points="26,37 61,24 95,40 58,54" fill="url(#rubT)"/>
+          <polygon points="26,37 58,54 58,92 26,73" fill="url(#rubL)"/>
+          <polygon points="58,54 95,40 95,78 58,92" fill="url(#rubR)"/>
+          <polyline points="26,37 58,54 95,40" stroke="rgba(255,255,255,0.6)" stroke-width="2" fill="none"/>
+          <path d="M38 33l33 15M49 29l33 15M26 49l32 18M26 61l32 18M70 49v38M82 44v38" stroke="#1c2838" stroke-width="3" stroke-linecap="round"/>
+        </svg>`,
+      giftCube: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="gfT" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fff0bd"/><stop offset="100%" stop-color="#ffd03b"/></linearGradient>
+            <linearGradient id="gfL" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff9eb0"/><stop offset="100%" stop-color="#db556b"/></linearGradient>
+            <linearGradient id="gfR" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff879d"/><stop offset="100%" stop-color="#cc3d57"/></linearGradient>
+          </defs>
+          <polygon points="30,40 61,27 91,41 59,54" fill="url(#gfT)"/>
+          <polygon points="30,40 59,54 59,91 30,74" fill="url(#gfL)"/>
+          <polygon points="59,54 91,41 91,77 59,91" fill="url(#gfR)"/>
+          <path d="M50 32l30 15M46 48v34M71 49v34" stroke="rgba(255,255,255,0.95)" stroke-width="6"/>
+          <path d="M59 29c-10-20-28-14-12 2M61 28c10-20 28-12 12 3" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" filter="drop-shadow(0 2px 2px rgba(0,0,0,0.15))"/>
+          <path d="M 60 25 C 40 10, 45 35, 60 25 C 80 10, 75 35, 60 25" fill="none" stroke="#ff4d6d" stroke-width="2"/>
+        </svg>`,
+      book: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="bkT" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffefc9"/><stop offset="100%" stop-color="#ffc84d"/></linearGradient>
+            <linearGradient id="bkL" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff7d91"/><stop offset="100%" stop-color="#cc314a"/></linearGradient>
+            <linearGradient id="bkR" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffb0bb"/><stop offset="100%" stop-color="#db6b7c"/></linearGradient>
+          </defs>
+          <polygon points="25,44 75,31 94,40 44,54" fill="#d94a61"/>
+          <polygon points="44,52 93,38 93,65 44,80" fill="#fcf9f2"/>
+          <path d="M 44 56 L 93 42 M 44 60 L 93 46 M 44 64 L 93 50 M 44 68 L 93 54 M 44 72 L 93 58 M 44 76 L 93 62" stroke="#e0ddd5" stroke-width="1.5"/>
+          <polygon points="25,42 74,29 93,38 44,52" fill="url(#bkT)"/>
+          <polygon points="25,42 44,52 44,82 25,72" fill="url(#bkL)"/>
+          <polygon points="44,77 94,62 95,67 44,82" fill="url(#bkR)"/>
+          <path d="M29 48l14 8v20M50 56l39-11" stroke="rgba(255,255,255,0.95)" stroke-width="3"/>
+          <path d="M72 29l19 10" stroke="#a37637" stroke-width="3" opacity=".5"/>
+        </svg>`,
+      cereal: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="cerT" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fff1ab"/><stop offset="100%" stop-color="#ffdc40"/></linearGradient>
+            <linearGradient id="cerL" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffc678"/><stop offset="100%" stop-color="#db861f"/></linearGradient>
+            <linearGradient id="cerR" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffd580"/><stop offset="100%" stop-color="#e8a635"/></linearGradient>
+          </defs>
+          <polygon points="28,24 75,19 92,31 44,36" fill="url(#cerT)"/>
+          <polygon points="28,24 44,36 44,97 28,84" fill="url(#cerL)"/>
+          <polygon points="44,36 92,31 92,91 44,97" fill="url(#cerR)"/>
+          <polyline points="28,24 44,36 92,31" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" fill="none"/>
+          <path d="M54,66 Q68,88 84,66 Z" fill="#fff" filter="drop-shadow(0 2px 2px rgba(0,0,0,0.1))"/>
+          <ellipse cx="69" cy="66" rx="15" ry="4" fill="#e0e0e0"/>
+          <path d="M59 65c9-11 18-9 23 1-7 9-15 11-23-1Z" fill="#bd631e"/>
+          <circle cx="68" cy="65" r="5" fill="#f5b91b"/>
+          <circle cx="76" cy="63" r="4" fill="#e37b12"/>
+        </svg>`,
+      brick: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="brkT" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f28d74"/><stop offset="1" stop-color="#bd543e"/></linearGradient>
+            <linearGradient id="brkL" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a83c2c"/><stop offset="1" stop-color="#7a2417"/></linearGradient>
+            <linearGradient id="brkR" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d45744"/><stop offset="1" stop-color="#a33626"/></linearGradient>
+          </defs>
+          <polygon points="22,50 70,36 96,46 47,61" fill="url(#brkT)"/>
+          <polygon points="22,50 47,61 47,82 22,71" fill="url(#brkL)"/>
+          <polygon points="47,61 96,46 96,67 47,82" fill="url(#brkR)"/>
+          <polyline points="22,50 47,61 96,46" stroke="rgba(255,255,255,0.4)" stroke-width="2" fill="none"/>
+          <line x1="47" y1="61" x2="47" y2="82" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
+          <path d="M38 45l24 9M60 40l23 9M47 68l49-14M70 56v18" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
+          <ellipse cx="48" cy="46" rx="5" ry="2.5" fill="#521308"/>
+          <ellipse cx="61" cy="42" rx="5" ry="2.5" fill="#521308"/>
+          <ellipse cx="74" cy="47" rx="5" ry="2.5" fill="#521308"/>
+          <ellipse cx="48" cy="45.5" rx="4.5" ry="2" fill="rgba(0,0,0,0.5)"/>
+        </svg>`,
+      tissue: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="tsT" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c9f1ff"/><stop offset="100%" stop-color="#7ddbf7"/></linearGradient>
+            <linearGradient id="tsL" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#4fc0eb"/><stop offset="100%" stop-color="#2a91b8"/></linearGradient>
+            <linearGradient id="tsR" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#7bd2eb"/><stop offset="100%" stop-color="#3fb2d1"/></linearGradient>
+          </defs>
+          <polygon points="26,49 72,36 95,47 49,60" fill="url(#tsT)"/>
+          <polygon points="26,49 49,60 49,87 26,75" fill="url(#tsL)"/>
+          <polygon points="49,60 95,47 95,74 49,87" fill="url(#tsR)"/>
+          <polyline points="26,49 49,60 95,47" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" fill="none"/>
+          <path d="M60 38 C 50 15, 75 15, 75 30 C 85 45, 40 50, 45 30 Z" fill="#fff" filter="drop-shadow(0 3px 2px rgba(0,0,0,0.15))"/>
+          <path d="M 55 25 Q 65 15 70 28" stroke="#e0f4ff" stroke-width="2" fill="none"/>
+        </svg>`,
+      icecream: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="icCone" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#e8a84a"/><stop offset="100%" stop-color="#b8781a"/></linearGradient>
+            <radialGradient id="icP" cx="40%" cy="30%"><stop offset="0%" stop-color="#ffbadd"/><stop offset="100%" stop-color="#d65185"/></radialGradient>
+            <radialGradient id="icY" cx="40%" cy="30%"><stop offset="0%" stop-color="#ffecad"/><stop offset="100%" stop-color="#e6b100"/></radialGradient>
+            <radialGradient id="icB" cx="40%" cy="30%"><stop offset="0%" stop-color="#baeff7"/><stop offset="100%" stop-color="#3fbed1"/></radialGradient>
+          </defs>
+          <polygon points="37,56 80,56 59,105" fill="url(#icCone)"/>
+          <path d="M 37,56 C 59,62 80,56 80,56 L 59,105 Z" fill="rgba(0,0,0,0.1)"/>
+          <path d="M 45 60 L 60 90 M 55 60 L 70 90 M 70 60 L 50 90 M 60 60 L 45 90" stroke="#995a10" stroke-width="1.5" opacity="0.6"/>
+          <path d="M44 65l29 18M73 65L48 84" stroke="#996014" stroke-width="2"/>
+          <circle cx="58" cy="38" r="27" fill="url(#icP)"/>
+          <circle cx="42" cy="42" r="23" fill="url(#icY)"/>
+          <circle cx="72" cy="43" r="22" fill="url(#icB)"/>
+          <line x1="55" y1="20" x2="65" y2="22" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="47" cy="31" r="3" fill="#e62048" filter="drop-shadow(0 1px 1px rgba(0,0,0,0.2))"/>
+          <circle cx="69" cy="28" r="3" fill="#e62048" filter="drop-shadow(0 1px 1px rgba(0,0,0,0.2))"/>
+        </svg>`,
+      trafficCone: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="trCB" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#db4300"/><stop offset="25%" stop-color="#ff894a"/>
+              <stop offset="60%" stop-color="#ff5900"/><stop offset="100%" stop-color="#a33200"/>
+            </linearGradient>
+            <linearGradient id="trCW" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#cccccc"/><stop offset="30%" stop-color="#ffffff"/><stop offset="100%" stop-color="#999999"/></linearGradient>
+          </defs>
+          <polygon points="20,85 98,85 80,95 38,95" fill="#a33200"/>
+          <polygon points="20,85 98,85 85,91 33,91" fill="#db4300"/>
+          <polygon points="59,19 36,83 82,83" fill="url(#trCB)"/>
+          <path d="M 43,53 Q 59,57 75,53 L 73,64 Q 59,68 45,64 Z" fill="url(#trCW)"/>
+          <ellipse cx="59" cy="83" rx="23" ry="6" fill="#a33200"/>
+          <rect x="27" y="84" width="65" height="4" rx="2" fill="url(#trCB)"/>
+          <ellipse cx="59" cy="84" rx="32" ry="5" fill="#ff7930"/>
+        </svg>`,
+      partyHat: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="phB" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#5630bd"/><stop offset="30%" stop-color="#a07dff"/>
+              <stop offset="70%" stop-color="#734ae6"/><stop offset="100%" stop-color="#3d1d91"/>
+            </linearGradient>
+            <radialGradient id="phP" cx="30%" cy="30%"><stop offset="0%" stop-color="#ffeb73"/><stop offset="100%" stop-color="#db9f00"/></radialGradient>
+          </defs>
+          <polygon points="59,18 29,87 89,87" fill="url(#phB)"/>
+          <circle cx="59" cy="18" r="10" fill="url(#phP)" filter="drop-shadow(0 2px 2px rgba(0,0,0,0.3))"/>
+          <path d="M40 63h40M46 45h27M34 77h50" stroke="#ffd659" stroke-width="5" stroke-linecap="round"/>
+          <path d="M29 87c14 11 43 12 60 0" stroke="#ff7aa7" stroke-width="7" fill="none" stroke-linecap="round"/>
+          <circle cx="46" cy="60" r="3" fill="#fff"/><circle cx="62" cy="45" r="3" fill="#fff"/>
+        </svg>`,
+      soda: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="sdB" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#a82121"/><stop offset="25%" stop-color="#f55d5d"/>
+              <stop offset="60%" stop-color="#db2e2e"/><stop offset="100%" stop-color="#731010"/>
+            </linearGradient>
+            <linearGradient id="sdT" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#aabec7"/></linearGradient>
+          </defs>
+          <rect x="36" y="24" width="48" height="68" fill="url(#sdB)"/>
+          <ellipse cx="60" cy="92" rx="24" ry="8" fill="#8f1919"/>
+          <ellipse cx="60" cy="24" rx="24" ry="8" fill="url(#sdT)"/>
+          <line x1="44" y1="26" x2="44" y2="90" stroke="rgba(255,255,255,0.4)" stroke-width="5" stroke-linecap="round"/>
+          <path d="M52 22h19M61 22l7 7" stroke="#718691" stroke-width="3" stroke-linecap="round"/>
+          <path d="M45 49c16-12 31-8 34 4-8 8-24 10-34-4Z" fill="rgba(255,255,255,0.95)" filter="drop-shadow(0 2px 1px rgba(0,0,0,0.2))"/>
+          <path d="M51 61h19" stroke="#ffd954" stroke-width="4" stroke-linecap="round"/>
+        </svg>`,
+      candle: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="cdB" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#c99b2e"/><stop offset="25%" stop-color="#ffe385"/>
+              <stop offset="60%" stop-color="#f0bc3a"/><stop offset="100%" stop-color="#a37616"/>
+            </linearGradient>
+            <radialGradient id="flameG" cx="50%" cy="80%"><stop offset="0%" stop-color="#ffffff"/><stop offset="40%" stop-color="#ffdc42"/><stop offset="100%" stop-color="#ff7300"/></radialGradient>
+          </defs>
+          <rect x="38" y="38" width="44" height="54" fill="url(#cdB)"/>
+          <ellipse cx="60" cy="92" rx="22" ry="8" fill="#a37616"/>
+          <ellipse cx="60" cy="38" rx="22" ry="8" fill="#fff7d6"/>
+          <path d="M 42 40 L 42 55 C 42 58 46 58 46 55 L 46 40 Z" fill="#ffe385"/>
+          <path d="M 52 40 L 52 65 C 52 68 56 68 56 65 L 56 40 Z" fill="#fff7d6"/>
+          <path d="M60 38v-16" stroke="#4a371e" stroke-width="3" stroke-linecap="round"/>
+          <path d="M60 6c12 16 7 26 0 26-8 0-10-10 0-26Z" fill="url(#flameG)" filter="drop-shadow(0 0 6px rgba(255,160,0,0.8))"/>
+          <path d="M46 50 Q 60,54 74,50 M46 63 Q 60,67 74,63 M46 76 Q 60,80 74,76" stroke="rgba(255,255,255,0.7)" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </svg>`,
+      drum: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="drB" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#147ca6"/><stop offset="30%" stop-color="#4fd8f0"/>
+              <stop offset="60%" stop-color="#2aaddb"/><stop offset="100%" stop-color="#0c5673"/>
+            </linearGradient>
+            <linearGradient id="drT" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fff2c2"/><stop offset="100%" stop-color="#d6b338"/></linearGradient>
+          </defs>
+          <rect x="30" y="32" width="60" height="48" fill="url(#drB)" stroke="#593a23" stroke-width="2"/>
+          <path d="M35 38 L 45 74 L 55 38 L 65 74 L 75 38 L 85 74" stroke="#a6dcef" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+          <ellipse cx="60" cy="80" rx="30" ry="10" fill="#147ca6" stroke="#593a23" stroke-width="2"/>
+          <ellipse cx="60" cy="32" rx="30" ry="10" fill="url(#drT)" stroke="#593a23" stroke-width="2"/>
+          <path d="M38 39l42 34M82 39L40 72" stroke="rgba(255,255,255,0.9)" stroke-width="3"/>
+          <path d="M94 24l13 16M89 31l11 12" stroke="#664624" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="94" cy="24" r="4" fill="#db3030"/>
+        </svg>`,
+      tent: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="ttS" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d65e29"/><stop offset="1" stop-color="#993d15"/></linearGradient>
+            <linearGradient id="ttF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7f42"/><stop offset="1" stop-color="#d95116"/></linearGradient>
+            <linearGradient id="ttI" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b1f13"/><stop offset="1" stop-color="#1a0c06"/></linearGradient>
+          </defs>
+          <polygon points="45,30 75,90 105,70 75,10" fill="url(#ttS)"/>
+          <polygon points="45,30 15,90 75,90" fill="url(#ttI)"/>
+          <line x1="45" y1="30" x2="45" y2="90" stroke="#777" stroke-width="2"/>
+          <polygon points="45,30 15,90 30,90 45,45" fill="url(#ttF)"/>
+          <polygon points="45,30 75,90 60,90 50,45" fill="url(#ttF)"/>
+          <line x1="45" y1="20" x2="45" y2="92" stroke="#d4d4d4" stroke-width="3" stroke-linecap="round"/>
+          <line x1="45" y1="30" x2="10" y2="95" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
+          <line x1="45" y1="30" x2="80" y2="95" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
+        </svg>`,
+      chocolate: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="chL" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#692b1b"/><stop offset="100%" stop-color="#421409"/></linearGradient>
+            <linearGradient id="chR" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#964b36"/><stop offset="100%" stop-color="#6b2d1c"/></linearGradient>
+            <linearGradient id="chB" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#803521"/><stop offset="100%" stop-color="#591c0e"/></linearGradient>
+          </defs>
+          <polygon points="25,81 48,38 83,30 61,72" fill="url(#chB)"/>
+          <polygon points="25,81 61,72 48,38" fill="url(#chL)"/>
+          <polygon points="61,72 95,75 83,30 48,38" fill="url(#chR)"/>
+          <path d="M53 38l32 38M40 55l40-10" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
+          <polyline points="25,81 61,72 95,75" stroke="rgba(255,255,255,0.3)" stroke-width="2" fill="none"/>
+          <line x1="61" y1="72" x2="48" y2="38" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+        </svg>`,
+      prismBox: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="pbL" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#db9c1a"/><stop offset="100%" stop-color="#a37007"/></linearGradient>
+            <linearGradient id="pbR" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffd447"/><stop offset="100%" stop-color="#cc9e00"/></linearGradient>
+            <linearGradient id="pbB" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f0bd29"/><stop offset="100%" stop-color="#b88b09"/></linearGradient>
+          </defs>
+          <polygon points="23,79 47,33 83,27 60,72" fill="url(#pbB)"/>
+          <polygon points="23,79 60,72 47,33" fill="url(#pbL)"/>
+          <polygon points="60,72 96,76 83,27 47,33" fill="url(#pbR)"/>
+          <path d="M52 33l32 43" stroke="rgba(255,255,255,0.8)" stroke-width="3" stroke-linecap="round"/>
+          <polyline points="23,79 60,72 96,76" stroke="rgba(255,255,255,0.5)" stroke-width="2" fill="none"/>
+          <line x1="60" y1="72" x2="47" y2="33" stroke="rgba(255,255,255,0.5)" stroke-width="2"/>
+        </svg>`,
+      pyramidEgypt: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="pyEL" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ebd19b"/><stop offset="100%" stop-color="#b89a58"/></linearGradient>
+            <linearGradient id="pyER" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c7a45e"/><stop offset="100%" stop-color="#917235"/></linearGradient>
+            <linearGradient id="pyEB" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#a87c38"/><stop offset="100%" stop-color="#73501a"/></linearGradient>
+          </defs>
+          <polygon points="22,90 61,74 99,90 60,98" fill="url(#pyEB)"/>
+          <polygon points="60,17 22,90 61,74" fill="url(#pyEL)"/>
+          <polygon points="60,17 61,74 99,90" fill="url(#pyER)"/>
+          <path d="M60 17L75 88 M41 53 Q 60,56 80,53 M31 72 Q 60,76 89,72" stroke="rgba(120,80,30,0.5)" stroke-width="2" fill="none"/>
+          <polyline points="22,90 61,74 99,90" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" fill="none"/>
+          <line x1="60" y1="17" x2="61" y2="74" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+        </svg>`,
+      pyramidToy: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="pyTL" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8ce1ff"/><stop offset="100%" stop-color="#4ba5cc"/></linearGradient>
+            <linearGradient id="pyTR" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#55c1eb"/><stop offset="100%" stop-color="#2683a8"/></linearGradient>
+            <linearGradient id="pyTB" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#348bad"/><stop offset="100%" stop-color="#145f7d"/></linearGradient>
+          </defs>
+          <polygon points="24,89 60,74 96,89 60,97" fill="url(#pyTB)"/>
+          <polygon points="60,17 24,89 60,74" fill="url(#pyTL)"/>
+          <polygon points="60,17 60,74 96,89" fill="url(#pyTR)"/>
+          <circle cx="60" cy="42" r="5.5" fill="#fff" filter="drop-shadow(0 1px 1px rgba(0,0,0,0.2))"/>
+          <circle cx="48" cy="67" r="5.5" fill="#fff" filter="drop-shadow(0 1px 1px rgba(0,0,0,0.2))"/>
+          <circle cx="72" cy="69" r="5.5" fill="#fff" filter="drop-shadow(0 1px 1px rgba(0,0,0,0.2))"/>
+          <polyline points="24,89 60,74 96,89" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" fill="none"/>
+          <line x1="60" y1="17" x2="60" y2="74" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
+        </svg>`,
+      pyramidBlock: `
+        <svg viewBox="0 0 120 120">
+          <defs>
+            <linearGradient id="pyBL" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffb875"/><stop offset="100%" stop-color="#d17b2e"/></linearGradient>
+            <linearGradient id="pyBR" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e8853f"/><stop offset="100%" stop-color="#ad5617"/></linearGradient>
+            <linearGradient id="pyBB" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ba5f29"/><stop offset="100%" stop-color="#80380f"/></linearGradient>
+          </defs>
+          <polygon points="25,90 60,75 95,90 60,98" fill="url(#pyBB)"/>
+          <polygon points="60,19 25,90 60,75" fill="url(#pyBL)"/>
+          <polygon points="60,19 60,75 95,90" fill="url(#pyBR)"/>
+          <polyline points="25,90 60,75 95,90" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" fill="none"/>
+          <line x1="60" y1="19" x2="60" y2="75" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
+        </svg>`
+    };
+
+    const questionPool = [
+      {name:"Ball", art:"ball", answer:"Sphere"},
+      {name:"Orange", art:"orange", answer:"Sphere"},
+      {name:"Globe", art:"globe", answer:"Sphere"},
+      {name:"Marble", art:"marble", answer:"Sphere"},
+      {name:"Dice", art:"dice", answer:"Cube"},
+      {name:"Toy Block", art:"block", answer:"Cube"},
+      {name:"Puzzle Cube", art:"rubik", answer:"Cube"},
+      {name:"Cube Gift Box", art:"giftCube", answer:"Cube"},
+      {name:"Book", art:"book", answer:"Cuboid"},
+      {name:"Cereal Box", art:"cereal", answer:"Cuboid"},
+      {name:"Brick", art:"brick", answer:"Cuboid"},
+      {name:"Tissue Box", art:"tissue", answer:"Cuboid"},
+      {name:"Ice Cream Cone", art:"icecream", answer:"Cone"},
+      {name:"Traffic Cone", art:"trafficCone", answer:"Cone"},
+      {name:"Party Hat", art:"partyHat", answer:"Cone"},
+      {name:"Soda Can", art:"soda", answer:"Cylinder"},
+      {name:"Candle", art:"candle", answer:"Cylinder"},
+      {name:"Drum", art:"drum", answer:"Cylinder"},
+      {name:"Camping Tent", art:"tent", answer:"Prism"},
+      {name:"Triangular Chocolate", art:"chocolate", answer:"Prism"},
+      {name:"Triangular Box", art:"prismBox", answer:"Prism"},
+      {name:"Egyptian Pyramid", art:"pyramidEgypt", answer:"Pyramid"},
+      {name:"Pyramid Toy", art:"pyramidToy", answer:"Pyramid"},
+      {name:"Pyramid Block", art:"pyramidBlock", answer:"Pyramid"}
+    ];
+    const shapeNames = ["Sphere","Cube","Cuboid","Cone","Cylinder","Prism","Pyramid"];
+    const groupedByShape = shapeNames.reduce((acc,shape) => {
+      acc[shape] = questionPool.filter(q => q.answer === shape);
+      return acc;
+    }, {});
+
+    let rounds = [];
+    let currentRoundIndex = 0;
+    let score = 0;
+    let soundOn = true;
+    let matchedInRound = 0;
+    let activeDrag = null;
+    let pendingAdvance = null;
+    let conveyorSlots = [];
+    let conveyorRAF = null;
+
+    const feedback = document.getElementById("feedback");
+    const scoreEl = document.getElementById("score");
+    const objectsTrack = document.getElementById("objectsTrack");
+    const answers = document.getElementById("answers");
+    const startOverlay = document.getElementById("startOverlay");
+    const finishOverlay = document.getElementById("finishOverlay");
+    const finalScore = document.getElementById("finalScore");
+    const menuPanel = document.getElementById("menuPanel");
+    const soundBtn = document.getElementById("soundBtn");
+
+    const shuffle = arr => {
+      const a = [...arr];
+      for(let i=a.length-1;i>0;i--){
+        const j = Math.floor(Math.random()*(i+1));
+        [a[i],a[j]]=[a[j],a[i]];
+      }
+      return a;
+    };
+
+    function updateScore(){
+      scoreEl.textContent = score;
+    }
+
+    function buildRounds(){
+      if (pendingAdvance) clearTimeout(pendingAdvance);
+      stopConveyor();
+      rounds = [];
+      currentRoundIndex = 0;
+      score = 0;
+      matchedInRound = 0;
+      feedback.textContent = "";
+      const usedObjects = new Set();
+      for(let r=0; r<ROUND_LENGTH; r++){
+        const roundShapes = shuffle(shapeNames).slice(0, OBJECTS_PER_ROUND);
+        const roundItems = roundShapes.map(shape => {
+          let choices = shuffle(groupedByShape[shape]);
+          let selected = choices.find(item => !usedObjects.has(item.name)) || choices[0];
+          usedObjects.add(selected.name);
+          return selected;
+        });
+        rounds.push(shuffle(roundItems));
+      }
+      renderRound();
+    }
+
+    function getCurrentRound(){
+      return rounds[currentRoundIndex] || [];
+    }
+
+    function renderRound(){
+      if (pendingAdvance) clearTimeout(pendingAdvance);
+      stopConveyor();
+      feedback.textContent = "";
+      matchedInRound = 0;
+      updateScore();
+      renderObjects();
+      renderAnswers();
+      setTimeout(speakInstructions, 180);
+    }
+
+    function renderObjects(){
+      const items = getCurrentRound();
+      objectsTrack.innerHTML = '';
+      conveyorSlots = [];
+
+      const zoneWidth = objectsTrack.parentElement.clientWidth;
+      const spacing = zoneWidth / items.length;
+      
+      items.forEach((item, i) => {
+        const slot = document.createElement("div");
+        slot.className = "object-slot";
+        slot.dataset.slot = i;
+        slot.innerHTML = `
+          <div class="object-card" data-object="${item.name}" data-answer="${item.answer}" data-art="${item.art}" aria-label="${item.name}">
+            ${OBJECTS[item.art]}
+          </div>
+          ${i === 0 ? '<div class="drag-tip">DRAG TO MATCH</div>' : ''}
+        `;
+        objectsTrack.appendChild(slot);
+        
+        let startX = (i * spacing) + (spacing / 2) - (140 / 2); 
+        slot.style.transform = `translate3d(${startX}px, -50%, 0)`;
+
+        conveyorSlots.push({ el: slot, x: startX, width: 140 });
+        enableDrag(slot.querySelector(".object-card"));
+      });
+
+      requestAnimationFrame(() => {
+        conveyorSlots.forEach(s => s.width = s.el.offsetWidth || 140);
+        startConveyor();
+      });
+    }
+
+    function startConveyor() {
+      if (conveyorRAF) return;
+      function loop() {
+        const zoneWidth = objectsTrack.parentElement.clientWidth;
+        conveyorSlots.forEach(slot => {
+          slot.x += conveyorSpeed;
+          if (slot.x > zoneWidth) {
+             slot.x = -slot.width;
+          }
+          slot.el.style.transform = `translate3d(${slot.x}px, -50%, 0)`;
+        });
+        conveyorRAF = requestAnimationFrame(loop);
+      }
+      conveyorRAF = requestAnimationFrame(loop);
+    }
+
+    function stopConveyor() {
+      if (conveyorRAF) {
+        cancelAnimationFrame(conveyorRAF);
+        conveyorRAF = null;
+      }
+    }
+
+    function renderAnswers(){
+      answers.innerHTML = "";
+      shapeNames.forEach(shape => {
+        const card = document.createElement("div");
+        card.className = "shape-card";
+        card.dataset.shape = shape;
+        card.setAttribute("aria-label", shape);
+        card.innerHTML = `
+          ${SHAPE_SVGS[shape]}
+          <div class="shape-name">${shape}</div>
+        `;
+        answers.appendChild(card);
+      });
+    }
+
+    function enableDrag(card){
+      card.addEventListener("pointerdown", onDragStart);
+    }
+
+    function onDragStart(e){
+      const card = e.currentTarget;
+      if (card.classList.contains("placed")) return;
+      const rect = card.getBoundingClientRect();
+      
+      activeDrag = {
+        el: card,
+        pointerId: e.pointerId,
+        startX: e.clientX,
+        startY: e.clientY,
+        initialX: rect.left,
+        initialY: rect.top,
+        originParent: card.parentElement,
+        currentDrop: null
+      };
+
+      card.classList.add("dragging");
+      card.style.position = "fixed";
+      card.style.margin = "0";
+      card.style.left = "0px";
+      card.style.top = "0px";
+      card.style.width = rect.width + "px";
+      card.style.height = rect.height + "px";
+      card.style.transform = `translate3d(${rect.left}px, ${rect.top}px, 0) scale(1.08)`;
+      
+      document.body.appendChild(card);
+      card.setPointerCapture(e.pointerId);
+
+      window.addEventListener("pointermove", onDragMove);
+      window.addEventListener("pointerup", onDragEnd);
+      window.addEventListener("pointercancel", onDragEnd);
+    }
+
+    function onDragMove(e){
+      if (!activeDrag || e.pointerId !== activeDrag.pointerId) return;
+      const dx = e.clientX - activeDrag.startX;
+      const dy = e.clientY - activeDrag.startY;
+      
+      activeDrag.el.style.transform = `translate3d(${activeDrag.initialX + dx}px, ${activeDrag.initialY + dy}px, 0) scale(1.08)`;
+
+      const elsUnder = document.elementsFromPoint(e.clientX, e.clientY);
+      let dropTarget = null;
+      for (const el of elsUnder) {
+        if (el.closest && el.closest('.shape-card')) {
+          dropTarget = el.closest('.shape-card');
+          break;
+        }
+      }
+      highlightDropTarget(dropTarget, activeDrag.el.dataset.answer);
+    }
+
+    function highlightDropTarget(dropTarget, answer){
+      document.querySelectorAll(".shape-card").forEach(card => card.classList.remove("drop-ready"));
+      activeDrag && (activeDrag.currentDrop = null);
+      if (!dropTarget) return;
+      if (dropTarget.classList.contains("matched")) return;
+      dropTarget.classList.add("drop-ready");
+      if (activeDrag) activeDrag.currentDrop = dropTarget;
+    }
+
+    function onDragEnd(e){
+      if (!activeDrag || e.pointerId !== activeDrag.pointerId) return;
+      window.removeEventListener("pointermove", onDragMove);
+      window.removeEventListener("pointerup", onDragEnd);
+      window.removeEventListener("pointercancel", onDragEnd);
+
+      const card = activeDrag.el;
+      const dropTarget = activeDrag.currentDrop;
+      document.querySelectorAll(".shape-card").forEach(shape => shape.classList.remove("drop-ready"));
+
+      if (dropTarget && dropTarget.dataset.shape === card.dataset.answer && !dropTarget.classList.contains("matched")) {
+        placeCorrect(card, dropTarget);
+      } else {
+        revertWrong(card, dropTarget);
+      }
+      activeDrag = null;
+    }
+
+    function placeCorrect(card, dropTarget){
+      feedback.textContent = "Correct!";
+      playCorrect();
+      miniConfetti();
+      score++;
+      matchedInRound++;
+      updateScore();
+
+      dropTarget.classList.add("correct", "matched");
+
+      card.classList.add("placed");
+      card.classList.remove("dragging");
+      setTimeout(() => {
+        if (card && card.parentNode) card.remove();
+      }, 180);
+
+      if (matchedInRound >= OBJECTS_PER_ROUND) {
+        pendingAdvance = setTimeout(() => {
+          if (currentRoundIndex < ROUND_LENGTH - 1) {
+            currentRoundIndex++;
+            renderRound();
+          } else {
+            finishGame();
+          }
+        }, AUTO_NEXT_MS);
+      }
+    }
+
+    function revertWrong(card, dropTarget){
+      feedback.textContent = "Try again!";
+      playWrong();
+      
+      const originParent = activeDrag.originParent;
+      const slotRect = originParent.getBoundingClientRect();
+
+      card.classList.remove("dragging");
+      card.style.transition = "transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1)";
+      card.style.transform = `translate3d(${slotRect.left}px, ${slotRect.top}px, 0) scale(1)`;
+
+      if (dropTarget) {
+        dropTarget.classList.remove("drop-ready");
+        dropTarget.classList.add("wrong");
+        setTimeout(() => dropTarget.classList.remove("wrong"), 360);
+      }
+
+      setTimeout(() => {
+        if (!card.isConnected) return;
+        card.style.transition = "";
+        card.style.position = "";
+        card.style.left = "";
+        card.style.top = "";
+        card.style.width = "";
+        card.style.height = "";
+        card.style.margin = "";
+        card.style.zIndex = "";
+        card.style.transform = "";
+        originParent.appendChild(card);
+      }, 230);
+    }
+
+    function finishGame(){
+      stopConveyor();
+      feedback.textContent = "Great job!";
+      document.querySelector("#finishOverlay h2").textContent = "Amazing!";
+      document.querySelector("#finishOverlay p").textContent = "You matched all the moving objects!";
+      finalScore.textContent = `${score} / ${ROUND_LENGTH * OBJECTS_PER_ROUND}`;
+      finishOverlay.classList.remove("hidden");
+      playFinish();
+      confettiBurst(240);
+    }
+
+    function speakInstructions(){
+      if(!soundOn || !("speechSynthesis" in window)) return;
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance("Drag each moving object into the correct three D shape.");
+      u.lang = "en-US";
+      u.rate = .9;
+      u.pitch = 1.05;
+      window.speechSynthesis.speak(u);
+    }
+
+    let audioCtx = null;
+    function ensureAudio(){
+      if(!soundOn) return null;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return null;
+      if(!audioCtx) audioCtx = new AC();
+      if(audioCtx.state === "suspended") audioCtx.resume();
+      return audioCtx;
+    }
+    function tone(freq, duration=.12, type="sine", delay=0, gain=.06){
+      const ctx = ensureAudio(); if(!ctx) return;
+      const t = ctx.currentTime + delay;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(.0001, t);
+      g.gain.exponentialRampToValueAtTime(gain, t + .015);
+      g.gain.exponentialRampToValueAtTime(.0001, t + duration);
+      osc.connect(g); g.connect(ctx.destination);
+      osc.start(t); osc.stop(t + duration + .04);
+    }
+    function playCorrect(){ tone(523,.11,"triangle",0,.06); tone(659,.11,"triangle",.12,.06); tone(784,.18,"triangle",.24,.06); }
+    function playWrong(){ tone(180,.12,"sine",0,.045); tone(135,.16,"sine",.1,.04); }
+    function playFinish(){ tone(523,.12,"triangle",0,.07); tone(659,.12,"triangle",.13,.07); tone(784,.12,"triangle",.26,.07); tone(1047,.22,"triangle",.39,.075); }
+
+    function updateSoundIcon(){
+      soundBtn.innerHTML = soundOn ? `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10v4h4l5 4V6L9 10H5z"/><path d="M17 9c1.7 1.6 1.7 4.4 0 6"/><path d="M19.5 6.5c3.2 3.1 3.2 7.9 0 11"/></svg>` : `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10v4h4l5 4V6L9 10H5z"/><path d="M18 9l4 6M22 9l-4 6"/></svg>`;
+    }
+
+    const c = document.getElementById("confetti");
+    const cctx = c.getContext("2d");
+    let particles = [];
+    function resizeConfetti(){ c.width = innerWidth; c.height = innerHeight; }
+    addEventListener("resize", resizeConfetti); resizeConfetti();
+
+    function addPieces(count, small=false){
+      const colors = ["#ff5f6d","#ffc83d","#49b6ff","#6bd66b","#a872ef","#ff8c42"];
+      const ox = innerWidth/2, oy = small ? innerHeight*.48 : innerHeight*.42;
+      for(let i=0;i<count;i++){
+        particles.push({
+          x: ox + (Math.random()-.5)*(small?180:320), y: oy + (Math.random()-.5)*(small?40:80),
+          vx:(Math.random()-.5)*(small?8:14), vy:-(Math.random()*(small?8:15)+4),
+          g: small ? .25 : .3, r:Math.random()*5+3, rot:Math.random()*Math.PI, vr:(Math.random()-.5)*.28,
+          color:colors[Math.floor(Math.random()*colors.length)], life: small ? 70 : 130
+        });
+      }
+    }
+    function miniConfetti(){ addPieces(34, true); }
+    function confettiBurst(count=220){ addPieces(count, false); }
+    function animateConfetti(){
+      cctx.clearRect(0,0,c.width,c.height);
+      particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy; p.vy += p.g; p.rot += p.vr; p.life--;
+        cctx.save(); cctx.translate(p.x,p.y); cctx.rotate(p.rot);
+        cctx.fillStyle = p.color; cctx.fillRect(-p.r, -p.r/2, p.r*2, p.r); cctx.restore();
+      });
+      particles = particles.filter(p => p.life > 0 && p.y < innerHeight + 50);
+      requestAnimationFrame(animateConfetti);
+    }
+    animateConfetti();
+
+    const bgCanvas = document.getElementById("bgCanvas");
+    const bgCtx = bgCanvas.getContext("2d", {alpha:false});
+    let bgW = 0, bgH = 0, bgTime = 0;
+    let clouds = [], flowers = [], reeds = [];
+
+    function resizeBg(){
+      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      bgW = innerWidth; bgH = innerHeight;
+      bgCanvas.width = Math.floor(bgW * dpr); bgCanvas.height = Math.floor(bgH * dpr);
+      bgCanvas.style.width = bgW + "px"; bgCanvas.style.height = bgH + "px";
+      bgCtx.setTransform(dpr,0,0,dpr,0,0);
+      seedBg();
+    }
+
+    function seedBg(){
+      clouds = []; flowers = []; reeds = [];
+      const cloudCount = bgW < 650 ? 4 : 6;
+      for(let i=0;i<cloudCount;i++) clouds.push({x: Math.random() * bgW, y: bgH * (0.10 + Math.random() * 0.25), s: 22 + Math.random() * 34, speed: .08 + Math.random() * .08});
+      const flowerCount = bgW < 650 ? 14 : 22;
+      for(let i=0;i<flowerCount;i++) flowers.push({x: Math.random() * bgW, y: bgH * (.82 + Math.random() * .13), scale: .5 + Math.random() * .5, color: ["#ff87b0","#ffffff","#ffd54f","#95d8ff","#ce93ff"][i % 5]});
+      const reedCount = bgW < 650 ? 22 : 42;
+      for(let i=0;i<reedCount;i++) reeds.push({x: (i / reedCount) * bgW + Math.random() * 20, h: 14 + Math.random() * 32, sway: Math.random() * Math.PI * 2});
+    }
+
+    function updateBg(){
+      bgTime += 0.018;
+      clouds.forEach(c => { c.x += c.speed; if(c.x - c.s * 3 > bgW) c.x = -c.s * 3; });
+    }
+
+    function drawCloud(c){
+      bgCtx.save(); bgCtx.translate(c.x, c.y); bgCtx.fillStyle = "rgba(255,255,255,.82)";
+      bgCtx.beginPath(); bgCtx.arc(0,0,c.s,0,Math.PI*2); bgCtx.arc(c.s*.82,c.s*.15,c.s*.72,0,Math.PI*2);
+      bgCtx.arc(-c.s*.8,c.s*.18,c.s*.66,0,Math.PI*2); bgCtx.arc(c.s*.10,-c.s*.25,c.s*.72,0,Math.PI*2);
+      bgCtx.fill(); bgCtx.restore();
+    }
+
+    function drawFlower(f){
+      bgCtx.save(); bgCtx.translate(f.x + Math.sin(bgTime + f.x * .01) * 2, f.y); bgCtx.scale(f.scale, f.scale);
+      bgCtx.strokeStyle = "#4b9e37"; bgCtx.lineWidth = 2.4; bgCtx.beginPath(); bgCtx.moveTo(0, 6); bgCtx.quadraticCurveTo(1, 14, 0, 24); bgCtx.stroke();
+      bgCtx.fillStyle = f.color;
+      for(let i=0;i<6;i++){ bgCtx.save(); bgCtx.rotate(i * Math.PI / 3); bgCtx.beginPath(); bgCtx.ellipse(0, -9, 5, 10, 0, 0, Math.PI * 2); bgCtx.fill(); bgCtx.restore(); }
+      bgCtx.fillStyle = "#ffe16a"; bgCtx.beginPath(); bgCtx.arc(0, 0, 4.5, 0, Math.PI * 2); bgCtx.fill(); bgCtx.restore();
+    }
+
+    function drawTreeCluster(x, y, scale=1){
+      bgCtx.save(); bgCtx.translate(x, y); bgCtx.scale(scale, scale); bgCtx.fillStyle = "#6f4625"; bgCtx.fillRect(-12, 10, 24, 80);
+      bgCtx.fillStyle = "#73b14d";
+      [[-38, 4, 36], [0, -15, 42], [34, 3, 34], [-10, 20, 32], [16, 20, 30]].forEach(([tx,ty,r]) => { bgCtx.beginPath(); bgCtx.arc(tx, ty, r, 0, Math.PI * 2); bgCtx.fill(); });
+      bgCtx.fillStyle = "rgba(255,255,255,.16)"; bgCtx.beginPath(); bgCtx.arc(-12, -18, 14, 0, Math.PI*2); bgCtx.fill(); bgCtx.restore();
+    }
+
+    function drawBush(x, y, scale=1){
+      bgCtx.save(); bgCtx.translate(x, y); bgCtx.scale(scale, scale); bgCtx.fillStyle = "#65aa3f";
+      [-38,-16,8,32].forEach((dx, i) => { bgCtx.beginPath(); bgCtx.arc(dx, 0, 24 + (i % 2) * 4, Math.PI, Math.PI * 2); bgCtx.fill(); }); bgCtx.restore();
+    }
+
+    function drawBench(x, y, scale=1){
+      bgCtx.save(); bgCtx.translate(x,y); bgCtx.scale(scale, scale);
+      bgCtx.fillStyle = "#c59654"; bgCtx.fillRect(0,0,120,14); bgCtx.fillRect(10,16,96,13);
+      bgCtx.fillStyle = "#8b6435"; bgCtx.save(); bgCtx.transform(1,-.45,0,1,0,0); bgCtx.fillRect(8,28,9,44); bgCtx.fillRect(95,28,9,44); bgCtx.restore(); bgCtx.restore();
+    }
+
+    function drawBackground(){
+      const sky = bgCtx.createLinearGradient(0,0,0,bgH);
+      sky.addColorStop(0,"#63b6f2"); sky.addColorStop(.48,"#96daf3"); sky.addColorStop(.70,"#cceff7"); sky.addColorStop(1,"#eef9df");
+      bgCtx.fillStyle = sky; bgCtx.fillRect(0,0,bgW,bgH);
+      bgCtx.fillStyle = "rgba(255,255,255,.18)"; bgCtx.fillRect(0,bgH*.30,bgW,bgH*.14);
+      const sunG = bgCtx.createRadialGradient(90,88,18,90,88,62);
+      sunG.addColorStop(0,"rgba(255,245,190,.95)"); sunG.addColorStop(.55,"rgba(255,217,110,.70)"); sunG.addColorStop(1,"rgba(255,217,110,0)");
+      bgCtx.fillStyle = sunG; bgCtx.beginPath(); bgCtx.arc(90,88,62,0,Math.PI*2); bgCtx.fill();
+      clouds.forEach(drawCloud);
+
+      function mountain(points, fillA, fillB, opacity=1){
+        const grad = bgCtx.createLinearGradient(0,bgH*.20,0,bgH*.60);
+        grad.addColorStop(0, fillA); grad.addColorStop(1, fillB);
+        bgCtx.globalAlpha = opacity; bgCtx.fillStyle = grad; bgCtx.beginPath();
+        bgCtx.moveTo(0,bgH); bgCtx.lineTo(points[0][0], points[0][1]);
+        for(let i=1;i<points.length;i++) bgCtx.lineTo(points[i][0], points[i][1]);
+        bgCtx.lineTo(bgW,bgH); bgCtx.closePath(); bgCtx.fill(); bgCtx.globalAlpha = 1;
+      }
+      mountain([[0, bgH*.58], [bgW*.10, bgH*.42], [bgW*.18, bgH*.53], [bgW*.30, bgH*.30], [bgW*.44, bgH*.55], [bgW*.58, bgH*.28], [bgW*.72, bgH*.54], [bgW*.86, bgH*.36], [bgW, bgH*.56]], "#8fb6d1", "#6895ba", .65);
+      mountain([[0, bgH*.66], [bgW*.12, bgH*.52], [bgW*.23, bgH*.62], [bgW*.36, bgH*.39], [bgW*.52, bgH*.67], [bgW*.68, bgH*.41], [bgW*.79, bgH*.66], [bgW*.91, bgH*.48], [bgW, bgH*.65]], "#b8d5e8", "#8eb6d4", .9);
+
+      bgCtx.fillStyle = "rgba(255,255,255,.88)"; bgCtx.beginPath(); bgCtx.moveTo(bgW*.37, bgH*.39); bgCtx.lineTo(bgW*.41, bgH*.44); bgCtx.lineTo(bgW*.45, bgH*.39); bgCtx.lineTo(bgW*.49, bgH*.44); bgCtx.lineTo(bgW*.53, bgH*.39); bgCtx.lineTo(bgW*.48, bgH*.34); bgCtx.lineTo(bgW*.43, bgH*.37); bgCtx.closePath(); bgCtx.fill();
+      bgCtx.fillStyle = "#7fbd51"; bgCtx.beginPath(); bgCtx.moveTo(0, bgH); bgCtx.lineTo(0, bgH*.66);
+      for(let x=0; x<=bgW+240; x+=240) bgCtx.quadraticCurveTo(x+80, bgH*.57, x+240, bgH*.66);
+      bgCtx.lineTo(bgW, bgH); bgCtx.fill();
+
+      const treeCount = bgW < 650 ? 5 : 9;
+      for(let i=0;i<treeCount;i++){ const x = (i/(treeCount-1))*bgW + (Math.sin(i*4.1)*22); drawTreeCluster(x, bgH*.66 + (i%2?8:-6), .38 + (i%3)*.07); }
+
+      const lakeY = bgH*.70; const lake = bgCtx.createLinearGradient(0,lakeY,0,bgH);
+      lake.addColorStop(0,"#3ac3e8"); lake.addColorStop(1,"#0f7eb2");
+      bgCtx.fillStyle = lake; bgCtx.fillRect(0,lakeY,bgW,bgH-lakeY);
+      bgCtx.fillStyle = "rgba(255,255,255,.12)";
+      for(let i=0;i<7;i++){ bgCtx.beginPath(); const y = lakeY + 20 + i * 26; bgCtx.ellipse(bgW * (.20 + i*.10), y, 92, 7, 0, 0, Math.PI*2); bgCtx.fill(); }
+
+      bgCtx.fillStyle = "#7ac047";
+      bgCtx.beginPath(); bgCtx.moveTo(0,bgH); bgCtx.lineTo(0, bgH*.86); bgCtx.quadraticCurveTo(bgW*.15, bgH*.73, bgW*.36, bgH*.84); bgCtx.lineTo(bgW*.36,bgH); bgCtx.closePath(); bgCtx.fill();
+      bgCtx.beginPath(); bgCtx.moveTo(bgW,bgH); bgCtx.lineTo(bgW, bgH*.83); bgCtx.quadraticCurveTo(bgW*.83, bgH*.73, bgW*.62, bgH*.85); bgCtx.lineTo(bgW*.62,bgH); bgCtx.closePath(); bgCtx.fill();
+
+      bgCtx.strokeStyle = "#9ad958"; bgCtx.lineWidth = 12; bgCtx.lineCap = "round";
+      bgCtx.beginPath(); bgCtx.moveTo(-10,bgH*.84); bgCtx.quadraticCurveTo(bgW*.20,bgH*.76,bgW*.36,bgH*.84); bgCtx.stroke();
+      bgCtx.beginPath(); bgCtx.moveTo(bgW*.62,bgH*.85); bgCtx.quadraticCurveTo(bgW*.82,bgH*.76,bgW+10,bgH*.83); bgCtx.stroke();
+
+      drawBush(110, bgH*.86, 1.1); drawBush(bgW-150, bgH*.85, 1.25); drawBench(18, bgH*.875, .95);
+      reeds.forEach(r => { const x = r.x; const baseY = bgH * .97; const sway = Math.sin(bgTime * 1.6 + r.sway) * 3; bgCtx.strokeStyle = "#6dad44"; bgCtx.lineWidth = 2; bgCtx.beginPath(); bgCtx.moveTo(x, baseY); bgCtx.quadraticCurveTo(x + sway, baseY - r.h*.5, x + sway*1.7, baseY - r.h); bgCtx.stroke(); });
+      flowers.forEach(drawFlower);
+      drawTreeCluster(-10, bgH*.82, 1.55); drawTreeCluster(bgW-25, bgH*.18, 1.82);
+    }
+
+    function bgLoop(){ updateBg(); drawBackground(); requestAnimationFrame(bgLoop); }
+    window.addEventListener("resize", resizeBg); resizeBg(); requestAnimationFrame(bgLoop);
+
+    document.getElementById("playBtn").addEventListener("click", () => {
+      ensureAudio(); startOverlay.classList.add("hidden"); buildRounds();
+    });
+    document.getElementById("playAgainBtn").addEventListener("click", () => {
+      ensureAudio(); finishOverlay.classList.add("hidden"); buildRounds();
+    });
+    document.getElementById("homeBtn").addEventListener("click", () => {
+      finishOverlay.classList.add("hidden"); startOverlay.classList.remove("hidden");
+      feedback.textContent = ""; stopConveyor();
+    });
+    document.getElementById("closeBtn").addEventListener("click", () => {
+      finishOverlay.classList.remove("hidden");
+      document.querySelector("#finishOverlay h2").textContent = "Game Paused";
+      document.querySelector("#finishOverlay p").textContent = "You can play again or return home.";
+      finalScore.textContent = `${score} / ${ROUND_LENGTH * OBJECTS_PER_ROUND}`;
+    });
+    document.getElementById("menuBtn").addEventListener("click", e => {
+      e.stopPropagation(); menuPanel.classList.toggle("hidden");
+    });
+    document.addEventListener("click", e => {
+      if(!menuPanel.contains(e.target) && e.target.id !== "menuBtn") menuPanel.classList.add("hidden");
+    });
+    document.getElementById("restartMenuBtn").addEventListener("click", () => {
+      menuPanel.classList.add("hidden"); buildRounds();
+    });
+    document.getElementById("speakMenuBtn").addEventListener("click", () => {
+      menuPanel.classList.add("hidden"); speakInstructions();
+    });
+    document.getElementById("fullscreenBtn").addEventListener("click", async () => {
+      menuPanel.classList.add("hidden");
+      try{
+        if(!document.fullscreenElement) await document.documentElement.requestFullscreen();
+        else await document.exitFullscreen();
+      }catch(err){}
+    });
+    soundBtn.addEventListener("click", () => {
+      soundOn = !soundOn;
+      if(!soundOn && "speechSynthesis" in window) window.speechSynthesis.cancel();
+      updateSoundIcon();
+    });
+    updateSoundIcon();
+  })();
+  </script>
+</body>
+</html>
