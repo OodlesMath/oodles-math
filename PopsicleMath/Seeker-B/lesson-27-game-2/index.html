@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="../assets/brand.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#7dd3fc" />
+  <title>AM or PM? – Daily Routine (Ver 3)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --ink:#17324d;
+      --panel:rgba(255,255,255,.96);
+      --shadow:0 16px 40px rgba(23,50,77,.18);
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{
+      margin:0;width:100%;height:100%;overflow:hidden;
+      font-family:"Poppins",system-ui,sans-serif;
+      color:var(--ink);background:#8dd9ff;
+      user-select:none;-webkit-user-select:none;
+      touch-action:manipulation;
+    }
+    button{font:inherit}
+
+    #bgCanvas,#confettiCanvas{
+      position:fixed;inset:0;width:100%;height:100%;
+      display:block;
+    }
+    #bgCanvas{z-index:0}
+    #confettiCanvas{z-index:50;pointer-events:none}
+
+    .app{
+      position:relative;z-index:5;
+      width:100%;height:100dvh;
+      display:flex;flex-direction:column;
+      padding:clamp(8px,1.4vw,18px);
+      gap:clamp(8px,1vw,14px);
+    }
+
+    .topbar{
+      width:min(1180px,100%);
+      margin:0 auto;
+      display:grid;
+      grid-template-columns:1fr;
+      align-items:center;
+      gap:12px;
+      min-height:56px;
+    }
+    .progress-wrap{
+      display:flex;align-items:center;gap:12px;
+      background:rgba(255,255,255,.9);
+      border:3px solid rgba(255,255,255,.98);
+      border-radius:22px;
+      padding:8px 12px;
+      box-shadow:0 7px 0 rgba(61,149,198,.18);
+      backdrop-filter:blur(8px);
+      min-width:0;
+    }
+    .progress-text{
+      font-size:clamp(12px,1.4vw,16px);
+      font-weight:900;
+      white-space:nowrap;
+      flex:0 0 auto;
+    }
+    .meter{
+      flex:1;height:14px;background:#e7eef4;border-radius:999px;overflow:hidden;
+      border:2px solid #d6e2eb;min-width:90px;
+    }
+    .meter>span{
+      display:block;height:100%;width:0%;
+      background:linear-gradient(90deg,#39bdf8,#5acb63,#ffd34d);
+      border-radius:inherit;
+      transition:width .45s cubic-bezier(.22,.9,.32,1);
+    }
+    .score{
+      font-size:clamp(12px,1.4vw,16px);
+      font-weight:900;
+      white-space:nowrap;
+      background:#fff6c8;color:#9a6a00;
+      border:3px solid #ffe078;border-radius:18px;
+      padding:8px 14px;box-shadow:0 6px 0 #e8c44a;
+      flex:0 0 auto;
+    }
+
+    .game-card{
+      width:min(1180px,100%);
+      flex:1;min-height:0;
+      margin:0 auto;
+      background:var(--panel);
+      border:5px solid rgba(255,255,255,.98);
+      border-radius:clamp(24px,3vw,38px);
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(10px);
+      padding:clamp(12px,2vw,24px);
+      display:grid;
+      grid-template-rows:auto minmax(0,1fr);
+      gap:clamp(10px,1.3vw,16px);
+      overflow:hidden;
+    }
+
+    .question-head{
+      display:flex;align-items:center;justify-content:center;
+      gap:10px;min-height:58px;
+      text-align:center;
+    }
+    #questionText{
+      margin:0;
+      font-size:clamp(26px,4.4vw,58px);
+      line-height:1.12;
+      font-weight:900;
+      color:#114d8f;
+      letter-spacing:-.03em;
+      text-wrap:balance;
+    }
+    .icon-btn{
+      flex:0 0 auto;
+      width:clamp(48px,5vw,62px);height:clamp(48px,5vw,62px);
+      border:0;border-radius:18px;
+      background:#35b8f0;color:#fff;
+      box-shadow:0 6px 0 #1289bd;
+      display:grid;place-items:center;cursor:pointer;
+      transition:transform .1s ease,box-shadow .1s ease;
+    }
+    .icon-btn:active{transform:translateY(6px);box-shadow:0 0 0 transparent}
+    .icon-btn svg{width:58%;height:58%;fill:currentColor}
+
+    .main-zone{
+      min-height:0;
+      display:grid;
+      grid-template-columns:minmax(220px,.95fr) minmax(260px,1.65fr);
+      gap:clamp(14px,2vw,24px);
+      align-items:center;
+    }
+    .scene-card{
+      min-height:0;height:100%;
+      background:linear-gradient(180deg,#f7fcff,#edf8ff);
+      border:4px solid #ddecf6;
+      border-radius:28px;
+      display:grid;place-items:center;
+      overflow:hidden;position:relative;
+      padding:8px;
+    }
+    .scene-card::after{
+      content:"";
+      position:absolute;inset:auto 0 0 0;height:28%;
+      background:linear-gradient(180deg,rgba(255,255,255,0),rgba(190,234,192,.25));
+      pointer-events:none;
+    }
+    #sceneSvg{
+      width:100%;height:100%;
+      max-height:100%;
+      display:grid;place-items:center;
+    }
+    #sceneSvg svg{width:100%;height:100%;display:block}
+
+    .answer-area{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:clamp(12px,1.8vw,20px);
+      align-content:center;
+      min-height:0;
+    }
+    .answer-btn{
+      position:relative;
+      min-height:clamp(145px,26vh,260px);
+      border:0;border-radius:28px;
+      color:#fff;font-size:clamp(54px,9vw,112px);
+      font-weight:900;letter-spacing:.02em;
+      cursor:pointer;
+      transition:transform .1s ease,filter .18s ease;
+      overflow:hidden;
+      text-shadow:0 3px 0 rgba(0,0,0,.12);
+      box-shadow:0 10px 0 var(--btn-dark),0 18px 30px rgba(23,50,77,.16);
+    }
+    .answer-btn::before{
+      content:"";
+      position:absolute;left:4%;right:4%;top:5%;
+      height:18%;border-radius:20px 20px 12px 12px;
+      background:rgba(255,255,255,.18);
+    }
+    .answer-btn::after{
+      content:"";
+      position:absolute;left:0;right:0;bottom:0;height:25%;
+      background:rgba(0,0,0,.08);
+    }
+    .answer-btn span{position:relative;z-index:2}
+    .answer-btn:hover{transform:translateY(-3px);filter:brightness(1.04)}
+    .answer-btn:active{transform:translateY(8px);box-shadow:0 2px 0 var(--btn-dark)}
+    .answer-btn.disabled{pointer-events:none}
+    .answer-btn.correct{
+      background:#43c75b!important;--btn-dark:#26913b!important;
+      animation:correctBounce .45s ease;
+    }
+    .answer-btn.wrong{
+      background:#ef4b61!important;--btn-dark:#c92e43!important;
+      animation:shake .42s ease;
+    }
+    .feedback-mark{
+      position:absolute;right:16px;top:10px;z-index:3;
+      width:48px;height:48px;border-radius:50%;
+      background:#fff;display:none;place-items:center;
+      color:#279345;font-size:34px;font-weight:900;
+      box-shadow:0 4px 12px rgba(0,0,0,.18);
+    }
+    .wrong .feedback-mark{display:grid;color:#cf3145}
+    .correct .feedback-mark{display:grid;color:#279345}
+
+    .praise{
+      position:fixed;left:50%;top:48%;
+      transform:translate(-50%,-50%) scale(.8);
+      z-index:30;background:#fff;
+      border:4px solid #ffe078;color:#8d6500;
+      padding:12px 20px;border-radius:22px;
+      font-size:clamp(22px,3vw,36px);font-weight:900;
+      box-shadow:0 12px 28px rgba(23,50,77,.22);
+      opacity:0;pointer-events:none;
+    }
+    .praise.show{animation:praisePop .9s ease forwards}
+
+    .sound-toggle{
+      position:fixed;right:clamp(10px,1.5vw,20px);bottom:clamp(10px,1.5vw,20px);
+      z-index:20;width:48px;height:48px;border:0;border-radius:16px;
+      background:rgba(255,255,255,.94);color:#34536d;
+      box-shadow:0 6px 0 rgba(52,83,109,.22);
+      display:grid;place-items:center;cursor:pointer;
+    }
+    .sound-toggle svg{width:55%;height:55%;fill:currentColor}
+
+    .start-screen,.finish-screen{
+      position:fixed;inset:0;z-index:40;
+      display:grid;place-items:center;
+      background:rgba(55,133,178,.28);
+      backdrop-filter:blur(8px);
+      padding:18px;
+    }
+    .modal{
+      width:min(520px,100%);
+      background:#fff;border:5px solid #fff;
+      border-radius:34px;padding:28px;
+      text-align:center;box-shadow:0 24px 70px rgba(23,50,77,.28);
+    }
+    .modal h1,.modal h2{margin:0;color:#245fa8;font-size:clamp(34px,6vw,54px);line-height:1.05;font-weight:900}
+    .modal p{font-size:clamp(15px,2.3vw,20px);font-weight:700;color:#5b6f7f;line-height:1.5}
+    .stars{font-size:clamp(44px,8vw,68px);letter-spacing:5px;margin:10px 0}
+    .big-score{font-size:clamp(34px,6vw,54px);font-weight:900;color:#e7a400;margin:8px 0 18px}
+    .primary-btn{
+      width:100%;border:0;border-radius:24px;
+      padding:17px 22px;background:#52ca59;color:#fff;
+      font-weight:900;font-size:clamp(20px,3vw,28px);
+      box-shadow:0 8px 0 #329f3a;cursor:pointer;
+    }
+    .primary-btn:active{transform:translateY(8px);box-shadow:none}
+    .hidden{display:none!important}
+
+    @keyframes shake{
+      0%,100%{transform:translateX(0)}
+      20%{transform:translateX(-10px)}
+      40%{transform:translateX(10px)}
+      60%{transform:translateX(-7px)}
+      80%{transform:translateX(7px)}
+    }
+    @keyframes correctBounce{
+      0%{transform:scale(1)}
+      45%{transform:scale(1.04)}
+      75%{transform:scale(.98)}
+      100%{transform:scale(1)}
+    }
+    @keyframes praisePop{
+      0%{opacity:0;transform:translate(-50%,-50%) scale(.75)}
+      20%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}
+      55%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+      100%{opacity:0;transform:translate(-50%,-62%) scale(.95)}
+    }
+
+    @media (max-width:760px){
+      .app{padding:8px;gap:8px}
+      .progress-wrap{padding:6px 8px;gap:8px;flex-wrap:wrap}
+      .score{margin-left:auto}
+      .game-card{padding:10px;border-width:4px;border-radius:24px;gap:8px}
+      .question-head{min-height:48px}
+      #questionText{font-size:clamp(22px,7vw,35px)}
+      .main-zone{
+        grid-template-columns:1fr;
+        grid-template-rows:minmax(150px,1fr) auto;
+        gap:10px;
+      }
+      .scene-card{border-radius:22px;min-height:0}
+      .answer-area{grid-template-columns:1fr 1fr;gap:10px}
+      .answer-btn{
+        min-height:clamp(82px,16vh,126px);
+        border-radius:22px;
+        font-size:clamp(44px,17vw,76px);
+        box-shadow:0 7px 0 var(--btn-dark),0 12px 18px rgba(23,50,77,.13);
+      }
+      .sound-toggle{width:44px;height:44px}
+    }
+    @media (max-height:620px) and (orientation:landscape){
+      .app{padding:6px;gap:6px}
+      .topbar{min-height:44px}
+      .progress-wrap,.score{padding-top:5px;padding-bottom:5px}
+      .game-card{padding:8px;gap:6px}
+      .question-head{min-height:42px}
+      #questionText{font-size:clamp(22px,4.3vw,42px)}
+      .main-zone{grid-template-columns:minmax(180px,.95fr) minmax(280px,1.65fr)}
+      .answer-btn{min-height:clamp(110px,28vh,180px)}
+      .icon-btn{width:44px;height:44px;border-radius:14px}
+    }
+  </style>
+</head>
+<body>
+  <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+  <canvas id="bgCanvas"></canvas>
+  <canvas id="confettiCanvas"></canvas>
+
+  <div class="app">
+    <header class="topbar">
+      <div class="progress-wrap">
+        <div class="progress-text" id="progressText">Question 1 of 13</div>
+        <div class="meter"><span id="progressBar"></span></div>
+        <div class="score" id="scoreText">★ 0</div>
+      </div>
+    </header>
+
+    <main class="game-card" id="gameCard">
+      <div class="question-head">
+        <h1 id="questionText">7:00 – I go to school</h1>
+        <button class="icon-btn" id="speakBtn" aria-label="Read the question">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 9v6h4l5 4V5L7 9H3zm12.5 3a3.5 3.5 0 0 0-2-3.16v6.32A3.5 3.5 0 0 0 15.5 12zm0-7.5v2.06a7 7 0 0 1 0 10.88v2.06a9 9 0 0 0 0-15z"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="main-zone">
+        <section class="scene-card" aria-label="Question illustration">
+          <div id="sceneSvg"></div>
+        </section>
+
+        <section class="answer-area" aria-label="Choose AM or PM">
+          <button class="answer-btn" id="amBtn" data-answer="AM"><span>AM</span><b class="feedback-mark">✓</b></button>
+          <button class="answer-btn" id="pmBtn" data-answer="PM"><span>PM</span><b class="feedback-mark">✓</b></button>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div class="praise" id="praise">Great job!</div>
+
+  <button class="sound-toggle" id="soundToggle" aria-label="Toggle sound effects">
+    <svg viewBox="0 0 24 24">
+      <path d="M3 9v6h4l5 4V5L7 9H3zm12.5 3a3.5 3.5 0 0 0-2-3.16v6.32A3.5 3.5 0 0 0 15.5 12zm0-7.5v2.06a7 7 0 0 1 0 10.88v2.06a9 9 0 0 0 0-15z"/>
+    </svg>
+  </button>
+
+  <section class="start-screen" id="startScreen">
+    <div class="modal">
+      <div class="stars">★ ★ ★</div>
+      <h1>AM or PM?</h1>
+      <p>Look at the time and the daily activity. Then choose <b>AM</b> or <b>PM</b>.</p>
+      <button class="primary-btn" id="startBtn">START GAME</button>
+    </div>
+  </section>
+
+  <section class="finish-screen hidden" id="finishScreen">
+    <div class="modal">
+      <div class="stars">★ ★ ★</div>
+      <h2>GREAT JOB!</h2>
+      <p>You completed the AM &amp; PM challenge!</p>
+      <div class="big-score" id="finalScore">★ 13 / 13</div>
+      <button class="primary-btn" id="playAgainBtn">PLAY AGAIN</button>
+    </div>
+  </section>
+
+  <script>
+  // ============================================================
+  // QUESTIONS
+  // ============================================================
+  const questions = [
+    { time:"7:00", activity:"I go to school", speech:"Seven o'clock. I go to school.", answer:"AM", scene:"school" },
+    { time:"4:00", activity:"I go home", speech:"Four o'clock. I go home.", answer:"PM", scene:"home" },
+    { time:"6:00", activity:"I eat dinner", speech:"Six o'clock. I eat dinner.", answer:"PM", scene:"dinner" },
+    { time:"5:00", activity:"I play soccer", speech:"Five o'clock. I play soccer.", answer:"PM", scene:"soccer" },
+    { time:"12:00", activity:"I eat lunch at school", speech:"Twelve o'clock. I eat lunch at school.", answer:"PM", scene:"lunch" },
+    { time:"7:00", activity:"I do my homework", speech:"Seven o'clock. I do my homework.", answer:"PM", scene:"homework" },
+    { time:"6:00", activity:"I wake up", speech:"Six o'clock. I wake up.", answer:"AM", scene:"wake" },
+    { time:"5:00", activity:"The sun rises", speech:"Five o'clock. The sun rises.", answer:"AM", scene:"sunrise" },
+    { time:"6:00", activity:"The sun sets", speech:"Six o'clock. The sun sets.", answer:"PM", scene:"sunset" },
+    { time:"8:00", activity:"I watch TV", speech:"Eight o'clock. I watch T V.", answer:"PM", scene:"tv" },
+    { time:"2:00", activity:"I study English", speech:"Two o'clock. I study English.", answer:"PM", scene:"english" },
+    { time:"7:00", activity:"I have breakfast", speech:"Seven o'clock. I have breakfast.", answer:"AM", scene:"breakfast" },
+    { time:"8:00", activity:"I get dressed", speech:"Eight o'clock. I get dressed.", answer:"AM", scene:"dressed" }
+  ];
+
+  // ============================================================
+  // GAME STATE
+  // ============================================================
+  let deck = [];
+  let currentIndex = 0;
+  let score = 0;
+  let soundEnabled = true;
+  let waitingNext = false;
+  let gotWrongThisQuestion = false;
+  const TOTAL = questions.length;
+
+  const $ = sel => document.querySelector(sel);
+  const questionText = $("#questionText");
+  const sceneSvg = $("#sceneSvg");
+  const progressText = $("#progressText");
+  const progressBar = $("#progressBar");
+  const scoreText = $("#scoreText");
+  const praise = $("#praise");
+  const amBtn = $("#amBtn");
+  const pmBtn = $("#pmBtn");
+  const finishScreen = $("#finishScreen");
+
+  const praiseTexts = ["Great job!","Awesome!","Well done!","Excellent!","You got it!"];
+
+  function shuffle(arr){
+    const a = [...arr];
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]]=[a[j],a[i]];
+    }
+    return a;
+  }
+
+  function startNewRound(){
+    deck = shuffle(questions);
+    currentIndex = 0;
+    score = 0;
+    scoreText.textContent = "★ 0";
+    finishScreen.classList.add("hidden");
+    renderQuestion();
+  }
+
+  // ============================================================
+  // TTS
+  // ============================================================
+  function speakCurrent(){
+    if(!("speechSynthesis" in window)) return;
+    const q = deck[currentIndex];
+    if(!q) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(q.speech);
+    u.lang = "en-US";
+    u.rate = 0.9;
+    u.pitch = 1.05;
+    const voices = speechSynthesis.getVoices();
+    const preferred =
+      voices.find(v => /en-US/i.test(v.lang) && /Google|Samantha|Microsoft|Jenny|Aria/i.test(v.name)) ||
+      voices.find(v => /en-US/i.test(v.lang)) ||
+      voices.find(v => /^en/i.test(v.lang));
+    if(preferred) u.voice = preferred;
+    speechSynthesis.speak(u);
+  }
+
+  $("#speakBtn").addEventListener("click", () => {
+    SoundFX.click();
+    speakCurrent();
+  });
+
+  // ============================================================
+  // SOUND EFFECTS
+  // ============================================================
+  const SoundFX = {
+    ctx:null,
+    ensure(){
+      if(!soundEnabled) return null;
+      if(!this.ctx){
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if(AC) this.ctx = new AC();
+      }
+      if(this.ctx && this.ctx.state === "suspended") this.ctx.resume();
+      return this.ctx;
+    },
+    tone(freq=440,duration=.1,type="sine",gain=.05,delay=0){
+      const ctx=this.ensure(); if(!ctx) return;
+      const now=ctx.currentTime+delay;
+      const osc=ctx.createOscillator();
+      const g=ctx.createGain();
+      osc.type=type; osc.frequency.setValueAtTime(freq,now);
+      g.gain.setValueAtTime(.0001,now);
+      g.gain.exponentialRampToValueAtTime(gain,now+.012);
+      g.gain.exponentialRampToValueAtTime(.0001,now+duration);
+      osc.connect(g);g.connect(ctx.destination);
+      osc.start(now);osc.stop(now+duration+.03);
+    },
+    click(){this.tone(420,.06,"triangle",.035)},
+    correct(){
+      this.tone(660,.09,"triangle",.055);
+      this.tone(880,.12,"triangle",.05,.08);
+      this.tone(1040,.16,"sine",.045,.16);
+    },
+    wrong(){
+      this.tone(180,.14,"sawtooth",.045);
+      this.tone(135,.16,"sawtooth",.04,.1);
+    },
+    finish(){
+      [523,659,784,1047].forEach((f,i)=>this.tone(f,.18,"triangle",.055,i*.11));
+    }
+  };
+
+  $("#soundToggle").addEventListener("click",()=>{
+    soundEnabled=!soundEnabled;
+    $("#soundToggle").style.opacity=soundEnabled?"1":".55";
+    if(soundEnabled) SoundFX.click();
+  });
+
+  // ============================================================
+  // ILLUSTRATION HELPERS
+  // ============================================================
+  function svgWrap(inner, bg1="#dff5ff", bg2="#ffffff"){
+    return `
+      <svg viewBox="0 0 640 420" role="img" aria-label="Beautiful colorful cartoon illustration">
+        <defs>
+          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="${bg1}"/>
+            <stop offset="100%" stop-color="${bg2}"/>
+          </linearGradient>
+          <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#5d7385" flood-opacity=".22"/>
+          </filter>
+          <linearGradient id="grassGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#9fda66"/>
+            <stop offset="100%" stop-color="#67b94a"/>
+          </linearGradient>
+          <linearGradient id="roadGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#f4dfb2"/>
+            <stop offset="100%" stop-color="#d1b279"/>
+          </linearGradient>
+        </defs>
+        <rect width="640" height="420" rx="30" fill="url(#sky)"/>
+        ${inner}
+      </svg>`;
+  }
+
+  function face(cx, cy, skin="#ffd7b5", hair="#6b4026", smile=true){
+    return `
+      <circle cx="${cx}" cy="${cy}" r="24" fill="${skin}"/>
+      <path d="M${cx-22} ${cy-6} Q${cx} ${cy-34} ${cx+22} ${cy-6} Q${cx+16} ${cy-20} ${cx-16} ${cy-18}Z" fill="${hair}"/>
+      <circle cx="${cx-8}" cy="${cy-2}" r="2.4" fill="#29394d"/>
+      <circle cx="${cx+8}" cy="${cy-2}" r="2.4" fill="#29394d"/>
+      ${smile ? `<path d="M${cx-7} ${cy+9} Q${cx} ${cy+14} ${cx+7} ${cy+9}" stroke="#cb6464" stroke-width="2.8" fill="none" stroke-linecap="round"/>` : ``}
+    `;
+  }
+
+  function childStanding(x,y,shirt="#5ab1ef",pants="#5469bc",hair="#6b4026",skin="#ffd7b5",scale=1, backpack=false, armPose="down"){
+    const armLeft = armPose === "wave" ? `M -18 -10 Q -36 -26 -46 -44` : armPose === "front" ? `M -18 -10 Q -42 4 -52 14` : `M -18 -10 Q -34 10 -46 24`;
+    const armRight = armPose === "wave" ? `M 18 -10 Q 38 -20 42 -42` : armPose === "front" ? `M 18 -10 Q 42 4 54 18` : `M 18 -10 Q 34 10 46 24`;
+    return `
+      <g transform="translate(${x} ${y}) scale(${scale})" filter="url(#softShadow)">
+        ${backpack ? `<ellipse cx="18" cy="-1" rx="16" ry="23" fill="#406bc2"/>` : ``}
+        ${face(0,-48,skin,hair,true)}
+        <rect x="-22" y="-23" width="44" height="56" rx="16" fill="${shirt}"/>
+        <path d="${armLeft}" stroke="${skin}" stroke-width="10" fill="none" stroke-linecap="round"/>
+        <path d="${armRight}" stroke="${skin}" stroke-width="10" fill="none" stroke-linecap="round"/>
+        <rect x="-18" y="30" width="14" height="42" rx="7" fill="${pants}"/>
+        <rect x="4" y="30" width="14" height="42" rx="7" fill="${pants}"/>
+        <path d="M -19 72 h18" stroke="#ef6e4f" stroke-width="9" stroke-linecap="round"/>
+        <path d="M 5 72 h18" stroke="#ef6e4f" stroke-width="9" stroke-linecap="round"/>
+      </g>`;
+  }
+
+  function tree(x, y, scale=.8){
+    return `
+      <g transform="translate(${x} ${y}) scale(${scale})">
+        <rect x="-8" y="15" width="16" height="36" rx="6" fill="#8a5930"/>
+        <circle cx="0" cy="0" r="24" fill="#59c467"/>
+        <circle cx="-18" cy="8" r="18" fill="#64cf73"/>
+        <circle cx="18" cy="8" r="18" fill="#4eb95d"/>
+      </g>`;
+  }
+
+  function cloud(x,y,s=1){
+    return `
+      <g transform="translate(${x} ${y}) scale(${s})" fill="#fff" opacity=".95">
+        <circle cx="0" cy="0" r="20"/>
+        <circle cx="24" cy="-7" r="25"/>
+        <circle cx="50" cy="0" r="18"/>
+      </g>`;
+  }
+
+  function classroomDesk(x,y,scale=1,kidColor="#5ab1ef",hair="#6b4026"){
+    return `
+      <g transform="translate(${x} ${y}) scale(${scale})" filter="url(#softShadow)">
+        <rect x="-32" y="0" width="64" height="24" rx="5" fill="#c98b52"/>
+        <rect x="-27" y="24" width="7" height="28" rx="3" fill="#956239"/>
+        <rect x="20" y="24" width="7" height="28" rx="3" fill="#956239"/>
+        ${face(0,-18,"#ffd7b5",hair)}
+        <rect x="-20" y="0" width="40" height="34" rx="12" fill="${kidColor}"/>
+      </g>
+    `;
+  }
+
+  function sceneFor(type){
+    switch(type){
+      case "school":
+        return svgWrap(`
+          ${cloud(90,78,.9)}${cloud(498,85,.8)}
+          <circle cx="560" cy="72" r="34" fill="#ffd65b"/><circle cx="560" cy="72" r="52" fill="#ffd65b" opacity=".2"/>
+          <path d="M0 300 Q170 250 330 285 T640 286 V420 H0Z" fill="url(#grassGrad)"/>
+          ${tree(65,250,.9)}${tree(565,245,.9)}
+          <g transform="translate(184 70)" filter="url(#softShadow)">
+            <path d="M0 118 L136 22 L272 118Z" fill="#ef6e62"/>
+            <rect x="22" y="118" width="228" height="142" rx="16" fill="#ffd665"/>
+            <rect x="105" y="155" width="62" height="105" rx="10" fill="#67afda"/>
+            <rect x="44" y="150" width="42" height="38" rx="6" fill="#caedff" stroke="#6cb2cf" stroke-width="4"/>
+            <rect x="190" y="150" width="42" height="38" rx="6" fill="#caedff" stroke="#6cb2cf" stroke-width="4"/>
+            <circle cx="136" cy="88" r="21" fill="#fff" stroke="#728190" stroke-width="5"/>
+            <path d="M136 88 v-12 M136 88 l8 7" stroke="#546374" stroke-width="4" stroke-linecap="round"/>
+            <path d="M258 58 l32 10 -32 10z" fill="#4bb7f3"/>
+          </g>
+          <path d="M235 420 Q270 334 320 284 Q370 334 405 420Z" fill="url(#roadGrad)" opacity=".96"/>
+          ${childStanding(280,300,"#f8a642","#7a5ec4","#7d4a26","#ffd7b5",1.05,true,"front")}
+          ${childStanding(360,276,"#5ab1ef","#3d63bd","#6b4026","#ffd7b5",.96,true,"wave")}
+          ${childStanding(450,322,"#7fcf74","#4258ae","#95502f","#ffd7b5",.83,false,"down")}
+        `, "#b7e6ff", "#eaf8ff");
+
+      case "home":
+        return svgWrap(`
+          ${cloud(92,84,.9)}${cloud(478,88,.75)}
+          <circle cx="555" cy="78" r="34" fill="#ffb356"/><circle cx="555" cy="78" r="54" fill="#ffb356" opacity=".18"/>
+          <path d="M0 304 Q170 266 322 295 T640 292 V420 H0Z" fill="url(#grassGrad)"/>
+          <g transform="translate(94 124)" filter="url(#softShadow)">
+            <path d="M0 105 L120 24 L240 105Z" fill="#ec665a"/>
+            <rect x="24" y="105" width="192" height="126" rx="14" fill="#ffe2b1"/>
+            <rect x="88" y="152" width="48" height="79" rx="8" fill="#90cdf0"/>
+            <rect x="42" y="132" width="35" height="34" rx="5" fill="#d7f4ff" stroke="#7bb8d2" stroke-width="4"/>
+            <rect x="163" y="132" width="35" height="34" rx="5" fill="#d7f4ff" stroke="#7bb8d2" stroke-width="4"/>
+          </g>
+          <path d="M0 420 Q118 320 235 285 Q290 270 350 289 Q510 338 640 420Z" fill="#d9d9d9" opacity=".75"/>
+          ${childStanding(408,280,"#f18aa2","#4560be","#7d4b28","#ffd7b5",1.06,false,"front")}
+          <path d="M356 317 Q403 286 455 293" stroke="#7597bc" stroke-width="9" fill="none" stroke-linecap="round"/>
+          ${tree(545,250,.9)}
+        `, "#ffe7c6", "#fff7ed");
+
+      case "dinner":
+        return svgWrap(`
+          <defs>
+            <linearGradient id="nightWin" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#302d65"/><stop offset="100%" stop-color="#5e3b8c"/></linearGradient>
+          </defs>
+          <rect width="640" height="420" fill="#f5e5d0"/>
+          <rect x="62" y="62" width="118" height="110" rx="14" fill="#fff" filter="url(#softShadow)"/>
+          <rect x="72" y="72" width="98" height="90" rx="10" fill="url(#nightWin)"/>
+          <circle cx="142" cy="102" r="13" fill="#ffd86c"/>
+          <g fill="#fff" opacity=".95"><circle cx="100" cy="92" r="2.2"/><circle cx="119" cy="131" r="2"/><circle cx="151" cy="125" r="2.2"/></g>
+          <rect y="286" width="640" height="134" fill="#eecaa5"/>
+          <g transform="translate(322 286)" filter="url(#softShadow)">
+            <ellipse cx="0" cy="22" rx="160" ry="36" fill="#9f633d"/>
+            <rect x="-155" y="22" width="310" height="17" rx="8" fill="#8b5633"/>
+            <ellipse cx="-80" cy="0" rx="40" ry="16" fill="#fff"/>
+            <ellipse cx="-80" cy="-1" rx="26" ry="10" fill="#8aca69"/>
+            <path d="M-92 -5 q18-18 32 0" stroke="#ea913a" stroke-width="8" fill="none" stroke-linecap="round"/>
+            <ellipse cx="8" cy="0" rx="43" ry="17" fill="#fff"/>
+            <ellipse cx="8" cy="-1" rx="27" ry="10" fill="#f0be75"/>
+            <ellipse cx="92" cy="-2" rx="40" ry="16" fill="#fff"/>
+            <path d="M72 -2 h40" stroke="#9f6138" stroke-width="4" stroke-linecap="round"/>
+          </g>
+          ${childStanding(210,252,"#8ab267","#6c4a3a","#4b362a","#ffd7b5",.95,false,"front")}
+          ${childStanding(420,254,"#d98eb7","#89644d","#8d4b2f","#ffd7b5",.95,false,"front")}
+        `, "#f7eadf", "#f1d0c5");
+
+      case "soccer":
+        return svgWrap(`
+          ${cloud(100,84,.85)}${cloud(500,82,.8)}
+          <path d="M0 296 Q180 260 340 290 T640 288 V420 H0Z" fill="#89d15b"/>
+          <rect x="465" y="174" width="115" height="94" fill="none" stroke="#fff" stroke-width="10"/>
+          <path d="M465 174 l-28 18 v76 l28 0 M580 174 l28 18 v76 l-28 0" fill="none" stroke="#fff" stroke-width="6"/>
+          <path d="M0 320 H640" stroke="#fff" stroke-width="6" opacity=".9"/>
+          ${childStanding(248,282,"#ff8e60","#345fbe","#7d4a27","#ffd7b5",1.06,false,"front")}
+          <circle cx="350" cy="324" r="26" fill="#fff" stroke="#29394d" stroke-width="5" filter="url(#softShadow)"/>
+          <path d="M350 299 l10 8 -4 13h-13l-4-13z M331 326 l12-4 M369 326 l-12-4 M350 349 v-11" fill="none" stroke="#29394d" stroke-width="4.5"/>
+          ${childStanding(525,250,"#6cc17a","#4a64bf","#614227","#ffd7b5",.78,false,"wave")}
+        `, "#ccefff", "#f4fcff");
+
+      case "lunch":
+        return svgWrap(`
+          <rect width="640" height="420" fill="#fff4e5"/>
+          <rect x="38" y="52" width="170" height="130" rx="16" fill="#cdeeff" stroke="#85b9d7" stroke-width="5"/>
+          <path d="M123 52 v130 M38 118 h170" stroke="#85b9d7" stroke-width="5"/>
+          <rect x="246" y="58" width="130" height="155" rx="12" fill="#ef575f"/>
+          <rect x="260" y="72" width="102" height="127" rx="8" fill="#dff8ff"/>
+          <g transform="translate(460 68)">
+            <rect x="0" y="0" width="122" height="128" rx="14" fill="#ffd9a9"/>
+            <rect x="14" y="16" width="44" height="54" rx="8" fill="#fff"/>
+            <rect x="66" y="16" width="44" height="54" rx="8" fill="#fff"/>
+            <rect x="14" y="78" width="96" height="16" rx="8" fill="#f3b36f"/>
+          </g>
+          <g transform="translate(318 290)" filter="url(#softShadow)">
+            <rect x="-170" y="5" width="340" height="16" rx="7" fill="#aa7046"/>
+            <rect x="-150" y="20" width="10" height="58" rx="4" fill="#8c5c35"/>
+            <rect x="140" y="20" width="10" height="58" rx="4" fill="#8c5c35"/>
+            <ellipse cx="-90" cy="-4" rx="34" ry="12" fill="#fff"/><ellipse cx="-90" cy="-4" rx="22" ry="8" fill="#7fc46f"/>
+            <ellipse cx="0" cy="-4" rx="34" ry="12" fill="#fff"/><ellipse cx="0" cy="-4" rx="22" ry="8" fill="#efc27a"/>
+            <ellipse cx="90" cy="-4" rx="34" ry="12" fill="#fff"/><ellipse cx="90" cy="-4" rx="22" ry="8" fill="#ffd75f"/>
+          </g>
+          ${childStanding(228,250,"#f17c8d","#4762bf","#784425","#ffd7b5",.82,false,"front")}
+          ${childStanding(318,250,"#5bb1ed","#4762bf","#6a4228","#ffd7b5",.82,false,"front")}
+          ${childStanding(406,250,"#7cc771","#4762bf","#8a5430","#ffd7b5",.82,false,"front")}
+        `, "#fff7ea", "#fffef9");
+
+      case "homework":
+        return svgWrap(`
+          <rect width="640" height="420" fill="#fff6e9"/>
+          <rect x="52" y="64" width="118" height="158" rx="16" fill="#d9f0ff" stroke="#8cb6d2" stroke-width="5"/>
+          <path d="M111 64 v158 M52 143 h118" stroke="#8cb6d2" stroke-width="5"/>
+          <g transform="translate(470 72)" filter="url(#softShadow)">
+            <rect x="0" y="0" width="102" height="164" rx="14" fill="#e7d7be"/>
+            <rect x="17" y="18" width="18" height="82" rx="5" fill="#f06d5d"/>
+            <rect x="42" y="26" width="18" height="74" rx="5" fill="#4fa8ea"/>
+            <rect x="67" y="10" width="18" height="90" rx="5" fill="#73c271"/>
+          </g>
+          <g transform="translate(310 292)" filter="url(#softShadow)">
+            <rect x="-150" y="0" width="300" height="18" rx="8" fill="#c48351"/>
+            <rect x="-132" y="18" width="9" height="68" rx="4" fill="#94623a"/>
+            <rect x="123" y="18" width="9" height="68" rx="4" fill="#94623a"/>
+            <path d="M-58 -8 q56-26 108 0 v38 h-108z" fill="#fff" stroke="#cfd9e2" stroke-width="4"/>
+            <path d="M-44 4 h64 M-44 16 h64" stroke="#afc2d0" stroke-width="3" />
+            <rect x="68" y="-44" width="11" height="56" rx="5" fill="#e35662" transform="rotate(18 74 -16)"/>
+            <rect x="95" y="-32" width="12" height="44" rx="4" fill="#ffd55d"/>
+          </g>
+          ${childStanding(300,238,"#67bfd2","#4f64ad","#6c4026","#ffd7b5",1.0,false,"front")}
+        `, "#fff7e8", "#fffef7");
+
+      case "wake":
+        return svgWrap(`
+          <rect width="640" height="420" fill="#ffe9f3"/>
+          <rect x="430" y="55" width="145" height="116" rx="14" fill="#c9efff" stroke="#8bb8d2" stroke-width="5"/>
+          <path d="M502 55 v116 M430 113 h145" stroke="#8bb8d2" stroke-width="5"/>
+          <circle cx="501" cy="102" r="24" fill="#ffd75a"/>
+          <g transform="translate(95 220)" filter="url(#softShadow)">
+            <rect x="0" y="0" width="265" height="105" rx="24" fill="#bf83ea"/>
+            <rect x="14" y="-26" width="118" height="52" rx="20" fill="#a667d9"/>
+            <path d="M86 8 q118-34 160 30 v67 H84Z" fill="#f39bc6"/>
+            <circle cx="72" cy="-18" r="24" fill="#ffd7b5"/>
+            <path d="M49 -24 Q72 -47 95 -24 Q79 -32 60 -26Z" fill="#8a522f"/>
+            <path d="M58 -9 q14 12 28 0" stroke="#cf5f70" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <path d="M72 -45 l-6-18 M72 -45 l12 -15" stroke="#ffd75a" stroke-width="7" stroke-linecap="round"/>
+          </g>
+          <path d="M0 420 V330 Q150 300 320 330 T640 334 V420Z" fill="#f6d6dd"/>
+        `, "#ffdff0", "#fff5fa");
+
+      case "sunrise":
+        return svgWrap(`
+          <defs>
+            <linearGradient id="riseSky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#8fd8ff"/>
+              <stop offset="55%" stop-color="#d9f0ff"/>
+              <stop offset="100%" stop-color="#ffe7ac"/>
+            </linearGradient>
+          </defs>
+          <rect width="640" height="420" fill="url(#riseSky)"/>
+          <g opacity=".55" stroke="#ffd35d" stroke-width="7" stroke-linecap="round">
+            <path d="M320 255 V152"/><path d="M280 258 L220 192"/><path d="M360 258 L420 192"/>
+            <path d="M255 285 H178"/><path d="M385 285 H462"/>
+          </g>
+          <circle cx="320" cy="284" r="72" fill="#ffd65b"/>
+          <path d="M0 288 Q128 233 244 284 T485 278 T640 292 V420 H0Z" fill="#7ece58"/>
+          <path d="M0 340 Q160 300 320 338 T640 334 V420 H0Z" fill="#4ea44e"/>
+          <path d="M245 420 Q275 350 320 320 Q365 350 395 420Z" fill="#ead17d"/>
+          ${tree(92,260,.9)}${tree(536,258,.9)}
+        `, "#9edcff", "#ffe7ae");
+
+      case "sunset":
+        return svgWrap(`
+          <defs>
+            <linearGradient id="setSky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#655dc7"/>
+              <stop offset="46%" stop-color="#ef8a84"/>
+              <stop offset="100%" stop-color="#ffbf69"/>
+            </linearGradient>
+          </defs>
+          <rect width="640" height="420" fill="url(#setSky)"/>
+          <circle cx="320" cy="268" r="74" fill="#fff0b0"/>
+          <rect y="278" width="640" height="142" fill="#f19849"/>
+          <path d="M0 300 Q110 268 220 296 T440 292 T640 298 V420 H0Z" fill="#33454a"/>
+          <path d="M0 352 Q170 322 320 350 T640 348" fill="none" stroke="#ffd98e" stroke-width="7" opacity=".45"/>
+          <g fill="#242c37">
+            <path d="M105 226 q16-22 32 0 q16-22 32 0 q-16-10-32 0 q-16-10-32 0Z"/>
+            <path d="M474 194 q12-18 24 0 q12-18 24 0 q-12-8-24 0 q-12-8-24 0Z"/>
+          </g>
+          <path d="M0 420 V334 Q170 310 320 336 T640 334 V420Z" fill="#ed9042" opacity=".85"/>
+        `, "#7158bf", "#ffb865");
+
+      case "tv":
+        return svgWrap(`
+          <rect width="640" height="420" fill="#fff0dd"/>
+          <rect x="392" y="88" width="176" height="130" rx="18" fill="#30384b" filter="url(#softShadow)"/>
+          <rect x="409" y="104" width="142" height="98" rx="10" fill="#9ddcff"/>
+          <circle cx="477" cy="142" r="24" fill="#ffd35f"/>
+          <path d="M431 184 q46-52 104 0" stroke="#67bf73" stroke-width="10" fill="none" stroke-linecap="round"/>
+          <rect x="466" y="218" width="26" height="64" rx="8" fill="#30384b"/>
+          <rect x="421" y="272" width="116" height="14" rx="7" fill="#30384b"/>
+          <g transform="translate(112 262)" filter="url(#softShadow)">
+            <rect x="0" y="0" width="248" height="94" rx="40" fill="#ec927d"/>
+            <circle cx="64" cy="-14" r="23" fill="#ffd7b5"/>
+            <path d="M42 -19 Q64 -40 86 -19 Q71 -28 50 -22Z" fill="#6b4026"/>
+            <rect x="44" y="8" width="42" height="48" rx="16" fill="#65b8df"/>
+            <circle cx="124" cy="-14" r="23" fill="#ffd7b5"/>
+            <path d="M102 -18 Q124 -39 146 -18 Q131 -26 110 -20Z" fill="#7c4c2a"/>
+            <rect x="104" y="8" width="42" height="48" rx="16" fill="#87c96a"/>
+          </g>
+        `, "#fff6ea", "#fff9f4");
+
+      case "english":
+        return svgWrap(`
+          <rect width="640" height="420" fill="#fff1f1"/>
+          <rect x="210" y="55" width="335" height="165" rx="18" fill="#2c7b70" filter="url(#softShadow)"/>
+          <text x="380" y="151" font-family="Poppins,Arial" font-size="64" font-weight="900" text-anchor="middle" fill="#fff">A B C</text>
+          <g transform="translate(108 144)" filter="url(#softShadow)">
+            <circle cx="0" cy="0" r="28" fill="#ffd7b5"/>
+            <path d="M-24 -6 Q0 -32 24 -6 Q7 -16 -17 -12Z" fill="#945635"/>
+            <rect x="-28" y="26" width="56" height="80" rx="18" fill="#f37d91"/>
+            <path d="M28 38 L90 16" stroke="#ffd7b5" stroke-width="11" fill="none" stroke-linecap="round"/>
+            <rect x="81" y="-4" width="62" height="44" rx="10" fill="#fff" stroke="#e5d6cf" stroke-width="4"/>
+            <text x="112" y="25" font-family="Poppins,Arial" font-size="23" font-weight="900" text-anchor="middle" fill="#ef5468">A</text>
+          </g>
+          ${classroomDesk(305,300,.92,"#5cb6eb","#6e4328")}
+          ${classroomDesk(405,300,.92,"#f5a45c","#5c3a25")}
+          ${classroomDesk(505,300,.92,"#88cb72","#8d4f2e")}
+        `, "#fff0f0", "#fff8f8");
+
+      case "breakfast":
+        return svgWrap(`
+          ${cloud(100,78,.84)}
+          <circle cx="545" cy="76" r="34" fill="#ffd95a"/><circle cx="545" cy="76" r="52" fill="#ffd95a" opacity=".18"/>
+          <path d="M0 420 V300 Q160 268 320 302 T640 294 V420Z" fill="#fff1cf"/>
+          <path d="M0 420 V328 Q160 300 320 332 T640 328 V420Z" fill="#f3ddad"/>
+          ${childStanding(260,240,"#57a7d8","#5366b2","#724120","#ffd7b5",.95,false,"front")}
+          <g transform="translate(312 314)" filter="url(#softShadow)">
+            <rect x="-156" y="0" width="312" height="18" rx="8" fill="#bb7c4a"/>
+            <rect x="-136" y="18" width="10" height="62" rx="4" fill="#92603a"/>
+            <rect x="126" y="18" width="10" height="62" rx="4" fill="#92603a"/>
+            <ellipse cx="-88" cy="-2" rx="36" ry="14" fill="#fff"/>
+            <circle cx="-104" cy="-5" r="13" fill="#ff564f"/>
+            <circle cx="-73" cy="-5" r="12" fill="#ffd65d"/>
+            <ellipse cx="8" cy="-2" rx="42" ry="16" fill="#fff"/>
+            <ellipse cx="8" cy="-2" rx="26" ry="10" fill="#a6d56f"/>
+            <circle cx="-4" cy="-2" r="3" fill="#76512f"/><circle cx="10" cy="-5" r="3" fill="#76512f"/><circle cx="22" cy="0" r="3" fill="#76512f"/>
+            <rect x="84" y="-48" width="24" height="46" rx="7" fill="#dff4ff" stroke="#74b7d5" stroke-width="4"/>
+          </g>
+        `, "#dff5ff", "#fff8df");
+
+      case "dressed":
+        return svgWrap(`
+          <rect width="640" height="420" fill="#f7edff"/>
+          <g transform="translate(74 70)" filter="url(#softShadow)">
+            <rect x="0" y="0" width="132" height="268" rx="22" fill="#ead8c2"/>
+            <path d="M22 42 h88" stroke="#9a765a" stroke-width="8" stroke-linecap="round"/>
+            <path d="M42 42 v72" stroke="#9a765a" stroke-width="6"/>
+            <path d="M90 42 v72" stroke="#9a765a" stroke-width="6"/>
+            <path d="M26 114 q40-28 80 0 v58 h-80z" fill="#f37466"/>
+            <path d="M50 194 q16-24 32 0 v57 h-32z" fill="#7080ca"/>
+          </g>
+          ${childStanding(390,266,"#ff926a","#7750bf","#703f27","#ffd7b5",1.12,false,"front")}
+          <path d="M334 218 q54-70 113 -3" fill="none" stroke="#ff926a" stroke-width="16" stroke-linecap="round"/>
+          <rect x="472" y="88" width="74" height="166" rx="18" fill="#fff" opacity=".55"/>
+        `, "#f7edff", "#fff9ff");
+
+      default:
+        return svgWrap(`${childStanding(320,260)}`);
+    }
+  }
+
+  // ============================================================
+  // RENDER QUESTION
+  // ============================================================
+  const palettes = [
+    {am:["#2aa9ee","#1588c7"],pm:["#ef4d61","#c52f42"]},
+    {am:["#55c978","#2fa355"],pm:["#a45fe8","#7a3fc0"]},
+    {am:["#ff942e","#d56800"],pm:["#3f5be9","#2739bf"]},
+    {am:["#bd78e5","#8b4fba"],pm:["#2c9fd7","#1474ae"]},
+    {am:["#43c29c","#238e71"],pm:["#ef5f39","#c63a1f"]}
+  ];
+
+  function resetAnswerButtons(){
+    [amBtn,pmBtn].forEach(btn=>{
+      btn.classList.remove("correct","wrong","disabled");
+      btn.querySelector(".feedback-mark").textContent="✓";
+    });
+  }
+
+  function applyPalette(){
+    const p=palettes[currentIndex%palettes.length];
+    amBtn.style.background=p.am[0];amBtn.style.setProperty("--btn-dark",p.am[1]);
+    pmBtn.style.background=p.pm[0];pmBtn.style.setProperty("--btn-dark",p.pm[1]);
+  }
+
+  function renderQuestion(){
+    waitingNext=false;
+    gotWrongThisQuestion = false;
+    const q=deck[currentIndex];
+    questionText.textContent=`${q.time} – ${q.activity}`;
+    sceneSvg.innerHTML=sceneFor(q.scene);
+    progressText.textContent=`Question ${currentIndex+1} of ${TOTAL}`;
+    progressBar.style.width=`${(currentIndex/TOTAL)*100}%`;
+    resetAnswerButtons();
+    applyPalette();
+
+    $("#gameCard").animate(
+      [{opacity:.55,transform:"translateY(6px)"},{opacity:1,transform:"translateY(0)"}],
+      {duration:280,easing:"ease-out"}
+    );
+
+    setTimeout(speakCurrent,420);
+  }
+
+  // ============================================================
+  // CHECK ANSWER
+  // ============================================================
+  function showPraise(){
+    praise.textContent=praiseTexts[Math.floor(Math.random()*praiseTexts.length)];
+    praise.classList.remove("show");
+    void praise.offsetWidth;
+    praise.classList.add("show");
+  }
+
+  function checkAnswer(btn){
+    if(waitingNext) return;
+    const q=deck[currentIndex];
+    SoundFX.click();
+
+    if(btn.dataset.answer===q.answer){
+      waitingNext=true;
+      if(!gotWrongThisQuestion){
+        score++;
+        scoreText.textContent=`★ ${score}`;
+      }
+      btn.classList.add("correct");
+      btn.querySelector(".feedback-mark").textContent="✓";
+      [amBtn,pmBtn].forEach(b=>b.classList.add("disabled"));
+      SoundFX.correct();
+      showPraise();
+      smallConfetti();
+      progressBar.style.width=`${((currentIndex+1)/TOTAL)*100}%`;
+      setTimeout(nextQuestion,900);
+    }else{
+      gotWrongThisQuestion = true;
+      btn.classList.remove("wrong");
+      void btn.offsetWidth;
+      btn.classList.add("wrong");
+      btn.querySelector(".feedback-mark").textContent="×";
+      SoundFX.wrong();
+      setTimeout(()=>btn.classList.remove("wrong"),550);
+    }
+  }
+
+  amBtn.addEventListener("click",()=>checkAnswer(amBtn));
+  pmBtn.addEventListener("click",()=>checkAnswer(pmBtn));
+
+  // ============================================================
+  // NEXT QUESTION
+  // ============================================================
+  function nextQuestion(){
+    currentIndex++;
+    if(currentIndex>=TOTAL){
+      finishGame();
+      return;
+    }
+    renderQuestion();
+  }
+
+  // ============================================================
+  // FINISH SCREEN
+  // ============================================================
+  function finishGame(){
+    speechSynthesis?.cancel?.();
+    $("#finalScore").textContent=`★ ${score} / ${TOTAL}`;
+    finishScreen.classList.remove("hidden");
+    SoundFX.finish();
+    bigConfetti();
+  }
+
+  // ============================================================
+  // CONFETTI
+  // ============================================================
+  const confCanvas=$("#confettiCanvas");
+  const cctx=confCanvas.getContext("2d");
+  let confetti=[];
+  function resizeConfetti(){
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    confCanvas.width=innerWidth*dpr;
+    confCanvas.height=innerHeight*dpr;
+    confCanvas.style.width=innerWidth+"px";
+    confCanvas.style.height=innerHeight+"px";
+    cctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  resizeConfetti();
+  addEventListener("resize",resizeConfetti);
+
+  const confColors=["#58cc02","#1cb0f6","#ff4b4b","#ffc800","#ce82ff","#ff8f4b"];
+  function emitConfetti(count,spread=10){
+    for(let i=0;i<count;i++){
+      confetti.push({
+        x:innerWidth/2+(Math.random()-.5)*180,
+        y:innerHeight*.46,
+        vx:(Math.random()-.5)*spread,
+        vy:-Math.random()*8-4,
+        g:.18+Math.random()*.08,
+        r:4+Math.random()*5,
+        life:70+Math.random()*45,
+        color:confColors[Math.floor(Math.random()*confColors.length)],
+        rot:Math.random()*Math.PI
+      });
+    }
+  }
+  function smallConfetti(){emitConfetti(34,7)}
+  function bigConfetti(){emitConfetti(180,13)}
+  function confettiLoop(){
+    cctx.clearRect(0,0,innerWidth,innerHeight);
+    confetti.forEach(p=>{
+      p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.life--;p.rot+=.12;
+      cctx.save();cctx.translate(p.x,p.y);cctx.rotate(p.rot);
+      cctx.fillStyle=p.color;cctx.fillRect(-p.r,-p.r/2,p.r*2,p.r);
+      cctx.restore();
+    });
+    confetti=confetti.filter(p=>p.life>0 && p.y<innerHeight+40);
+    requestAnimationFrame(confettiLoop);
+  }
+  requestAnimationFrame(confettiLoop);
+
+  // ============================================================
+  // RESPONSIVE BACKGROUND
+  // ============================================================
+  const bg=$("#bgCanvas");
+  const bctx=bg.getContext("2d",{alpha:false});
+  let BW=0,BH=0,clouds=[];
+  function resizeBg(){
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    BW=innerWidth;BH=innerHeight;
+    bg.width=BW*dpr;bg.height=BH*dpr;
+    bg.style.width=BW+"px";bg.style.height=BH+"px";
+    bctx.setTransform(dpr,0,0,dpr,0,0);
+    clouds=Array.from({length:BW<700?3:5},()=>({
+      x:Math.random()*BW,y:BH*(.08+Math.random()*.33),
+      s:18+Math.random()*30,sp:.08+Math.random()*.08
+    }));
+  }
+  function drawCloud(c){
+    bctx.beginPath();
+    bctx.arc(c.x,c.y,c.s,0,Math.PI*2);
+    bctx.arc(c.x+c.s*.85,c.y+c.s*.18,c.s*.72,0,Math.PI*2);
+    bctx.arc(c.x-c.s*.82,c.y+c.s*.22,c.s*.67,0,Math.PI*2);
+    bctx.arc(c.x+c.s*.05,c.y-c.s*.25,c.s*.7,0,Math.PI*2);
+    bctx.fill();
+  }
+  function drawBg(){
+    const g=bctx.createLinearGradient(0,0,0,BH);
+    g.addColorStop(0,"#7fd4ff");g.addColorStop(.7,"#dff6ff");g.addColorStop(1,"#f3ffef");
+    bctx.fillStyle=g;bctx.fillRect(0,0,BW,BH);
+
+    bctx.fillStyle="rgba(255,211,77,.22)";bctx.beginPath();bctx.arc(BW*.09,BH*.13,58,0,Math.PI*2);bctx.fill();
+    bctx.fillStyle="#ffd34d";bctx.beginPath();bctx.arc(BW*.09,BH*.13,36,0,Math.PI*2);bctx.fill();
+
+    bctx.fillStyle="rgba(255,255,255,.9)";
+    clouds.forEach(c=>{c.x-=c.sp;if(c.x<-c.s*3)c.x=BW+c.s*3;drawCloud(c)});
+
+    bctx.fillStyle="#8ed05f";
+    bctx.beginPath();bctx.moveTo(0,BH);bctx.lineTo(0,BH*.74);
+    bctx.quadraticCurveTo(BW*.2,BH*.62,BW*.42,BH*.75);
+    bctx.quadraticCurveTo(BW*.63,BH*.59,BW,BH*.73);
+    bctx.lineTo(BW,BH);bctx.fill();
+
+    bctx.fillStyle="#64b84e";
+    bctx.beginPath();bctx.moveTo(0,BH);bctx.lineTo(0,BH*.82);
+    bctx.quadraticCurveTo(BW*.5,BH*.76,BW,BH*.82);
+    bctx.lineTo(BW,BH);bctx.fill();
+
+    for(let i=0;i<9;i++){
+      const x=(i+.5)*BW/9, y=BH*(.87+(i%2)*.045);
+      bctx.strokeStyle="#2f8e42";bctx.lineWidth=2;bctx.beginPath();bctx.moveTo(x,y);bctx.lineTo(x,y+18);bctx.stroke();
+      bctx.fillStyle=["#ff7090","#fff","#ffd34d","#a46de3"][i%4];
+      for(let p=0;p<5;p++){
+        const a=p*Math.PI*2/5;
+        bctx.beginPath();bctx.arc(x+Math.cos(a)*7,y+Math.sin(a)*7,4.2,0,Math.PI*2);bctx.fill();
+      }
+      bctx.fillStyle="#ffd34d";bctx.beginPath();bctx.arc(x,y,4,0,Math.PI*2);bctx.fill();
+    }
+  }
+  function bgLoop(){drawBg();requestAnimationFrame(bgLoop)}
+  resizeBg();addEventListener("resize",resizeBg);requestAnimationFrame(bgLoop);
+
+  // ============================================================
+  // START / RESTART
+  // ============================================================
+  $("#startBtn").addEventListener("click",()=>{
+    SoundFX.ensure();
+    $("#startScreen").classList.add("hidden");
+    startNewRound();
+    setTimeout(speakCurrent,450);
+  });
+
+  $("#playAgainBtn").addEventListener("click",()=>{
+    SoundFX.click();
+    startNewRound();
+    setTimeout(speakCurrent,450);
+  });
+
+  if("speechSynthesis" in window){
+    speechSynthesis.getVoices();
+    speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices();
+  }
+  </script>
+</body>
+</html>
