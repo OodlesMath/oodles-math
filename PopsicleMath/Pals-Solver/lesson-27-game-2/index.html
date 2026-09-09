@@ -1,14 +1,18 @@
-<!DOCTYPE html><html lang="en"><head>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
     <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Oodles Math: Shape Explorer V2 (2D Only)</title>
+    <title>Oodles Math: Shape Explorer V2</title>
     <!-- Google Fonts: Poppins -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Canvas Confetti -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
     <style>
         :root {
             --primary: #1cb0f6;
@@ -190,7 +194,7 @@
 
         /* Flashlight Mask Effect */
         #game-stage {  
-            cursor: crosshair;  
+            cursor: crosshair;
             box-shadow: 0 0 0 8px white, 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.05);
         }
 
@@ -284,19 +288,20 @@
 
     <!-- MAIN GAME CONTAINER: Centers content gracefully -->
     <div class="flex-1 flex flex-col justify-center items-center w-full max-w-5xl mx-auto h-full relative z-10 my-auto">
-
         <!-- START SCREEN -->
         <div id="screen-start" class="flex flex-col items-center justify-center p-4 w-full">
             <div class="bg-white/95 backdrop-blur-sm rounded-[3.5rem] p-8 md:p-14 max-w-lg w-full text-center shadow-[0_25px_0_0_rgba(0,0,0,0.1)] border-4 border-white transform transition-all hover:scale-105">
                 <div class="text-7xl md:text-8xl mb-6 drop-shadow-lg animate-bounce">🔭</div>
                 <h1 class="text-4xl md:text-5xl font-black text-slate-700 mb-2 tracking-tight leading-tight">SHAPE<br><span class="text-[#1cb0f6]">EXPLORER</span></h1>
-                <p class="text-slate-400 font-bold text-lg md:text-xl mb-10">Find all the hidden 2D shapes!</p>
+                <p class="text-slate-400 font-bold text-lg md:text-xl mb-10">Find all the hidden magic shapes!</p>
                 
                 <div class="flex flex-col gap-5">
-                    <button onclick="startGame()" class="btn-3d w-full bg-[#58cc02] border-[#46a302] text-white text-2xl font-black py-5 md:py-6 rounded-3xl">
-                        START ADVENTURE
+                    <button onclick="startGame('2D')" class="btn-3d w-full bg-[#58cc02] border-[#46a302] text-white text-2xl font-black py-5 md:py-6 rounded-3xl">
+                        2D ADVENTURE
                     </button>
-                    <!-- 3D button removed for V2 -->
+                    <button onclick="startGame('3D')" class="btn-3d w-full bg-[#ce82ff] border-[#a85ad4] text-white text-2xl font-black py-5 md:py-6 rounded-3xl">
+                        3D CHALLENGE
+                    </button>
                 </div>
             </div>
         </div>
@@ -353,8 +358,8 @@
             <!-- Controls (Fixed at bottom on smaller screens, relative on large) -->
             <div class="mt-4 text-center bg-white/95 backdrop-blur-md p-5 md:p-6 rounded-[2.5rem] shadow-xl border-t-4 md:border-4 border-white w-full">
                 <div class="flex justify-center items-center gap-3 mb-4 md:mb-5">
-                    <h2 class="text-slate-600 text-xl md:text-2xl font-black uppercase tracking-widest m-0">Which shape is it?</h2>
-                    <button onclick="playTTS('Which shape is it?')" class="btn-speaker bg-[#1cb0f6] text-white w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-xl md:text-2xl shadow-md border-b-4 border-[#1899d6]" aria-label="Listen to question">
+                    <h2 class="text-slate-600 text-xl md:text-2xl font-black uppercase tracking-widest m-0">What shape is it?</h2>
+                    <button onclick="playTTS('What shape is it?')" class="btn-speaker bg-[#1cb0f6] text-white w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-xl md:text-2xl shadow-md border-b-4 border-[#1899d6]" aria-label="Listen to question">
                         🔊
                     </button>
                 </div>
@@ -383,20 +388,44 @@
                     <stop offset="40%" stop-color="white" stop-opacity="0.1"/>
                     <stop offset="100%" stop-color="white" stop-opacity="0"/>
                 </linearGradient>
+                <!-- 3D Shading Gradients -->
+                <linearGradient id="cylinderBody" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="black" stop-opacity="0.1"/>
+                    <stop offset="30%" stop-color="white" stop-opacity="0.2"/>
+                    <stop offset="70%" stop-color="currentColor"/>
+                    <stop offset="100%" stop-color="black" stop-opacity="0.3"/>
+                </linearGradient>
+                <radialGradient id="sphereJuice" cx="35%" cy="35%" r="65%">
+                    <stop offset="0%" stop-color="white" stop-opacity="0.8" />
+                    <stop offset="30%" stop-color="currentColor" stop-opacity="1" />
+                    <stop offset="100%" stop-color="black" stop-opacity="0.4" />
+                </radialGradient>
             </defs>
         `;
 
-        // Strictly 6 2D Shapes as requested
         const SHAPES_2D = [
             { name: 'Circle', color: '#ff4b4b', svg: `<g class="juicy-shape" stroke="#1e293b" stroke-width="4"><circle cx="50" cy="50" r="40" fill="currentColor"/><circle cx="50" cy="50" r="40" fill="url(#gloss)" stroke="none"/></g>` },
             { name: 'Triangle', color: '#1cb0f6', svg: `<g class="juicy-shape" stroke="#1e293b" stroke-width="4" stroke-linejoin="round"><polygon points="50,15 90,85 10,85" fill="currentColor"/><polygon points="50,15 90,85 10,85" fill="url(#gloss)" stroke="none"/></g>` },
             { name: 'Rectangle', color: '#ce82ff', svg: `<g class="juicy-shape" stroke="#1e293b" stroke-width="4" stroke-linejoin="round"><rect x="10" y="30" width="80" height="40" rx="4" fill="currentColor"/><rect x="10" y="30" width="80" height="40" rx="4" fill="url(#gloss)" stroke="none"/></g>` },
             { name: 'Square', color: '#ffc800', svg: `<g class="juicy-shape" stroke="#1e293b" stroke-width="4" stroke-linejoin="round"><rect x="20" y="20" width="60" height="60" rx="6" fill="currentColor"/><rect x="20" y="20" width="60" height="60" rx="6" fill="url(#gloss)" stroke="none"/></g>` },
             { name: 'Half Circle', color: '#ff9600', svg: `<g class="juicy-shape" stroke="#1e293b" stroke-width="4" stroke-linejoin="round"><path d="M 10 70 A 40 40 0 0 1 90 70 Z" fill="currentColor"/><path d="M 10 70 A 40 40 0 0 1 90 70 Z" fill="url(#gloss)" stroke="none"/></g>` },
-            { name: 'Quarter', color: '#58cc02', svg: `<g class="juicy-shape" stroke="#1e293b" stroke-width="4" stroke-linejoin="round"><path d="M 20 80 L 80 80 A 60 60 0 0 0 20 20 Z" fill="currentColor"/><path d="M 20 80 L 80 80 A 60 60 0 0 0 20 20 Z" fill="url(#gloss)" stroke="none"/></g>` }
+            { name: 'Quarter Circle', color: '#58cc02', svg: `<g class="juicy-shape" stroke="#1e293b" stroke-width="4" stroke-linejoin="round"><path d="M 20 80 L 80 80 A 60 60 0 0 0 20 20 Z" fill="currentColor"/><path d="M 20 80 L 80 80 A 60 60 0 0 0 20 20 Z" fill="url(#gloss)" stroke="none"/></g>` },
+            { name: 'Diamond', color: '#ff4b4b', svg: `<g class="juicy-shape" stroke="#1e293b" stroke-width="4" stroke-linejoin="round"><polygon points="50,5 85,50 50,95 15,50" fill="currentColor"/><polygon points="50,5 85,50 50,95 15,50" fill="url(#gloss)" stroke="none"/></g>` }
+        ];
+
+        // 3D Shapes with distinct shading on faces for a realistic look
+        const SHAPES_3D = [
+            { name: 'Cube', color: '#1cb0f6', svg: `<g class="juicy-shape" stroke="#1e293b" stroke-width="3" stroke-linejoin="round"><polygon points="50,25 75,40 50,55 25,40" fill="currentColor"/><polygon points="50,25 75,40 50,55 25,40" fill="white" fill-opacity="0.4" stroke="none"/><polygon points="25,40 50,55 50,85 25,70" fill="currentColor"/><polygon points="50,55 75,40 75,70 50,85" fill="currentColor"/><polygon points="50,55 75,40 75,70 50,85" fill="black" fill-opacity="0.3" stroke="none"/></g>` },
+            { name: 'Sphere', color: '#ff4b4b', svg: `<g class="juicy-shape"><circle cx="50" cy="50" r="40" fill="currentColor" stroke="#1e293b" stroke-width="4"/><circle cx="50" cy="50" r="40" fill="url(#sphereJuice)"/></g>` },
+            { name: 'Cone', color: '#ffc800', svg: `<g class="juicy-shape" stroke="#1e293b" stroke-width="3" stroke-linejoin="round"><path d="M 50,15 L 20,75 A 30 12 0 0 0 80,75 Z" fill="currentColor"/><path d="M 50,15 L 20,75 A 30 12 0 0 0 80,75 Z" fill="url(#cylinderBody)" stroke="none"/></g>` },
+            { name: 'Cylinder', color: '#00cd9c', svg: `<g class="juicy-shape" stroke="#1e293b" stroke-width="3" stroke-linejoin="round"><path d="M 25,30 L 25,75 A 25 12 0 0 0 75,75 L 75,30 Z" fill="currentColor"/><path d="M 25,30 L 25,75 A 25 12 0 0 0 75,75 L 75,30 Z" fill="url(#cylinderBody)" stroke="none"/><ellipse cx="50" cy="30" rx="25" ry="12" fill="currentColor"/><ellipse cx="50" cy="30" rx="25" ry="12" fill="white" fill-opacity="0.3" stroke="none"/></g>` },
+            { name: 'Pyramid', color: '#ce82ff', svg: `<g class="juicy-shape" stroke="#1e293b" stroke-width="3" stroke-linejoin="round"><polygon points="50,20 20,75 50,90" fill="currentColor"/><polygon points="50,20 20,75 50,90" fill="white" fill-opacity="0.1" stroke="none"/><polygon points="50,20 50,90 80,75" fill="currentColor"/><polygon points="50,20 50,90 80,75" fill="black" fill-opacity="0.3" stroke="none"/></g>` },
+            { name: 'Cuboid', color: '#58cc02', svg: `<g class="juicy-shape" stroke="#1e293b" stroke-width="3" stroke-linejoin="round"><polygon points="50,15 75,30 50,45 25,30" fill="currentColor"/><polygon points="50,15 75,30 50,45 25,30" fill="white" fill-opacity="0.4" stroke="none"/><polygon points="25,30 50,45 50,90 25,75" fill="currentColor"/><polygon points="50,45 75,30 75,75 50,90" fill="currentColor"/><polygon points="50,45 75,30 75,75 50,90" fill="black" fill-opacity="0.3" stroke="none"/></g>` },
+            { name: 'Prism', color: '#ff9600', svg: `<g class="juicy-shape" stroke="#1e293b" stroke-width="3" stroke-linejoin="round"><polygon points="50,35 75,80 90,60 65,15" fill="currentColor"/><polygon points="50,35 75,80 90,60 65,15" fill="black" fill-opacity="0.25" stroke="none"/><polygon points="25,80 75,80 50,35" fill="currentColor"/><polygon points="25,80 75,80 50,35" fill="white" fill-opacity="0.1" stroke="none"/></g>` }
         ];
 
         // --- State ---
+        let mode = '2D';
         let currentRound = 1;
         let score = 0;
         let shapeQueue = [];
@@ -449,7 +478,8 @@
         }
 
         // --- Game Flow ---
-        function startGame() {
+        function startGame(selectedMode) {
+            mode = selectedMode;
             document.getElementById('screen-start').classList.add('hidden-element');
             document.getElementById('game-ui').classList.remove('hidden-element');
             
@@ -457,8 +487,8 @@
             document.getElementById('bg-sunburst').classList.add('hidden-element');
             document.getElementById('bg-hills').style.zIndex = "-10"; 
             
-            // Generate queue with exactly our 6 2D shapes
-            shapeQueue = shuffle([...SHAPES_2D]).slice(0, 6);
+            const list = mode === '2D' ? [...SHAPES_2D] : [...SHAPES_3D];
+            shapeQueue = shuffle(list).slice(0, 7); // Pick 7 random rounds
 
             initProgressDots();
             setupRound();
@@ -498,10 +528,11 @@
             area.style.transform = 'scale(1)';
 
             // Auto-play the question sound on new round
-            setTimeout(() => playTTS("Which shape is it?"), 500);
+            setTimeout(() => playTTS("What shape is it?"), 500);
 
-            // Generate 3 Options (1 correct, 2 wrong from the 2D list)
-            let wrongs = shuffle(SHAPES_2D.filter(s => s.name !== currentTarget.name)).slice(0, 2);
+            // Generate 3 Options
+            const allShapes = mode === '2D' ? SHAPES_2D : SHAPES_3D;
+            let wrongs = shuffle(allShapes.filter(s => s.name !== currentTarget.name)).slice(0, 2);
             const opts = shuffle([currentTarget, ...wrongs]);
 
             const optContainer = document.getElementById('options-container');
