@@ -3,657 +3,1558 @@
 <head>
     <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tug of War: Math Challenge</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Position & Direction - Slap Challenge Ver 7</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
-
-        body {
-            font-family: 'Fredoka', sans-serif;
-            touch-action: manipulation;
-            user-select: none;
+        :root {
+            --pad1: #9557e6;
+            --pad2: #11b7ea;
+            --pad3: #ef55ad;
+            --pad4: #f6c515;
+            --ink: #17233f;
+            --sky1: #75d0fa;
+            --sky2: #dff7ff;
+            --green: #58cc02;
+            --green-dark: #3a9a00;
         }
 
-        .rope-pattern {
-            background: repeating-linear-gradient(
-                45deg,
-                #d97706,
-                #d97706 10px,
-                #b45309 10px,
-                #b45309 20px
-            );
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-        }
+        * { box-sizing: border-box; }
 
-        /* --- BEAUTIFUL SKY & SUN --- */
-        .sky-bg {
-            background: linear-gradient(to bottom, #0ea5e9 0%, #38bdf8 40%, #bae6fd 100%);
-            position: relative;
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
             overflow: hidden;
         }
 
-        /* The Sun */
-        .sun {
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--sky1);
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            color: var(--ink);
+        }
+
+        .hidden { display: none !important; }
+
+        #backgroundCanvas {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ---------- Start / End screens ---------- */
+        .screen {
             position: absolute;
-            top: -40px;
-            right: -40px;
-            width: 150px;
-            height: 150px;
-            background: radial-gradient(circle, #fde047 20%, #facc15 60%, transparent 70%);
-            border-radius: 50%;
-            box-shadow: 0 0 40px 20px rgba(253, 224, 71, 0.5);
-            animation: sun-glow 4s infinite alternate;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            background: transparent;
+            overflow: hidden;
+            padding: 3vh 3vw;
+        }
+
+        .screen::before {
+            content: "";
+            position: absolute;
+            width: min(900px, 92vw);
+            height: min(820px, 90vh);
+            border-radius: 44px;
+            background: rgba(255,255,255,0.78);
+            border: 5px solid rgba(255,255,255,0.92);
+            box-shadow: 0 24px 60px rgba(27,88,121,0.20);
+            backdrop-filter: blur(9px);
             z-index: 0;
         }
 
-        @keyframes sun-glow {
-            from { transform: scale(1); opacity: 0.9; }
-            to { transform: scale(1.1); opacity: 1; }
+        .screen > * { position: relative; z-index: 1; }
+
+        .title-text {
+            font-size: clamp(2.6rem, 7vw, 5.6rem);
+            font-weight: 900;
+            color: var(--ink);
+            text-align: center;
+            text-shadow: 0 5px 0 #fff, 0 9px 18px rgba(17,54,92,0.16);
+            line-height: 1.03;
+            margin-bottom: 10px;
+            letter-spacing: -0.03em;
         }
 
-        /* Fluffy Clouds */
-        .cloud-base {
-            position: absolute;
+        .subtitle-text {
+            font-size: clamp(1.25rem, 3vw, 2.25rem);
+            font-weight: 900;
+            color: #ef476f;
+            background: #fff8bd;
+            padding: 9px 24px;
+            border: 3px solid #ffe36e;
+            border-radius: 999px;
+            box-shadow: 0 6px 0 #efd14f;
+            margin-bottom: 26px;
+            letter-spacing: .06em;
+        }
+
+        .instruction-row {
+            display: flex;
+            gap: clamp(12px, 3vw, 34px);
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            justify-content: center;
+            color: #516174;
+            font-size: clamp(1rem, 2vw, 1.45rem);
+            font-weight: 800;
+        }
+
+        .instruction-row span {
+            background: rgba(255,255,255,.82);
+            border: 3px solid #e5eef6;
+            border-radius: 18px;
+            padding: 8px 14px;
+            box-shadow: 0 5px 0 rgba(151,177,199,.26);
+        }
+
+        .btn-large {
+            font-family: inherit;
+            font-size: clamp(1.25rem, 3vw, 2rem);
+            font-weight: 900;
+            padding: 17px 42px;
+            border-radius: 24px;
+            background: var(--green);
             color: white;
-            opacity: 0.9;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            filter: drop-shadow(0 4px 2px rgba(0,0,0,0.05));
+            border: 4px solid rgba(255,255,255,.72);
+            cursor: pointer;
+            box-shadow: 0 9px 0 var(--green-dark), 0 18px 28px rgba(50,137,0,.18);
+            transition: transform .11s ease, box-shadow .11s ease, filter .11s ease;
+            text-transform: uppercase;
+            letter-spacing: .04em;
         }
-        
-        .cloud-move-1 { animation: float 45s infinite linear; }
-        .cloud-move-2 { animation: float 35s infinite linear reverse; }
-        .cloud-move-3 { animation: float 55s infinite linear; }
+        .btn-large:hover { filter: brightness(1.04); transform: translateY(-2px); }
+        .btn-large:active { transform: translateY(8px); box-shadow: 0 1px 0 var(--green-dark); }
 
-        @keyframes float {
-            from { transform: translateX(-120px); }
-            to { transform: translateX(100vw); }
-        }
+        .end-actions { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
 
-        .wiggle {
-            animation: wiggle 0.5s ease-in-out;
-        }
-
-        @keyframes wiggle {
-            0%, 100% { transform: rotate(0deg); }
-            25% { transform: rotate(-5deg); }
-            75% { transform: rotate(5deg); }
-        }
-
-        .pop-in {
-            animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        @keyframes pop {
-            0% { transform: scale(0.5); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        #fireworksCanvas {
+        /* ---------- Game Layout ---------- */
+        #game-screen {
             position: absolute;
-            top: 0;
-            left: 0;
+            inset: 0;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #top-bar {
+            height: 10vh;
+            min-height: 64px;
+            display: grid;
+            grid-template-columns: auto minmax(220px, 1fr) auto auto;
+            gap: clamp(10px, 2vw, 24px);
+            align-items: center;
+            padding: 0 clamp(14px, 2.6vw, 36px);
+            background: rgba(255,255,255,0.88);
+            border-bottom: 4px solid rgba(255,255,255,.96);
+            box-shadow: 0 8px 24px rgba(29,82,113,0.11);
+            font-size: clamp(1rem, 2vw, 1.55rem);
+            font-weight: 900;
+            color: var(--ink);
+            backdrop-filter: blur(10px);
+        }
+
+        .top-badge {
+            min-width: 112px;
+            background: #fff;
+            border: 3px solid #e4edf5;
+            border-radius: 18px;
+            padding: 8px 14px;
+            text-align: center;
+            box-shadow: 0 5px 0 #dbe8f1;
+            white-space: nowrap;
+        }
+
+        .progress-wrap { min-width: 0; }
+        .progress-title {
+            text-align:center;
+            font-size: clamp(.72rem, 1.4vw, .95rem);
+            letter-spacing: .09em;
+            color: #5b7087;
+            margin-bottom: 5px;
+        }
+        .progress-track {
+            height: 16px;
+            border-radius: 999px;
+            background: #dce9f1;
+            border: 3px solid #c8dbe7;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,.08);
+        }
+        #top-progress-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #58cc02, #8be23b);
+            transition: width .35s ease;
+        }
+
+        .tts-btn {
+            background: #18b9ee;
+            color: white;
+            border: 3px solid rgba(255,255,255,.9);
+            border-radius: 50%;
+            width: clamp(44px, 6vh, 62px);
+            height: clamp(44px, 6vh, 62px);
+            font-size: clamp(1.15rem, 2.6vh, 1.9rem);
+            cursor: pointer;
+            box-shadow: 0 5px 0 #0787ba;
+            display: grid;
+            place-items: center;
+            transition: transform .1s, box-shadow .1s;
+        }
+        .tts-btn:active { transform: translateY(5px); box-shadow: 0 0 0 #0787ba; }
+
+        #question-area {
+            height: 14vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.2vh 3vw 0;
+            text-align: center;
+            background: transparent;
+        }
+
+        #question-text {
+            max-width: min(1040px, 92vw);
+            font-size: clamp(1.65rem, 3.8vmin, 3.2rem);
+            font-weight: 900;
+            color: var(--ink);
+            line-height: 1.15;
+            text-shadow: 0 2px 0 rgba(255,255,255,.9);
+            background: rgba(255,255,255,.76);
+            border: 4px solid rgba(255,255,255,.92);
+            border-radius: 24px;
+            padding: .55vh 2vw;
+            box-shadow: 0 8px 22px rgba(29,82,113,.09);
+            backdrop-filter: blur(6px);
+        }
+
+        #picture-area {
+            height: 48vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            padding: 1.5vh 2vw 2vh;
+            background: transparent;
+        }
+
+        #picture-area::after {
+            content:"";
+            position:absolute;
+            left:50%;
+            top:50%;
+            transform:translate(-50%,-50%);
+            width:min(610px, 72vw);
+            height:min(30vh, 285px);
+            border-radius:36px;
+            background:rgba(255,255,255,.58);
+            border:4px solid rgba(255,255,255,.78);
+            box-shadow:0 16px 38px rgba(29,82,113,.10);
+            backdrop-filter:blur(5px);
+            pointer-events:none;
+        }
+
+        #main-svg-container {
+            height: min(27vh, 255px);
+            width: min(600px, 70vw);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        #main-svg-container svg {
             width: 100%;
             height: 100%;
-            pointer-events: none;
-            z-index: 60;
+            max-height: 100%;
+            overflow: visible;
+            filter: drop-shadow(0 10px 9px rgba(30,86,111,0.15));
         }
 
-        button:disabled {
-            cursor: not-allowed;
-            opacity: 0.6;
-            transform: none !important;
-            pointer-events: none;
+        #answer-area {
+            height: 28vh;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-rows: 1fr;
+            gap: clamp(9px, 1.15vw, 18px);
+            padding: clamp(10px, 1.15vw, 18px) clamp(14px, 1.8vw, 28px);
+            padding-bottom: max(clamp(12px, 1.5vw, 22px), env(safe-area-inset-bottom));
+            background: transparent;
+            align-items: center;
         }
 
-        ::-webkit-scrollbar {
-            display: none;
+        .answer-pad {
+            height: min(20vh, 180px);
+            border-radius: clamp(18px, 1.8vw, 28px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+            transition: transform .1s, filter .2s, box-shadow .2s;
+            font-size: clamp(1.15rem, 3.1vmin, 2.7rem);
+            line-height: 1.05;
+            font-weight: 900;
+            color: white;
+            text-shadow: 0 3px 0 rgba(55,55,55,.22);
+            border: 4px solid rgba(255,255,255,.42);
+            text-align: center;
+            padding: 8px 10px;
+            overflow: hidden;
+            letter-spacing: .005em;
+        }
+
+        .answer-pad::after {
+            content:"";
+            position:absolute;
+            inset:7px 12px auto;
+            height:24%;
+            border-radius:999px;
+            background:linear-gradient(180deg,rgba(255,255,255,.20),rgba(255,255,255,0));
+            pointer-events:none;
+        }
+
+        .pad-0 { background: linear-gradient(180deg,#a367ef,#8e4bd8); box-shadow: 0 10px 0 #6730a4, 0 16px 24px rgba(51,37,92,.18); }
+        .pad-1 { background: linear-gradient(180deg,#20c4f1,#0aa9da); box-shadow: 0 10px 0 #087fa7, 0 16px 24px rgba(23,99,132,.18); }
+        .pad-2 { background: linear-gradient(180deg,#f565b9,#e849a5); box-shadow: 0 10px 0 #ac3478, 0 16px 24px rgba(113,46,85,.18); }
+        .pad-3 { background: linear-gradient(180deg,#ffd31f,#efbd09); box-shadow: 0 10px 0 #b98a05, 0 16px 24px rgba(110,83,22,.18); color:#fff; }
+
+        .answer-pad:hover { filter: brightness(1.035); transform: translateY(-2px); }
+        .answer-pad:active { transform: translateY(9px); }
+
+        .answer-pad.image-option { padding: 4px; }
+        .answer-pad.image-option .pad-content {
+            width: 100%;
+            height: 100%;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+        }
+        .answer-pad.image-option svg {
+            width: 104%;
+            height: 104%;
+            pointer-events: none;
+            overflow: visible;
+            filter: drop-shadow(0 7px 6px rgba(52,54,78,.16));
+        }
+
+        .keyboard-hint {
+            position: absolute;
+            top: 9px;
+            left: 15px;
+            font-size: clamp(1rem, 2vw, 1.55rem);
+            opacity: .60;
+            text-shadow: none;
+            z-index: 3;
+        }
+
+        @keyframes bounceCorrect {
+            0%,100% { transform: scale(1) translateY(8px); }
+            50% { transform: scale(1.055) translateY(-8px); }
+        }
+        @keyframes shakeWrong {
+            0%,100% { transform: translateX(0); }
+            20% { transform: translateX(-13px); }
+            40% { transform: translateX(13px); }
+            60% { transform: translateX(-10px); }
+            80% { transform: translateX(10px); }
+        }
+
+        .pad-correct {
+            animation: bounceCorrect .5s ease;
+            background: linear-gradient(180deg,#4add73,#26b84d) !important;
+            box-shadow: 0 10px 0 #17883a !important;
+            z-index: 10;
+        }
+        .pad-wrong {
+            animation: shakeWrong .4s ease;
+            background: linear-gradient(180deg,#f45c68,#df3342) !important;
+            box-shadow: 0 10px 0 #a92230 !important;
+            filter: saturate(.86);
+        }
+
+        .feedback-icon {
+            position: absolute;
+            font-size: clamp(4rem, 11vmin, 10rem);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s, transform .3s cubic-bezier(.175,.885,.32,1.275);
+            transform: scale(0);
+            z-index: 5;
+            color: white;
+            text-shadow: 0 4px 10px rgba(0,0,0,.24);
+        }
+        .pad-correct .feedback-icon,
+        .pad-wrong .feedback-icon { opacity: 1; transform: scale(1); }
+        .pad-correct .feedback-icon::before { content:"✓"; }
+        .pad-wrong .feedback-icon::before { content:"✗"; }
+
+        .star-particle {
+            position: absolute;
+            color: #FFD700;
+            font-size: 2rem;
+            pointer-events: none;
+            animation: floatStar 1s forwards ease-out;
+            z-index: 20;
+        }
+        @keyframes floatStar {
+            0% { transform: translate(0,0) scale(.5) rotate(0deg); opacity:1; }
+            100% { transform: translate(var(--tx),var(--ty)) scale(1.5) rotate(360deg); opacity:0; }
+        }
+
+        .layout-word-to-pic #picture-area { display: none; }
+        .layout-word-to-pic #question-area { height: 18vh; }
+        .layout-word-to-pic #answer-area {
+            height: 62vh;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-rows: 1fr;
+            padding-top: 4vh;
+            padding-bottom: 7vh;
+        }
+        .layout-word-to-pic .answer-pad {
+            height: min(48vh, 430px);
+        }
+
+        @media (max-width: 760px) {
+            #top-bar {
+                grid-template-columns: auto 1fr auto;
+                gap: 7px;
+                padding: 0 9px;
+            }
+            #top-bar .progress-wrap { display:none; }
+            .top-badge { min-width: 82px; padding: 7px 9px; }
+            #question-text { font-size: clamp(1.35rem, 5.5vw, 2.2rem); }
+            .answer-pad { font-size: clamp(.82rem, 3.5vw, 1.55rem); padding: 5px; height:min(18vh,145px); }
+            #answer-area { grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; padding-left:8px; padding-right:8px; }
+            .layout-word-to-pic #answer-area { grid-template-columns:repeat(4,minmax(0,1fr)); padding-left:7px; padding-right:7px; }
+            .layout-word-to-pic .answer-pad { height:min(46vh,390px); }
+            .keyboard-hint { font-size: .95rem; top: 6px; left: 9px; }
+            .screen::before { height: 94vh; }
+        }
+
+        @media (max-height: 650px) and (orientation: landscape) {
+            .screen { padding: 1.5vh 2vw; }
+            .screen::before { height: 94vh; }
+            .title-text { font-size: clamp(2rem, 6vh, 3.7rem); }
+            .subtitle-text { margin-bottom: 14px; padding: 5px 18px; }
+            .instruction-row { margin-bottom: 16px; }
+            #top-bar { min-height: 52px; }
         }
     </style>
+
 </head>
-<body class="sky-bg h-screen w-screen overflow-hidden flex flex-col items-center relative text-slate-800">
+<body>
     <img src="../assets/logo-oodles-math.png" class="oodles-logo">
-    <!-- Sun & Clouds Background -->
-    <div class="sun"></div>
-    <div class="cloud-base text-8xl cloud-move-1" style="top: 5%; left: -10%;">☁️</div>
-    <div class="cloud-base text-6xl cloud-move-2" style="top: 15%; right: -10%; opacity: 0.7;">☁️</div>
-    <div class="cloud-base text-9xl cloud-move-3" style="top: 25%; left: -20%; opacity: 0.6; animation-delay: -20s;">☁️</div>
-    
-    <!-- Game Header -->
-    <header class="w-full p-4 flex justify-between items-center z-10 max-w-4xl">
-        <div class="bg-white/90 backdrop-blur rounded-2xl px-4 py-2 border-4 border-yellow-400 shadow-lg">
-            <span class="text-2xl font-bold text-yellow-600">⏱️ Time: <span id="timer">00:00</span></span>
+    <canvas id="backgroundCanvas" aria-label="Colorful nature background"></canvas>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="screen">
+        <!-- Upgraded SVG Mascot (Cute Owl) -->
+        <svg width="200" height="200" viewBox="0 0 200 200" style="margin-bottom: 20px; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.2));">
+            <!-- Body -->
+            <ellipse cx="100" cy="110" rx="60" ry="70" fill="#8D6E63"/>
+            <!-- Belly -->
+            <ellipse cx="100" cy="125" rx="40" ry="50" fill="#D7CCC8"/>
+            <!-- Big Cute Eyes -->
+            <circle cx="75" cy="85" r="22" fill="#FFF"/>
+            <circle cx="125" cy="85" r="22" fill="#FFF"/>
+            <circle cx="75" cy="85" r="10" fill="#212121"/>
+            <circle cx="125" cy="85" r="10" fill="#212121"/>
+            <circle cx="79" cy="81" r="3" fill="#FFF"/>
+            <circle cx="129" cy="81" r="3" fill="#FFF"/>
+            <!-- Cute Beak -->
+            <path d="M 92 100 L 108 100 L 100 115 Z" fill="#FFCA28"/>
+            <!-- Ears / Feathers -->
+            <path d="M 40 60 Q 60 40 75 55 Z" fill="#8D6E63"/>
+            <path d="M 160 60 Q 140 40 125 55 Z" fill="#8D6E63"/>
+        </svg>
+        <div class="title-text">POSITION &<br>DIRECTION</div>
+        <div class="subtitle-text">SLAP CHALLENGE</div>
+        <div class="instruction-row">
+            <span>👀 Look</span>
+            <span>🧠 Think</span>
+            <span>✋ Slap!</span>
         </div>
-        <button id="muteBtn" class="bg-white/90 p-2 rounded-full border-2 border-slate-300 hover:bg-slate-100 transition">
-            🔊
-        </button>
-    </header>
+        <button class="btn-large" onclick="startGame()">START GAME</button>
+    </div>
 
-    <!-- Start Screen Overlay -->
-    <div id="startScreen" class="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl p-8 max-w-md w-[95%] text-center shadow-2xl border-8 border-blue-400 pop-in max-h-[90vh] overflow-y-auto">
-            <h1 class="text-4xl sm:text-5xl font-bold text-blue-600 mb-2">Tug of War</h1>
-            <h2 class="text-xl sm:text-2xl font-semibold text-orange-500 mb-4">Math Challenge (+ & -)</h2>
-            
-            <div class="flex justify-center gap-4 sm:gap-8 mb-4 text-5xl sm:text-6xl">
-                <div class="animate-bounce" style="animation-delay: 0s">🦁</div>
-                <div class="animate-bounce" style="animation-delay: 0.1s">🆚</div>
-                <div class="animate-bounce" style="animation-delay: 0.2s">🐯</div>
+    <!-- Game Screen -->
+    <div id="game-screen" class="hidden">
+        <div id="top-bar">
+            <div class="top-badge">Q: <span id="q-counter">1</span> / 15</div>
+            <div class="progress-wrap">
+                <div class="progress-title">POSITION &amp; DIRECTION</div>
+                <div class="progress-track"><div id="top-progress-fill"></div></div>
             </div>
+            <button class="tts-btn" onclick="readQuestion()" title="Read Question" aria-label="Read question">🔊</button>
+            <div class="top-badge">⭐ <span id="score-counter">0</span></div>
+        </div>
+        
+        <div id="question-area">
+            <div id="question-text">Where is the ball?</div>
+        </div>
 
-            <!-- Time Selection -->
-            <div class="mb-4 bg-blue-50 p-3 rounded-xl border-2 border-blue-100">
-                <label class="block text-slate-600 mb-1 font-bold text-base">⏳ Game Duration:</label>
-                <div class="flex justify-center items-center gap-2">
-                    <input type="range" id="timeSlider" min="1" max="10" value="3" class="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
-                    <span id="timeDisplay" class="font-bold text-xl text-blue-600 min-w-[3ch]">3m</span>
-                </div>
+        <div id="picture-area">
+            <div id="main-svg-container">
+                <!-- SVG Content Injected Here -->
             </div>
+        </div>
 
-            <p class="text-base text-slate-600 mb-4">Choose a game mode:</p>
-            
-            <div class="flex flex-col gap-3">
-                <button onclick="startGame('cpu')" class="w-full bg-green-500 hover:bg-green-600 text-white text-xl sm:text-2xl font-bold py-3 px-6 rounded-2xl shadow-[0_5px_0_rgb(21,128,61)] active:shadow-[0_2px_0_rgb(21,128,61)] active:translate-y-1 transition transform flex items-center justify-center gap-3">
-                    <span>👤 vs 🤖</span> 1 Player
-                </button>
-                <button onclick="startGame('pvp')" class="w-full bg-orange-500 hover:bg-orange-600 text-white text-xl sm:text-2xl font-bold py-3 px-6 rounded-2xl shadow-[0_5px_0_rgb(194,65,12)] active:shadow-[0_2px_0_rgb(194,65,12)] active:translate-y-1 transition transform flex items-center justify-center gap-3">
-                    <span>👤 vs 👤</span> 2 Players
-                </button>
+        <div id="answer-area">
+            <div class="answer-pad pad-0" id="pad-0" onclick="handleSlap(0)">
+                <span class="keyboard-hint">1</span>
+                <span class="pad-content">LEFT</span>
+                <div class="feedback-icon"></div>
+            </div>
+            <div class="answer-pad pad-1" id="pad-1" onclick="handleSlap(1)">
+                <span class="keyboard-hint">2</span>
+                <span class="pad-content">RIGHT</span>
+                <div class="feedback-icon"></div>
+            </div>
+            <div class="answer-pad pad-2" id="pad-2" onclick="handleSlap(2)">
+                <span class="keyboard-hint">3</span>
+                <span class="pad-content">ABOVE</span>
+                <div class="feedback-icon"></div>
+            </div>
+            <div class="answer-pad pad-3" id="pad-3" onclick="handleSlap(3)">
+                <span class="keyboard-hint">4</span>
+                <span class="pad-content">BELOW</span>
+                <div class="feedback-icon"></div>
             </div>
         </div>
     </div>
 
-    <!-- Game Over Screen -->
-    <div id="gameOverScreen" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-        <div class="bg-white rounded-3xl p-8 max-w-md w-[90%] text-center shadow-2xl border-8 border-purple-400 pop-in relative z-50">
-            <h1 id="winnerText" class="text-4xl font-bold mb-4">Game Over!</h1>
-            <div id="winnerIcon" class="text-8xl mb-6">🏆</div>
-            <p id="finalScore" class="text-xl text-slate-600 mb-8"></p>
-            <button onclick="resetGame()" class="w-full bg-blue-500 hover:bg-blue-600 text-white text-2xl font-bold py-3 px-8 rounded-2xl shadow-[0_6px_0_rgb(29,78,216)] active:shadow-[0_2px_0_rgb(29,78,216)] active:translate-y-1 transition transform">
-                Play Again ↺
-            </button>
+    <!-- End Screen -->
+    <div id="end-screen" class="screen hidden">
+        <div style="font-size: 8rem; margin-bottom: -20px;">🏆</div>
+        <div class="title-text" style="color: #ff9f1c;">AMAZING JOB!</div>
+        <div class="subtitle-text" style="background: #2ec4b6; color: white;">Position & Direction Star!</div>
+        <div style="font-size: 4rem; font-weight: 900; color: #2b2d42; margin-bottom: 10px;">⭐ <span id="final-score">15</span> / 15</div>
+        <div id="accuracy-text" style="font-size: 2rem; font-weight: 600; color: #6c757d; margin-bottom: 40px;">Accuracy: 100%</div>
+        <div class="end-actions">
+            <button class="btn-large" onclick="startGame()" style="background: #4361ee; box-shadow: 0 10px 0 #3f37c9;">PLAY AGAIN</button>
+            <button class="btn-large" onclick="goHome()" style="background: #e0e1dd; color: #1b263b; box-shadow: 0 10px 0 #778da9;">HOME</button>
         </div>
     </div>
-    
-    <!-- Fireworks Layer -->
-    <canvas id="fireworksCanvas"></canvas>
-
-    <!-- Main Game Area -->
-    <main class="flex-1 w-full max-w-6xl flex flex-col relative z-0 h-full pb-4">
-        
-        <!-- Tug of War Scene (Common) -->
-        <div class="relative w-full h-40 sm:h-56 flex items-end justify-center mb-2 overflow-hidden shrink-0">
-            <!-- Grass Ground -->
-            <div class="absolute bottom-0 w-[150%] h-12 bg-green-500 rounded-t-[100%] left-[-25%] shadow-[inset_0_10px_20px_rgba(0,0,0,0.1)] border-t-8 border-green-400"></div>
-
-            <!-- Ground Line Marker -->
-            <div class="absolute bottom-4 w-full h-4 bg-green-800/20 rounded-full opacity-50 z-0"></div>
-            
-            <!-- Center Marker -->
-            <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-full border-l-4 border-dashed border-white/40 z-0"></div>
-            <div class="absolute bottom-2 left-1/2 -translate-x-1/2 text-2xl z-0 font-bold text-white/80 drop-shadow-md">CENTER</div>
-
-            <!-- The Moving Group (Teams + Rope) -->
-            <div id="gameContainer" class="flex items-end transition-transform duration-500 ease-out z-10" style="transform: translateX(0px);">
-                
-                <!-- Left Team (Player 1) -->
-                <div class="flex flex-col items-end mr-2 relative">
-                    <div class="flex -space-x-4 mb-1">
-                        <span class="text-5xl sm:text-7xl transform scale-x-[-1] drop-shadow-xl z-10">🦁</span>
-                        <span class="text-4xl sm:text-6xl transform scale-x-[-1] drop-shadow-lg opacity-90 grayscale-[0.3]">🐻</span>
-                        <span class="text-4xl sm:text-6xl transform scale-x-[-1] drop-shadow-lg opacity-80 grayscale-[0.5]">🐼</span>
-                    </div>
-                    <div id="p1Label" class="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-md absolute -top-4 right-10">P1</div>
-                </div>
-
-                <!-- The Rope -->
-                <div class="h-4 w-48 sm:w-80 rope-pattern relative self-end mb-6 rounded-full flex items-center justify-center shadow-lg border border-orange-800/30">
-                    <div class="absolute -top-10">
-                        <div class="w-1 h-10 bg-slate-700 mx-auto"></div>
-                        <div class="w-8 h-6 bg-red-600 text-white text-xs flex items-center justify-center font-bold shadow-sm border border-white/20">🚩</div>
-                    </div>
-                </div>
-
-                <!-- Right Team (CPU or Player 2) -->
-                <div class="flex flex-col items-start ml-2 relative">
-                    <div class="flex -space-x-4 mb-1 flex-row-reverse">
-                        <span class="text-5xl sm:text-7xl drop-shadow-xl z-10">🐯</span>
-                        <span class="text-4xl sm:text-6xl drop-shadow-lg opacity-90 grayscale-[0.3]">🦊</span>
-                        <span class="text-4xl sm:text-6xl drop-shadow-lg opacity-80 grayscale-[0.5]">🐺</span>
-                    </div>
-                     <div id="p2Label" class="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-md absolute -top-4 left-10">CPU</div>
-                </div>
-
-            </div>
-        </div>
-        
-        <!-- Progress Bar (Common) -->
-        <div class="w-full max-w-md mx-auto bg-slate-200 h-3 rounded-full mb-2 overflow-hidden relative border-2 border-slate-300 shrink-0 shadow-inner">
-            <div id="progressBar" class="h-full bg-gradient-to-r from-blue-400 to-blue-600 transition-all duration-500 w-1/2"></div>
-            <div class="absolute top-0 left-0 h-full w-1 bg-blue-500"></div>
-            <div class="absolute top-0 right-0 h-full w-1 bg-red-500"></div>
-        </div>
-
-        <!-- Dynamic Game Controls Container -->
-        <div id="gameControls" class="flex-1 w-full px-4 relative flex gap-4 min-h-0">
-            
-            <!-- MODE 1: Single Player View (Centered) -->
-            <div id="singlePlayerView" class="hidden w-full flex-col items-center justify-center bg-white/60 backdrop-blur-md rounded-t-[2rem] shadow-sm p-4 h-full border-t border-white/50">
-                 <div class="text-center mb-4 sm:mb-8">
-                    <p class="text-slate-600 text-sm font-semibold mb-1 uppercase tracking-wider">Solve:</p>
-                    <div class="text-5xl sm:text-7xl font-black text-slate-800 bg-white px-6 py-3 rounded-3xl shadow-sm border-4 border-slate-100 flex items-center justify-center gap-3">
-                        <span id="spNum1">0</span><span id="spOp" class="text-blue-500">+</span><span id="spNum2">0</span>
-                    </div>
-                </div>
-                <div id="spAnswersGrid" class="grid grid-cols-2 gap-4 w-full max-w-lg"></div>
-                <p id="spFeedback" class="mt-4 text-slate-600 text-sm font-medium h-6">Choose correctly!</p>
-            </div>
-
-            <!-- MODE 2: Two Player View (Split Screen) -->
-            <div id="twoPlayerView" class="hidden w-full flex-row gap-2 sm:gap-4 h-full">
-                
-                <!-- PLAYER 1 (Left) -->
-                <div class="flex-1 bg-blue-100/80 backdrop-blur-md rounded-2xl border-4 border-blue-200 p-2 sm:p-4 flex flex-col items-center justify-center relative shadow-sm">
-                    <div class="text-blue-700 font-bold mb-2">PLAYER 1</div>
-                    <div class="text-3xl sm:text-5xl font-black text-slate-800 bg-white px-4 py-2 rounded-2xl shadow-sm border-2 border-blue-100 flex items-center gap-2 mb-4">
-                        <span id="p1Num1">0</span><span id="p1Op">+</span><span id="p1Num2">0</span>
-                    </div>
-                    <div id="p1Grid" class="grid grid-cols-2 gap-2 w-full max-w-sm"></div>
-                </div>
-
-                <!-- PLAYER 2 (Right) -->
-                <div class="flex-1 bg-red-100/80 backdrop-blur-md rounded-2xl border-4 border-red-200 p-2 sm:p-4 flex flex-col items-center justify-center relative shadow-sm">
-                    <div class="text-red-700 font-bold mb-2">PLAYER 2</div>
-                    <div class="text-3xl sm:text-5xl font-black text-slate-800 bg-white px-4 py-2 rounded-2xl shadow-sm border-2 border-red-100 flex items-center gap-2 mb-4">
-                        <span id="p2Num1">0</span><span id="p2Op">+</span><span id="p2Num2">0</span>
-                    </div>
-                    <div id="p2Grid" class="grid grid-cols-2 gap-2 w-full max-w-sm"></div>
-                </div>
-
-            </div>
-
-        </div>
-
-    </main>
 
     <script>
-        // --- Game Config & State ---
-        const MAX_OFFSET = 5; 
-        let currentOffset = 0; 
-        let gameActive = false;
-        let gameMode = 'cpu'; // 'cpu' or 'pvp'
+
+        // --- POLISHED ANIMATED NATURE BACKGROUND ---
+        (() => {
+            const canvas = document.getElementById('backgroundCanvas');
+            const ctx = canvas.getContext('2d', { alpha: false });
+            let w = 0, h = 0, dpr = 1, t = 0;
+            let clouds = [], trees = [], flowers = [], butterflies = [];
+
+            function resizeBackground() {
+                dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+                w = window.innerWidth;
+                h = window.innerHeight;
+                canvas.width = Math.floor(w * dpr);
+                canvas.height = Math.floor(h * dpr);
+                canvas.style.width = w + 'px';
+                canvas.style.height = h + 'px';
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                makeScene();
+            }
+
+            function makeScene() {
+                clouds = [];
+                trees = [];
+                flowers = [];
+                butterflies = [];
+
+                const cloudCount = w < 700 ? 4 : 6;
+                for (let i = 0; i < cloudCount; i++) {
+                    clouds.push({
+                        x: Math.random() * w,
+                        y: h * (.08 + Math.random() * .30),
+                        s: 22 + Math.random() * 30,
+                        v: .05 + Math.random() * .08,
+                        a: .62 + Math.random() * .22
+                    });
+                }
+
+                const treeCount = w < 700 ? 5 : 9;
+                for (let i = 0; i < treeCount; i++) {
+                    trees.push({
+                        x: (i + .5) * w / treeCount + (Math.random()*34 - 17),
+                        y: h * (.72 + Math.random()*.035),
+                        s: .55 + Math.random()*.45
+                    });
+                }
+
+                const flowerCount = w < 700 ? 12 : 22;
+                const colors = ['#ff6f91','#ffd93d','#a775f2','#ffffff','#32baf2','#ff9f43'];
+                for (let i = 0; i < flowerCount; i++) {
+                    flowers.push({
+                        x: Math.random()*w,
+                        y: h*(.82 + Math.random()*.14),
+                        s: .55 + Math.random()*.55,
+                        c: colors[Math.floor(Math.random()*colors.length)],
+                        p: Math.random()*Math.PI*2
+                    });
+                }
+
+                for (let i = 0; i < 4; i++) {
+                    butterflies.push({
+                        x: Math.random()*w,
+                        y: h*(.22 + Math.random()*.30),
+                        s: 5 + Math.random()*4,
+                        v: .10 + Math.random()*.09,
+                        p: Math.random()*Math.PI*2,
+                        c: ['#ff6f91','#ffd93d','#9b5de5','#00bbf9'][i]
+                    });
+                }
+            }
+
+            function drawCloud(c) {
+                ctx.save();
+                ctx.globalAlpha = c.a;
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(c.x, c.y, c.s, 0, Math.PI*2);
+                ctx.arc(c.x + c.s*.85, c.y + c.s*.18, c.s*.72, 0, Math.PI*2);
+                ctx.arc(c.x - c.s*.82, c.y + c.s*.2, c.s*.68, 0, Math.PI*2);
+                ctx.arc(c.x + c.s*.12, c.y - c.s*.28, c.s*.72, 0, Math.PI*2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            function drawTree(tr) {
+                ctx.save();
+                ctx.translate(tr.x, tr.y);
+                ctx.scale(tr.s, tr.s);
+                ctx.fillStyle = '#8a5a34';
+                ctx.fillRect(-8, -1, 16, 54);
+                ctx.fillStyle = '#5fcf55';
+                ctx.beginPath();
+                ctx.arc(0, -29, 34, 0, Math.PI*2);
+                ctx.arc(-23, -16, 26, 0, Math.PI*2);
+                ctx.arc(22, -14, 27, 0, Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle = 'rgba(255,255,255,.22)';
+                ctx.beginPath();
+                ctx.arc(-10, -40, 10, 0, Math.PI*2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            function drawFlower(f) {
+                const sway = Math.sin(t*.002 + f.p)*1.5;
+                ctx.save();
+                ctx.translate(f.x + sway, f.y);
+                ctx.scale(f.s, f.s);
+                ctx.strokeStyle = '#2d9b45';
+                ctx.lineWidth = 2.3;
+                ctx.beginPath();
+                ctx.moveTo(0, 4);
+                ctx.quadraticCurveTo(2, 12, 0, 22);
+                ctx.stroke();
+
+                ctx.fillStyle = f.c;
+                for (let i = 0; i < 6; i++) {
+                    ctx.save();
+                    ctx.rotate(i*Math.PI/3);
+                    ctx.beginPath();
+                    ctx.ellipse(0,-8,4.8,8.5,0,0,Math.PI*2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+                ctx.fillStyle = '#ffe36b';
+                ctx.beginPath();
+                ctx.arc(0,0,4.5,0,Math.PI*2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            function drawButterfly(b) {
+                const yy = b.y + Math.sin(b.p)*9;
+                ctx.save();
+                ctx.translate(b.x, yy);
+                ctx.fillStyle = b.c;
+                ctx.globalAlpha = .9;
+                ctx.beginPath();
+                ctx.ellipse(-b.s, 0, b.s, b.s*1.25, Math.sin(b.p)*.35, 0, Math.PI*2);
+                ctx.ellipse(b.s, 0, b.s, b.s*1.25, -Math.sin(b.p)*.35, 0, Math.PI*2);
+                ctx.fill();
+                ctx.strokeStyle = '#475569';
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.moveTo(0,-b.s);
+                ctx.lineTo(0,b.s);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            function drawBackground() {
+                const sky = ctx.createLinearGradient(0,0,0,h*.72);
+                sky.addColorStop(0,'#72cef8');
+                sky.addColorStop(.60,'#bcecff');
+                sky.addColorStop(1,'#e7fbff');
+                ctx.fillStyle = sky;
+                ctx.fillRect(0,0,w,h);
+
+                // Sun
+                const sx = Math.min(92, w*.10), sy = Math.min(90, h*.12), sr = Math.max(30, Math.min(w,h)*.045);
+                ctx.fillStyle = 'rgba(255,210,66,.18)';
+                ctx.beginPath(); ctx.arc(sx,sy,sr*1.75,0,Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#ffd65a';
+                ctx.beginPath(); ctx.arc(sx,sy,sr,0,Math.PI*2); ctx.fill();
+
+                clouds.forEach(drawCloud);
+                butterflies.forEach(drawButterfly);
+
+                // Far hills
+                ctx.fillStyle = '#8bdc55';
+                ctx.beginPath();
+                ctx.moveTo(0,h);
+                ctx.lineTo(0,h*.70);
+                ctx.quadraticCurveTo(w*.22,h*.57,w*.45,h*.69);
+                ctx.quadraticCurveTo(w*.70,h*.80,w,h*.65);
+                ctx.lineTo(w,h);
+                ctx.fill();
+
+                ctx.fillStyle = '#6ac947';
+                ctx.beginPath();
+                ctx.moveTo(0,h);
+                ctx.lineTo(0,h*.76);
+                ctx.quadraticCurveTo(w*.30,h*.64,w*.56,h*.77);
+                ctx.quadraticCurveTo(w*.78,h*.87,w,h*.72);
+                ctx.lineTo(w,h);
+                ctx.fill();
+
+                trees.forEach(drawTree);
+
+                // Front grass
+                ctx.fillStyle = '#55bb35';
+                ctx.beginPath();
+                ctx.moveTo(0,h);
+                ctx.lineTo(0,h*.84);
+                ctx.quadraticCurveTo(w*.5,h*.76,w,h*.85);
+                ctx.lineTo(w,h);
+                ctx.fill();
+
+                flowers.forEach(drawFlower);
+            }
+
+            function loop(ts) {
+                t = ts || 0;
+                clouds.forEach(c => {
+                    c.x -= c.v;
+                    if (c.x + c.s*2.5 < 0) c.x = w + c.s*2.5;
+                });
+                butterflies.forEach(b => {
+                    b.x += b.v;
+                    b.p += .045;
+                    if (b.x > w + 30) b.x = -30;
+                });
+                drawBackground();
+                requestAnimationFrame(loop);
+            }
+
+            window.addEventListener('resize', resizeBackground);
+            resizeBackground();
+            requestAnimationFrame(loop);
+        })();
+
+
+        // --- UPGRADED CUTE SVG ASSET LIBRARY ---
+        // Assets are designed centered around 100,100 within a 200x200 mental box
         
-        let timeLeft = 180;
-        let initialTime = 180;
-        let cpuTimer = null;
-        let gameTimer = null;
-        let isMuted = false;
+        const assets = {
+            box: `
+                <path d="M52 76 L100 52 L148 76 L100 100 Z" fill="#DDF5FF" fill-opacity=".55" stroke="#71B9D6" stroke-width="3.2" stroke-linejoin="round"/>
+                <path d="M52 76 L52 132 L100 160 L100 100 Z" fill="#BEE9FB" fill-opacity=".42" stroke="#71B9D6" stroke-width="3.2" stroke-linejoin="round"/>
+                <path d="M148 76 L148 132 L100 160 L100 100 Z" fill="#A9E0F7" fill-opacity=".34" stroke="#71B9D6" stroke-width="3.2" stroke-linejoin="round"/>
+                <path d="M67 84 L100 67 L133 84" fill="none" stroke="#F6FDFF" stroke-width="4.5" stroke-linecap="round" opacity=".82"/>
+                <path d="M58 90 L58 126 M142 90 L142 126" stroke="#FFFFFF" stroke-opacity=".38" stroke-width="4" stroke-linecap="round"/>`,
+            box_front: `
+                <path d="M52 76 L52 132 L100 160 L100 100 Z" fill="#C4F0FD" fill-opacity=".08" stroke="#71B9D6" stroke-width="3.2" stroke-linejoin="round"/>
+                <path d="M148 76 L148 132 L100 160 L100 100 Z" fill="#DBF7FF" fill-opacity=".16" stroke="#71B9D6" stroke-width="3.2" stroke-linejoin="round"/>
+                <path d="M100 100 L100 160" stroke="#FFFFFF" stroke-opacity=".55" stroke-width="3"/>`,
 
-        // Player States
-        let p1State = { num1: 0, num2: 0, ans: 0 };
-        let p2State = { num1: 0, num2: 0, ans: 0 };
-        let spState = { num1: 0, num2: 0, ans: 0 };
+            kennel: `
+                <path d="M44 101 L100 56 L156 101 L156 149 Q156 156 149 156 L51 156 Q44 156 44 149 Z"
+                      fill="#E8C18F" stroke="#976643" stroke-width="3.5" stroke-linejoin="round"/>
+                <path d="M44 101 L100 56 L156 101" fill="none" stroke="#8D5A37" stroke-width="4.5" stroke-linejoin="round"/>
+                <path d="M58 96 L100 63 L142 96" fill="none" stroke="#F7E1BF" stroke-width="4.5" stroke-linecap="round" opacity=".82"/>
+                <path d="M63 111 Q63 90 84 90 L116 90 Q137 90 137 111 L137 156 L63 156 Z"
+                      fill="#D7A36F" stroke="#8D5A37" stroke-width="3.2"/>
+                <path d="M74 114 Q74 98 89 98 L111 98 Q126 98 126 114 L126 156 L74 156 Z"
+                      fill="#5E3B29" stroke="#8D5A37" stroke-width="2.8"/>
+                <ellipse cx="100" cy="130" rx="8" ry="15" fill="#F7C03B"/>`,
 
-        // --- Audio Context ---
+            ball: `
+                <circle cx="100" cy="104" r="38" fill="#FFD94A" stroke="#B98600" stroke-width="3.5"/>
+                <path d="M69 80 C84 87 88 120 72 134 C58 122 57 96 69 80Z" fill="#FF5F62"/>
+                <path d="M131 80 C116 87 112 120 128 134 C142 122 143 96 131 80Z" fill="#3DA8F5"/>
+                <path d="M75 73 Q100 88 126 73" fill="none" stroke="#FFF6B4" stroke-width="5" stroke-linecap="round" opacity=".8"/>
+                <circle cx="88" cy="101" r="4.5" fill="#28323E"/><circle cx="112" cy="101" r="4.5" fill="#28323E"/>
+                <circle cx="89.5" cy="99.5" r="1.4" fill="#fff"/><circle cx="113.5" cy="99.5" r="1.4" fill="#fff"/>
+                <path d="M92 115 Q100 122 108 115" fill="none" stroke="#3A3840" stroke-width="2.6" stroke-linecap="round"/>`,
+
+            bird: `
+                <path d="M66 111 C65 84 80 68 100 68 C121 68 136 84 135 111 C134 135 120 149 100 149 C80 149 67 135 66 111Z"
+                      fill="#FFE33F" stroke="#D69C00" stroke-width="3.5"/>
+                <path d="M70 103 Q48 91 53 118 Q61 129 77 118" fill="#FFC928" stroke="#D69C00" stroke-width="3"/>
+                <path d="M130 103 Q152 91 147 118 Q139 129 123 118" fill="#FFC928" stroke="#D69C00" stroke-width="3"/>
+                <path d="M79 78 Q100 65 121 78" fill="none" stroke="#FFF59D" stroke-width="6" stroke-linecap="round" opacity=".72"/>
+                <ellipse cx="87" cy="101" rx="5.5" ry="6" fill="#222A35"/><ellipse cx="113" cy="101" rx="5.5" ry="6" fill="#222A35"/>
+                <circle cx="89" cy="99" r="1.7" fill="#fff"/><circle cx="115" cy="99" r="1.7" fill="#fff"/>
+                <path d="M94 110 Q100 106 106 110 L100 118 Z" fill="#FF8B24" stroke="#C75F00" stroke-width="2"/>
+                <path d="M90 146 L86 156 M90 146 L96 155 M110 146 L106 156 M110 146 L116 155"
+                      stroke="#E87518" stroke-width="3.8" stroke-linecap="round"/>
+                <ellipse cx="82" cy="118" rx="7" ry="3.8" fill="#FFA1B2" opacity=".55"/>
+                <ellipse cx="118" cy="118" rx="7" ry="3.8" fill="#FFA1B2" opacity=".55"/>`,
+
+            cloud: `
+                <path d="M48 121 C39 107 45 91 61 87 C62 68 75 56 91 59 C101 41 126 42 136 62 C155 59 168 72 167 91 C181 97 183 114 170 122 Z"
+                      fill="#FFFFFF" stroke="#CDEAF6" stroke-width="3.5" stroke-linejoin="round"/>
+                <path d="M67 89 Q94 67 125 76" fill="none" stroke="#EEF9FF" stroke-width="8" stroke-linecap="round"/>`,
+
+            table: `
+                <path d="M33 78 Q33 69 42 69 L158 69 Q167 69 167 78 L165 93 Q164 99 157 99 L43 99 Q36 99 35 93 Z"
+                      fill="#9F653D" stroke="#65412B" stroke-width="3.5"/>
+                <path d="M44 78 Q100 66 156 78" fill="none" stroke="#C98C5D" stroke-width="5" stroke-linecap="round" opacity=".9"/>
+                <path d="M49 98 L64 98 L60 160 L43 160 Z" fill="#76503A" stroke="#543424" stroke-width="3"/>
+                <path d="M136 98 L151 98 L157 160 L140 160 Z" fill="#76503A" stroke="#543424" stroke-width="3"/>`,
+
+            dog: `
+                <path d="M66 123 C66 98 80 86 100 86 C121 86 135 98 134 123 C133 145 120 156 100 156 C80 156 67 145 66 123Z"
+                      fill="#F5AA35" stroke="#A65F18" stroke-width="3.5"/>
+                <path d="M68 83 C68 59 82 46 100 46 C118 46 132 59 132 83 C132 104 119 116 100 116 C81 116 68 104 68 83Z"
+                      fill="#FFC45C" stroke="#A65F18" stroke-width="3.5"/>
+                <path d="M72 61 C52 59 49 84 63 96 C75 102 82 89 80 74Z" fill="#C9792B" stroke="#965316" stroke-width="3"/>
+                <path d="M128 61 C148 59 151 84 137 96 C125 102 118 89 120 74Z" fill="#C9792B" stroke="#965316" stroke-width="3"/>
+                <ellipse cx="88" cy="80" rx="4.8" ry="5.5" fill="#28231F"/><ellipse cx="112" cy="80" rx="4.8" ry="5.5" fill="#28231F"/>
+                <circle cx="89.5" cy="78.4" r="1.5" fill="#fff"/><circle cx="113.5" cy="78.4" r="1.5" fill="#fff"/>
+                <path d="M85 94 Q100 85 115 94 Q112 108 100 110 Q88 108 85 94Z" fill="#FFF1DE"/>
+                <ellipse cx="100" cy="93" rx="6" ry="4.5" fill="#3D2C24"/>
+                <path d="M100 98 Q94 105 88 100 M100 98 Q106 105 112 100" fill="none" stroke="#53362A" stroke-width="2.4" stroke-linecap="round"/>
+                <path d="M73 136 Q84 129 95 137 Q89 150 77 150Z" fill="#E38E28"/>
+                <path d="M127 136 Q116 129 105 137 Q111 150 123 150Z" fill="#E38E28"/>`,
+
+            bowl: `
+                <path d="M47 70 Q100 56 153 70 L146 139 Q142 159 100 169 Q58 159 54 139 Z"
+                      fill="#E9FAFF" fill-opacity=".78" stroke="#80CBE9" stroke-width="3.5"/>
+                <path d="M55 109 Q100 123 145 109 L141 139 Q136 155 100 163 Q64 155 59 139 Z"
+                      fill="#64CEF4" fill-opacity=".58"/>
+                <path d="M56 70 Q100 82 144 70" fill="none" stroke="#B9ECFA" stroke-width="6" stroke-linecap="round"/>
+                <path d="M62 82 Q56 114 65 141" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity=".82"/>`,
+            bowl_front: `
+                <path d="M57 111 Q100 127 143 111 L140 140 Q134 158 100 166 Q66 158 60 140 Z"
+                      fill="#5AC8F1" fill-opacity=".38"/>
+                <path d="M64 140 Q100 153 136 140" fill="none" stroke="#DDF8FF" stroke-width="4.5" stroke-linecap="round" opacity=".88"/>`,
+
+            fish: `
+                <path d="M72 111 C76 91 92 83 111 88 C126 92 135 102 135 111 C135 121 126 130 111 134 C92 139 76 130 72 111Z"
+                      fill="#FF9828" stroke="#C75700" stroke-width="3.5"/>
+                <path d="M75 111 L51 94 Q47 91 49 99 L54 111 L49 123 Q47 131 51 128 Z"
+                      fill="#FF7B16" stroke="#C75700" stroke-width="3"/>
+                <path d="M91 92 Q101 78 112 94" fill="#FFB34A" stroke="#C75700" stroke-width="2.5"/>
+                <circle cx="119" cy="105" r="6.5" fill="#fff"/><circle cx="121" cy="105" r="2.8" fill="#263238"/>
+                <circle cx="122" cy="103.8" r="1" fill="#fff"/>
+                <path d="M121 119 Q115 123 109 119" fill="none" stroke="#9F3B00" stroke-width="2.2" stroke-linecap="round"/>
+                <path d="M83 104 Q95 96 106 99" fill="none" stroke="#FFD087" stroke-width="4" stroke-linecap="round" opacity=".75"/>`,
+
+            tree: `
+                <path d="M86 105 Q88 88 84 72 Q94 80 100 96 Q106 80 116 72 Q112 89 114 105 L121 164 L79 164 Z"
+                      fill="#8C5A35" stroke="#5F3D29" stroke-width="3.5" stroke-linejoin="round"/>
+                <path d="M42 91 C36 72 50 57 67 59 C68 37 86 26 101 37 C115 23 139 31 143 50 C162 50 173 65 166 83 C181 96 171 117 153 118 C145 137 123 139 109 127 C95 141 72 138 65 121 C47 122 34 108 42 91Z"
+                      fill="#58C94F" stroke="#2F8B35" stroke-width="3.5"/>
+                <path d="M63 69 Q88 44 119 49" fill="none" stroke="#8EE879" stroke-width="9" stroke-linecap="round" opacity=".68"/>
+                <circle cx="78" cy="83" r="6.5" fill="#FF5B55"/><circle cx="121" cy="77" r="6.5" fill="#FF5B55"/><circle cx="103" cy="52" r="6.5" fill="#FF5B55"/>`,
+
+            owl: `
+                <path d="M58 111 C58 76 75 55 100 55 C125 55 142 76 142 111 C142 143 126 160 100 160 C74 160 58 143 58 111Z"
+                      fill="#88593D" stroke="#563724" stroke-width="3.5"/>
+                <path d="M64 73 L68 43 Q81 54 90 66 Z" fill="#88593D" stroke="#563724" stroke-width="3"/>
+                <path d="M136 73 L132 43 Q119 54 110 66 Z" fill="#88593D" stroke="#563724" stroke-width="3"/>
+                <path d="M72 112 Q100 92 128 112 Q125 149 100 151 Q75 149 72 112Z" fill="#E9C7A1"/>
+                <path d="M66 88 Q78 65 99 80 Q86 102 66 88Z" fill="#F7E1C5" stroke="#6A432D" stroke-width="2.8"/>
+                <path d="M134 88 Q122 65 101 80 Q114 102 134 88Z" fill="#F7E1C5" stroke="#6A432D" stroke-width="2.8"/>
+                <circle cx="82" cy="86" r="8.5" fill="#263238"/><circle cx="118" cy="86" r="8.5" fill="#263238"/>
+                <circle cx="85" cy="83.5" r="2.6" fill="#fff"/><circle cx="121" cy="83.5" r="2.6" fill="#fff"/>
+                <path d="M93 104 L107 104 L100 117 Z" fill="#F5A623" stroke="#B96D00" stroke-width="2"/>
+                <path d="M66 118 Q46 108 52 136 Q60 145 75 132" fill="#70462F"/>
+                <path d="M134 118 Q154 108 148 136 Q140 145 125 132" fill="#70462F"/>`,
+
+            cat: `
+                <path d="M66 126 C66 101 80 89 100 89 C120 89 134 101 134 126 C134 147 121 158 100 158 C79 158 66 147 66 126Z"
+                      fill="#F7A730" stroke="#A66115" stroke-width="3.5"/>
+                <path d="M68 82 C68 59 82 46 100 46 C118 46 132 59 132 82 C132 104 119 116 100 116 C81 116 68 104 68 82Z"
+                      fill="#FFC45A" stroke="#A66115" stroke-width="3.5"/>
+                <path d="M71 63 L77 38 L95 58 Z" fill="#FFB63E" stroke="#A66115" stroke-width="3"/>
+                <path d="M129 63 L123 38 L105 58 Z" fill="#FFB63E" stroke="#A66115" stroke-width="3"/>
+                <path d="M78 53 L81 45 L89 58" fill="#FF91A7"/><path d="M122 53 L119 45 L111 58" fill="#FF91A7"/>
+                <ellipse cx="87" cy="80" rx="4.7" ry="5.5" fill="#253238"/><ellipse cx="113" cy="80" rx="4.7" ry="5.5" fill="#253238"/>
+                <circle cx="88.5" cy="78.2" r="1.5" fill="#fff"/><circle cx="114.5" cy="78.2" r="1.5" fill="#fff"/>
+                <path d="M95 94 L105 94 L100 101 Z" fill="#F06D83"/>
+                <path d="M100 101 Q94 107 88 103 M100 101 Q106 107 112 103" fill="none" stroke="#5F493A" stroke-width="2.2" stroke-linecap="round"/>
+                <path d="M80 98 L57 93 M80 103 L56 104 M120 98 L143 93 M120 103 L144 104" stroke="#5F493A" stroke-width="1.8"/>`,
+
+            mouse: `
+                <path d="M72 122 C72 101 84 90 101 90 C119 90 131 101 131 122 C131 140 119 151 101 151 C83 151 72 140 72 122Z"
+                      fill="#AEBECA" stroke="#667987" stroke-width="3.5"/>
+                <circle cx="76" cy="89" r="17" fill="#9EAFBD" stroke="#667987" stroke-width="3"/>
+                <circle cx="126" cy="89" r="17" fill="#9EAFBD" stroke="#667987" stroke-width="3"/>
+                <circle cx="76" cy="89" r="9.5" fill="#F5ADC2"/><circle cx="126" cy="89" r="9.5" fill="#F5ADC2"/>
+                <ellipse cx="89" cy="111" rx="4.2" ry="4.8" fill="#263238"/><ellipse cx="113" cy="111" rx="4.2" ry="4.8" fill="#263238"/>
+                <circle cx="90.5" cy="109.5" r="1.3" fill="#fff"/><circle cx="114.5" cy="109.5" r="1.3" fill="#fff"/>
+                <ellipse cx="101" cy="122" rx="5.8" ry="4.3" fill="#F1839F"/>
+                <path d="M80 124 L58 119 M80 129 L57 131 M122 124 L144 119 M122 129 L145 131" stroke="#5E6D77" stroke-width="1.8"/>
+                <path d="M127 136 Q157 145 161 124" fill="none" stroke="#8FA2B0" stroke-width="4" stroke-linecap="round"/>`,
+
+            cheese: `
+                <path d="M45 132 Q45 126 51 122 L111 62 Q115 58 121 61 L148 77 Q151 79 150 84 L144 137 Q143 144 136 144 Z"
+                      fill="#FFD84D" stroke="#C89600" stroke-width="3.5"/>
+                <path d="M51 122 L111 62 L132 75 L74 133 Z" fill="#FFF178" stroke="#C89600" stroke-width="2.8"/>
+                <circle cx="91" cy="113" r="7.5" fill="#E8B60D"/>
+                <circle cx="121" cy="102" r="10.5" fill="#E8B60D"/>
+                <circle cx="131" cy="127" r="5.8" fill="#E8B60D"/>
+                <path d="M59 119 Q88 84 111 74" fill="none" stroke="#FFF9B8" stroke-width="5" stroke-linecap="round" opacity=".72"/>`,
+
+            teddy: `
+                <circle cx="75" cy="60" r="15" fill="#9B6849" stroke="#60422F" stroke-width="3.5"/>
+                <circle cx="125" cy="60" r="15" fill="#9B6849" stroke="#60422F" stroke-width="3.5"/>
+                <path d="M63 123 C63 95 79 80 100 80 C121 80 137 95 137 123 C137 148 122 160 100 160 C78 160 63 148 63 123Z"
+                      fill="#A87350" stroke="#60422F" stroke-width="3.5"/>
+                <path d="M69 79 C69 56 82 44 100 44 C118 44 131 56 131 79 C131 101 118 112 100 112 C82 112 69 101 69 79Z"
+                      fill="#B77D55" stroke="#60422F" stroke-width="3.5"/>
+                <ellipse cx="100" cy="90" rx="16" ry="13" fill="#EAD0B9"/>
+                <circle cx="88" cy="75" r="4.2" fill="#342820"/><circle cx="112" cy="75" r="4.2" fill="#342820"/>
+                <circle cx="89.5" cy="73.6" r="1.3" fill="#fff"/><circle cx="113.5" cy="73.6" r="1.3" fill="#fff"/>
+                <ellipse cx="100" cy="87" rx="5" ry="4" fill="#3C2A23"/>
+                <path d="M100 91 Q94 97 89 93 M100 91 Q106 97 111 93" fill="none" stroke="#60422F" stroke-width="2"/>
+                <path d="M67 119 Q50 117 55 139 Q66 150 80 139" fill="#9F694A"/>
+                <path d="M133 119 Q150 117 145 139 Q134 150 120 139" fill="#9F694A"/>`,
+
+            apple: `
+                <path d="M100 68 C82 54 61 61 56 82 C49 111 63 145 99 151 C137 145 152 111 144 82 C139 61 119 54 100 68Z"
+                      fill="#F45151" stroke="#AA2929" stroke-width="3.5"/>
+                <path d="M100 68 Q102 51 117 41" fill="none" stroke="#6B4A2B" stroke-width="5.5" stroke-linecap="round"/>
+                <path d="M108 52 Q126 41 137 55 Q122 65 108 52Z" fill="#62BD4B" stroke="#368E2C" stroke-width="2.8"/>
+                <path d="M72 80 Q88 66 103 71" fill="none" stroke="#FFAAA5" stroke-width="6.5" stroke-linecap="round" opacity=".65"/>`,
+
+            book: `
+                <path d="M49 76 Q49 68 57 68 L143 68 Q151 68 151 76 L151 148 Q151 156 143 156 L57 156 Q49 156 49 148 Z"
+                      fill="#4D9DF5" stroke="#245D9E" stroke-width="3.5"/>
+                <path d="M63 70 L63 154" stroke="#D9ECFF" stroke-width="5"/>
+                <path d="M77 91 Q104 84 135 91 M77 108 Q104 101 128 108 M77 126 Q104 119 137 126"
+                      stroke="#D9ECFF" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+                <path d="M55 82 Q100 68 145 82" fill="none" stroke="#91C7FF" stroke-width="5" opacity=".8"/>`,
+
+            pencil: `
+                <g transform="rotate(-12 100 105)">
+                    <path d="M47 92 Q47 87 52 87 L143 87 L169 104 L143 121 L52 121 Q47 121 47 116 Z"
+                          fill="#FFD34F" stroke="#A87800" stroke-width="3.5" stroke-linejoin="round"/>
+                    <path d="M47 92 Q47 87 52 87 L67 87 L67 121 L52 121 Q47 121 47 116 Z"
+                          fill="#F39CB0" stroke="#AA6072" stroke-width="2.8"/>
+                    <path d="M143 87 L169 104 L143 121 Z" fill="#E5C29A" stroke="#8D6B42" stroke-width="3"/>
+                    <path d="M162 100 L169 104 L162 108 Z" fill="#3F3D3D"/>
+                    <path d="M77 93 L128 93" stroke="#FFF2A9" stroke-width="5" stroke-linecap="round"/>
+                </g>`,
+
+            car: `
+                <path d="M53 112 L63 91 Q70 74 89 73 L119 73 Q136 73 144 90 L154 112 Z"
+                      fill="#5C8DF6" stroke="#264F9E" stroke-width="3.5"/>
+                <path d="M46 112 Q46 104 54 104 L154 104 Q162 104 162 112 L161 135 Q160 144 151 144 L57 144 Q48 144 47 135 Z"
+                      fill="#4C7CE0" stroke="#264F9E" stroke-width="3.5"/>
+                <path d="M78 82 L95 82 L95 102 L67 102 Z M103 82 L120 82 Q131 82 136 102 L103 102 Z"
+                      fill="#DFF5FF" stroke="#7EB4DB" stroke-width="2.8"/>
+                <circle cx="76" cy="144" r="14" fill="#374151" stroke="#111827" stroke-width="3.5"/><circle cx="76" cy="144" r="5.5" fill="#CBD5E1"/>
+                <circle cx="135" cy="144" r="14" fill="#374151" stroke="#111827" stroke-width="3.5"/><circle cx="135" cy="144" r="5.5" fill="#CBD5E1"/>
+                <circle cx="57" cy="121" r="5.5" fill="#FFF59D"/><circle cx="151" cy="121" r="5.5" fill="#FF8A80"/>`,
+
+            backpack: `
+                <path d="M61 82 Q61 66 77 66 L123 66 Q139 66 139 82 L139 143 Q139 158 124 158 L76 158 Q61 158 61 143 Z"
+                      fill="#8D63E8" stroke="#5635A8" stroke-width="3.5"/>
+                <path d="M77 67 Q79 46 100 46 Q121 46 123 67" fill="none" stroke="#5635A8" stroke-width="7" stroke-linecap="round"/>
+                <path d="M72 116 Q72 108 80 108 L120 108 Q128 108 128 116 L128 141 Q128 148 121 148 L79 148 Q72 148 72 141 Z"
+                      fill="#AA89EF" stroke="#5635A8" stroke-width="2.8"/>
+                <path d="M77 87 Q100 78 123 87" stroke="#CBBBF7" stroke-width="5" fill="none" stroke-linecap="round"/>
+                <circle cx="100" cy="129" r="4" fill="#FFE16B"/>`,
+
+            arrow_up: `<path d="M100 26 L45 82 Q41 86 47 86 L76 86 L76 158 L124 158 L124 86 L153 86 Q159 86 155 82 Z" fill="#FF5A5F" stroke="#fff" stroke-width="4.5" stroke-linejoin="round"/>`,
+            arrow_down: `<path d="M100 174 L45 118 Q41 114 47 114 L76 114 L76 42 L124 42 L124 114 L153 114 Q159 114 155 118 Z" fill="#FF5A5F" stroke="#fff" stroke-width="4.5" stroke-linejoin="round"/>`,
+            arrow_left: `<path d="M26 100 L82 45 Q86 41 86 47 L86 76 L158 76 L158 124 L86 124 L86 153 Q86 159 82 155 Z" fill="#FF5A5F" stroke="#fff" stroke-width="4.5" stroke-linejoin="round"/>`,
+            arrow_right: `<path d="M174 100 L118 45 Q114 41 114 47 L114 76 L42 76 L42 124 L114 124 L114 153 Q114 159 118 155 Z" fill="#FF5A5F" stroke="#fff" stroke-width="4.5" stroke-linejoin="round"/>`
+        };
+
+        // --- SCENE BUILDER ---
+        // Shifts assets to create relations perfectly simulating real spatial layouts.
+        function buildScene(obj1Name, obj2Name, relation, obj3Name = null) {
+            let svgContent = '';
+            const o1 = assets[obj1Name] || '';
+            const o2 = assets[obj2Name] || '';
+            const o3 = obj3Name ? (assets[obj3Name] || '') : '';
+            const o2Front = assets[obj2Name + '_front'] || '';
+
+            const place = (svg, dx, dy, scale=1) =>
+                `<g transform="translate(${100 + dx}, ${100 + dy}) scale(${scale}) translate(-100,-100)">${svg}</g>`;
+
+            switch (relation) {
+                case 'LEFT':
+                    svgContent = place(o1, -50, 4, .72) + place(o2, 50, 4, .72);
+                    break;
+                case 'RIGHT':
+                    svgContent = place(o2, -50, 4, .72) + place(o1, 50, 4, .72);
+                    break;
+                case 'ABOVE':
+                    svgContent = place(o2, 0, 51, .62) + place(o1, 0, -51, .62);
+                    break;
+                case 'BELOW':
+                    svgContent = place(o2, 0, -51, .62) + place(o1, 0, 51, .62);
+                    break;
+                case 'UNDER':
+                    svgContent = place(o2, 0, -24, .82) + place(o1, 0, 48, .53);
+                    break;
+                case 'INSIDE':
+                    if (obj2Name === 'box') {
+                        svgContent = place(o2, 0, 4, .96) + place(o1, 0, 13, .53) + place(o2Front, 0, 4, .96);
+                    } else {
+                        svgContent = place(o2, 0, 0, .94) + place(o1, 0, 18, .48) + place(o2Front, 0, 0, .94);
+                    }
+                    break;
+                case 'BETWEEN':
+                    svgContent = place(o2, -63, 8, .58) + place(o3 || o2, 63, 8, .58) + place(o1, 0, 7, .62);
+                    break;
+                case 'NEXT TO':
+                    svgContent = place(o1, -37, 5, .72) + place(o2, 37, 5, .72);
+                    break;
+                case 'IN FRONT OF':
+                    if (obj1Name === 'dog' && obj2Name === 'table') {
+                        // Make the dog about 20% larger in the "in front of" distractor so it is easier
+                        // to distinguish from "under" in the picture-choice question.
+                        svgContent = place(o2, 16, -13, .68) + place(o1, -16, 18, 1.10);
+                    } else {
+                        svgContent = place(o2, 13, -13, .70) + place(o1, -12, 21, .91);
+                    }
+                    break;
+                case 'BEHIND':
+                    if (obj2Name === 'tree' && obj1Name === 'bird') {
+                        // Bigger tree. Put the bird behind the tree trunk and let the face peek out.
+                        svgContent = place(o1, 22, 44, .44) + place(o2, -2, 18, 1.12);
+                    } else if (obj2Name === 'tree') {
+                        // Larger tree with the hidden object peeking from behind it.
+                        svgContent = place(o1, 26, 22, .55) + place(o2, -4, 18, 1.08);
+                    } else {
+                        svgContent = place(o1, 30, 4, .58) + place(o2, -8, 16, .91);
+                    }
+                    break;
+                case 'UP':
+                case 'DOWN':
+                case 'DIR_LEFT':
+                case 'DIR_RIGHT': {
+                    const dirName = relation.replace('DIR_', '').toLowerCase();
+                    const arrow = assets['arrow_' + dirName];
+                    if (relation === 'UP') svgContent = place(o2, 0, 43, .53) + place(arrow, 0, -43, .43);
+                    if (relation === 'DOWN') svgContent = place(o2, 0, -43, .53) + place(arrow, 0, 43, .43);
+                    if (relation === 'DIR_LEFT') svgContent = place(o2, 43, 0, .53) + place(arrow, -43, 0, .43);
+                    if (relation === 'DIR_RIGHT') svgContent = place(o2, -43, 0, .53) + place(arrow, 43, 0, .43);
+                    break;
+                }
+            }
+
+            return `<svg viewBox="-8 -8 216 216" xmlns="http://www.w3.org/2000/svg" overflow="visible">
+                <g transform="translate(100,100) scale(1.10) translate(-100,-100)">${svgContent}</g>
+            </svg>`;
+        }
+
+        const positionConcepts = ['LEFT', 'RIGHT', 'ABOVE', 'BELOW', 'UNDER', 'INSIDE', 'BETWEEN', 'NEXT TO', 'IN FRONT OF', 'BEHIND'];
+        const directionConcepts = ['UP', 'DOWN', 'DIR_LEFT', 'DIR_RIGHT'];
+
+        function displayConcept(concept) {
+            return concept.replace('DIR_', '');
+        }
+
+        function getDistractors(correctConcept, count = 3) {
+            let pool;
+
+            if (directionConcepts.includes(correctConcept)) {
+                pool = directionConcepts.filter(c => c !== correctConcept);
+            } else {
+                pool = positionConcepts.filter(c => c !== correctConcept);
+
+                // Avoid semantically overlapping choices.
+                if (correctConcept === 'UNDER' || correctConcept === 'BELOW') {
+                    pool = pool.filter(c => c !== 'UNDER' && c !== 'BELOW');
+                }
+                if (correctConcept === 'NEXT TO') {
+                    // LEFT/RIGHT can both be true in a next-to picture, so avoid them.
+                    pool = pool.filter(c => !['LEFT','RIGHT'].includes(c));
+                }
+                if (correctConcept === 'LEFT' || correctConcept === 'RIGHT') {
+                    pool = pool.filter(c => c !== 'NEXT TO');
+                }
+            }
+
+            return shuffle([...pool]).slice(0, count);
+        }
+
+        const imageContrastMap = {
+            'LEFT': ['RIGHT', 'ABOVE', 'INSIDE'],
+            'RIGHT': ['LEFT', 'BELOW', 'INSIDE'],
+            'ABOVE': ['BELOW', 'NEXT TO', 'LEFT'],
+            'BELOW': ['ABOVE', 'RIGHT', 'INSIDE'],
+            'UNDER': ['ABOVE', 'NEXT TO', 'INSIDE'],
+            'INSIDE': ['ABOVE', 'NEXT TO', 'UNDER'],
+            'BETWEEN': ['ABOVE', 'NEXT TO', 'INSIDE'],
+            'NEXT TO': ['ABOVE', 'UNDER', 'INSIDE'],
+            'IN FRONT OF': ['BEHIND', 'NEXT TO', 'ABOVE'],
+            'BEHIND': ['IN FRONT OF', 'NEXT TO', 'ABOVE']
+        };
+
+        const questionBank = [];
+
+        function addTextQ(concept, qText, obj1, obj2, obj3=null, level='easy') {
+            const correct = displayConcept(concept);
+            const distractors = getDistractors(concept, 3).map(displayConcept);
+
+            questionBank.push({
+                type: 'text_options',
+                level,
+                concept,
+                question: qText,
+                image: buildScene(obj1, obj2, concept, obj3),
+                correct,
+                distractors
+            });
+        }
+
+        function addImageQ(concept, qText, obj1, obj2, obj3=null, level='image') {
+            const contrastConcepts = imageContrastMap[concept] || getDistractors(concept, 3);
+            questionBank.push({
+                type: 'image_options',
+                level,
+                concept,
+                question: qText,
+                correct: buildScene(obj1, obj2, concept, obj3),
+                correctLabel: concept,
+                distractors: contrastConcepts.slice(0,3).map(dc => buildScene(obj1, obj2, dc, obj3))
+            });
+        }
+
+        // --- CURATED QUESTION BANK: clear, child-friendly, non-ambiguous ---
+
+        // Easy core positions
+        addTextQ('LEFT', 'Where is the ball?', 'ball', 'teddy');
+        addTextQ('RIGHT', 'Where is the dog?', 'dog', 'ball');
+        addTextQ('LEFT', 'Where is the pencil?', 'pencil', 'book');
+        addTextQ('RIGHT', 'Where is the apple?', 'apple', 'backpack');
+        addTextQ('LEFT', 'Where is the toy car?', 'car', 'tree');
+        addTextQ('RIGHT', 'Where is the mouse?', 'mouse', 'cheese');
+
+        addTextQ('ABOVE', 'Where is the bird?', 'bird', 'cloud');
+        addTextQ('BELOW', 'Where is the cloud?', 'cloud', 'bird');
+        addTextQ('ABOVE', 'Where is the owl?', 'owl', 'box');
+        addTextQ('BELOW', 'Where is the mouse?', 'mouse', 'book');
+        addTextQ('ABOVE', 'Where is the apple?', 'apple', 'book');
+        addTextQ('BELOW', 'Where is the toy car?', 'car', 'tree');
+
+        addTextQ('UNDER', 'Where is the dog?', 'dog', 'table');
+        addTextQ('UNDER', 'Where is the ball?', 'ball', 'table');
+        addTextQ('UNDER', 'Where is the cat?', 'cat', 'table');
+        addTextQ('UNDER', 'Where is the backpack?', 'backpack', 'table');
+
+        addTextQ('INSIDE', 'Where is the fish?', 'fish', 'bowl');
+        addTextQ('INSIDE', 'Where is the ball?', 'ball', 'box');
+        addTextQ('INSIDE', 'Where is the mouse?', 'mouse', 'box');
+        addTextQ('INSIDE', 'Where is the teddy bear?', 'teddy', 'box');
+
+        // Advanced spatial language
+        addTextQ('BETWEEN', 'Where is the cheese?', 'cheese', 'mouse', 'mouse', 'advanced');
+        addTextQ('BETWEEN', 'Where is the ball?', 'ball', 'teddy', 'teddy', 'advanced');
+        addTextQ('BETWEEN', 'Where is the apple?', 'apple', 'book', 'book', 'advanced');
+        addTextQ('BETWEEN', 'Where is the owl?', 'owl', 'tree', 'tree', 'advanced');
+
+        addTextQ('NEXT TO', 'Where is the cat?', 'cat', 'tree', null, 'advanced');
+        addTextQ('NEXT TO', 'Where is the bird?', 'bird', 'kennel', null, 'advanced');
+        addTextQ('NEXT TO', 'Where is the pencil?', 'pencil', 'book', null, 'advanced');
+        addTextQ('NEXT TO', 'Where is the toy car?', 'car', 'backpack', null, 'advanced');
+
+        addTextQ('IN FRONT OF', 'Where is the owl?', 'owl', 'tree', null, 'advanced');
+        addTextQ('IN FRONT OF', 'Where is the teddy bear?', 'teddy', 'box', null, 'advanced');
+        addTextQ('IN FRONT OF', 'Where is the dog?', 'dog', 'table', null, 'advanced');
+        addTextQ('IN FRONT OF', 'Where is the apple?', 'apple', 'backpack', null, 'advanced');
+
+        addTextQ('BEHIND', 'Where is the cat?', 'cat', 'box', null, 'advanced');
+        addTextQ('BEHIND', 'Where is the bird?', 'bird', 'tree', null, 'advanced');
+        addTextQ('BEHIND', 'Where is the mouse?', 'mouse', 'book', null, 'advanced');
+        addTextQ('BEHIND', 'Where is the backpack?', 'backpack', 'tree', null, 'advanced');
+
+        // Direction questions — answer set is always UP / DOWN / LEFT / RIGHT
+        addTextQ('UP',        'Which way is the bird going?', 'bird', 'bird', null, 'direction');
+        addTextQ('DOWN',      'Which way is the ball going?', 'ball', 'ball', null, 'direction');
+        addTextQ('DIR_LEFT',  'Which way is the mouse going?', 'mouse', 'mouse', null, 'direction');
+        addTextQ('DIR_RIGHT', 'Which way is the dog going?', 'dog', 'dog', null, 'direction');
+        addTextQ('UP',        'Which way is the owl going?', 'owl', 'owl', null, 'direction');
+        addTextQ('DIR_RIGHT', 'Which way is the toy car going?', 'car', 'car', null, 'direction');
+
+        // Word -> picture questions. Contrast sets are intentionally non-overlapping.
+        addImageQ('ABOVE',       'Which picture shows ABOVE?', 'bird', 'kennel');
+        addImageQ('BELOW',       'Which picture shows BELOW?', 'apple', 'book');
+        addImageQ('UNDER',       'Which picture shows UNDER?', 'dog', 'table');
+        addImageQ('BETWEEN',     'Which picture shows BETWEEN?', 'ball', 'teddy', 'teddy');
+        addImageQ('INSIDE',      'Which picture shows INSIDE?', 'fish', 'bowl');
+        addImageQ('LEFT',        'Which picture shows LEFT?', 'owl', 'tree');
+        addImageQ('RIGHT',       'Which picture shows RIGHT?', 'cat', 'box');
+        addImageQ('IN FRONT OF', 'Which picture shows IN FRONT OF?', 'teddy', 'box');
+        addImageQ('BEHIND',      'Which picture shows BEHIND?', 'mouse', 'book');
+        addImageQ('NEXT TO',     'Which picture shows NEXT TO?', 'dog', 'ball');
+
+
+        let currentSession = [];
+        let currentQIndex = 0;
+        let score = 0;
+        let hasGuessedWrongCurrent = false;
+        let isTransitioning = false;
+        let correctPadIndex = -1;
+        let currentQuestion = null;
+
+        // Audio Setup (Web Audio API)
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         const audioCtx = new AudioContext();
 
-        function playSound(type) {
-            if (isMuted) return;
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+        function playTone(freq, type, duration, vol=0.1) {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            const now = audioCtx.currentTime;
-
-            if (type === 'correct') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(523.25, now);
-                osc.frequency.setValueAtTime(783.99, now + 0.1);
-                gainNode.gain.setValueAtTime(0.1, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-                osc.start(now); osc.stop(now + 0.3);
-            } else if (type === 'wrong') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, now);
-                osc.frequency.exponentialRampToValueAtTime(50, now + 0.3);
-                gainNode.gain.setValueAtTime(0.1, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-                osc.start(now); osc.stop(now + 0.3);
-            } else if (type === 'win') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(523, now);
-                osc.frequency.setValueAtTime(659, now + 0.2);
-                gainNode.gain.setValueAtTime(0.1, now);
-                gainNode.gain.linearRampToValueAtTime(0, now + 1.0);
-                osc.start(now); osc.stop(now + 1.0);
-            }
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
         }
 
-        // --- Fireworks Logic ---
-        const canvas = document.getElementById('fireworksCanvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
-        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        function playDing() {
+            playTone(800, 'sine', 0.1, 0.2);
+            setTimeout(() => playTone(1200, 'sine', 0.2, 0.2), 100);
+        }
+        function playBuzz() {
+            playTone(150, 'sawtooth', 0.3, 0.1);
+        }
 
-        function animateFireworks() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach((p, index) => {
-                p.x += p.vx; p.y += p.vy; p.vy += 0.05; p.alpha -= 0.015;
-                ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color; 
-                ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-                if (p.alpha <= 0) particles.splice(index, 1);
+        // TTS setup
+        function readQuestion() {
+            if (!window.speechSynthesis || !currentQuestion) return;
+            window.speechSynthesis.cancel(); 
+            const utterance = new SpeechSynthesisUtterance(currentQuestion.question);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.85; 
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Shuffle array helper
+        function shuffle(array) {
+            let currentIndex = array.length,  randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+
+        function sample(arr, n) {
+            return shuffle([...arr]).slice(0, Math.min(n, arr.length));
+        }
+
+        function pickFromConcepts(bank, concepts, n = 1) {
+            const chosen = [];
+            const usedConcepts = new Set();
+            const shuffledBank = shuffle([...bank]);
+
+            for (const q of shuffledBank) {
+                if (!concepts.includes(q.concept)) continue;
+                if (usedConcepts.has(q.concept)) continue;
+                chosen.push(q);
+                usedConcepts.add(q.concept);
+                if (chosen.length >= n) break;
+            }
+
+            if (chosen.length < n) {
+                for (const q of shuffledBank) {
+                    if (!concepts.includes(q.concept)) continue;
+                    if (chosen.includes(q)) continue;
+                    chosen.push(q);
+                    if (chosen.length >= n) break;
+                }
+            }
+            return chosen.slice(0, n);
+        }
+
+        function arrangeNoAdjacentSameConcept(questions) {
+            const remaining = shuffle([...questions]);
+            const arranged = [];
+
+            while (remaining.length) {
+                const lastConcept = arranged.length ? arranged[arranged.length - 1].concept : null;
+                let idx = remaining.findIndex(q => q.concept !== lastConcept);
+                if (idx === -1) idx = 0;
+                arranged.push(remaining.splice(idx, 1)[0]);
+            }
+            return arranged;
+        }
+
+        function buildSession() {
+            const easyText = questionBank.filter(q => q.type === 'text_options' && q.level === 'easy');
+            const advancedText = questionBank.filter(q => q.type === 'text_options' && q.level === 'advanced');
+            const directionText = questionBank.filter(q => q.type === 'text_options' && q.level === 'direction');
+            const imageQs = questionBank.filter(q => q.type === 'image_options');
+
+            const session = [
+                ...pickFromConcepts(easyText, ['LEFT', 'RIGHT'], 2),
+                ...pickFromConcepts(easyText, ['ABOVE', 'BELOW'], 2),
+                ...pickFromConcepts(easyText, ['UNDER'], 1),
+                ...pickFromConcepts(easyText, ['INSIDE'], 1),
+
+                ...pickFromConcepts(advancedText, ['BETWEEN'], 1),
+                ...pickFromConcepts(advancedText, ['NEXT TO'], 1),
+                ...pickFromConcepts(advancedText, ['IN FRONT OF'], 1),
+                ...pickFromConcepts(advancedText, ['BEHIND'], 1),
+
+                ...pickFromConcepts(directionText, ['UP', 'DOWN', 'DIR_LEFT', 'DIR_RIGHT'], 2),
+
+                ...pickFromConcepts(imageQs, ['ABOVE', 'BELOW', 'UNDER', 'BETWEEN', 'INSIDE', 'LEFT', 'RIGHT', 'IN FRONT OF', 'BEHIND', 'NEXT TO'], 3)
+            ];
+
+            return arrangeNoAdjacentSameConcept(session);
+        }
+
+        function startGame() {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+
+            // Build a balanced 15-question round with gentle difficulty progression.
+            currentSession = buildSession();
+            currentQIndex = 0;
+            score = 0;
+            updateTopBar();
+            document.getElementById('top-progress-fill').style.width = '0%';
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            isTransitioning = false;
+            hasGuessedWrongCurrent = false;
+            currentQuestion = currentSession[currentQIndex];
+
+            // Reset UI Pads
+            const gameScreen = document.getElementById('game-screen');
+            const mainSvgContainer = document.getElementById('main-svg-container');
+            const pads = document.querySelectorAll('.answer-pad');
+            
+            pads.forEach(pad => {
+                pad.className = `answer-pad pad-${pad.id.split('-')[1]}`; // reset classes
+                pad.classList.remove('image-option');
             });
-            if (Math.random() < 0.05 && particles.length < 300) {
-                 const x = Math.random() * canvas.width;
-                 const y = Math.random() * canvas.height / 2;
-                 const color = ['#f00','#0f0','#00f','#ff0'][Math.floor(Math.random()*4)];
-                 for(let i=0;i<20;i++) {
-                     particles.push({x, y, vx: Math.cos(i)*Math.random()*4, vy: Math.sin(i)*Math.random()*4, color, alpha: 1});
-                 }
+
+            document.getElementById('question-text').innerText = currentQuestion.question;
+            document.getElementById('q-counter').innerText = currentQIndex + 1;
+            document.getElementById('top-progress-fill').style.width = `${((currentQIndex + 1) / currentSession.length) * 100}%`;
+
+            // Prepare options (0 is correct, 1-3 are distractors)
+            let options = [currentQuestion.correct, ...currentQuestion.distractors];
+            if (currentQuestion.type === 'text_options') {
+                options = [...new Set(options)];
+                const fallback = ['LEFT','RIGHT','ABOVE','BELOW','UNDER','INSIDE','BETWEEN','NEXT TO','IN FRONT OF','BEHIND','UP','DOWN'];
+                for (const item of fallback) {
+                    if (options.length >= 4) break;
+                    if (!options.includes(item)) options.push(item);
+                }
+                options = options.slice(0,4);
             }
-            if (particles.length > 0 || !gameActive) requestAnimationFrame(animateFireworks);
-        }
-
-        // --- Time Slider ---
-        const timeSlider = document.getElementById('timeSlider');
-        timeSlider.addEventListener('input', (e) => {
-            document.getElementById('timeDisplay').innerText = `${e.target.value}m`;
-        });
-
-        // --- Core Game Functions ---
-
-        function startGame(mode) {
-            gameMode = mode;
-            const selectedMins = parseInt(document.getElementById('timeSlider').value);
-            initialTime = selectedMins * 60;
             
-            document.getElementById('startScreen').classList.add('hidden');
+            // Randomize position on pads
+            const optionIndices = shuffle([0, 1, 2, 3]);
             
-            // Setup UI based on mode
-            if (gameMode === 'cpu') {
-                document.getElementById('singlePlayerView').classList.remove('hidden');
-                document.getElementById('singlePlayerView').classList.add('flex');
-                document.getElementById('twoPlayerView').classList.add('hidden');
-                document.getElementById('twoPlayerView').classList.remove('flex');
-                document.getElementById('p2Label').innerText = "CPU";
-                document.getElementById('p2Label').classList.remove('bg-red-700');
-                document.getElementById('p2Label').classList.add('bg-red-500');
+            if (currentQuestion.type === 'text_options') {
+                gameScreen.classList.remove('layout-word-to-pic');
+                mainSvgContainer.innerHTML = currentQuestion.image;
+                
+                optionIndices.forEach((optIndex, padIndex) => {
+                    const pad = document.getElementById(`pad-${padIndex}`);
+                    pad.querySelector('.pad-content').innerHTML = options[optIndex];
+                    if (optIndex === 0) correctPadIndex = padIndex;
+                });
             } else {
-                document.getElementById('singlePlayerView').classList.add('hidden');
-                document.getElementById('singlePlayerView').classList.remove('flex');
-                document.getElementById('twoPlayerView').classList.remove('hidden');
-                document.getElementById('twoPlayerView').classList.add('flex');
-                document.getElementById('p2Label').innerText = "P2";
-                document.getElementById('p2Label').classList.remove('bg-red-500');
-                document.getElementById('p2Label').classList.add('bg-red-700');
+                gameScreen.classList.add('layout-word-to-pic');
+                mainSvgContainer.innerHTML = ''; 
+                
+                optionIndices.forEach((optIndex, padIndex) => {
+                    const pad = document.getElementById(`pad-${padIndex}`);
+                    pad.classList.add('image-option');
+                    pad.querySelector('.pad-content').innerHTML = options[optIndex];
+                    if (optIndex === 0) correctPadIndex = padIndex;
+                });
             }
 
-            resetGameState();
-            gameActive = true;
-            particles = []; // clear fireworks
+            // Auto-read question gently
+            setTimeout(readQuestion, 300);
+        }
+
+        function handleSlap(padIndex) {
+            if (isTransitioning) return;
             
-            // Initial Questions
-            if (gameMode === 'cpu') {
-                generateQuestion('single');
-            } else {
-                generateQuestion('p1');
-                generateQuestion('p2');
-            }
+            const pad = document.getElementById(`pad-${padIndex}`);
+            
+            if (padIndex === correctPadIndex) {
+                // Correct!
+                isTransitioning = true;
+                pad.classList.add('pad-correct');
+                playDing();
+                createStars(pad);
+                
+                if (!hasGuessedWrongCurrent) {
+                    score++;
+                    updateTopBar();
+                }
 
-            startTimers();
-            updateVisuals();
-        }
+                const qText = document.getElementById('question-text');
+                const origText = qText.innerText;
+                qText.innerText = ["Great job!", "You got it!", "Awesome!"][Math.floor(Math.random()*3)];
+                qText.style.color = "#2dc653";
 
-        function resetGame() {
-            document.getElementById('gameOverScreen').classList.add('hidden');
-            document.getElementById('startScreen').classList.remove('hidden');
-            particles = [];
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
-
-        function resetGameState() {
-            currentOffset = 0;
-            timeLeft = initialTime;
-            updateTimerDisplay();
-        }
-
-        function startTimers() {
-            clearInterval(cpuTimer);
-            clearInterval(gameTimer);
-
-            if (gameMode === 'cpu') {
-                cpuTimer = setInterval(() => {
-                    if (!gameActive) return;
-                    if (currentOffset > -MAX_OFFSET) {
-                        currentOffset--;
-                        wiggleContainer();
-                        updateVisuals();
-                        checkWinCondition();
+                setTimeout(() => {
+                    qText.innerText = origText;
+                    qText.style.color = "#14213d";
+                    currentQIndex++;
+                    if (currentQIndex < currentSession.length) {
+                        loadQuestion();
+                    } else {
+                        endGame();
                     }
-                }, 7000);
-            }
+                }, 1200);
 
-            gameTimer = setInterval(() => {
-                if (!gameActive) return;
-                timeLeft--;
-                updateTimerDisplay();
-                if (timeLeft <= 0) {
-                    endGame(currentOffset > 0 ? 'player' : (currentOffset < 0 ? 'cpu' : 'draw'));
-                }
-            }, 1000);
-        }
-
-        function updateTimerDisplay() {
-            const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
-            const s = (timeLeft % 60).toString().padStart(2, '0');
-            document.getElementById('timer').innerText = `${m}:${s}`;
-        }
-
-        // --- Question Generation Logic (Updated for + and -) ---
-        
-        function getMathProblem() {
-            const isAddition = Math.random() < 0.5;
-
-            if (isAddition) {
-                let n1 = Math.floor(Math.random() * 45) + 5; 
-                let n2 = Math.floor(Math.random() * 45) + 5;
-                while(n1 + n2 > 100) n2 = Math.floor(Math.random() * 40) + 1;
-                return { n1, n2, operator: '+', ans: n1 + n2 };
             } else {
-                // Subtraction: Ensure result is positive and operands reasonable
-                let n1 = Math.floor(Math.random() * 90) + 10; // Min 10
-                let n2 = Math.floor(Math.random() * (n1 - 5)) + 1; // Ensure some difference
-                return { n1, n2, operator: '-', ans: n1 - n2 };
+                // Wrong!
+                if(pad.classList.contains('pad-wrong')) return; 
+                
+                hasGuessedWrongCurrent = true;
+                pad.classList.add('pad-wrong');
+                playBuzz();
+                
+                const qText = document.getElementById('question-text');
+                const origText = qText.innerText;
+                qText.innerText = "Try again!";
+                qText.style.color = "#e63946";
+                
+                setTimeout(() => {
+                    if(!isTransitioning) {
+                        qText.innerText = currentQuestion.question;
+                        qText.style.color = "#14213d";
+                    }
+                }, 1000);
             }
         }
 
-        function getOptions(correctVal) {
-            let answers = [correctVal];
-            while (answers.length < 4) {
-                let offset = Math.floor(Math.random() * 10) - 5;
-                if (offset === 0) offset = 1;
-                let fake = correctVal + offset;
-                // Ensure fake answers are positive and within reasonable 0-100 range for consistency
-                if (fake >= 0 && fake <= 100 && !answers.includes(fake)) answers.push(fake);
-            }
-            return answers.sort(() => Math.random() - 0.5);
+        function updateTopBar() {
+            document.getElementById('score-counter').innerText = score;
         }
 
-        function generateQuestion(who) {
-            if (!gameActive) return;
-
-            const prob = getMathProblem();
-            const opts = getOptions(prob.ans);
-
-            if (who === 'single') {
-                spState = { num1: prob.n1, num2: prob.n2, ans: prob.ans };
-                document.getElementById('spNum1').innerText = prob.n1;
-                document.getElementById('spOp').innerText = prob.operator;
-                document.getElementById('spNum2').innerText = prob.n2;
-                renderButtons('spAnswersGrid', opts, 'single');
-            } else if (who === 'p1') {
-                p1State = { num1: prob.n1, num2: prob.n2, ans: prob.ans };
-                document.getElementById('p1Num1').innerText = prob.n1;
-                document.getElementById('p1Op').innerText = prob.operator;
-                document.getElementById('p1Num2').innerText = prob.n2;
-                renderButtons('p1Grid', opts, 'p1');
-            } else if (who === 'p2') {
-                p2State = { num1: prob.n1, num2: prob.n2, ans: prob.ans };
-                document.getElementById('p2Num1').innerText = prob.n1;
-                document.getElementById('p2Op').innerText = prob.operator;
-                document.getElementById('p2Num2').innerText = prob.n2;
-                renderButtons('p2Grid', opts, 'p2');
+        function createStars(element) {
+            const rect = element.getBoundingClientRect();
+            for(let i=0; i<6; i++) {
+                const star = document.createElement('div');
+                star.innerHTML = '⭐';
+                star.className = 'star-particle';
+                
+                const x = rect.left + Math.random() * rect.width;
+                const y = rect.top + Math.random() * rect.height;
+                
+                star.style.left = `${x}px`;
+                star.style.top = `${y}px`;
+                
+                const tx = (Math.random() - 0.5) * 200 + 'px';
+                const ty = (Math.random() - 1) * 200 + 'px';
+                star.style.setProperty('--tx', tx);
+                star.style.setProperty('--ty', ty);
+                
+                document.body.appendChild(star);
+                
+                setTimeout(() => star.remove(), 1000);
             }
         }
 
-        function renderButtons(gridId, options, type) {
-            const grid = document.getElementById(gridId);
-            grid.innerHTML = '';
+        function endGame() {
+            document.getElementById('game-screen').classList.add('hidden');
+            const endScreen = document.getElementById('end-screen');
+            endScreen.classList.remove('hidden');
             
-            const btnClass = type === 'single' 
-                ? "bg-white border-b-8 border-slate-200 text-slate-700 text-3xl sm:text-5xl font-bold py-4 sm:py-6 rounded-2xl hover:bg-slate-50 hover:border-b-4 hover:translate-y-1 active:border-b-0 active:translate-y-2 transition-all shadow-sm w-full"
-                : "bg-white border-b-4 border-slate-200 text-slate-700 text-xl sm:text-3xl font-bold py-3 sm:py-4 rounded-xl hover:bg-slate-50 active:translate-y-1 transition-all shadow-sm w-full";
-
-            options.forEach(ans => {
-                const btn = document.createElement('button');
-                btn.className = btnClass;
-                btn.innerText = ans;
-                btn.onclick = () => handleAnswer(ans, btn, type);
-                grid.appendChild(btn);
-            });
-        }
-
-        function handleAnswer(val, btn, type) {
-            if (!gameActive) return;
-            if (btn.hasAttribute('disabled')) return;
-
-            let correctVal = 0;
-            let gridId = '';
-            if (type === 'single') { correctVal = spState.ans; gridId = 'spAnswersGrid'; }
-            if (type === 'p1') { correctVal = p1State.ans; gridId = 'p1Grid'; }
-            if (type === 'p2') { correctVal = p2State.ans; gridId = 'p2Grid'; }
-
-            if (val === correctVal) {
-                // CORRECT
-                const buttons = document.getElementById(gridId).querySelectorAll('button');
-                buttons.forEach(b => b.setAttribute('disabled', 'true'));
-
-                playSound('correct');
-                
-                if (type === 'single' || type === 'p1') {
-                    currentOffset++;
-                } else if (type === 'p2') {
-                    currentOffset--;
-                }
-
-                btn.classList.add('bg-green-200', 'border-green-400', 'text-green-700');
-                
-                if (type === 'single') {
-                     document.getElementById('spFeedback').innerText = "Correct! Pulling!";
-                     document.getElementById('spFeedback').className = "mt-4 text-green-600 font-bold pop-in";
-                }
-
-                updateVisuals();
-                checkWinCondition();
-                
-                if (gameActive) {
-                    setTimeout(() => generateQuestion(type), 500);
-                }
-
-            } else {
-                // WRONG
-                playSound('wrong');
-                btn.setAttribute('disabled', 'true');
-                btn.classList.add('bg-red-200', 'border-red-400', 'text-red-700', 'wiggle');
-
-                if (type === 'single' || type === 'p1') {
-                    if (currentOffset > -MAX_OFFSET) currentOffset--;
-                } else if (type === 'p2') {
-                    if (currentOffset < MAX_OFFSET) currentOffset++;
-                }
-                
-                wiggleContainer();
-                updateVisuals();
-                checkWinCondition();
-
-                if (type === 'single') {
-                    document.getElementById('spFeedback').innerText = "Oops! Pulled back!";
-                    document.getElementById('spFeedback').className = "mt-4 text-red-500 font-bold";
-                }
-            }
-        }
-
-        function wiggleContainer() {
-            const c = document.getElementById('gameContainer');
-            c.classList.add('translate-x-1');
-            setTimeout(() => c.classList.remove('translate-x-1'), 100);
-        }
-
-        function updateVisuals() {
-            const stepSize = 30;
-            const translateVal = currentOffset * -stepSize;
-            document.getElementById('gameContainer').style.transform = `translateX(${translateVal}px)`;
-
-            const progressPercent = ((currentOffset + MAX_OFFSET) / (MAX_OFFSET * 2)) * 100;
-            const bar = document.getElementById('progressBar');
-            bar.style.width = `${progressPercent}%`;
+            document.getElementById('final-score').innerText = score;
+            const accuracy = Math.round((score / 15) * 100);
+            document.getElementById('accuracy-text').innerText = `Accuracy: ${accuracy}%`;
             
-            if (currentOffset > 0) bar.className = 'h-full transition-all duration-300 w-1/2 bg-blue-500';
-            else if (currentOffset < 0) bar.className = 'h-full transition-all duration-300 w-1/2 bg-red-500';
-            else bar.className = 'h-full transition-all duration-300 w-1/2 bg-slate-400';
-        }
-
-        function checkWinCondition() {
-            if (currentOffset >= MAX_OFFSET) endGame('player');
-            else if (currentOffset <= -MAX_OFFSET) endGame('cpu');
-        }
-
-        function endGame(winner) {
-            gameActive = false;
-            clearInterval(cpuTimer);
-            clearInterval(gameTimer);
-
-            const screen = document.getElementById('gameOverScreen');
-            const title = document.getElementById('winnerText');
-            const icon = document.getElementById('winnerIcon');
-            const scoreText = document.getElementById('finalScore');
-
-            screen.classList.remove('hidden');
-
-            let p1Name = "BLUE TEAM";
-            let p2Name = gameMode === 'cpu' ? "RED TEAM (CPU)" : "RED TEAM";
-
-            if (winner === 'player') {
-                playSound('win');
-                title.innerText = `${p1Name} WINS!`;
-                title.className = "text-4xl font-bold mb-4 text-blue-600";
-                icon.innerText = "🏆 🦁";
-                scoreText.innerText = "Amazing teamwork!";
-                requestAnimationFrame(animateFireworks);
-            } else if (winner === 'cpu') {
-                playSound('win');
-                title.innerText = `${p2Name} WINS!`;
-                title.className = "text-4xl font-bold mb-4 text-red-600";
-                icon.innerText = "🥈 🐯";
-                scoreText.innerText = "Better luck next time!";
-                requestAnimationFrame(animateFireworks);
-            } else {
-                playSound('win');
-                title.innerText = "IT'S A TIE!";
-                title.className = "text-4xl font-bold mb-4 text-slate-600";
-                icon.innerText = "🤝";
-                scoreText.innerText = "Well played both sides!";
+            // Confetti effect
+            for(let i=0; i<40; i++) {
+                const conf = document.createElement('div');
+                conf.style.position = 'absolute';
+                conf.style.width = '12px';
+                conf.style.height = '12px';
+                conf.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                conf.style.backgroundColor = ['#f94144', '#f3722c', '#f8961e', '#f9c74f', '#90be6d', '#43aa8b', '#577590', '#9b5de5'][Math.floor(Math.random()*8)];
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.top = '-10px';
+                conf.style.zIndex = '20';
+                conf.style.animation = `floatStar ${1.5 + Math.random()*2}s linear forwards`;
+                conf.style.setProperty('--tx', (Math.random()-0.5)*150 + 'px');
+                conf.style.setProperty('--ty', '100vh');
+                document.body.appendChild(conf);
+                setTimeout(() => conf.remove(), 3500);
             }
+            
+            playTone(400, 'sine', 0.1);
+            setTimeout(() => playTone(500, 'sine', 0.1), 100);
+            setTimeout(() => playTone(600, 'sine', 0.3), 200);
+            setTimeout(() => playTone(800, 'sine', 0.4), 300);
         }
 
-        document.getElementById('muteBtn').onclick = function() {
-            isMuted = !isMuted;
-            this.innerText = isMuted ? '🔇' : '🔊';
-            this.classList.toggle('bg-red-100');
-        };
+        function goHome() {
+            document.getElementById('end-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+        }
+
+        // Keyboard shortcuts for Teacher / Facilitator
+        window.addEventListener('keydown', (e) => {
+            if (document.getElementById('game-screen').classList.contains('hidden')) return;
+            
+            if (e.key === '1') handleSlap(0); // Top Left
+            if (e.key === '2') handleSlap(1); // Top Right
+            if (e.key === '3') handleSlap(2); // Bottom Left
+            if (e.key === '4') handleSlap(3); // Bottom Right
+        });
 
     </script>
 </body>
