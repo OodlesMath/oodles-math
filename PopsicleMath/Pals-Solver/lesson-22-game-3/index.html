@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Days & Months Adventure! - Ver 2</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js for web audio sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Canvas Confetti for rewards -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .font-game {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 800;
+        }
+
+        /* Tactile animations */
+        @keyframes bounce-gentle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .animate-bounce-gentle {
+            animation: bounce-gentle 2s infinite ease-in-out;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.6)); }
+            50% { transform: scale(1.03); filter: drop-shadow(0 0 16px rgba(251, 191, 36, 0.9)); }
+        }
+        .animate-pulse-glow {
+            animation: pulse-glow 2.5s infinite;
+        }
+
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-6deg); }
+            75% { transform: rotate(6deg); }
+        }
+        .animate-wiggle {
+            animation: wiggle 0.4s ease-in-out;
+        }
+
+        @keyframes pop-in {
+            0% { transform: scale(0.8); opacity: 0; }
+            80% { transform: scale(1.03); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        .animate-pop {
+            animation: pop-in 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Classroom grid background pattern */
+        .bg-classroom-pattern {
+            background-color: #f0f9ff;
+            background-image: radial-gradient(#bae6fd 1.5px, transparent 1.5px), radial-gradient(#bae6fd 1.5px, #f0f9ff 1.5px);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+        }
+
+        /* 3D Visual buttons */
+        .btn-3d {
+            transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.15s ease;
+        }
+        .btn-3d:active {
+            transform: translateY(4px) !important;
+            box-shadow: 0 2px 0 0 rgba(0,0,0,0.15) !important;
+        }
+
+        /* Ordering slots styling */
+        .order-slot {
+            min-height: 65px;
+            border: 3px dashed #cbd5e1;
+            transition: all 0.2s ease;
+        }
+        .order-slot.has-item {
+            border-style: solid;
+            border-color: #38bdf8;
+            background-color: #f0f9ff;
+        }
+
+        /* Calendar grid cell hover */
+        .cal-day-cell {
+            transition: all 0.15s ease;
+        }
+        .cal-day-cell:hover:not(.disabled) {
+            transform: scale(1.1);
+            z-index: 10;
+        }
+
+
+        /* ===== VER 2: Poppins + Duolingo-inspired nature theme ===== */
+        :root {
+            --kid-blue: #1cb0f6;
+            --kid-blue-dark: #1899d6;
+            --kid-purple: #8b5cf6;
+            --kid-purple-dark: #6d28d9;
+            --kid-yellow: #ffc800;
+            --kid-ink: #26344a;
+            --card-lavender: #f4f1ff;
+            --card-border: #c4b5fd;
+        }
+
+        html, body { min-height: 100%; }
+        body {
+            font-family: 'Poppins', sans-serif !important;
+            color: var(--kid-ink);
+            min-height: 100dvh;
+            background: transparent !important;
+            position: relative;
+            overflow-x: hidden;
+        }
+        .font-game { font-family: 'Poppins', sans-serif !important; font-weight: 800 !important; }
+        .bg-classroom-pattern { background: transparent !important; background-image: none !important; }
+
+        /* Scenic background stays behind every game screen */
+        #nature-background {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+            background: linear-gradient(180deg, #78d4ff 0%, #b9e9ff 53%, #eafaff 100%);
+        }
+        #nature-background .sun-kid {
+            position: absolute; left: 5vw; top: 7vh;
+            width: clamp(58px, 7vw, 92px); aspect-ratio: 1;
+            border-radius: 50%;
+            background: radial-gradient(circle at 34% 30%, #fff7a6 0 18%, #ffd84d 20% 66%, #ffb800 68% 100%);
+            box-shadow: 0 0 0 12px rgba(255,216,77,.18), 0 0 40px rgba(255,196,0,.5);
+            animation: sunFloat 4s ease-in-out infinite alternate;
+        }
+        @keyframes sunFloat { from { transform: scale(1) rotate(-2deg); } to { transform: scale(1.05) rotate(4deg); } }
+
+        #nature-background .rainbow-kid {
+            position: absolute;
+            left: 50%; bottom: 17vh;
+            width: min(76vw, 920px); aspect-ratio: 2 / 1;
+            transform: translateX(-50%);
+            border-radius: 999px 999px 0 0;
+            overflow: hidden;
+            opacity: .64;
+        }
+        #nature-background .rainbow-kid::before {
+            content: '';
+            position: absolute; inset: 0;
+            border-radius: inherit;
+            background: radial-gradient(ellipse at 50% 100%,
+                transparent 0 46%,
+                #ce82ff 46% 51%,
+                #1cb0f6 51% 56%,
+                #58cc02 56% 61%,
+                #ffc800 61% 66%,
+                #ff9600 66% 71%,
+                #ff6b8b 71% 76%,
+                transparent 76% 100%);
+        }
+
+        .cloud-kid { position: absolute; width: 125px; height: 42px; border-radius: 999px; background: rgba(255,255,255,.92); filter: drop-shadow(0 6px 8px rgba(46,116,150,.08)); }
+        .cloud-kid::before, .cloud-kid::after { content: ''; position: absolute; background: inherit; border-radius: 50%; }
+        .cloud-kid::before { width: 54px; height: 54px; left: 18px; top: -26px; }
+        .cloud-kid::after { width: 68px; height: 68px; right: 15px; top: -34px; }
+        .cloud-kid.c1 { top: 15%; left: -160px; animation: cloudMove 34s linear infinite; }
+        .cloud-kid.c2 { top: 31%; left: -200px; transform: scale(.78); animation: cloudMove 47s linear infinite -17s; }
+        .cloud-kid.c3 { top: 9%; left: -170px; transform: scale(.62); animation: cloudMove 41s linear infinite -30s; }
+        @keyframes cloudMove { to { left: calc(100vw + 220px); } }
+
+        .hill-kid { position: absolute; left: -10%; width: 120%; border-radius: 50% 50% 0 0 / 100% 100% 0 0; }
+        .hill-kid.back { height: 32vh; bottom: 9vh; background: linear-gradient(180deg, #8edf55 0%, #58bb3e 100%); }
+        .hill-kid.mid  { height: 27vh; bottom: 2vh; left: -18%; width: 136%; background: linear-gradient(180deg, #73d63b 0%, #46a92d 100%); transform: rotate(1deg); }
+        .grass-kid { position: absolute; left: 0; bottom: 0; width: 100%; height: 17vh; background: linear-gradient(180deg, #63d52c 0%, #45aa20 100%); box-shadow: inset 0 10px 0 rgba(151,236,73,.6); }
+
+        .tree-kid { position: absolute; bottom: 11vh; width: 86px; height: 130px; transform-origin: bottom center; }
+        .tree-kid .trunk { position:absolute; left:35px; bottom:0; width:18px; height:62px; border-radius: 8px 8px 4px 4px; background: linear-gradient(90deg,#70401f,#a76734,#754320); box-shadow: inset -3px 0 rgba(60,30,10,.12); }
+        .tree-kid .crown { position:absolute; left:7px; top:10px; width:73px; height:73px; border-radius:50%; background:#46c933; box-shadow: -24px 20px 0 -7px #3bb82d, 25px 18px 0 -7px #38b82c, 1px -20px 0 -6px #65dc43, -18px -8px 0 -5px #5ad43c, 20px -8px 0 -5px #63d941; }
+        .tree-kid .shine { position:absolute; left:24px; top:20px; width:18px; height:12px; border-radius:50%; background: rgba(255,255,255,.3); transform: rotate(-20deg); }
+        .tree-kid.t1 { left: 5%; transform: scale(1.05); }
+        .tree-kid.t2 { left: 22%; bottom: 15vh; transform: scale(.68); opacity:.95; }
+        .tree-kid.t3 { right: 17%; bottom: 14vh; transform: scale(.78); }
+        .tree-kid.t4 { right: 3%; transform: scale(1.12); }
+
+        .flower-kid { position:absolute; bottom: clamp(16px, 4vh, 42px); font-size: clamp(20px, 2.5vw, 34px); filter: drop-shadow(0 3px 2px rgba(34,92,27,.18)); animation: flowerSway 3.4s ease-in-out infinite alternate; }
+        .flower-kid:nth-of-type(even) { animation-direction: alternate-reverse; }
+        @keyframes flowerSway { from { transform: rotate(-4deg) translateY(0); } to { transform: rotate(5deg) translateY(-3px); } }
+
+        /* UI above the background */
+        header, main, footer { position: relative; z-index: 10; }
+        .top-ui {
+            width: min(1050px, calc(100% - 18px));
+            padding-right: clamp(76px, 14vw, 180px) !important;
+            min-height: 74px;
+        }
+        .logo-safe-zone {
+            position: fixed; right: 10px; top: 10px;
+            width: clamp(68px, 12vw, 164px); height: clamp(58px, 8vw, 92px);
+            z-index: 11; pointer-events: none;
+        }
+        .glass-ui { background: rgba(255,255,255,.88) !important; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-color: rgba(255,255,255,.95) !important; }
+        #screen-home > div, #screen-round-intro, #screen-game-over { position: relative; z-index: 12; }
+        #question-card {
+            background: rgba(255,255,255,.95) !important;
+            border-color: #c4b5fd !important;
+            box-shadow: 0 16px 0 rgba(124, 58, 237, .08), 0 24px 48px rgba(30,64,175,.15) !important;
+            width: 100%;
+            margin-left: auto; margin-right: auto;
+        }
+        #question-text { color: #34446a !important; letter-spacing: -0.02em; }
+        #question-icon img, .kid-icon-img { width: 1.2em; height: 1.2em; object-fit: contain; filter: drop-shadow(0 4px 3px rgba(38,52,74,.12)); }
+        #question-icon { background: #f5f3ff !important; border-color: #ddd6fe !important; }
+
+        .answer-card {
+            background: linear-gradient(145deg, #eef4ff 0%, #f3efff 100%) !important;
+            border: 3px solid #b9a7ff !important;
+            color: #3f3c87 !important;
+            box-shadow: 0 7px 0 #d8d0ff, 0 12px 20px rgba(91,77,175,.10) !important;
+            min-height: 72px;
+        }
+        .answer-card:hover { background: linear-gradient(145deg, #e4efff 0%, #eee8ff 100%) !important; transform: translateY(-2px); }
+        .answer-card:active { transform: translateY(5px) !important; box-shadow: 0 2px 0 #d8d0ff !important; }
+        .answer-card .kid-icon-img { width: 40px; height: 40px; flex: 0 0 auto; }
+
+        #visual-sequence-banner { background: rgba(255,247,214,.93) !important; }
+        #feedback-banner { backdrop-filter: blur(8px); }
+        #screen-game { width: min(100%, 780px) !important; margin-inline: auto; }
+        #screen-game-over { z-index: 20; }
+        #screen-game { position: relative; }
+
+        /* Ver3: compact one-line question on laptop */
+        #question-text {
+            font-size: clamp(1.05rem, 1.65vw, 1.32rem) !important;
+            line-height: 1.2 !important;
+        }
+        @media (min-width: 760px) {
+            #question-text { white-space: nowrap; }
+        }
+
+        /* Ver3: clean icon fallback (prevents stray quote/angle characters) */
+        .kid-icon-wrap { display: inline-flex; align-items: center; justify-content: center; line-height: 1; flex: 0 0 auto; }
+        .kid-icon-fallback { align-items: center; justify-content: center; line-height: 1; }
+
+        /* Ver3: retry behavior colors */
+        .answer-card.answer-wrong {
+            background: linear-gradient(145deg, #ffe4e6 0%, #fecdd3 100%) !important;
+            border-color: #fb7185 !important;
+            color: #9f1239 !important;
+            box-shadow: 0 7px 0 #fda4af, 0 12px 20px rgba(190,24,93,.12) !important;
+        }
+        .answer-card.answer-correct {
+            background: linear-gradient(145deg, #dcfce7 0%, #bbf7d0 100%) !important;
+            border-color: #4ade80 !important;
+            color: #166534 !important;
+            box-shadow: 0 7px 0 #86efac, 0 12px 20px rgba(22,101,52,.12) !important;
+        }
+        .calendar-wrong { background:#fecdd3 !important; border-color:#fb7185 !important; color:#9f1239 !important; }
+        .calendar-correct { background:#86efac !important; border-color:#22c55e !important; color:#14532d !important; box-shadow:0 0 0 4px #dcfce7 !important; }
+        .order-slot.order-wrong { background:#ffe4e6 !important; border-color:#fb7185 !important; animation: wiggle .4s ease-in-out; }
+
+        /* Ver3: on wide laptop landscape, feedback/Next lives beside the question instead of below it */
+        @media (min-width: 1150px) and (orientation: landscape) {
+            #feedback-banner:not(.hidden) {
+                position: absolute;
+                left: calc(100% + 12px);
+                top: 50%;
+                transform: translateY(-38%);
+                width: clamp(170px, 14vw, 205px);
+                min-height: 190px;
+                padding: 14px !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                align-items: stretch !important;
+                gap: 14px !important;
+                z-index: 30;
+                box-shadow: 0 14px 30px rgba(15,23,42,.16);
+            }
+            #feedback-banner > div:first-child { flex-direction: column; gap: 8px !important; text-align: center; }
+            #feedback-banner > div:first-child > div { text-align: center !important; }
+            #feedback-banner #feedback-icon { font-size: 2.2rem !important; }
+            #feedback-banner #feedback-title { font-size: 1.02rem !important; }
+            #feedback-banner #feedback-subtitle { display: none; }
+            #feedback-banner button { width: 100%; padding: 12px 10px !important; white-space: normal !important; line-height: 1.2; }
+        }
+
+        /* Confetti must stay over all game UI */
+        canvas.confetti-canvas { z-index: 99999 !important; }
+
+        @media (max-width: 640px) {
+            .top-ui { padding-left: 10px !important; padding-right: 78px !important; padding-top: 10px !important; gap: 8px; min-height: 64px; }
+            .top-ui button { padding: 9px !important; border-radius: 15px !important; }
+            .score-card-top { padding: 7px 10px !important; gap: 6px !important; margin-left: 4px; }
+            .score-card-top > span { font-size: 1.2rem !important; }
+            .score-card-top #score-display { font-size: 1.35rem !important; }
+            main { padding: 10px !important; justify-content: flex-start !important; }
+            #question-card { padding: 16px !important; border-width: 3px !important; border-radius: 24px !important; margin-bottom: 12px !important; }
+            #question-text { font-size: clamp(1.08rem, 5.2vw, 1.38rem) !important; line-height: 1.3 !important; white-space: normal !important; }
+            #question-icon { font-size: 1.8rem !important; padding: 9px !important; border-radius: 16px !important; }
+            #visual-sequence-banner { gap: 6px !important; padding: 8px !important; }
+            .answer-card { min-height: 62px; padding: 11px 12px !important; font-size: 1rem !important; border-radius: 18px !important; }
+            .answer-card .kid-icon-img { width: 32px; height: 32px; }
+            .cal-day-cell { padding-top: 5px !important; padding-bottom: 5px !important; font-size: 11px !important; }
+            footer { padding: 8px 6px !important; font-size: 10px !important; }
+            .tree-kid.t2, .tree-kid.t3 { display:none; }
+            .rainbow-kid { bottom: 20vh !important; width: 108vw !important; opacity: .48 !important; }
+            .flower-kid { font-size: 20px; }
+        }
+
+        @media (max-height: 700px) and (orientation: landscape) {
+            main { padding-top: 6px !important; padding-bottom: 6px !important; }
+            #question-card { padding: 14px 18px !important; margin-bottom: 10px !important; }
+            #visual-sequence-banner { margin-top: 8px !important; margin-bottom: 8px !important; padding: 7px !important; }
+            #interactive-area { margin-top: 10px !important; }
+            .answer-card { min-height: 56px; padding-top: 9px !important; padding-bottom: 9px !important; }
+            footer { display:none; }
+        }
+
+    </style>
+</head>
+<body class="bg-classroom-pattern min-h-screen text-slate-800 flex flex-col justify-between overflow-x-hidden">
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <div id="nature-background" aria-hidden="true">
+        <div class="sun-kid"></div>
+        <div class="rainbow-kid"></div>
+        <div class="cloud-kid c1"></div><div class="cloud-kid c2"></div><div class="cloud-kid c3"></div>
+        <div class="hill-kid back"></div><div class="hill-kid mid"></div><div class="grass-kid"></div>
+        <div class="tree-kid t1"><span class="trunk"></span><span class="crown"></span><span class="shine"></span></div>
+        <div class="tree-kid t2"><span class="trunk"></span><span class="crown"></span><span class="shine"></span></div>
+        <div class="tree-kid t3"><span class="trunk"></span><span class="crown"></span><span class="shine"></span></div>
+        <div class="tree-kid t4"><span class="trunk"></span><span class="crown"></span><span class="shine"></span></div>
+        <span class="flower-kid" style="left:8%">🌼</span><span class="flower-kid" style="left:16%;bottom:7vh">🌷</span>
+        <span class="flower-kid" style="left:31%">🌸</span><span class="flower-kid" style="left:43%;bottom:6vh">🌻</span>
+        <span class="flower-kid" style="left:58%">🌺</span><span class="flower-kid" style="left:69%;bottom:7vh">🌼</span>
+        <span class="flower-kid" style="left:81%">🌷</span><span class="flower-kid" style="left:92%;bottom:6vh">🌸</span>
+    </div>
+    <div class="logo-safe-zone" aria-label="Reserved space for a logo"></div>
+
+
+    <!-- TOP NAVIGATION BAR -->
+    <header class="top-ui w-full max-w-5xl mx-auto px-4 pt-4 flex items-center gap-3 z-20">
+        <div class="flex items-center gap-2 shrink-0">
+            <button id="home-btn" onclick="goToHome()" class="glass-ui bg-white hover:bg-amber-50 text-amber-600 font-bold p-3 rounded-2xl shadow-md border-b-4 border-amber-300 flex items-center gap-2 text-sm md:text-base btn-3d" title="Home">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l1.293 1.293a1 1 0 001.414-1.414l-7-7z"/></svg>
+                <span class="hidden md:inline font-game">Home</span>
+            </button>
+            <button id="audio-toggle" onclick="toggleAudio()" class="glass-ui bg-white hover:bg-sky-50 text-sky-600 p-3 rounded-2xl shadow-md border-b-4 border-sky-300 flex items-center btn-3d" title="Sound">
+                <span id="sound-icon" class="text-xl">🔊</span>
+            </button>
+        </div>
+
+        <div id="game-badge" class="glass-ui hidden sm:flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md border-2 border-sky-200 min-w-0">
+            <span class="text-2xl animate-bounce-gentle">📅</span>
+            <span class="font-game text-sky-600 text-base lg:text-lg whitespace-nowrap">Days & Months</span>
+        </div>
+
+        <div class="score-card-top glass-ui bg-white px-4 py-2 rounded-2xl shadow-md border-b-4 border-violet-300 flex items-center gap-2 shrink-0">
+            <span class="text-2xl">⭐</span>
+            <div>
+                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Score</div>
+                <div id="score-display" class="text-2xl font-game text-violet-600 leading-none">0</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN GAME CONTAINER -->
+    <main class="w-full max-w-4xl mx-auto px-4 py-4 flex-1 flex flex-col justify-center items-center">
+
+        <!-- SCREEN 1: HOME SCREEN -->
+        <div id="screen-home" class="w-full flex flex-col items-center text-center animate-pop">
+            
+            <!-- Owl Mascot Graphic -->
+            <div class="relative mb-6">
+                <div class="w-40 h-40 md:w-48 md:h-48 bg-amber-300 rounded-full flex items-center justify-center shadow-lg border-4 border-white animate-bounce-gentle">
+                    <svg class="w-32 h-32" viewBox="0 0 100 100">
+                        <path d="M 20 50 Q 20 20 50 20 Q 80 20 80 50 Q 80 85 50 85 Q 20 85 20 50 Z" fill="#fbbf24" stroke="#d97706" stroke-width="3"/>
+                        <path d="M 30 55 Q 50 45 70 55 Q 50 85 30 55 Z" fill="#fef3c7"/>
+                        <polygon points="25,25 35,10 40,28" fill="#d97706"/>
+                        <polygon points="75,25 65,10 60,28" fill="#d97706"/>
+                        <circle cx="38" cy="40" r="12" fill="white" stroke="#d97706" stroke-width="2"/>
+                        <circle cx="38" cy="40" r="6" fill="#1e293b"/>
+                        <circle cx="40" cy="38" r="2" fill="white"/>
+                        
+                        <circle cx="62" cy="40" r="12" fill="white" stroke="#d97706" stroke-width="2"/>
+                        <circle cx="62" cy="40" r="6" fill="#1e293b"/>
+                        <circle cx="64" cy="38" r="2" fill="white"/>
+                        <polygon points="50,45 44,52 56,52" fill="#f97316"/>
+                        <polygon points="50,5 20,16 50,25 80,16" fill="#4f46e5"/>
+                        <rect x="42" y="20" width="16" height="6" fill="#3730a3"/>
+                        <circle cx="75" cy="20" r="3" fill="#fbbf24"/>
+                        <line x1="75" y1="20" x2="70" y2="28" stroke="#fbbf24" stroke-width="2"/>
+                    </svg>
+                </div>
+                <div class="absolute -top-2 -right-8 md:-right-16 bg-white px-4 py-2 rounded-2xl shadow-lg border-2 border-amber-300 font-game text-amber-600 text-sm md:text-base rotate-6">
+                    Hi! Let's Learn! 👋
+                </div>
+            </div>
+
+            <h1 class="text-4xl md:text-6xl font-game text-sky-600 tracking-wide mb-2 drop-shadow-sm">
+                Days & Months
+            </h1>
+            <p class="text-slate-600 text-base md:text-xl font-semibold mb-8 max-w-md">
+                Fun calendar games for smart young learners!
+            </p>
+
+            <button onclick="startGame()" class="bg-emerald-500 hover:bg-emerald-400 text-white font-game text-2xl md:text-3xl px-12 py-5 rounded-3xl shadow-xl border-b-8 border-emerald-700 hover:border-emerald-600 transform transition active:scale-95 animate-pulse-glow flex items-center gap-4 mb-8">
+                <span>PLAY GAME</span>
+                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"/></svg>
+            </button>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-2xl">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-sky-100 flex flex-col items-center">
+                    <span class="text-3xl mb-1">📅</span>
+                    <span class="font-game text-sky-600 text-sm">Round 1</span>
+                    <span class="text-xs text-slate-500 font-bold">7 Days of Week</span>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-indigo-100 flex flex-col items-center">
+                    <span class="text-3xl mb-1">🗓️</span>
+                    <span class="font-game text-indigo-600 text-sm">Round 2</span>
+                    <span class="text-xs text-slate-500 font-bold">12 Months of Year</span>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-purple-100 flex flex-col items-center">
+                    <span class="text-3xl mb-1">🎂</span>
+                    <span class="font-game text-purple-600 text-sm">Round 3</span>
+                    <span class="text-xs text-slate-500 font-bold">Calendar & Birthday</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 2: ROUND TRANSITION -->
+        <div id="screen-round-intro" class="hidden w-full flex flex-col items-center text-center animate-pop">
+            <div id="round-intro-badge" class="px-6 py-2 rounded-full font-game text-lg mb-4 bg-sky-100 text-sky-600">
+                ROUND 1 OF 3
+            </div>
+            <div id="round-intro-icon" class="text-7xl mb-4 animate-bounce-gentle">📅</div>
+            <h2 id="round-intro-title" class="text-3xl md:text-5xl font-game text-slate-800 mb-3">
+                Days of the Week
+            </h2>
+            <p id="round-intro-desc" class="text-slate-600 text-lg md:text-xl max-w-md mb-8">
+                Get ready to answer questions about Monday through Sunday!
+            </p>
+            <button onclick="startCurrentRoundQuestions()" class="bg-sky-500 hover:bg-sky-400 text-white font-game text-2xl px-10 py-4 rounded-2xl shadow-lg border-b-4 border-sky-700 btn-3d">
+                START ROUND ▶
+            </button>
+        </div>
+
+        <!-- SCREEN 3: GAME PLAY SCREEN -->
+        <div id="screen-game" class="hidden w-full max-w-2xl flex flex-col items-center">
+
+            <!-- Progress Bar & Round Badge Header -->
+            <div id="game-progress-card" class="glass-ui w-full bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-4 flex flex-col gap-2">
+                <div class="flex justify-between items-center text-sm font-bold text-slate-500">
+                    <span id="round-tag" class="bg-sky-100 text-sky-700 px-3 py-1 rounded-full font-game text-xs">
+                        Round 1: Days
+                    </span>
+                    <span id="question-progress-text" class="font-game text-slate-600">
+                        Question 1 / 10
+                    </span>
+                </div>
+                <!-- Progress Bar -->
+                <div class="w-full bg-slate-100 h-4 rounded-full overflow-hidden border border-slate-200">
+                    <div id="progress-bar-fill" class="bg-amber-400 h-full rounded-full transition-all duration-500" style="width: 10%;"></div>
+                </div>
+            </div>
+
+            <!-- Main Question Box -->
+            <div id="question-card" class="w-full bg-white rounded-3xl p-6 md:p-8 shadow-xl border-4 border-sky-100 mb-6 relative animate-pop">
+                
+                <div class="flex items-start justify-between gap-4 mb-4">
+                    <div id="question-icon" class="text-4xl p-3 bg-sky-50 rounded-2xl border border-sky-100 flex-shrink-0">
+                        🗓️
+                    </div>
+
+                    <div class="flex-1 text-left">
+                        <span class="text-xs font-bold text-sky-500 uppercase tracking-wider block mb-1">Question</span>
+                        <h3 id="question-text" class="text-2xl md:text-3xl font-game text-slate-800 leading-snug">
+                            Which day comes after Monday?
+                        </h3>
+                    </div>
+
+                    <button onclick="speakQuestion()" class="p-3 bg-violet-100 hover:bg-violet-200 text-violet-700 rounded-2xl text-xl btn-3d shadow-sm flex-shrink-0 border-2 border-violet-200" title="Listen to the question" aria-label="Listen to the question">
+                        🔊
+                    </button>
+                </div>
+
+                <!-- Visual Sequence Context Banner -->
+                <div id="visual-sequence-banner" class="hidden my-4 p-3 bg-amber-50 rounded-2xl border-2 border-amber-200 flex items-center justify-center gap-2 sm:gap-4">
+                    <div id="seq-prev-card" class="bg-white px-3 py-2 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col items-center min-w-[75px] sm:min-w-[100px]">
+                        <span id="seq-prev-icon" class="text-xl sm:text-2xl">📚</span>
+                        <span id="seq-prev-text" class="font-game text-xs sm:text-sm text-slate-700">Monday</span>
+                    </div>
+
+                    <span class="text-amber-400 font-bold text-lg sm:text-xl">➔</span>
+
+                    <div id="seq-target-card" class="bg-amber-300 px-3 py-2 rounded-xl shadow-md border-2 border-amber-400 border-dashed text-center flex flex-col items-center justify-center min-w-[75px] sm:min-w-[100px] animate-pulse">
+                        <span id="seq-target-icon" class="text-2xl sm:text-3xl font-game text-amber-800">❓</span>
+                        <span id="seq-target-text" class="font-game text-xs text-amber-800 font-bold">???</span>
+                    </div>
+
+                    <span class="text-amber-400 font-bold text-lg sm:text-xl">➔</span>
+
+                    <div id="seq-next-card" class="bg-white px-3 py-2 rounded-xl shadow-sm border border-slate-200 text-center flex flex-col items-center min-w-[75px] sm:min-w-[100px]">
+                        <span id="seq-next-icon" class="text-xl sm:text-2xl">🎵</span>
+                        <span id="seq-next-text" class="font-game text-xs sm:text-sm text-slate-700">Wednesday</span>
+                    </div>
+                </div>
+
+                <!-- Interactive Display Area -->
+                <div id="interactive-area" class="mt-6">
+                    <!-- Dynamic choices, order slots, or calendar rendered here via JS -->
+                </div>
+            </div>
+
+            <!-- Mascot Feedback Banner -->
+            <div id="feedback-banner" class="hidden w-full bg-emerald-100 border-2 border-emerald-400 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 animate-pop">
+                <div class="flex items-center gap-4">
+                    <span id="feedback-icon" class="text-4xl">🌟</span>
+                    <div class="text-left">
+                        <h4 id="feedback-title" class="font-game text-emerald-800 text-xl">Awesome job!</h4>
+                        <p id="feedback-subtitle" class="text-emerald-700 text-sm font-semibold">Tuesday comes right after Monday!</p>
+                    </div>
+                </div>
+                <button onclick="nextQuestion()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-game px-6 py-3 rounded-xl shadow-md border-b-4 border-emerald-800 btn-3d whitespace-nowrap">
+                    Next Question ➔
+                </button>
+            </div>
+
+        </div>
+
+        <!-- SCREEN 4: GAME OVER / CELEBRATION -->
+        <div id="screen-game-over" class="hidden glass-ui w-full max-w-xl bg-white rounded-3xl p-8 shadow-2xl border-4 border-violet-200 text-center animate-pop">
+            <div class="text-6xl mb-2 animate-bounce-gentle">🏆</div>
+            <h2 class="text-3xl md:text-5xl font-game text-violet-600 mb-2">Great Job!</h2>
+            <p class="text-slate-600 font-semibold mb-6">You finished the Days & Months Challenge!</p>
+
+            <div id="star-rating" class="flex justify-center gap-3 text-5xl mb-6">
+                <span>⭐</span>
+                <span>⭐</span>
+                <span>⭐</span>
+            </div>
+
+            <div class="bg-violet-50 p-6 rounded-2xl border border-violet-200 mb-8 flex items-center justify-around">
+                <div>
+                    <span class="text-xs font-bold text-amber-600 uppercase block">Total Questions</span>
+                    <span id="final-total" class="font-game text-3xl text-slate-700">10</span>
+                </div>
+                <div class="h-10 w-0.5 bg-amber-200"></div>
+                <div>
+                    <span class="text-xs font-bold text-amber-600 uppercase block">Correct Answers</span>
+                    <span id="final-score" class="font-game text-4xl text-emerald-600">10</span>
+                </div>
+            </div>
+
+            <div id="final-message" class="font-game text-sky-600 text-xl mb-8">
+                You are a Calendar Superstar! 🌟
+            </div>
+
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <button onclick="startGame()" class="bg-emerald-500 hover:bg-emerald-400 text-white font-game text-xl px-8 py-4 rounded-2xl shadow-lg border-b-4 border-emerald-700 btn-3d flex items-center justify-center gap-2">
+                    <span>🔄 Play Again</span>
+                </button>
+                <button onclick="goToHome()" class="bg-sky-500 hover:bg-sky-400 text-white font-game text-xl px-8 py-4 rounded-2xl shadow-lg border-b-4 border-sky-700 btn-3d flex items-center justify-center gap-2">
+                    <span>🏠 Main Menu</span>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="w-full text-center py-4 text-xs font-bold text-slate-400">
+        Interactive Days & Months Game • Designed for Young ESL Learners
+    </footer>
+
+    <script>
+        // Data Definitions
+        const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+        const MONTHS = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
+
+        const MONTH_ICONS = {
+            "January": "❄️", "February": "💘", "March": "🌱", "April": "🌧️",
+            "May": "🌸", "June": "☀️", "July": "🏖️", "August": "🌻",
+            "September": "🎒", "October": "🎃", "November": "🍂", "December": "🎄"
+        };
+
+        const DAY_ICONS = {
+            "Monday": "📚", "Tuesday": "🎨", "Wednesday": "🎵", "Thursday": "⚽",
+            "Friday": "🚀", "Saturday": "🎈", "Sunday": "☀️"
+        };
+
+        // Game State Variables
+        let currentScore = 0;
+        let currentQuestionIndex = 0;
+        let totalQuestions = 10;
+        let questionsList = [];
+        let isAudioMuted = false;
+        let selectedOrderingItems = [];
+        let hasAnsweredCurrent = false;
+        let hadWrongAttemptCurrent = false;
+        let synth = null;
+
+        // Initialize Audio Synthesizer
+        function initAudio() {
+            if (!synth && typeof Tone !== 'undefined') {
+                try {
+                    synth = new Tone.Synth().toDestination();
+                } catch (e) {
+                    console.log("Audio synth deferral");
+                }
+            }
+        }
+
+        function playSound(type) {
+            if (isAudioMuted) return;
+            initAudio();
+            if (!synth) return;
+
+            try {
+                const now = Tone.now();
+                if (type === 'correct') {
+                    const poly = new Tone.PolySynth().toDestination();
+                    poly.triggerAttackRelease(["C5", "E5", "G5", "C6"], "8n", now);
+                } else if (type === 'wrong') {
+                    synth.triggerAttackRelease("G3", "8n", now);
+                    synth.triggerAttackRelease("C3", "8n", now + 0.15);
+                } else if (type === 'click') {
+                    synth.triggerAttackRelease("E5", "16n", now);
+                } else if (type === 'win') {
+                    const poly = new Tone.PolySynth().toDestination();
+                    poly.triggerAttackRelease(["C5", "E5", "G5", "C6"], "4n", now);
+                }
+            } catch (e) {
+                // Ignore audio failures
+            }
+        }
+
+        function toggleAudio() {
+            isAudioMuted = !isAudioMuted;
+            document.getElementById('sound-icon').innerText = isAudioMuted ? '🔇' : '🔊';
+        }
+
+        function speakQuestion() {
+            const question = questionsList[currentQuestionIndex];
+            if (!question) return;
+
+            let speechText = question.questionText;
+            if (question.speechText) {
+                speechText = question.speechText;
+            } else if (question.type === 'order') {
+                speechText = "Put these items in correct order: " + question.items.join(", ");
+            }
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(speechText);
+                utterance.rate = 0.85;
+                utterance.pitch = 1.1;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+
+        function emojiCodePoint(emoji) {
+            return Array.from(emoji).map(ch => ch.codePointAt(0).toString(16)).filter(code => code !== 'fe0f').join('-');
+        }
+
+        function iconMarkup(emoji, alt = '') {
+            const code = emojiCodePoint(emoji);
+            const safeAlt = alt.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+            const safeEmoji = emoji.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return `<span class="kid-icon-wrap" aria-label="${safeAlt}"><img class="kid-icon-img" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/${code}.svg" alt="${safeAlt}" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-flex'"><span class="kid-icon-fallback" style="display:none">${safeEmoji}</span></span>`;
+        }
+
+        function celebrateSmall() {
+            if (typeof confetti !== 'function') return;
+            confetti({
+                particleCount: 34,
+                spread: 55,
+                startVelocity: 22,
+                gravity: 0.8,
+                scalar: 0.8,
+                origin: { y: 0.72 },
+                zIndex: 99999
+            });
+        }
+
+        function buildSequenceQuestion(source, icons, category, roundLabel, targetIndex, isAfter) {
+            const target = source[targetIndex];
+            const correctAnswer = isAfter
+                ? source[(targetIndex + 1) % source.length]
+                : source[(targetIndex - 1 + source.length) % source.length];
+            const prevItem = isAfter
+                ? target
+                : source[(targetIndex - 2 + source.length) % source.length];
+            const nextItem = isAfter
+                ? source[(targetIndex + 2) % source.length]
+                : target;
+            const choices = [correctAnswer];
+            while (choices.length < 4) {
+                const item = source[getRandomInt(0, source.length - 1)];
+                if (!choices.includes(item)) choices.push(item);
+            }
+            return {
+                id: `${category}-${target}-${isAfter ? 'after' : 'before'}`,
+                type: 'mc',
+                round: roundLabel,
+                category,
+                questionText: `Which ${category === 'days' ? 'day' : 'month'} comes ${isAfter ? 'after' : 'before'} ${target}?`,
+                icon: icons[target] || (category === 'days' ? '📅' : '🗓️'),
+                correctAnswer,
+                options: shuffleArray(choices),
+                explanation: `${correctAnswer} comes ${isAfter ? 'after' : 'before'} ${target}!`,
+                visualSequence: {
+                    prev: prevItem,
+                    prevIcon: icons[prevItem] || '📅',
+                    next: nextItem,
+                    nextIcon: icons[nextItem] || '📅'
+                }
+            };
+        }
+
+        function generateDayQuestions(count) {
+            const pool = [];
+            DAYS.forEach((_, index) => {
+                pool.push(buildSequenceQuestion(DAYS, DAY_ICONS, 'days', 'Round 1: Days', index, true));
+                pool.push(buildSequenceQuestion(DAYS, DAY_ICONS, 'days', 'Round 1: Days', index, false));
+            });
+            return shuffleArray(pool).slice(0, Math.min(count, pool.length));
+        }
+
+        function generateMonthQuestions(count) {
+            const pool = [];
+            MONTHS.forEach((_, index) => {
+                pool.push(buildSequenceQuestion(MONTHS, MONTH_ICONS, 'months', 'Round 2: Months', index, true));
+                pool.push(buildSequenceQuestion(MONTHS, MONTH_ICONS, 'months', 'Round 2: Months', index, false));
+            });
+            return shuffleArray(pool).slice(0, Math.min(count, pool.length));
+        }
+
+        function makeOrderingQuestion(source, icons, category, startIndex) {
+            const correctSequence = source.slice(startIndex, startIndex + 3);
+            return {
+                id: `order-${category}-${correctSequence.join('-')}`,
+                type: 'order',
+                round: 'Round 3: Challenge',
+                category,
+                questionText: `Put these ${category === 'days' ? 'days' : 'months'} in the correct order.`,
+                speechText: `Put these ${category === 'days' ? 'days' : 'months'} in the correct order: ${correctSequence.join(', ')}.`,
+                icon: category === 'days' ? '📅' : '🗓️',
+                correctSequence,
+                items: shuffleArray(correctSequence),
+                explanation: `Correct order: ${correctSequence.join(' → ')}`
+            };
+        }
+
+        function generateOrderingQuestions(count) {
+            const dayPool = [];
+            const monthPool = [];
+            for (let i = 0; i <= DAYS.length - 3; i++) dayPool.push(makeOrderingQuestion(DAYS, DAY_ICONS, 'days', i));
+            for (let i = 0; i <= MONTHS.length - 3; i++) monthPool.push(makeOrderingQuestion(MONTHS, MONTH_ICONS, 'months', i));
+            const mixed = [];
+            if (count > 0) mixed.push(shuffleArray(dayPool)[0]);
+            if (count > 1) mixed.push(shuffleArray(monthPool)[0]);
+            if (count > 2) {
+                const remaining = shuffleArray([...dayPool.slice(1), ...monthPool.slice(1)]);
+                mixed.push(...remaining.slice(0, count - 2));
+            }
+            return mixed;
+        }
+
+        function getDaysInMonth(monthIndex, year = 2026) {
+            return new Date(year, monthIndex + 1, 0).getDate();
+        }
+
+        function getMonthStartOffset(monthIndex, year = 2026) {
+            return new Date(year, monthIndex, 1).getDay();
+        }
+
+        function makeCalendarPickQuestion() {
+            const monthIndex = getRandomInt(0, 11);
+            const month = MONTHS[monthIndex];
+            const daysInMonth = getDaysInMonth(monthIndex);
+            const date = getRandomInt(2, Math.min(28, daysInMonth));
+            const names = ['Ben', 'Mia', 'Leo', 'Emma', 'Noah', 'Lily'];
+            const speakerName = names[getRandomInt(0, names.length - 1)];
+            return {
+                id: `calendar-pick-${month}-${date}`,
+                type: 'calendar-pick',
+                round: 'Round 3: Challenge',
+                category: 'calendar',
+                questionText: 'Tap the correct date on the calendar.',
+                speechText: `My birthday is on ${date} ${month}.`,
+                speakerName,
+                characterSpeech: `My birthday is on ${date} ${month}. 🎂`,
+                targetMonth: month,
+                targetMonthIndex: monthIndex,
+                daysInMonth,
+                startOffsetDay: getMonthStartOffset(monthIndex),
+                correctDate: date,
+                icon: '🎂',
+                explanation: `${date} ${month} is the correct date!`
+            };
+        }
+
+        function makeCalendarReadQuestion() {
+            const monthIndex = getRandomInt(0, 11);
+            const month = MONTHS[monthIndex];
+            const daysInMonth = getDaysInMonth(monthIndex);
+            const date = getRandomInt(4, Math.min(27, daysInMonth));
+            const wrongDate1 = date > 10 ? date - 10 : date + 10;
+            const wrongDate2 = date > 5 ? date - 3 : date + 3;
+            const otherMonth = MONTHS[(monthIndex + getRandomInt(1, 10)) % 12];
+            const correct = `Anna's birthday is on ${date} ${month}.`;
+            const options = shuffleArray([
+                correct,
+                `Anna's birthday is on ${wrongDate1} ${month}.`,
+                `Anna's birthday is on ${date} ${otherMonth}.`,
+                `Anna's birthday is on ${wrongDate2} ${month}.`
+            ]);
+            return {
+                id: `calendar-read-${month}-${date}`,
+                type: 'calendar-read',
+                round: 'Round 3: Challenge',
+                category: 'calendar',
+                questionText: "Look at Anna's calendar. Choose the correct sentence.",
+                speechText: "Look at Anna's calendar. Choose the correct sentence.",
+                targetMonth: month,
+                daysInMonth,
+                startOffsetDay: getMonthStartOffset(monthIndex),
+                highlightedDate: date,
+                highlightLabel: "Anna's Birthday",
+                icon: '🎈',
+                correctAnswer: correct,
+                options,
+                explanation: `The calendar shows Anna's birthday is on ${date} ${month}! 🎉`
+            };
+        }
+
+        function showScreen(screenId) {
+            ['screen-home', 'screen-round-intro', 'screen-game', 'screen-game-over'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+        }
+
+        function goToHome() {
+            playSound('click');
+            showScreen('screen-home');
+        }
+
+        function startGame() {
+            playSound('click');
+            if (typeof Tone !== 'undefined' && Tone.start) {
+                Tone.start().catch(() => {});
+            }
+            currentScore = 0;
+            currentQuestionIndex = 0;
+            document.getElementById('score-display').innerText = currentScore;
+
+            // 10 unique questions per play session:
+            // 3 Days + 3 Months + 2 Ordering + 2 randomized Calendar challenges.
+            const r1 = generateDayQuestions(3);
+            const r2 = generateMonthQuestions(3);
+            const r3Order = generateOrderingQuestions(2);
+            let q9 = makeCalendarPickQuestion();
+            let q10 = makeCalendarReadQuestion();
+            while (q10.id === q9.id) q10 = makeCalendarReadQuestion();
+
+            questionsList = [...r1, ...r2, ...r3Order, q9, q10];
+            const seen = new Set();
+            questionsList = questionsList.filter(q => {
+                if (seen.has(q.id)) return false;
+                seen.add(q.id);
+                return true;
+            });
+
+            // Defensive fill: keep exactly 10 even in an unlikely duplicate edge case.
+            while (questionsList.length < 10) {
+                const extra = generateMonthQuestions(8).find(q => !seen.has(q.id));
+                if (!extra) break;
+                seen.add(extra.id);
+                questionsList.splice(Math.min(6, questionsList.length), 0, extra);
+            }
+            questionsList = questionsList.slice(0, 10);
+            totalQuestions = questionsList.length;
+
+            showRoundIntro(1);
+        }
+
+        function showRoundIntro(roundNum) {
+            const introTitle = document.getElementById('round-intro-title');
+            const introDesc = document.getElementById('round-intro-desc');
+            const introIcon = document.getElementById('round-intro-icon');
+            const introBadge = document.getElementById('round-intro-badge');
+
+            if (roundNum === 1) {
+                introBadge.innerText = "ROUND 1 OF 3";
+                introIcon.innerText = "📅";
+                introTitle.innerText = "Days of the Week";
+                introDesc.innerText = "Let's test what day comes before or after!";
+            } else if (roundNum === 2) {
+                introBadge.innerText = "ROUND 2 OF 3";
+                introIcon.innerText = "🗓️";
+                introTitle.innerText = "Months of the Year";
+                introDesc.innerText = "Can you remember all 12 months in order?";
+            } else {
+                introBadge.innerText = "ROUND 3 OF 3";
+                introIcon.innerText = "⚡";
+                introTitle.innerText = "Super Challenge!";
+                introDesc.innerText = "Calendar reading & birthday date challenges!";
+            }
+
+            showScreen('screen-round-intro');
+        }
+
+        function startCurrentRoundQuestions() {
+            playSound('click');
+            showScreen('screen-game');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            hasAnsweredCurrent = false;
+            hadWrongAttemptCurrent = false;
+            const question = questionsList[currentQuestionIndex];
+            if (!question) {
+                endGame();
+                return;
+            }
+
+            // Hide feedback banner
+            document.getElementById('feedback-banner').classList.add('hidden');
+
+            // Update Progress Header
+            document.getElementById('round-tag').innerText = question.round;
+            document.getElementById('question-progress-text').innerText = `Question ${currentQuestionIndex + 1} / ${totalQuestions}`;
+            
+            const progressPercent = ((currentQuestionIndex + 1) / totalQuestions) * 100;
+            document.getElementById('progress-bar-fill').style.width = `${progressPercent}%`;
+
+            // Question text & main icon
+            document.getElementById('question-text').innerText = question.questionText;
+            document.getElementById('question-icon').innerHTML = iconMarkup(question.icon, 'Question picture');
+
+            // Visual sequence banner logic
+            const seqBanner = document.getElementById('visual-sequence-banner');
+            if (question.visualSequence) {
+                seqBanner.classList.remove('hidden');
+                document.getElementById('seq-prev-icon').innerHTML = iconMarkup(question.visualSequence.prevIcon, question.visualSequence.prev);
+                document.getElementById('seq-prev-text').innerText = question.visualSequence.prev;
+                document.getElementById('seq-next-icon').innerHTML = iconMarkup(question.visualSequence.nextIcon, question.visualSequence.next);
+                document.getElementById('seq-next-text').innerText = question.visualSequence.next;
+            } else {
+                seqBanner.classList.add('hidden');
+            }
+
+            // Render Interactive Area
+            const interactiveArea = document.getElementById('interactive-area');
+            interactiveArea.innerHTML = '';
+
+            if (question.type === 'mc') {
+                renderMultipleChoice(question, interactiveArea);
+            } else if (question.type === 'order') {
+                renderOrderingInterface(question, interactiveArea);
+            } else if (question.type === 'calendar-pick') {
+                renderCalendarPickInterface(question, interactiveArea);
+            } else if (question.type === 'calendar-read') {
+                renderCalendarReadInterface(question, interactiveArea);
+            }
+
+            speakQuestion();
+        }
+
+        function renderMultipleChoice(question, container) {
+            const grid = document.createElement('div');
+            grid.className = "grid grid-cols-1 sm:grid-cols-2 gap-4 w-full";
+
+            question.options.forEach(option => {
+                const icon = (question.category === 'days') ? (DAY_ICONS[option] || '📅') : (MONTH_ICONS[option] || '🗓️');
+                const btn = document.createElement('button');
+                btn.className = "choice-btn answer-card font-game text-xl p-4 rounded-2xl flex items-center justify-center sm:justify-start gap-3 transition-all btn-3d";
+                btn.onclick = () => checkMultipleChoiceAnswer(option, question, btn);
+
+                btn.innerHTML = `
+                    <span>${iconMarkup(icon, option)}</span>
+                    <span>${option}</span>
+                `;
+                grid.appendChild(btn);
+            });
+
+            container.appendChild(grid);
+        }
+
+        function renderOrderingInterface(question, container) {
+            selectedOrderingItems = [];
+            const wrapper = document.createElement('div');
+            wrapper.className = "flex flex-col items-center gap-4 w-full";
+
+            const notice = document.createElement('div');
+            notice.className = "text-xs font-bold text-slate-400 uppercase tracking-wider mb-1";
+            notice.innerText = "Tap the cards in the correct order.";
+            wrapper.appendChild(notice);
+
+            const slotsContainer = document.createElement('div');
+            slotsContainer.className = "grid grid-cols-3 gap-2 w-full";
+            
+            for (let i = 0; i < question.items.length; i++) {
+                const slot = document.createElement('div');
+                slot.id = `order-slot-${i}`;
+                slot.className = "order-slot rounded-2xl flex flex-col items-center justify-center p-2 text-center bg-slate-50";
+                slot.innerHTML = `<span class="text-slate-300 font-game text-xl">${i + 1}</span>`;
+                slotsContainer.appendChild(slot);
+            }
+            wrapper.appendChild(slotsContainer);
+
+            const poolContainer = document.createElement('div');
+            poolContainer.id = "order-pool";
+            poolContainer.className = "flex flex-wrap justify-center gap-2 mt-4 w-full";
+
+            question.items.forEach(item => {
+                const icon = (question.category === 'days') ? (DAY_ICONS[item] || '📅') : (MONTH_ICONS[item] || '🗓️');
+                const itemBtn = document.createElement('button');
+                itemBtn.id = `item-btn-${item}`;
+                itemBtn.className = "answer-card font-game px-4 py-3 rounded-xl flex items-center gap-2 btn-3d";
+                itemBtn.innerHTML = `<span>${iconMarkup(icon, item)}</span><span>${item}</span>`;
+                itemBtn.onclick = () => selectOrderingItem(item, question);
+                poolContainer.appendChild(itemBtn);
+            });
+
+            wrapper.appendChild(poolContainer);
+
+            const actionRow = document.createElement('div');
+            actionRow.className = "flex items-center gap-3 mt-4";
+
+            const resetBtn = document.createElement('button');
+            resetBtn.className = "bg-slate-200 hover:bg-slate-300 text-slate-700 font-game px-4 py-2 rounded-xl text-sm btn-3d";
+            resetBtn.innerText = "Reset 🔄";
+            resetBtn.onclick = () => resetOrderingSelection(question);
+
+            const checkBtn = document.createElement('button');
+            checkBtn.id = "check-order-btn";
+            checkBtn.className = "bg-emerald-500 hover:bg-emerald-400 text-white font-game px-6 py-2.5 rounded-xl text-base border-b-4 border-emerald-700 btn-3d opacity-50 cursor-not-allowed";
+            checkBtn.disabled = true;
+            checkBtn.innerText = "Check Order ✨";
+            checkBtn.onclick = () => checkOrderingAnswer(question);
+
+            actionRow.appendChild(resetBtn);
+            actionRow.appendChild(checkBtn);
+            wrapper.appendChild(actionRow);
+
+            container.appendChild(wrapper);
+        }
+
+        // QUESTION 9: Interactive Calendar Pick
+        function renderCalendarPickInterface(question, container) {
+            const wrapper = document.createElement('div');
+            wrapper.className = "flex flex-col items-center gap-4 w-full";
+
+            // Character speech bubble prompt
+            const speechBanner = document.createElement('div');
+            speechBanner.className = "bg-amber-100 border-2 border-amber-300 rounded-2xl p-4 flex items-center gap-3 w-full animate-bounce-gentle";
+            speechBanner.innerHTML = `
+                <div class="text-4xl">👦</div>
+                <div>
+                    <span class="text-xs font-bold text-amber-700 uppercase block">${question.speakerName} says:</span>
+                    <span class="font-game text-amber-900 text-lg md:text-xl">"${question.characterSpeech}"</span>
+                </div>
+            `;
+            wrapper.appendChild(speechBanner);
+
+            // Calendar Card
+            const calCard = createCalendarGrid({
+                monthTitle: question.targetMonth,
+                daysInMonth: question.daysInMonth,
+                offset: question.startOffsetDay,
+                onDayClick: (dayNum, dayBtn) => checkCalendarPickAnswer(dayNum, question, dayBtn)
+            });
+
+            wrapper.appendChild(calCard);
+            container.appendChild(wrapper);
+        }
+
+        // QUESTION 10: Calendar Statement Reading
+        function renderCalendarReadInterface(question, container) {
+            const wrapper = document.createElement('div');
+            wrapper.className = "flex flex-col items-center gap-6 w-full";
+
+            // Calendar Card with circled date
+            const calCard = createCalendarGrid({
+                monthTitle: question.targetMonth,
+                daysInMonth: question.daysInMonth,
+                offset: question.startOffsetDay,
+                highlightDay: question.highlightedDate,
+                highlightLabel: question.highlightLabel
+            });
+
+            wrapper.appendChild(calCard);
+
+            // Options List
+            const optionsBox = document.createElement('div');
+            optionsBox.className = "grid grid-cols-1 sm:grid-cols-2 gap-3 w-full";
+
+            question.options.forEach(optText => {
+                const btn = document.createElement('button');
+                btn.className = "statement-btn answer-card font-game text-base md:text-lg p-4 rounded-2xl text-left btn-3d flex items-center gap-3";
+                btn.innerHTML = `
+                    <span class="text-xl">📌</span>
+                    <span>${optText}</span>
+                `;
+                btn.onclick = () => checkStatementAnswer(optText, question, btn);
+                optionsBox.appendChild(btn);
+            });
+
+            wrapper.appendChild(optionsBox);
+            container.appendChild(wrapper);
+        }
+
+        // Helper to construct a responsive mini-calendar element
+        function createCalendarGrid({ monthTitle, daysInMonth, offset, highlightDay, highlightLabel, onDayClick }) {
+            const calCard = document.createElement('div');
+            calCard.className = "bg-white border-4 border-indigo-200 rounded-3xl shadow-lg p-4 w-full max-w-md mx-auto";
+
+            // Header
+            const header = document.createElement('div');
+            header.className = "bg-indigo-600 text-white font-game text-xl rounded-2xl py-2 px-4 text-center mb-3 flex items-center justify-between shadow-inner";
+            header.innerHTML = `<span>🗓️ ${monthTitle.toUpperCase()}</span><span class="text-xs bg-indigo-500 px-2 py-1 rounded-lg">2026</span>`;
+            calCard.appendChild(header);
+
+            // Weekday Headers
+            const daysHeader = document.createElement('div');
+            daysHeader.className = "grid grid-cols-7 gap-1 text-center font-bold text-xs text-indigo-400 mb-2";
+            ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach(d => {
+                const cell = document.createElement('div');
+                cell.innerText = d;
+                daysHeader.appendChild(cell);
+            });
+            calCard.appendChild(daysHeader);
+
+            // Days Grid
+            const grid = document.createElement('div');
+            grid.className = "grid grid-cols-7 gap-1.5 text-center";
+
+            // Offsets (empty cells)
+            for (let i = 0; i < offset; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = "p-2";
+                grid.appendChild(emptyCell);
+            }
+
+            // Day cells
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dayBtn = document.createElement('button');
+                dayBtn.className = "cal-day-cell relative py-2 font-game text-sm rounded-xl transition border flex flex-col items-center justify-center";
+
+                if (highlightDay && d === highlightDay) {
+                    dayBtn.className += " bg-rose-500 text-white border-rose-600 shadow-md ring-4 ring-rose-200 font-bold animate-pulse z-10";
+                    dayBtn.innerHTML = `
+                        <span>${d}</span>
+                        <span class="text-[10px] uppercase font-bold tracking-tight leading-none bg-rose-700 px-1 py-0.5 rounded mt-0.5">${highlightLabel || 'Birthday'}</span>
+                    `;
+                } else {
+                    dayBtn.className += " bg-slate-50 hover:bg-sky-100 text-slate-700 border-slate-200";
+                    dayBtn.innerText = d;
+                }
+
+                if (onDayClick) {
+                    dayBtn.onclick = () => onDayClick(d, dayBtn);
+                } else {
+                    dayBtn.classList.add('cursor-default');
+                }
+
+                grid.appendChild(dayBtn);
+            }
+
+            calCard.appendChild(grid);
+            return calCard;
+        }
+
+        function checkCalendarPickAnswer(selectedDay, question, dayBtn) {
+            if (hasAnsweredCurrent || dayBtn.classList.contains('calendar-wrong')) return;
+
+            if (selectedDay === question.correctDate) {
+                hasAnsweredCurrent = true;
+                const allDayButtons = document.querySelectorAll('.cal-day-cell');
+                allDayButtons.forEach(b => b.classList.add('pointer-events-none'));
+
+                playSound('correct');
+                celebrateSmall();
+                dayBtn.classList.add('calendar-correct', 'animate-wiggle');
+                if (!hadWrongAttemptCurrent) {
+                    currentScore++;
+                    document.getElementById('score-display').innerText = currentScore;
+                }
+                showFeedback(true, hadWrongAttemptCurrent ? "You Got It! 🎉" : "Correct Date! 🎉", question.explanation);
+            } else {
+                hadWrongAttemptCurrent = true;
+                playSound('wrong');
+                dayBtn.classList.add('calendar-wrong', 'animate-wiggle', 'pointer-events-none');
+                setTimeout(() => dayBtn.classList.remove('animate-wiggle'), 450);
+            }
+        }
+
+        function checkStatementAnswer(selectedOption, question, clickedBtn) {
+            if (hasAnsweredCurrent || clickedBtn.classList.contains('answer-wrong')) return;
+
+            if (selectedOption === question.correctAnswer) {
+                hasAnsweredCurrent = true;
+                const buttons = document.querySelectorAll('.statement-btn');
+                buttons.forEach(b => b.classList.add('pointer-events-none'));
+
+                playSound('correct');
+                celebrateSmall();
+                clickedBtn.classList.remove('answer-wrong');
+                clickedBtn.classList.add('answer-correct', 'animate-wiggle');
+                if (!hadWrongAttemptCurrent) {
+                    currentScore++;
+                    document.getElementById('score-display').innerText = currentScore;
+                }
+                showFeedback(true, hadWrongAttemptCurrent ? "You Got It! 🌟" : "Spot On! 🌟", question.explanation);
+            } else {
+                hadWrongAttemptCurrent = true;
+                playSound('wrong');
+                clickedBtn.classList.add('answer-wrong', 'animate-wiggle', 'pointer-events-none');
+                setTimeout(() => clickedBtn.classList.remove('animate-wiggle'), 450);
+            }
+        }
+
+        function selectOrderingItem(item, question) {
+            if (hasAnsweredCurrent) return;
+            if (selectedOrderingItems.includes(item)) return;
+            if (selectedOrderingItems.length >= question.items.length) return;
+
+            playSound('click');
+            selectedOrderingItems.push(item);
+
+            const slotIndex = selectedOrderingItems.length - 1;
+            const slot = document.getElementById(`order-slot-${slotIndex}`);
+            const icon = (question.category === 'days') ? (DAY_ICONS[item] || '📅') : (MONTH_ICONS[item] || '🗓️');
+
+            slot.classList.add('has-item');
+            slot.innerHTML = `
+                <span>${iconMarkup(icon, item)}</span>
+                <span class="font-game text-xs text-violet-800">${item}</span>
+            `;
+
+            const btn = document.getElementById(`item-btn-${item}`);
+            if (btn) {
+                btn.classList.add('opacity-40', 'pointer-events-none');
+            }
+
+            if (selectedOrderingItems.length === question.items.length) {
+                const checkBtn = document.getElementById('check-order-btn');
+                checkBtn.disabled = false;
+                checkBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                checkBtn.classList.add('animate-pulse');
+            }
+        }
+
+        function resetOrderingSelection(question) {
+            if (hasAnsweredCurrent) return;
+            playSound('click');
+            selectedOrderingItems = [];
+
+            for (let i = 0; i < question.items.length; i++) {
+                const slot = document.getElementById(`order-slot-${i}`);
+                if (slot) {
+                    slot.classList.remove('has-item');
+                    slot.innerHTML = `<span class="text-slate-300 font-game text-xl">${i + 1}</span>`;
+                }
+            }
+
+            question.items.forEach(item => {
+                const btn = document.getElementById(`item-btn-${item}`);
+                if (btn) {
+                    btn.classList.remove('opacity-40', 'pointer-events-none');
+                }
+            });
+
+            const checkBtn = document.getElementById('check-order-btn');
+            if (checkBtn) {
+                checkBtn.disabled = true;
+                checkBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                checkBtn.classList.remove('animate-pulse');
+            }
+        }
+
+        function checkMultipleChoiceAnswer(selectedOption, question, clickedBtn) {
+            if (hasAnsweredCurrent || clickedBtn.classList.contains('answer-wrong')) return;
+
+            if (selectedOption === question.correctAnswer) {
+                hasAnsweredCurrent = true;
+                const buttons = document.querySelectorAll('.choice-btn');
+                buttons.forEach(b => b.classList.add('pointer-events-none'));
+
+                playSound('correct');
+                celebrateSmall();
+                clickedBtn.classList.remove('answer-wrong');
+                clickedBtn.classList.add('answer-correct', 'animate-wiggle');
+
+                if (!hadWrongAttemptCurrent) {
+                    currentScore++;
+                    document.getElementById('score-display').innerText = currentScore;
+                }
+
+                showFeedback(true, hadWrongAttemptCurrent ? "You Got It! 🌟" : "Super Star! 🌟", question.explanation);
+            } else {
+                hadWrongAttemptCurrent = true;
+                playSound('wrong');
+                clickedBtn.classList.add('answer-wrong', 'animate-wiggle', 'pointer-events-none');
+                setTimeout(() => clickedBtn.classList.remove('animate-wiggle'), 450);
+            }
+        }
+
+        function checkOrderingAnswer(question) {
+            if (hasAnsweredCurrent) return;
+            const isCorrect = JSON.stringify(selectedOrderingItems) === JSON.stringify(question.correctSequence);
+
+            if (isCorrect) {
+                hasAnsweredCurrent = true;
+                playSound('correct');
+                celebrateSmall();
+                if (!hadWrongAttemptCurrent) {
+                    currentScore++;
+                    document.getElementById('score-display').innerText = currentScore;
+                }
+                showFeedback(true, hadWrongAttemptCurrent ? "You Got It! 🎉" : "Perfect Order! 🎉", question.explanation);
+            } else {
+                hadWrongAttemptCurrent = true;
+                playSound('wrong');
+                const slots = document.querySelectorAll('.order-slot');
+                slots.forEach(slot => slot.classList.add('order-wrong'));
+                setTimeout(() => {
+                    slots.forEach(slot => slot.classList.remove('order-wrong'));
+                    resetOrderingSelection(question);
+                }, 550);
+            }
+        }
+
+        function showFeedback(isCorrect, title, subtitle) {
+            const banner = document.getElementById('feedback-banner');
+            const icon = document.getElementById('feedback-icon');
+            const titleEl = document.getElementById('feedback-title');
+            const subEl = document.getElementById('feedback-subtitle');
+
+            banner.classList.remove('hidden', 'bg-emerald-100', 'border-emerald-400', 'bg-amber-100', 'border-amber-400');
+
+            if (isCorrect) {
+                banner.classList.add('bg-emerald-100', 'border-emerald-400');
+                icon.innerText = "🌟";
+                titleEl.className = "font-game text-emerald-800 text-xl";
+                subEl.className = "text-emerald-700 text-sm font-semibold";
+            } else {
+                banner.classList.add('bg-amber-100', 'border-amber-400');
+                icon.innerText = "💡";
+                titleEl.className = "font-game text-amber-800 text-xl";
+                subEl.className = "text-amber-700 text-sm font-semibold";
+            }
+
+            titleEl.innerText = title;
+            subEl.innerText = subtitle;
+        }
+
+        function nextQuestion() {
+            playSound('click');
+            currentQuestionIndex++;
+
+            if (currentQuestionIndex === 3) {
+                showRoundIntro(2);
+            } else if (currentQuestionIndex === 6) {
+                showRoundIntro(3);
+            } else if (currentQuestionIndex >= totalQuestions) {
+                endGame();
+            } else {
+                renderQuestion();
+            }
+        }
+
+        function endGame() {
+            playSound('win');
+            showScreen('screen-game-over');
+
+            document.getElementById('final-total').innerText = totalQuestions;
+            document.getElementById('final-score').innerText = currentScore;
+
+            const percent = (currentScore / totalQuestions) * 100;
+            const starContainer = document.getElementById('star-rating');
+            const finalMsg = document.getElementById('final-message');
+
+            if (percent >= 90) {
+                starContainer.innerHTML = "⭐ ⭐ ⭐";
+                finalMsg.innerText = "You are a Calendar Superstar! 🌟";
+            } else if (percent >= 60) {
+                starContainer.innerHTML = "⭐ ⭐ ⚪";
+                finalMsg.innerText = "Great Job! Practice makes perfect! 👍";
+            } else {
+                starContainer.innerHTML = "⭐ ⚪ ⚪";
+                finalMsg.innerText = "Good effort! Try again to get 3 stars! 💪";
+            }
+
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 180,
+                    spread: 95,
+                    startVelocity: 42,
+                    origin: { y: 0.52 },
+                    zIndex: 99999
+                });
+                setTimeout(() => confetti({ particleCount: 90, spread: 120, origin: { x: 0.18, y: 0.58 }, zIndex: 99999 }), 180);
+                setTimeout(() => confetti({ particleCount: 90, spread: 120, origin: { x: 0.82, y: 0.58 }, zIndex: 99999 }), 320);
+            }
+        }
+    </script>
+</body>
+</html>
