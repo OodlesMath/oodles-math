@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="../assets/brand.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mitten Match</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#31425f; --muted:#66738d; --panel:rgba(255,255,255,.83); --line:rgba(60,93,126,.13);
+    --yellow:#ffd75c; --blue:#66b7ff; --pink:#ff8ebb; --green:#75d689;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;font-family:Poppins,system-ui,-apple-system,Segoe UI,sans-serif;color:var(--ink);background:#bfe9ff}
+  body{overflow-x:hidden}
+  button{font:inherit}
+  .game{min-height:100vh;position:relative;overflow:hidden;background:linear-gradient(180deg,#79d4f7 0%,#bfeeff 45%,#e9fbff 56%,#9bdd79 56%,#5fbe50 100%)}
+  .sky-deco{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .sun{position:absolute;left:4.5%;top:4%;width:96px;height:96px;border-radius:50%;background:radial-gradient(circle at 33% 28%,#fffbd0 0 17%,#ffe875 43%,#ffc94a 73%,#f8ae2b 100%);box-shadow:0 0 28px 10px rgba(255,231,119,.34),0 0 68px 24px rgba(255,240,166,.2);animation:sunPulse 4.6s ease-in-out infinite alternate}
+  .sun:before{content:"";position:absolute;inset:-31px;border-radius:50%;background:repeating-conic-gradient(from 4deg,rgba(255,219,76,.55) 0 6deg,transparent 6deg 19deg);-webkit-mask:radial-gradient(circle,transparent 0 57%,#000 59%);mask:radial-gradient(circle,transparent 0 57%,#000 59%);animation:sunSpin 30s linear infinite}
+  .sun:after{content:"";position:absolute;width:34px;height:18px;left:18px;top:16px;border-radius:50%;background:radial-gradient(ellipse,rgba(255,255,238,.74),rgba(255,255,238,0) 70%);transform:rotate(-25deg)}
+  @keyframes sunSpin{to{transform:rotate(360deg)}}
+  @keyframes sunPulse{from{transform:scale(1)}to{transform:scale(1.045)}}
+  .rainbow{position:absolute;right:5.2%;top:8.5%;width:300px;height:148px;opacity:.72;border-radius:300px 300px 0 0;background:radial-gradient(ellipse at 50% 100%,transparent 0 39%,#ff8fa3 39.4% 43.8%,#ffbd63 44.2% 48.6%,#ffe36b 49% 53.4%,#7edc91 53.8% 58.2%,#65bdf2 58.6% 63%,#a992e8 63.4% 67.8%,transparent 68.2%);filter:drop-shadow(0 7px 8px rgba(75,110,143,.09));animation:rainbowFloat 7s ease-in-out infinite alternate}
+  .rainbow:after{content:"";position:absolute;left:39px;right:39px;bottom:-1px;height:18px;background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(255,255,255,0));filter:blur(6px);opacity:.58}
+  @keyframes rainbowFloat{from{transform:translateY(0)}to{transform:translateY(4px)}}
+  .cloud{position:absolute;width:132px;height:40px;border-radius:34px;background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(236,247,252,.94));filter:drop-shadow(0 7px 7px rgba(53,109,145,.08));animation:drift 18s ease-in-out infinite alternate}
+  .cloud:before,.cloud:after{content:"";position:absolute;background:inherit;border-radius:50%}
+  .cloud:before{width:56px;height:56px;left:18px;top:-24px}.cloud:after{width:70px;height:70px;right:17px;top:-34px}
+  .c1{top:10%;left:16%;transform:scale(.86)}.c2{top:24%;right:15%;transform:scale(.72);animation-duration:22s}.c3{top:31%;left:31%;transform:scale(.56);animation-duration:16s}
+  @keyframes drift{from{translate:-10px 0}to{translate:17px 3px}}
+  .hill{position:absolute;border-radius:50% 50% 0 0;box-shadow:inset 0 7px 0 rgba(255,255,255,.1);filter:saturate(.96)}
+  .h1{left:-17%;bottom:63px;width:65%;height:220px;background:radial-gradient(ellipse at 43% 7%,rgba(214,248,159,.46),transparent 51%),linear-gradient(180deg,#8bdd72 0%,#5bc35a 62%,#42a84f 100%);transform:rotate(-2deg)}
+  .h2{right:-19%;bottom:56px;width:70%;height:232px;background:radial-gradient(ellipse at 38% 5%,rgba(221,250,171,.43),transparent 51%),linear-gradient(180deg,#83da6d 0%,#54bd57 60%,#3ca04a 100%);transform:rotate(2deg)}
+  .h3{left:23%;bottom:-48px;width:60%;height:210px;background:radial-gradient(ellipse at 44% 3%,rgba(229,252,164,.54),transparent 54%),linear-gradient(180deg,#9be46f 0%,#69ca53 56%,#4eae45 100%)}
+  .meadowDots{position:absolute;left:0;right:0;bottom:0;height:154px;opacity:.58;background-image:radial-gradient(ellipse at 50% 100%,rgba(187,239,115,.68) 0 34%,transparent 35%),radial-gradient(circle,rgba(240,255,188,.85) 0 1.5px,transparent 2px),radial-gradient(circle,rgba(49,143,57,.38) 0 1.15px,transparent 1.8px);background-size:100% 140px,54px 42px,71px 54px;background-position:0 38px,10px 6px,31px 21px}
+  .grassBlades{position:absolute;left:-1%;right:-1%;bottom:-7px;height:103px;opacity:.52;background:repeating-linear-gradient(82deg,transparent 0 22px,rgba(38,134,44,.3) 23px 24px,transparent 25px 38px),repeating-linear-gradient(98deg,transparent 0 31px,rgba(99,194,66,.35) 32px 33px,transparent 34px 48px);-webkit-mask-image:linear-gradient(to top,#000 0 62%,transparent 100%);mask-image:linear-gradient(to top,#000 0 62%,transparent 100%)}
+  .treeDeco{position:absolute;bottom:26px;width:86px;height:132px;filter:drop-shadow(0 7px 6px rgba(30,91,51,.12));transform-origin:bottom center;opacity:.9}
+  .treeDeco:before{content:"";position:absolute;left:36px;bottom:0;width:16px;height:64px;border-radius:11px 11px 7px 7px;background:repeating-linear-gradient(96deg,#7b4b2d 0 5px,#a86c3c 5px 10px,#8b5630 10px 14px);box-shadow:inset 4px 0 6px rgba(255,213,156,.15)}
+  .treeDeco:after{content:"";position:absolute;left:13px;top:7px;width:64px;height:66px;border-radius:48% 52% 47% 53%;background:radial-gradient(circle at 31% 25%,#b2ed8d 0 10%,#72cd68 36%,#3fa658 70%,#2a874c 100%);box-shadow:-20px 16px 0 -6px #55b85d,20px 17px 0 -7px #45ad57,-5px -14px 0 -8px #7bd16c,13px -9px 0 -10px #64c464;outline:2px solid rgba(45,126,62,.07)}
+  .t1{left:1.5%;transform:scale(.82)}.t2{right:1.4%;transform:scale(.86)}.t3{right:12%;bottom:18px;transform:scale(.56);opacity:.78}
+  .flower{position:absolute;width:20px;height:38px;bottom:8px;filter:drop-shadow(0 2px 2px rgba(30,99,44,.09));transform-origin:bottom center;opacity:.9}
+  .flower:before{content:"";position:absolute;left:2px;top:1px;width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 50% 9%,var(--petal) 0 3.8px,transparent 4.2px),radial-gradient(circle at 91% 50%,var(--petal) 0 3.8px,transparent 4.2px),radial-gradient(circle at 50% 91%,var(--petal) 0 3.8px,transparent 4.2px),radial-gradient(circle at 9% 50%,var(--petal) 0 3.8px,transparent 4.2px),radial-gradient(circle at 50% 50%,#ffd965 0 3.3px,#f2a82d 3.5px 4.2px,transparent 4.4px)}
+  .flower:after{content:"";position:absolute;left:9px;top:15px;width:2px;height:23px;border-radius:3px;background:linear-gradient(#58b14f,#2f8e3f);box-shadow:-5px 10px 0 -1px rgba(74,163,69,.78),5px 14px 0 -1px rgba(70,154,63,.72)}
+  .f1{left:4%;--petal:#fff5f7;transform:scale(.72)}.f2{left:13%;bottom:4px;--petal:#ff86ac;transform:scale(.62) rotate(-3deg)}.f3{right:15%;--petal:#ffd85c;transform:scale(.72)}.f4{right:5%;bottom:3px;--petal:#ef9bd8;transform:scale(.64) rotate(3deg)}.f5{left:49%;bottom:4px;--petal:#a98cf4;transform:scale(.6)}.f6{left:23%;bottom:5px;--petal:#80d2f4;transform:scale(.56)}
+  .butterfly{position:absolute;width:13px;height:17px;background:linear-gradient(#4b3a45,#2c2630);border-radius:50% 50% 42% 42%;animation:float 4.4s ease-in-out infinite alternate;filter:drop-shadow(0 3px 2px rgba(44,60,71,.08));opacity:.86}
+  .butterfly:before,.butterfly:after{content:"";position:absolute;top:1px;width:15px;height:12px;border-radius:65% 40% 65% 35%;background:radial-gradient(circle at 35% 35%,#fff7b5 0 8%,transparent 9%),linear-gradient(135deg,var(--wing1),var(--wing2));border:1px solid rgba(64,55,69,.13)}
+  .butterfly:before{right:8px;transform:rotate(24deg)}.butterfly:after{left:8px;transform:scaleX(-1) rotate(24deg)}
+  .b1{left:8%;top:35%;--wing1:#ff8c62;--wing2:#ffca58}.b2{right:7%;top:34%;--wing1:#7d8cff;--wing2:#cf8bff;animation-delay:.7s}.b3{left:72%;top:16%;--wing1:#ff7db4;--wing2:#ffd05e;animation-delay:1.1s}.b4{left:17%;top:22%;--wing1:#61c9e8;--wing2:#8fe4ad;animation-delay:1.6s}
+  @keyframes float{from{transform:translate(-3px,-5px) rotate(-6deg)}to{transform:translate(10px,8px) rotate(8deg)}}
+  .wrap{position:relative;z-index:2;width:min(1180px,96vw);margin:0 auto;padding:16px 0 20px}
+  .topbar{display:grid;grid-template-columns:1.3fr auto auto auto;gap:10px;align-items:center;margin-bottom:10px}
+  .brand{display:flex;align-items:center;gap:11px;background:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.8);padding:10px 16px;border-radius:22px;box-shadow:0 8px 22px rgba(63,111,142,.12);backdrop-filter:blur(7px)}
+  .brand h1{font-size:clamp(24px,3vw,38px);line-height:1;margin:0;color:#2d4c6d;text-shadow:0 2px 0 #fff}
+  .brand .mini{font-size:28px}
+  .pill,.soundBtn{min-height:50px;border:0;border-radius:17px;padding:8px 14px;background:rgba(255,255,255,.86);box-shadow:0 7px 17px rgba(63,111,142,.12);color:#38506b;font-weight:800;display:flex;align-items:center;justify-content:center;gap:6px}
+  .soundBtn{width:52px;cursor:pointer;font-size:21px}
+  .main{background:rgba(255,255,255,.84);border:1px solid rgba(255,255,255,.9);border-radius:28px;box-shadow:0 15px 40px rgba(48,93,123,.18);backdrop-filter:blur(9px);padding:14px 16px 16px}
+  .instructionRow{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:9px;flex-wrap:wrap}
+  .instruction{font-size:clamp(18px,2.1vw,26px);font-weight:800;text-align:center;color:#344b69}
+  .speak{border:0;background:#e8f5ff;border-radius:14px;width:44px;height:44px;font-size:20px;cursor:pointer;box-shadow:inset 0 0 0 2px #fff}
+  .countTag{display:inline-flex;align-items:center;gap:7px;border-radius:14px;padding:7px 12px;background:#fff3c9;color:#71531c;font-weight:800;box-shadow:0 4px 10px rgba(77,68,36,.08)}
+  .board{position:relative;min-height:410px;border-radius:23px;padding:18px;background:linear-gradient(180deg,rgba(238,249,255,.8),rgba(255,251,234,.88));border:1px solid rgba(64,104,132,.09);overflow:hidden}
+  .mittenGrid{display:grid;grid-template-columns:repeat(6,minmax(92px,1fr));gap:12px;align-content:center;min-height:370px}
+  .mittenCard{position:relative;border:0;background:transparent;min-height:152px;padding:4px;cursor:pointer;border-radius:22px;transition:transform .18s ease,background .18s ease,box-shadow .18s ease;touch-action:manipulation}
+  .mittenCard:hover{transform:translateY(-3px)}
+  .mittenCard:focus-visible{outline:4px solid #2f7ad7;outline-offset:2px}
+  .mittenCard.selected{background:rgba(255,225,115,.42);box-shadow:0 0 0 4px rgba(255,199,44,.55)}
+  .mittenCard.matched{cursor:default;animation:pairPop .48s ease both}
+  .mittenCard.matched .mittenSvg{filter:saturate(.88);opacity:.78}
+  .mittenCard.wrong{animation:shake .35s ease}
+  .mittenCard.lonely{animation:lonely 1.15s ease-in-out infinite alternate;background:rgba(255,224,237,.38)}
+  @keyframes pairPop{0%{transform:scale(.84)}60%{transform:scale(1.08)}100%{transform:scale(1)}}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+  @keyframes lonely{from{transform:translateY(0) scale(1)}to{transform:translateY(-8px) scale(1.04)}}
+  .mittenSvg{width:100%;height:138px;display:block;filter:drop-shadow(0 8px 7px rgba(47,71,95,.16));transition:filter .2s ease}
+  .matchMark{position:absolute;right:7px;top:5px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#78d87f;color:white;font-weight:900;box-shadow:0 3px 8px rgba(50,100,70,.16);opacity:0;transform:scale(.5)}
+  .matched .matchMark{opacity:1;transform:scale(1);transition:.25s ease}
+  .spark{position:absolute;font-size:21px;animation:spark .65s ease-out forwards;pointer-events:none}
+  @keyframes spark{0%{opacity:1;transform:translate(0,0) scale(.5)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.25)}}
+  .pairTray{margin-top:11px;min-height:116px;border-radius:22px;padding:10px 13px 12px;background:linear-gradient(180deg,rgba(255,255,255,.88),rgba(247,253,255,.82));border:2px dashed rgba(84,146,190,.26);box-shadow:inset 0 1px 0 rgba(255,255,255,.95);transition:.22s ease}
+  .trayTop{display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:7px;color:#526985;font-size:14px;font-weight:800;letter-spacing:.2px}.trayTop span{font-size:18px}
+  .pairedRows{min-height:76px;display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap}
+  .trayPlaceholder{color:#8492a5;font-size:13px;font-weight:700;opacity:.76}
+  .pairGroup{display:flex;align-items:center;justify-content:center;gap:0;padding:3px 5px;border-radius:16px;background:rgba(232,248,255,.78);box-shadow:inset 0 0 0 2px rgba(255,255,255,.82);animation:trayArrive .38s ease both}
+  .pairGroup.lonelyGroup{margin-left:8px;background:rgba(255,231,241,.9);box-shadow:inset 0 0 0 2px rgba(255,255,255,.9),0 0 0 2px rgba(239,112,160,.18)}
+  .pairGroup .mittenCard{width:63px;min-height:76px;padding:0;border-radius:13px;pointer-events:none}
+  .pairGroup .mittenSvg{height:75px;filter:drop-shadow(0 4px 4px rgba(47,71,95,.14));opacity:1!important}.pairGroup .mittenCard.matched .mittenSvg{filter:drop-shadow(0 4px 4px rgba(47,71,95,.14));opacity:1}
+  .pairGroup .matchMark{width:19px;height:19px;font-size:11px;right:2px;top:0}
+  .pairGroup.lonelyGroup .matchMark{display:none}
+  .lonelyBadge{font-size:11px;font-weight:900;color:#c33f76;background:#fff;padding:3px 7px;border-radius:10px;margin-right:3px;white-space:nowrap}
+  @keyframes trayArrive{0%{opacity:0;transform:translateY(-13px) scale(.88)}70%{opacity:1;transform:translateY(2px) scale(1.03)}100%{opacity:1;transform:none}}
+  .pairQuestionStage{position:absolute;inset:0;z-index:5;display:none;align-items:center;justify-content:center;padding:24px;pointer-events:none}
+  .pairQuestionStage.show{display:flex}
+  .pairQuestionCard{pointer-events:auto;display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;padding:19px 24px;border-radius:24px;background:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.96);box-shadow:0 14px 34px rgba(50,91,119,.16);backdrop-filter:blur(8px);animation:questionPop .28s ease both}
+  .pairQuestionText{font-size:clamp(23px,3vw,34px);font-weight:900;color:#344b69;line-height:1.15}
+  .answerReveal{pointer-events:auto;display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;padding:20px 24px;border-radius:24px;background:rgba(255,255,255,.93);border:1px solid rgba(255,255,255,.98);box-shadow:0 14px 34px rgba(50,91,119,.16);backdrop-filter:blur(8px);animation:questionPop .28s ease both}
+  .answerText{font-size:clamp(27px,3.4vw,41px);font-weight:900;line-height:1.12;color:#344b69;text-align:center}
+  .answerText .evenWord{color:#1e9e59}.answerText .oddWord{color:#d84c84}
+  @keyframes questionPop{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+  .resultArea{min-height:0;padding:0;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;text-align:center}
+  .questionBox{display:flex;flex-direction:column;gap:4px;align-items:center}
+  .questionBox strong{font-size:22px}
+  .questionBox span{font-size:17px;color:var(--muted);font-weight:600}
+  .yn{display:flex;gap:10px}.btn{border:0;border-radius:16px;padding:12px 22px;min-width:110px;min-height:48px;font-weight:900;cursor:pointer;box-shadow:0 7px 14px rgba(46,79,105,.14);transition:transform .15s ease}.btn:active{transform:translateY(2px)}
+  .yes{background:#78db8d;color:#173d25}.no{background:#ffb3c6;color:#673247}.next{background:#ffd85c;color:#5b4810}.again{background:#69baff;color:#193d5b}
+  .resultTitle{font-size:clamp(26px,3.8vw,44px);font-weight:900;margin:0}.even{color:#1e9e59}.odd{color:#d84c84}.resultSentence{font-weight:700;color:#53627a}.numberExample{display:inline-block;margin-top:4px;padding:5px 12px;border-radius:12px;background:rgba(255,255,255,.82);box-shadow:inset 0 0 0 2px rgba(255,255,255,.86);font-size:17px;font-weight:900;color:#344b69}
+  .footerTip{font-size:13px;font-weight:600;color:#5f7086;text-align:center;margin-top:5px}
+  .overlay{position:absolute;inset:0;display:none;place-items:center;background:rgba(241,250,255,.9);z-index:10;padding:20px}.overlay.show{display:grid}
+  .finishCard{max-width:520px;text-align:center;background:white;padding:28px;border-radius:28px;box-shadow:0 20px 50px rgba(45,89,117,.2)}
+  .finishCard .big{font-size:60px}.finishCard h2{font-size:37px;margin:4px 0}.starsLine{font-size:36px;letter-spacing:3px}.scoreText{font-weight:800;color:#55657a;margin:8px 0 16px}
+  .confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:20}.confetti i{position:absolute;top:-16px;width:10px;height:16px;border-radius:3px;animation:fall 1.8s linear forwards;background:hsl(var(--h),80%,60%);left:var(--x);transform:rotate(var(--r))}
+  @keyframes fall{to{transform:translate(var(--drift),620px) rotate(630deg);opacity:.9}}
+  .toast{position:absolute;left:50%;top:72px;transform:translateX(-50%) translateY(-10px);opacity:0;background:#fff;padding:9px 16px;border-radius:14px;box-shadow:0 8px 20px rgba(54,86,112,.18);font-weight:800;transition:.2s;z-index:12;pointer-events:none}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media (max-width:850px){.topbar{grid-template-columns:1fr auto auto}.brand{grid-column:1/-1}.mittenGrid{grid-template-columns:repeat(4,minmax(78px,1fr))}.mittenCard{min-height:135px}.mittenSvg{height:122px}.board{min-height:390px}.mittenGrid{min-height:350px}}
+  @media (max-width:560px){.pairTray{padding:8px}.pairedRows{gap:4px}.pairGroup{padding:2px}.pairGroup .mittenCard{width:49px;min-height:62px}.pairGroup .mittenSvg{height:61px}.wrap{width:97vw;padding-top:8px}.main{padding:10px}.pill{padding:7px 10px;min-height:45px}.mittenGrid{grid-template-columns:repeat(3,minmax(75px,1fr));gap:6px}.mittenCard{min-height:116px}.mittenSvg{height:108px}.board{padding:10px;min-height:400px}.mittenGrid{min-height:380px}.instruction{font-size:18px}.brand h1{font-size:27px}}
+  @media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+  <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+<!-- Mitten Match Ver 5: refined background + centered concise Odd/Even result -->
+<div class="game" id="game">
+  <div class="sky-deco" aria-hidden="true">
+    <div class="sun"></div><div class="rainbow"></div><div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
+    <div class="hill h1"></div><div class="hill h2"></div><div class="hill h3"></div><div class="meadowDots"></div><div class="grassBlades"></div>
+    <div class="treeDeco t1"></div><div class="treeDeco t2"></div><div class="treeDeco t3"></div>
+    <span class="flower f1"></span><span class="flower f2"></span><span class="flower f3"></span><span class="flower f4"></span><span class="flower f5"></span><span class="flower f6"></span>
+    <span class="butterfly b1"></span><span class="butterfly b2"></span><span class="butterfly b3"></span><span class="butterfly b4"></span>
+  </div>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand"><span class="mini">🧤</span><h1>Mitten Match</h1></div>
+      <div class="pill" id="scorePill">⭐ 0 / 10</div>
+      <div class="pill" id="roundPill">Round 1 / 10</div>
+      <button class="soundBtn" id="soundToggle" type="button" aria-label="Turn sound off">🔊</button>
+    </div>
+
+    <section class="main" aria-label="Mitten matching game">
+      <div class="instructionRow">
+        <div class="instruction">Can you match the mittens into pairs?</div>
+        <button class="speak" id="speakBtn" type="button" aria-label="Read the instruction aloud">🔊</button>
+        <div class="countTag" id="countTag">🧤 8 Mittens</div>
+      </div>
+      <div class="board" id="board">
+        <div class="mittenGrid" id="mittenGrid" aria-live="polite"></div>
+        <div class="pairQuestionStage" id="pairQuestionStage" aria-live="polite"></div>
+        <div class="overlay" id="finishOverlay">
+          <div class="finishCard">
+            <div class="big">🏆</div><h2>Great matching!</h2>
+            <div class="starsLine">⭐⭐⭐⭐⭐</div>
+            <div class="scoreText" id="finalScore">You found the Odd and Even numbers!</div>
+            <button class="btn again" type="button" id="againBtn">PLAY AGAIN</button>
+          </div>
+        </div>
+      </div>
+      <div class="pairTray" id="pairTray" aria-label="Matched mitten pairs">
+        <div class="trayTop"><span>🧤</span> Matched Pairs</div>
+        <div class="pairedRows" id="pairedRows"><div class="trayPlaceholder">Your matching pairs will come here.</div></div>
+      </div>
+      <div class="resultArea" id="resultArea" aria-live="polite"></div>
+      <div class="footerTip">Match two mittens with the same color and pattern.</div>
+    </section>
+  </div>
+  <div class="confetti" id="confetti"></div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+(() => {
+  const grid = document.getElementById('mittenGrid');
+  const resultArea = document.getElementById('resultArea');
+  const pairQuestionStage = document.getElementById('pairQuestionStage');
+  const pairedRows = document.getElementById('pairedRows');
+  const roundPill = document.getElementById('roundPill');
+  const scorePill = document.getElementById('scorePill');
+  const countTag = document.getElementById('countTag');
+  const soundToggle = document.getElementById('soundToggle');
+  const speakBtn = document.getElementById('speakBtn');
+  const finishOverlay = document.getElementById('finishOverlay');
+  const finalScore = document.getElementById('finalScore');
+  const againBtn = document.getElementById('againBtn');
+  const confetti = document.getElementById('confetti');
+  const toast = document.getElementById('toast');
+
+  const TOTAL_ROUNDS = 10;
+  const patternDefs = [
+    {id:'heart', base:'#ef4444', accent:'#fff5f5'},
+    {id:'star', base:'#2684ff', accent:'#fff9df'},
+    {id:'flower', base:'#f2c52b', accent:'#fff7e5'},
+    {id:'dots', base:'#35a853', accent:'#f6fff4'},
+    {id:'hearts', base:'#f065a4', accent:'#fff2f8'},
+    {id:'zigzag', base:'#7447c8', accent:'#fff3ff'},
+    {id:'stripes', base:'#f47821', accent:'#fff8ea'},
+    {id:'snow', base:'#19a9b8', accent:'#f1feff'},
+    {id:'diamond', base:'#ff6b61', accent:'#fff0e9'},
+    {id:'moon', base:'#4f67c7', accent:'#fff6c9'},
+    {id:'leaf', base:'#2aa876', accent:'#f3fff2'},
+    {id:'candy', base:'#e84e89', accent:'#fff6fb'}
+  ];
+
+  let round = 1, score = 0, previousCount = null, currentCount = 8;
+  let selected = null, locked = false, matchedPairs = 0, soundOn = true, answering = false;
+  let audioCtx = null;
+
+  function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; }
+  function choice(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+  function beep(kind='click'){
+    if(!soundOn) return;
+    try{
+      audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
+      const ctx=audioCtx;
+      if(ctx.state==='suspended') ctx.resume().catch(()=>{});
+      const now=ctx.currentTime;
+      const play=(freq,start,dur,type='sine',vol=.045,endFreq=null)=>{
+        const osc=ctx.createOscillator(), gain=ctx.createGain();
+        osc.type=type; osc.frequency.setValueAtTime(freq,now+start);
+        if(endFreq) osc.frequency.exponentialRampToValueAtTime(endFreq,now+start+dur);
+        gain.gain.setValueAtTime(.001,now+start);
+        gain.gain.exponentialRampToValueAtTime(vol,now+start+.012);
+        gain.gain.exponentialRampToValueAtTime(.001,now+start+dur);
+        osc.connect(gain); gain.connect(ctx.destination); osc.start(now+start); osc.stop(now+start+dur+.02);
+      };
+      if(kind==='click'){
+        play(520,0,.055,'triangle',.03,620);
+      }else if(kind==='good'){
+        play(659,0,.11,'triangle',.05,760); play(880,.09,.15,'sine',.045,1040);
+      }else if(kind==='oops'){
+        play(330,0,.11,'sine',.035,255); play(245,.09,.13,'sine',.03,205);
+      }else if(kind==='celebrate'){
+        [[523,0],[659,.075],[784,.15],[1047,.23]].forEach(([f,t],i)=>play(f,t,.18,i%2?'sine':'triangle',.045,f*1.07));
+      }
+    }catch(e){}
+  }
+
+  function speak(text){
+    if(!soundOn || !('speechSynthesis' in window)) return;
+    speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.rate=.86; u.pitch=1.12; u.lang='en-US'; speechSynthesis.speak(u);
+  }
+
+  function svgFor(p, uid){
+    const accent=p.accent, base=p.base;
+    const dark=shade(base,-30), deep=shade(base,-43), light=shade(base,24);
+    const extra = {
+      heart:`<path d="M50 72 C39 57 18 59 18 41 C18 25 35 19 50 35 C65 19 82 25 82 41 C82 59 61 57 50 72Z" fill="${accent}"/>`,
+      star:`<path d="M50 25l8.3 17.4 19.2 2.4-14 13.3 3.8 19-17.3-9.2-17.3 9.2 3.8-19-14-13.3 19.2-2.4z" fill="${accent}"/>`,
+      flower:`<g fill="${accent}"><ellipse cx="50" cy="33" rx="10" ry="12"/><ellipse cx="65" cy="46" rx="10" ry="12" transform="rotate(70 65 46)"/><ellipse cx="58" cy="64" rx="10" ry="12" transform="rotate(145 58 64)"/><ellipse cx="39" cy="64" rx="10" ry="12" transform="rotate(215 39 64)"/><ellipse cx="34" cy="45" rx="10" ry="12" transform="rotate(285 34 45)"/></g><circle cx="50" cy="49" r="8" fill="#ff9d2e"/>`,
+      dots:`<g fill="${accent}"><circle cx="33" cy="34" r="5.2"/><circle cx="60" cy="37" r="5.2"/><circle cx="44" cy="57" r="5.2"/><circle cx="68" cy="63" r="5.2"/><circle cx="29" cy="77" r="5.2"/></g>`,
+      hearts:`<g fill="#d71f67"><path d="M31 44c-9-11-21 5 0 18 21-13 9-29 0-18z"/><path d="M61 34c-9-11-21 5 0 18 21-13 9-29 0-18z"/><path d="M50 68c-9-11-21 5 0 18 21-13 9-29 0-18z"/></g>`,
+      zigzag:`<path d="M20 36l13 10 12-10 13 10 12-10 13 10" fill="none" stroke="${accent}" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 67l13 10 12-10 13 10 12-10 13 10" fill="none" stroke="${accent}" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>`,
+      stripes:`<path d="M21 33h57M19 52h62M19 71h61" stroke="${accent}" stroke-width="7.5" stroke-linecap="round"/>`,
+      snow:`<g stroke="${accent}" stroke-width="4" stroke-linecap="round"><path d="M50 26v56M27 40l46 28M27 68l46-28"/><path d="M45 35l5-8 5 8M45 73l5 8 5-8M33 43l-6-3 1 7M67 65l6 3-1-7M33 65l-6 3 1-7M67 43l6-3-1 7"/></g>`,
+      diamond:`<g fill="${accent}"><path d="M50 24l14 14-14 14-14-14z"/><path d="M32 57l10 10-10 10-10-10z"/><path d="M68 57l10 10-10 10-10-10z"/></g>`,
+      moon:`<path d="M64 28c-20 6-19 36 2 42-19 8-39-6-39-25 0-18 18-31 37-17z" fill="${accent}"/><circle cx="69" cy="31" r="4" fill="${accent}"/><circle cx="75" cy="50" r="3" fill="${accent}"/>`,
+      leaf:`<g fill="${accent}"><path d="M27 62c-2-21 14-32 29-27 0 17-11 31-29 27z"/><path d="M49 74c0-19 14-28 27-23-1 16-12 26-27 23z"/></g><path d="M31 60c10-5 17-12 23-21M52 71c8-4 15-10 21-17" stroke="#bce9b8" stroke-width="3"/>`,
+      candy:`<g fill="${accent}"><circle cx="35" cy="41" r="7.5"/><circle cx="65" cy="41" r="7.5"/><circle cx="50" cy="65" r="8.5"/></g><path d="M24 79h52" stroke="${accent}" stroke-width="6.5" stroke-linecap="round"/>`
+    }[p.id] || '';
+    const bodyPath='M31 116C21 107 17 96 18 82L22 38C23 22 30 13 41 13C47 13 52 17 55 23C58 14 66 10 73 13C81 16 84 24 84 37L84 60L92 48C98 39 108 42 108 51C108 55 106 60 103 66L92 88C89 94 87 105 84 116Z';
+    return `<svg class="mittenSvg" viewBox="0 0 112 150" role="img" aria-label="${p.id} mitten">
+      <defs>
+        <linearGradient id="g${uid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${light}"/><stop offset=".38" stop-color="${base}"/><stop offset=".78" stop-color="${dark}"/><stop offset="1" stop-color="${deep}"/></linearGradient>
+        <linearGradient id="c${uid}" x1="0" x2="1"><stop stop-color="${light}"/><stop offset=".48" stop-color="${base}"/><stop offset="1" stop-color="${dark}"/></linearGradient>
+        <pattern id="k${uid}" width="8" height="7" patternUnits="userSpaceOnUse"><path d="M0 4 Q2 1 4 4 T8 4" fill="none" stroke="rgba(255,255,255,.42)" stroke-width="1.15"/><path d="M0 6 Q2 3 4 6 T8 6" fill="none" stroke="rgba(41,42,50,.12)" stroke-width=".8"/></pattern>
+        <clipPath id="clip${uid}"><path d="${bodyPath}"/><path d="M24 112h62v25c0 7-5 11-12 11H36c-7 0-12-4-12-11z"/></clipPath>
+        <filter id="ps${uid}" x="-25%" y="-25%" width="150%" height="150%"><feDropShadow dx="0" dy="1.8" stdDeviation="1.2" flood-color="#4f4051" flood-opacity=".22"/></filter>
+      </defs>
+      <path d="${bodyPath}" fill="url(#g${uid})" stroke="${deep}" stroke-opacity=".36" stroke-width="2.2" stroke-linejoin="round"/>
+      <path d="${bodyPath}" fill="url(#k${uid})" opacity=".34"/>
+      <path d="M85 61C92 61 97 57 102 50" fill="none" stroke="rgba(255,255,255,.28)" stroke-width="3" stroke-linecap="round"/>
+      <path d="M27 112h59v25c0 6-5 10-11 10H38c-6 0-11-4-11-10z" fill="url(#c${uid})" stroke="${deep}" stroke-opacity=".28" stroke-width="2"/>
+      <path d="M28 118h57M28 126h57M28 134h57M31 142h51" stroke="rgba(255,255,255,.5)" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M36 116v28M44 116v30M52 116v30M60 116v30M68 116v30M76 116v28" stroke="rgba(44,35,46,.1)" stroke-width="1.5"/>
+      <g filter="url(#ps${uid})">${extra}</g>
+      <path d="M29 34C30 22 36 17 42 17C47 17 50 19 53 24" fill="none" stroke="rgba(255,255,255,.52)" stroke-width="4.2" stroke-linecap="round"/>
+      <path d="M31 116C21 107 17 96 18 82" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="3" stroke-linecap="round"/>
+    </svg>`;
+  }
+
+  function shade(hex, amt){
+    const n=parseInt(hex.slice(1),16), r=Math.max(0,Math.min(255,(n>>16)+amt)), g=Math.max(0,Math.min(255,((n>>8)&255)+amt)), b=Math.max(0,Math.min(255,(n&255)+amt));
+    return '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+  }
+
+  function makeRound(){
+    answering=false; selected=null; locked=false; matchedPairs=0; resultArea.innerHTML=''; pairQuestionStage.classList.remove('show'); pairQuestionStage.innerHTML=''; finishOverlay.classList.remove('show'); grid.innerHTML=''; pairedRows.innerHTML='<div class="trayPlaceholder">Your matching pairs will come here.</div>';
+    let options=[5,6,7,8,9,10,11,12].filter(n=>n!==previousCount); currentCount=choice(options); previousCount=currentCount;
+    const pairCount=Math.floor(currentCount/2); const styles=shuffle([...patternDefs]).slice(0,pairCount+1);
+    const items=[]; let id=0;
+    for(let i=0;i<pairCount;i++){ items.push({id:id++,pair:i,style:styles[i]},{id:id++,pair:i,style:styles[i]}); }
+    if(currentCount%2===1) items.push({id:id++,pair:'lonely',style:styles[pairCount]});
+    shuffle(items);
+    items.forEach(item=>{
+      const btn=document.createElement('button'); btn.type='button'; btn.className='mittenCard'; btn.dataset.pair=item.pair; btn.dataset.id=item.id;
+      btn.setAttribute('aria-label', item.pair==='lonely' ? 'mitten without a partner' : `${item.style.id} mitten`);
+      btn.innerHTML=svgFor(item.style,item.id)+'<span class="matchMark">✓</span>';
+      btn.addEventListener('click',()=>selectMitten(btn)); grid.appendChild(btn);
+    });
+    updateTop();
+    setTimeout(()=>speak('Can you match the mittens into pairs?'), 520);
+  }
+
+  function selectMitten(btn){
+    if(locked || answering || btn.classList.contains('matched') || btn===selected) return;
+    beep('click');
+    if(!selected){ selected=btn; btn.classList.add('selected'); return; }
+    locked=true; const first=selected; selected=null; first.classList.remove('selected');
+    if(first.dataset.pair===btn.dataset.pair && first.dataset.pair!=='lonely'){
+      first.classList.add('matched'); btn.classList.add('matched'); matchedPairs++; beep('good'); addSparkles(first); addSparkles(btn);
+      setTimeout(()=>{ movePairToTray(first,btn); locked=false; checkCompleted(); },330);
+    }else{
+      first.classList.add('wrong'); btn.classList.add('wrong'); beep('oops');
+      setTimeout(()=>{ first.classList.remove('wrong'); btn.classList.remove('wrong'); locked=false; },380);
+    }
+  }
+
+  function movePairToTray(first,second){
+    const placeholder=pairedRows.querySelector('.trayPlaceholder'); if(placeholder) placeholder.remove();
+    const group=document.createElement('div'); group.className='pairGroup'; group.setAttribute('aria-label','Matched pair');
+    [first,second].forEach(card=>{ card.classList.remove('selected','wrong'); card.tabIndex=-1; group.appendChild(card); });
+    pairedRows.appendChild(group);
+  }
+
+  function moveLonelyToTray(card){
+    const placeholder=pairedRows.querySelector('.trayPlaceholder'); if(placeholder) placeholder.remove();
+    const group=document.createElement('div'); group.className='pairGroup lonelyGroup'; group.setAttribute('aria-label','One mitten left without a pair');
+    const badge=document.createElement('span'); badge.className='lonelyBadge'; badge.textContent='1 left'; group.appendChild(badge);
+    card.tabIndex=-1; group.appendChild(card); pairedRows.appendChild(group);
+  }
+
+  function addSparkles(el){
+    for(let i=0;i<5;i++){ const s=document.createElement('span'); s.className='spark'; s.textContent=i%2?'✨':'⭐'; s.style.left=(35+Math.random()*35)+'%'; s.style.top=(30+Math.random()*35)+'%'; s.style.setProperty('--dx',(Math.random()*80-40)+'px'); s.style.setProperty('--dy',(Math.random()*70-45)+'px'); el.appendChild(s); setTimeout(()=>s.remove(),700); }
+  }
+
+  function checkCompleted(){
+    if(matchedPairs===Math.floor(currentCount/2)){
+      answering=true; const lonely=grid.querySelector('[data-pair="lonely"]'); if(lonely){ lonely.classList.add('lonely'); moveLonelyToTray(lonely); }
+      pairQuestionStage.innerHTML=`<div class="pairQuestionCard"><div class="pairQuestionText">Do they all have a pair?</div><div class="yn"><button class="btn yes" type="button" data-answer="yes">YES</button><button class="btn no" type="button" data-answer="no">NO</button></div></div>`;
+      pairQuestionStage.classList.add('show');
+      pairQuestionStage.querySelectorAll('[data-answer]').forEach(b=>b.addEventListener('click',()=>answerPairQuestion(b.dataset.answer)));
+      setTimeout(()=>speak('Do they all have a pair?'), 180);
+    }
+  }
+
+  function answerPairQuestion(ans){
+    const isEven=currentCount%2===0; const correct=(isEven && ans==='yes')||(!isEven && ans==='no');
+    if(!correct){ beep('oops'); showToast(isEven?'Look again. Every mitten has a partner!':'Look again. One mitten is alone!'); return; }
+    score++; updateTop(); beep('celebrate'); burstConfetti(24);
+    resultArea.innerHTML='';
+    const numberType=isEven?'even':'odd';
+    pairQuestionStage.innerHTML=`<div class="answerReveal"><div class="answerText">${currentCount} is an <span class="${isEven?'evenWord':'oddWord'}">${numberType}</span> number.</div><button class="btn next" id="nextBtn" type="button">NEXT ➜</button></div>`;
+    pairQuestionStage.classList.add('show');
+    document.getElementById('nextBtn').addEventListener('click',nextRound);
+    speak(`${currentCount} is an ${numberType} number.`);
+  }
+
+  function nextRound(){
+    beep('click'); if(round>=TOTAL_ROUNDS){ finishGame(); return; } round++; makeRound();
+  }
+
+  function finishGame(){
+    finalScore.textContent=`${score} / ${TOTAL_ROUNDS} stars — You found the Odd and Even numbers!`; finishOverlay.classList.add('show'); burstConfetti(90); beep('celebrate');
+  }
+
+  function updateTop(){ roundPill.textContent=`Round ${round} / ${TOTAL_ROUNDS}`; scorePill.textContent=`⭐ ${score} / ${TOTAL_ROUNDS}`; countTag.textContent=`🧤 ${currentCount} Mittens`; }
+
+  function showToast(msg){ toast.textContent=msg; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),1500); }
+
+  function burstConfetti(n){
+    for(let i=0;i<n;i++){ const c=document.createElement('i'); c.style.setProperty('--x',(Math.random()*100)+'%'); c.style.setProperty('--h',Math.floor(Math.random()*360)); c.style.setProperty('--r',(Math.random()*180)+'deg'); c.style.setProperty('--drift',(Math.random()*160-80)+'px'); c.style.animationDelay=(Math.random()*.22)+'s'; confetti.appendChild(c); setTimeout(()=>c.remove(),2300); }
+  }
+
+  soundToggle.addEventListener('click',()=>{ soundOn=!soundOn; soundToggle.textContent=soundOn?'🔊':'🔇'; soundToggle.setAttribute('aria-label',soundOn?'Turn sound off':'Turn sound on'); if(!soundOn && 'speechSynthesis' in window) speechSynthesis.cancel(); else beep('click'); });
+  speakBtn.addEventListener('click',()=>speak('Can you match the mittens into pairs?'));
+  againBtn.addEventListener('click',()=>{ round=1; score=0; previousCount=null; makeRound(); });
+  makeRound();
+})();
+</script>
+</body>
+</html>
