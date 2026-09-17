@@ -4,7 +4,7 @@
     <link rel="stylesheet" href="../assets/brand.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Addition Adventure - Ver 3</title>
+    <title>Addition Adventure - Ver 4</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -60,39 +60,7 @@
         }
         @keyframes pulseSun { 0% { transform: scale(1); } 100% { transform: scale(1.15); box-shadow: 0 0 30px #FF9800, 0 0 50px #FFD369; } }
 
-                /* Background Clouds - Ver 2: two clouds drifting back and forth */
-        .cloud {
-            position: fixed; background: rgba(255,255,255,0.92); border-radius: 50px;
-            opacity: 0.82; z-index: 2; pointer-events: none;
-            filter: drop-shadow(0 5px 7px rgba(72, 145, 180, 0.16));
-            will-change: transform;
-        }
-        .cloud::before, .cloud::after { content: ''; position: absolute; background: rgba(255,255,255,0.96); border-radius: 50%; }
-        .c1 {
-            width: 105px; height: 40px; top: 8%; left: 7%;
-            animation: cloudSwayOne 12s ease-in-out infinite alternate;
-        }
-        .c1::before { width: 52px; height: 52px; top: -22px; left: 16px; }
-        .c1::after { width: 42px; height: 42px; top: -16px; right: 14px; }
-        .c2 {
-            width: 145px; height: 48px; top: 16%; right: 8%; left: auto;
-            animation: cloudSwayTwo 15s ease-in-out infinite alternate;
-        }
-        .c2::before { width: 62px; height: 62px; top: -29px; left: 22px; }
-        .c2::after { width: 50px; height: 50px; top: -20px; right: 22px; }
-
-        @keyframes cloudSwayOne {
-            0%   { transform: translate3d(-4vw, 0, 0); }
-            50%  { transform: translate3d(18vw, 7px, 0); }
-            100% { transform: translate3d(34vw, 0, 0); }
-        }
-        @keyframes cloudSwayTwo {
-            0%   { transform: translate3d(3vw, 0, 0); }
-            50%  { transform: translate3d(-17vw, -6px, 0); }
-            100% { transform: translate3d(-32vw, 0, 0); }
-        }
-
-/* Top Bar */
+                /* Top Bar */
         #top-bar {
             width: 100%; max-width: 800px; padding: 15px 20px;
             display: flex; justify-content: space-between; align-items: center; z-index: 100;
@@ -308,9 +276,6 @@
 </head>
 <body>
     <img src="../assets/logo-oodles-math.png" class="oodles-logo" onerror="this.style.display='none'">
-    <div class="cloud c1"></div>
-    <div class="cloud c2"></div>
-
     <!-- Cute Sun -->
     <div class="sun-wrapper">
         <div class="sun">
@@ -405,7 +370,7 @@
         const questionsPerRound = 10;
         let currentQuestionData = {};
         let questionFailed = false;
-        let askedQuestions = [];
+        let roundQuestions = [];
         let isFinalMiniGame = false;
 
         let soundEnabled = true;
@@ -487,6 +452,35 @@
             const fill = document.getElementById(`p-game`);
             // Adjust progress relative to total questions per round
             if(fill) fill.style.width = `${(questionIndex / questionsPerRound) * 100}%`;
+        }
+
+        function generateRoundQuestions() {
+            // Build every valid pair of one-digit addends whose sum is from 11 to 20.
+            // With one-digit addends (1-9), the reachable sums are 11-18.
+            // Treat reversed pairs (e.g. 7+5 and 5+7) as the same fact so no fact repeats.
+            const pool = [];
+            for (let a = 1; a <= 9; a++) {
+                for (let b = a; b <= 9; b++) {
+                    const sum = a + b;
+                    if (sum >= 11 && sum <= 20) {
+                        pool.push({ a, b, sum });
+                    }
+                }
+            }
+
+            // Fisher-Yates shuffle for an unbiased random order.
+            for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
+
+            return pool.slice(0, questionsPerRound).map(q => {
+                // Randomly swap the display order while keeping each fact unique.
+                if (q.a !== q.b && Math.random() < 0.5) {
+                    return { n1: q.b, n2: q.a, sum: q.sum };
+                }
+                return { n1: q.a, n2: q.b, sum: q.sum };
+            });
         }
 
         function generateEquationChoices(correctSum) {
@@ -606,7 +600,7 @@
 
         function startGame() {
             initAudio(); playClick(); score = 0; updateScore(0);
-            askedQuestions = [];
+            roundQuestions = generateRoundQuestions();
             document.getElementById('mascot-area').style.display = 'flex';
             setMascot("Let's add the dots together!", "happy");
             startAdditionRound();
@@ -630,16 +624,11 @@
             document.getElementById('game-step-choices').style.display = 'none';
             document.getElementById('next-container').style.display = 'none'; // Hide next button
 
-            // Ensure unique 10 questions with n1 <= 10, n2 <= 10, sum from 11 to 20
-            let n1, n2, sum, key;
-            do {
-                n1 = Math.floor(Math.random() * 10) + 1;
-                n2 = Math.floor(Math.random() * 10) + 1;
-                sum = n1 + n2;
-                key = `${n1}+${n2}`;
-            } while (sum < 11 || sum > 20 || askedQuestions.includes(key));
-
-            askedQuestions.push(key);
+            // Use the pre-generated 10 unique equations for this game.
+            const q = roundQuestions[questionIndex];
+            const n1 = q.n1;
+            const n2 = q.n2;
+            const sum = q.sum;
 
             currentQuestionData = { n1, n2, sum, groupsDropped: 0 };
 
