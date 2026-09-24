@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Number Safari: Math Quest</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #78C5F9; /* Fallback sky blue */
+            overflow: hidden; /* Prevent scrolling, fixed layout */
+            touch-action: manipulation;
+            user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Custom Animations */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes float-cloud {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(20px); }
+            100% { transform: translateX(0); }
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes bounce-in {
+            0% { transform: scale(0.5); opacity: 0; }
+            60% { transform: scale(1.05); opacity: 1; }
+            80% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        /* New Explosion Confetti */
+        @keyframes explode {
+            0% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+            50% { opacity: 1; }
+            100% { transform: translate(var(--dx), var(--dy)) scale(0) rotate(var(--rot)); opacity: 0; }
+        }
+
+        .animate-float { animation: float 4s ease-in-out infinite; }
+        .animate-float-cloud { animation: float-cloud 8s ease-in-out infinite; }
+        .animate-pop { animation: pop 0.3s ease-in-out; }
+        .animate-bounce-in { animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
+        .animate-shake { animation: shake 0.4s ease-in-out; }
+        
+        .animate-explode {
+            animation: explode var(--duration, 1.5s) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        
+        /* Text Stroke */
+        .text-stroke-small {
+            -webkit-text-stroke: 1.5px rgba(255,255,255,0.9);
+        }
+
+        /* Buttons & Cards 3D effect */
+        .btn-duo {
+            border-bottom-width: 6px;
+            transition: all 0.1s;
+        }
+        .btn-duo:active:not(:disabled) {
+            border-bottom-width: 0px;
+            transform: translateY(6px);
+            margin-bottom: 6px;
+        }
+
+        .card-duo {
+            border-bottom-width: 8px;
+            transition: all 0.15s ease;
+        }
+        .card-duo:active:not(:disabled) {
+            border-bottom-width: 0px;
+            transform: translateY(8px);
+        }
+
+        /* Better shadow for emojis to look like high-quality icons */
+        .emoji-icon {
+            filter: drop-shadow(2px 4px 0px rgba(0,0,0,0.15));
+        }
+        
+        /* Rainbow specific styling */
+        .rainbow-arch {
+            position: absolute;
+            bottom: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90vw;
+            max-width: 1200px;
+            aspect-ratio: 1/0.5; /* Half circle */
+            border-top-left-radius: 1200px;
+            border-top-right-radius: 1200px;
+            background: radial-gradient(circle at bottom, 
+                transparent 40%, 
+                #9b5de5 40%, #9b5de5 45%, 
+                #00bbf9 45%, #00bbf9 50%, 
+                #00f5d4 50%, #00f5d4 55%, 
+                #fee440 55%, #fee440 60%, 
+                #f15bb5 60%, #f15bb5 65%, 
+                transparent 65%);
+            opacity: 0.6;
+            z-index: 0;
+        }
+
+        /* Scrollbar hide for inner containers */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* Glassmorphism for the main container */
+        .glass-container {
+            background: rgba(255, 255, 255, 0.85); /* 85% opacity white */
+            backdrop-filter: blur(12px); /* Blur the background behind it */
+            -webkit-backdrop-filter: blur(12px);
+            border: 4px solid rgba(255, 255, 255, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // --- AUDIO ENGINE ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        const playTone = (freq, type, duration, vol = 0.1) => {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        };
+
+        const sfx = {
+            click: () => playTone(400, 'sine', 0.1, 0.05),
+            success: () => {
+                playTone(600, 'sine', 0.1, 0.1);
+                setTimeout(() => playTone(800, 'sine', 0.2, 0.15), 100);
+            },
+            wrong: () => {
+                playTone(300, 'sawtooth', 0.2, 0.1);
+                setTimeout(() => playTone(250, 'sawtooth', 0.3, 0.1), 150);
+            },
+            tada: () => {
+                playTone(400, 'square', 0.1, 0.1);
+                setTimeout(() => playTone(400, 'square', 0.1, 0.1), 150);
+                setTimeout(() => playTone(400, 'square', 0.1, 0.1), 300);
+                setTimeout(() => playTone(600, 'square', 0.5, 0.15), 450);
+            }
+        };
+
+        // --- DATA & CONFIG ---
+        const ITEM_TYPES = [
+            { id: 'apple', emoji: '🍎' },
+            { id: 'banana', emoji: '🍌' },
+            { id: 'cherry', emoji: '🍒' },
+            { id: 'grape', emoji: '🍇' },
+            { id: 'strawberry', emoji: '🍓' },
+            { id: 'watermelon', emoji: '🍉' },
+            { id: 'orange', emoji: '🍊' },
+            { id: 'pineapple', emoji: '🍍' },
+        ];
+
+        const TOTAL_QUESTIONS = 10;
+        const MAX_NUMBER = 20;
+
+        // --- ICONS ---
+        const VolumeIcon = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+            </svg>
+        );
+
+        // --- HELPER FUNCTIONS ---
+        const generateRandomQuestions = (count) => {
+            const questions = [];
+            for (let i = 0; i < count; i++) {
+                const isGreatest = Math.random() > 0.5;
+                const type = isGreatest ? 'greatest' : 'smallest';
+                const itemType = ITEM_TYPES[Math.floor(Math.random() * ITEM_TYPES.length)];
+                
+                const numbers = new Set();
+                while(numbers.size < 3) {
+                    numbers.add(Math.floor(Math.random() * MAX_NUMBER) + 1);
+                }
+                const options = Array.from(numbers);
+                
+                let correctVal = type === 'greatest' ? Math.max(...options) : Math.min(...options);
+                const correctIndex = options.indexOf(correctVal);
+
+                questions.push({ id: i, type, itemType, options, correctIndex });
+            }
+            return questions;
+        };
+
+        const speakText = (text) => {
+            if (!window.speechSynthesis) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.85; 
+            utterance.pitch = 1.2; 
+            utterance.lang = 'en-US';
+            const voices = window.speechSynthesis.getVoices();
+            const preferredVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Google US')) || voices[0];
+            if (preferredVoice) utterance.voice = preferredVoice;
+            window.speechSynthesis.speak(utterance);
+        };
+
+        // --- BACKGROUND COMPONENT ---
+        const LandscapeBackground = () => (
+            <div className="fixed inset-0 z-0 bg-[#78C5F9] pointer-events-none overflow-hidden">
+                {/* Sun */}
+                <div className="absolute top-10 left-10 md:top-20 md:left-24 w-20 h-20 md:w-32 md:h-32 bg-[#FFD700] rounded-full shadow-[0_0_50px_rgba(255,215,0,0.8)] animate-float"></div>
+                
+                {/* Rainbow */}
+                <div className="rainbow-arch"></div>
+
+                {/* Clouds */}
+                <svg className="absolute top-20 right-10 md:right-32 w-32 md:w-48 opacity-90 animate-float-cloud" viewBox="0 0 100 50" fill="white">
+                    <circle cx="30" cy="30" r="15" />
+                    <circle cx="50" cy="20" r="20" />
+                    <circle cx="70" cy="30" r="15" />
+                    <rect x="30" y="30" width="40" height="15" />
+                </svg>
+
+                <svg className="absolute top-40 left-1/4 w-24 md:w-32 opacity-80 animate-float-cloud" style={{animationDelay: '2s'}} viewBox="0 0 100 50" fill="white">
+                    <circle cx="30" cy="30" r="15" />
+                    <circle cx="50" cy="20" r="20" />
+                    <circle cx="70" cy="30" r="15" />
+                    <rect x="30" y="30" width="40" height="15" />
+                </svg>
+
+                {/* Grass */}
+                <div className="absolute bottom-0 left-0 right-0 h-[20%] bg-[#58CC02] border-t-[10px] border-[#46A302]"></div>
+
+                {/* Trees & Flowers */}
+                <div className="absolute bottom-[10%] left-[10%] md:left-[20%] flex flex-col items-center">
+                    <div className="w-12 h-12 bg-green-600 rounded-full border-b-4 border-green-800 z-10"></div>
+                    <div className="w-3 h-8 bg-amber-800 -mt-2"></div>
+                </div>
+
+                <div className="absolute bottom-[12%] right-[15%] md:right-[25%] flex flex-col items-center">
+                    <div className="w-16 h-16 bg-green-500 rounded-full border-b-4 border-green-700 z-10"></div>
+                    <div className="w-4 h-10 bg-amber-800 -mt-2"></div>
+                </div>
+
+                <div className="absolute bottom-[5%] left-[30%] text-xl">🌸</div>
+                <div className="absolute bottom-[8%] right-[40%] text-xl">🌺</div>
+                <div className="absolute bottom-[3%] right-[10%] text-xl">🌼</div>
+            </div>
+        );
+
+        // --- EXPLOSION CONFETTI COMPONENT ---
+        const ExplosionConfetti = () => {
+            const colors = ['#58CC02', '#1CB0F6', '#FFC800', '#FF4B4B', '#CE82FF', '#FF9600'];
+            
+            // Create particles that shoot outwards from the center
+            const pieces = useMemo(() => Array.from({length: 120}).map((_, i) => {
+                const isCircle = Math.random() > 0.5;
+                const angle = Math.random() * Math.PI * 2; // Random direction in 360 degrees
+                const velocity = Math.random() * 400 + 100; // Random distance
+                
+                const dx = Math.cos(angle) * velocity + 'px';
+                // Bias Y slightly upwards so it looks like a fountain blast
+                const dy = Math.sin(angle) * velocity - (Math.random() * 200) + 'px'; 
+                
+                return {
+                    id: i,
+                    backgroundColor: colors[Math.floor(Math.random() * colors.length)],
+                    width: Math.random() * 12 + 8 + 'px',
+                    height: isCircle ? (Math.random() * 12 + 8 + 'px') : (Math.random() * 20 + 10 + 'px'),
+                    borderRadius: isCircle ? '50%' : '4px',
+                    '--dx': dx,
+                    '--dy': dy,
+                    '--rot': Math.random() * 1080 + 'deg',
+                    duration: (Math.random() * 1.5 + 1) + 's' // 1 to 2.5 seconds
+                };
+            }), []);
+
+            return (
+                <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center overflow-hidden">
+                    {pieces.map(p => (
+                        <div key={p.id} className="absolute animate-explode shadow-sm" style={{
+                            backgroundColor: p.backgroundColor,
+                            width: p.width,
+                            height: p.height,
+                            borderRadius: p.borderRadius,
+                            '--dx': p['--dx'],
+                            '--dy': p['--dy'],
+                            '--rot': p['--rot'],
+                            '--duration': p.duration
+                        }} />
+                    ))}
+                </div>
+            );
+        };
+
+        // --- SCREENS ---
+        const StartScreen = ({ onStart }) => (
+            <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center animate-bounce-in relative z-10">
+                <div className="glass-container p-8 md:p-12 rounded-[2.5rem] shadow-2xl max-w-lg w-full border-b-[10px] border-b-gray-200">
+                    <div className="text-6xl mb-4 animate-float emoji-icon">🐵</div>
+                    <h1 className="text-5xl md:text-6xl font-black text-[#FF9600] tracking-wide leading-tight text-stroke-small mb-2">
+                        MATH QUEST
+                    </h1>
+                    <p className="text-xl md:text-2xl text-gray-600 mb-8 font-bold">
+                        Learn Numbers with Fruits!
+                    </p>
+                    <button 
+                        onClick={() => { sfx.click(); onStart(); }}
+                        className="btn-duo w-full bg-[#58CC02] hover:bg-[#46A302] border-[#46a302] text-white text-3xl font-black py-5 rounded-2xl shadow-sm flex items-center justify-center gap-3"
+                    >
+                        PLAY NOW
+                    </button>
+                </div>
+            </div>
+        );
+
+        const EndScreen = ({ score, total, onRestart }) => {
+            useEffect(() => { sfx.tada(); }, []);
+            
+            return (
+                <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center animate-bounce-in relative z-10">
+                    <ExplosionConfetti />
+                    <div className="glass-container p-10 rounded-[2.5rem] shadow-2xl max-w-lg w-full border-b-[10px] border-b-gray-200">
+                        <div className="text-8xl mb-6 animate-bounce emoji-icon">🌟</div>
+                        <h2 className="text-5xl font-black text-[#FFC800] mb-4 text-stroke-small">Super Star!</h2>
+                        <p className="text-3xl text-gray-600 mb-10 font-bold">
+                            Score: <span className="text-[#1CB0F6] text-4xl">{score}</span> / {total}
+                        </p>
+                        <button 
+                            onClick={() => { sfx.click(); onRestart(); }}
+                            className="btn-duo w-full bg-[#1CB0F6] hover:bg-[#1899D6] border-[#1899D6] text-white text-2xl font-black py-5 rounded-2xl flex items-center justify-center gap-3"
+                        >
+                            PLAY AGAIN
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- GAME CARD COMPONENT ---
+        const GameCard = ({ count, itemType, onClick, disabled, isSelected, status, showNumber }) => {
+            let borderClass = "border-[#E5E5E5] border-b-[#E5E5E5]";
+            let bgClass = "bg-white";
+            let animationClass = "";
+
+            if (isSelected) {
+                borderClass = "border-[#1CB0F6] border-b-[#1CB0F6]";
+                bgClass = "bg-[#DDF4FF]";
+                
+                if (status === 'correct') {
+                    borderClass = "border-[#58CC02] border-b-[#58CC02]";
+                    bgClass = "bg-[#D7FFB8]";
+                    animationClass = "animate-pop scale-105 z-10";
+                } else if (status === 'wrong') {
+                    borderClass = "border-[#FF4B4B] border-b-[#FF4B4B]";
+                    bgClass = "bg-[#FFDFE0]";
+                    animationClass = "animate-shake";
+                }
+            } else if (disabled && !isSelected) {
+                bgClass = "bg-white/60 opacity-70";
+            }
+
+            return (
+                <div className="flex flex-col items-center gap-3 h-full">
+                    <button 
+                        onClick={onClick}
+                        disabled={disabled && status !== 'wrong'} 
+                        className={`
+                            card-duo relative w-full aspect-[4/5] rounded-3xl border-2
+                            flex flex-col items-center justify-center p-2 md:p-3
+                            ${borderClass} ${bgClass} ${animationClass}
+                            ${disabled && status !== 'wrong' ? 'cursor-default' : 'cursor-pointer hover:bg-gray-50'}
+                        `}
+                    >
+                        {/* Grid of fruits: Fixed max 5 per row. 
+                            place-content-center ensures the entire grid block is centered vertically and horizontally. 
+                        */}
+                        <div className="grid grid-cols-5 gap-1 place-items-center place-content-center w-full h-full overflow-hidden">
+                            {[...Array(count)].map((_, i) => (
+                                <span key={i} className="text-3xl md:text-4xl emoji-icon leading-none">
+                                    {itemType.emoji}
+                                </span>
+                            ))}
+                        </div>
+                    </button>
+                    
+                    {/* Number Label: Opacity 0 when not revealed, to keep layout stable */}
+                    <div className={`bg-white border-2 border-gray-200 text-gray-700 font-black text-2xl md:text-3xl px-6 py-2 rounded-2xl shadow-sm transition-opacity duration-300 ${showNumber ? 'opacity-100' : 'opacity-0'}`}>
+                        {count}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- MAIN GAME ---
+        const Game = () => {
+            const [gameState, setGameState] = useState('start');
+            const [questions, setQuestions] = useState([]);
+            const [currentQIndex, setCurrentQIndex] = useState(0);
+            const [score, setScore] = useState(0);
+            
+            // Interaction States
+            const [selectedOption, setSelectedOption] = useState(null);
+            const [status, setStatus] = useState('idle');
+            const [canScore, setCanScore] = useState(true);
+            const [isChecked, setIsChecked] = useState(false); // Controls number visibility
+
+            const startGame = () => {
+                setQuestions(generateRandomQuestions(TOTAL_QUESTIONS));
+                setCurrentQIndex(0);
+                setScore(0);
+                resetQuestionState();
+                setGameState('playing');
+            };
+
+            const resetQuestionState = () => {
+                setSelectedOption(null);
+                setStatus('idle');
+                setCanScore(true);
+                setIsChecked(false);
+            };
+
+            // Read aloud ONLY on manual click
+            const playQuestionAudio = () => {
+                sfx.click();
+                const q = questions[currentQIndex];
+                if (q) {
+                    const text = q.type === 'greatest' ? "Which is the greatest?" : "Which is the smallest?";
+                    speakText(text);
+                }
+            };
+
+            const handleOptionClick = (optionIndex) => {
+                if (status === 'correct') return;
+                sfx.click();
+                setSelectedOption(optionIndex);
+                setStatus('idle');
+            };
+
+            const handleCheck = () => {
+                setIsChecked(true); // Reveal numbers
+                
+                const currentQ = questions[currentQIndex];
+                const isCorrect = selectedOption === currentQ.correctIndex;
+
+                if (isCorrect) {
+                    setStatus('correct');
+                    sfx.success();
+                    if (canScore) {
+                        setScore(s => s + 1);
+                    }
+                    speakText("Awesome!");
+                } else {
+                    setStatus('wrong');
+                    sfx.wrong();
+                    setCanScore(false);
+                    speakText("Try again!");
+                }
+            };
+
+            const handleNext = () => {
+                sfx.click();
+                if (currentQIndex < TOTAL_QUESTIONS - 1) {
+                    setCurrentQIndex(prev => prev + 1);
+                    resetQuestionState();
+                } else {
+                    setGameState('end');
+                }
+            };
+
+            if (gameState === 'start') return (
+                <>
+                    <LandscapeBackground />
+                    <StartScreen onStart={startGame} />
+                </>
+            );
+            
+            if (gameState === 'end') return (
+                <>
+                    <LandscapeBackground />
+                    <EndScreen score={score} total={TOTAL_QUESTIONS} onRestart={startGame} />
+                </>
+            );
+
+            const currentQ = questions[currentQIndex];
+            const isGreatest = currentQ.type === 'greatest';
+            const keyword = isGreatest ? "GREATEST" : "SMALLEST";
+            const keywordColor = isGreatest ? "text-[#58CC02]" : "text-[#FF4B4B]";
+
+            return (
+                <div className="min-h-screen w-full flex items-center justify-center p-2 md:p-6 relative">
+                    <LandscapeBackground />
+
+                    {/* Main Game Container - Using glass-container for translucent effect */}
+                    <div className="glass-container w-full max-w-4xl rounded-[2.5rem] shadow-2xl flex flex-col p-6 md:p-10 relative z-10 max-h-[95vh] overflow-y-auto no-scrollbar">
+                        
+                        {/* Header: Round & Score */}
+                        <div className="flex justify-between items-center w-full mb-6 font-bold text-gray-600">
+                            <div className="bg-white/80 rounded-2xl px-5 py-2 uppercase tracking-wider text-sm md:text-base border-2 border-white">
+                                Round {currentQIndex + 1}/{TOTAL_QUESTIONS}
+                            </div>
+                            <div className="flex items-center gap-2 bg-[#FFC800]/20 text-[#FFC800] rounded-2xl px-5 py-2 border-2 border-[#FFC800]/30 text-lg shadow-sm">
+                                🌟 {score}
+                            </div>
+                        </div>
+
+                        {/* Question Title & Speaker Icon */}
+                        <div className="w-full flex flex-row items-center justify-center flex-wrap gap-x-4 gap-y-2 mb-10">
+                            <div className="flex items-center justify-center flex-wrap gap-3 text-center">
+                                <h2 className="text-3xl md:text-5xl font-black text-gray-700 m-0">
+                                    Which is the
+                                </h2>
+                                <span className={`text-3xl md:text-5xl font-black ${keywordColor} text-stroke-small px-4 py-1 bg-white/90 rounded-2xl shadow-sm border-2 border-white`}>
+                                    {keyword}?
+                                </span>
+                            </div>
+                            {/* Speaker Button */}
+                            <button 
+                                onClick={playQuestionAudio} 
+                                className="bg-white/80 p-2 md:p-3 rounded-full shadow-sm border-2 border-gray-200 hover:scale-110 active:scale-95 transition-transform"
+                                aria-label="Read Question"
+                            >
+                                <VolumeIcon />
+                            </button>
+                        </div>
+
+                        {/* Cards Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 md:gap-8 w-full mb-10 flex-1">
+                            {currentQ.options.map((count, idx) => (
+                                <GameCard 
+                                    key={idx}
+                                    count={count}
+                                    itemType={currentQ.itemType}
+                                    onClick={() => handleOptionClick(idx)}
+                                    disabled={status === 'correct'}
+                                    isSelected={selectedOption === idx}
+                                    status={selectedOption === idx ? status : 'idle'}
+                                    showNumber={isChecked} /* Only show numbers when checked */
+                                />
+                            ))}
+                        </div>
+
+                        {/* Action Area */}
+                        <div className="w-full h-24 flex items-center justify-center relative">
+                            {/* Feedback Message */}
+                            {status === 'correct' && (
+                                <div className="absolute top-[-20px] left-1/2 -translate-x-1/2 bg-[#58CC02] text-white px-8 py-3 rounded-full font-bold text-2xl shadow-lg animate-bounce-in z-20 whitespace-nowrap">
+                                    Awesome! 🎉
+                                </div>
+                            )}
+                            
+                            {/* Check or Next Button */}
+                            {status !== 'correct' ? (
+                                <button
+                                    onClick={handleCheck}
+                                    disabled={selectedOption === null}
+                                    className={`btn-duo w-full max-w-sm py-4 md:py-5 text-2xl md:text-3xl font-black rounded-2xl text-white tracking-wide transition-all z-10 ${
+                                        selectedOption !== null 
+                                            ? 'bg-[#58CC02] border-[#46A302] hover:bg-[#4dd200] shadow-md' 
+                                            : 'bg-gray-300 border-gray-400 text-gray-500 cursor-not-allowed opacity-80'
+                                    }`}
+                                >
+                                    CHECK
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={handleNext}
+                                    className="btn-duo w-full max-w-sm py-4 md:py-5 text-2xl md:text-3xl font-black rounded-2xl text-white bg-[#1CB0F6] border-[#1899D6] hover:bg-[#1cbaf6] shadow-md tracking-wide animate-pop z-10"
+                                >
+                                    CONTINUE
+                                </button>
+                            )}
+                        </div>
+
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<Game />);
+    </script>
+</body>
+</html>
