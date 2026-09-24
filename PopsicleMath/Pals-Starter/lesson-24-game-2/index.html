@@ -1,815 +1,524 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="stylesheet" href="../assets/brand.css">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pattern Detective</title>
-
-<!-- Tailwind CSS -->
-<script src="https://cdn.tailwindcss.com"></script>
-
-<!-- Tone.js cho hiệu ứng âm thanh (Đã sửa lại phiên bản đúng 14.8.49) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-
-<!-- Google Fonts: Poppins -->
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-
-<style>
-    body {
-        font-family: 'Poppins', sans-serif;
-        background: linear-gradient(-45deg, #1cb0f6, #009ce0, #58cc02, #38bdf8);
-        background-size: 400% 400%;
-        animation: gradientBG 15s ease infinite;
-        overflow-x: hidden;
-        touch-action: manipulation;
-        color: #374151;
-        user-select: none;
-    }
-
-    @keyframes gradientBG {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-
-    /* Hoạt ảnh tùy chỉnh */
-    @keyframes bounceIn {
-        0% { transform: scale(0.5); opacity: 0; }
-        60% { transform: scale(1.05); opacity: 1; }
-        100% { transform: scale(1); opacity: 1; }
-    }
-
-    @keyframes wiggle {
-        0%, 100% { transform: rotate(0deg); }
-        25% { transform: rotate(-10deg); }
-        50% { transform: rotate(10deg); }
-        75% { transform: rotate(-10deg); }
-    }
-
-    @keyframes float {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-15px); }
-    }
-
-    @keyframes popIn {
-        0% { transform: scale(0.5); opacity: 0; }
-        80% { transform: scale(1.2); opacity: 1; }
-        100% { transform: scale(1); opacity: 1; }
-    }
-
-    .animate-bounceIn { animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-    .animate-wiggle { animation: wiggle 0.4s ease-in-out; }
-    .animate-float { animation: float 3s ease-in-out infinite; }
-    .animate-pop { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-
-    /* Phong cách nút nổi 3D kiểu Duolingo */
-    .duo-box {
-        background: #ffffff;
-        border-radius: 24px;
-        border: 2px solid #e5e7eb;
-        border-bottom: 8px solid #e5e7eb;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-    }
-
-    .duo-btn {
-        transition: all 0.1s ease-in-out;
-        cursor: pointer;
-    }
-
-    .duo-btn:active {
-        transform: translateY(6px);
-        border-bottom-width: 2px !important;
-        margin-top: 6px;
-        margin-bottom: -6px;
-    }
-
-    .duo-btn-blue {
-        background-color: #1cb0f6;
-        color: white;
-        border: 2px solid #1899d6;
-        border-bottom: 8px solid #1899d6;
-    }
-
-    .duo-btn-green {
-        background-color: #58cc02;
-        color: white;
-        border: 2px solid #58a700;
-        border-bottom: 8px solid #58a700;
-    }
-
-    .duo-btn-speaker {
-        background-color: #f3f4f6;
-        color: #374151;
-        border: 2px solid #d1d5db;
-        border-bottom: 6px solid #d1d5db;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        width: 50px;
-        height: 50px;
-    }
-
-    .duo-btn-speaker:hover {
-        background-color: #e5e7eb;
-    }
-
-    /* Thẻ lựa chọn đáp án */
-    .option-card {
-        background: #ffffff;
-        border-radius: 24px;
-        border: 3px solid #e5e7eb;
-        border-bottom: 8px solid #e5e7eb;
-        transition: all 0.1s ease-in-out;
-        cursor: pointer;
-        position: relative;
-    }
-
-    .option-card:hover {
-        background: #f8fafc;
-        border-color: #cbd5e1;
-        border-bottom-color: #cbd5e1;
-        transform: translateY(-2px);
-    }
-
-    .option-card:active {
-        transform: translateY(6px);
-        border-bottom-width: 3px;
-        margin-top: 5px;
-    }
-
-    /* Pháo giấy - Cần hiển thị trên cùng */
-    .confetti {
-        position: fixed;
-        width: 12px;
-        height: 24px;
-        z-index: 99999;
-        pointer-events: none;
-        animation: fall 3s ease-in forwards;
-    }
-
-    @keyframes fall {
-        0% { transform: translateY(-50px) rotate(0deg); opacity: 1; }
-        100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
-    }
-
-    /* Ô trống chứa dấu chấm hỏi */
-    .missing-slot {
-        border: 4px dashed #cbd5e1;
-        background-color: #f8fafc;
-        border-radius: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 3rem;
-        color: #cbd5e1;
-        font-weight: 800;
-        box-shadow: inset 0 4px 10px rgba(0,0,0,0.05);
-    }
-
-    .text-stroke-title {
-        text-shadow: 
-            -2px -2px 0 #1e3a8a,  
-             2px -2px 0 #1e3a8a,
-            -2px  2px 0 #1e3a8a,
-             2px  2px 0 #1e3a8a,
-             0px  6px 0 #1e3a8a;
-    }
-
-    /* Rung lắc Icon khi di chuột */
-    .shape-icon {
-        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    .option-card:hover .shape-icon {
-        transform: scale(1.15) rotate(5deg);
-    }
-</style>
-</head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 md:p-8">
-<img src="../assets/logo-oodles-math.png" class="oodles-logo">
-<!-- Cảnh báo âm thanh -->
-<div id="audio-context-warning" class="hidden fixed top-4 left-1/2 transform -translate-x-1/2 bg-yellow-100 text-yellow-800 px-6 py-3 rounded-full font-bold shadow-lg z-50 animate-bounce">
-    Tap anywhere to enable sound! 🎵
-</div>
-
-<!-- Khung chứa Game chính -->
-<div id="app" class="w-full max-w-5xl flex flex-col items-center justify-center relative my-auto">
-    <!-- Màn hình sẽ được nạp bằng JS -->
-</div>
-
-<script>
-// --- 1. DỮ LIỆU GAME & CẤU HÌNH ---
-
-const COLORS = {
-    red: '#ff4b4b',
-    blue: '#1cb0f6',
-    green: '#58cc02',
-    yellow: '#ffc800',
-    purple: '#ce82ff',
-    pink: '#ff82d2',
-    orange: '#ff9600'
-};
-const COLOR_VALS = Object.values(COLORS);
-const SHAPES = ['square', 'circle', 'triangle', 'star', 'heart'];
-const SIZES = ['small', 'medium', 'large'];
-const PATTERNS = ['AB', 'ABC', 'AABB', 'AAB', 'ABB'];
-
-let currentState = {
-    screen: 'start', 
-    round: 0, 
-    questionIdx: 0,
-    score: 0,
-    totalQuestions: 9,
-    questions: [] // Sẽ chứa các câu hỏi được tạo ngẫu nhiên
-};
-
-// --- 2. TRÌNH TẠO CÂU HỎI NGẪU NHIÊN ---
-
-function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
-}
-
-function getRandomElements(arr, n) {
-    let shuffled = shuffleArray([...arr]);
-    return shuffled.slice(0, n);
-}
-
-function getPatternSequence(patternStr, length) {
-    let seq = [];
-    let i = 0;
-    while(seq.length < length) {
-        seq.push(patternStr[i % patternStr.length]);
-        i++;
-    }
-    return seq;
-}
-
-function generateDynamicQuestions() {
-    let questions = [];
-    
-    // Hàm phụ trợ để xây dựng một câu hỏi đơn lẻ
-    function buildQuestion(roundType, roundNum, roundTitle) {
-        let patternType = getRandomElements(PATTERNS, 1)[0];
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Math Graphing Adventure!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap');
         
-        // LOGIC: Với pattern dài >= 3 (ABC, AAB, ABB, AABB) -> hiển thị 6 slots
-        // pattern đơn giản (AB) -> hiển thị 5 slots.
-        let totalSlots = (patternType.length >= 3) ? 6 : 5;
-        let missingIndex = totalSlots - 1; 
-
-        let seqLabels = getPatternSequence(patternType, totalSlots);
-        
-        let shapeMap = {}, colorMap = {}, sizeMap = {};
-        
-        // Thuộc tính cơ bản (cố định cho vòng này trừ khi biến đổi)
-        let baseShape = getRandomElements(SHAPES, 1)[0];
-        let baseColor = getRandomElements(COLOR_VALS, 1)[0];
-        let baseSize = 'large';
-
-        // Thay đổi thuộc tính dựa trên vòng chơi
-        if (roundType === 'color') {
-            let colors = getRandomElements(COLOR_VALS, new Set(patternType.split('')).size);
-            let uniqueLabels = Array.from(new Set(patternType.split('')));
-            uniqueLabels.forEach((label, idx) => colorMap[label] = colors[idx]);
-        } else if (roundType === 'shape') {
-            let shapes = getRandomElements(SHAPES, new Set(patternType.split('')).size);
-            let uniqueLabels = Array.from(new Set(patternType.split('')));
-            uniqueLabels.forEach((label, idx) => shapeMap[label] = shapes[idx]);
-        } else if (roundType === 'size') {
-            let sizes = getRandomElements(SIZES, new Set(patternType.split('')).size);
-            let uniqueLabels = Array.from(new Set(patternType.split('')));
-            uniqueLabels.forEach((label, idx) => sizeMap[label] = sizes[idx]);
+        :root {
+            --c-blue: #1CB0F6;
+            --c-green: #58CC02;
+            --c-red: #FF4B4B;
+            --c-yellow: #FFC800;
+            --font-main: 'Poppins', sans-serif;
         }
 
-        let sequence = seqLabels.map((label, idx) => {
-            if (idx === missingIndex) return null; // Ô trống ở cuối cùng
-            return {
-                shape: shapeMap[label] || baseShape,
-                color: colorMap[label] || baseColor,
-                size: sizeMap[label] || baseSize
-            };
-        });
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            font-family: var(--font-main);
+        }
 
-        let correctItem = {
-            shape: shapeMap[seqLabels[missingIndex]] || baseShape,
-            color: colorMap[seqLabels[missingIndex]] || baseColor,
-            size: sizeMap[seqLabels[missingIndex]] || baseSize
-        };
+        /* ==================================================== */
+        /* SCENERY BACKGROUND CSS */
+        /* ==================================================== */
+        .scenery-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #6EE2FF, #C9F0FF);
+        }
+        .scenery-sun {
+            position: absolute;
+            top: 2rem; left: 2rem;
+            width: 5rem; height: 5rem;
+            background-color: #FFD166;
+            border-radius: 50%;
+            box-shadow: 0 0 50px rgba(255,209,102,0.8);
+            animation: sun-pulse 4s ease-in-out infinite;
+        }
+        @media (min-width: 640px) {
+            .scenery-sun { top: 4rem; left: 6rem; width: 8rem; height: 8rem; }
+        }
+        .scenery-rainbow {
+            position: absolute;
+            bottom: 20%; left: 50%;
+            transform: translateX(-50%);
+            width: 150%;
+            min-width: 800px; max-width: 1400px;
+            opacity: 0.6;
+        }
+        .scenery-cloud {
+            position: absolute;
+            color: white;
+            filter: drop-shadow(0 4px 3px rgba(0,0,0,0.07));
+        }
+        .scenery-cloud-1 { top: 10%; opacity: 0.9; width: 6rem; animation: cloud-fly 45s linear infinite; animation-delay: -5s; }
+        .scenery-cloud-2 { top: 25%; opacity: 0.8; width: 8rem; animation: cloud-fly 60s linear infinite; animation-delay: -30s; }
+        .scenery-cloud-3 { top: 5%; opacity: 0.8; width: 5rem; animation: cloud-fly 30s linear infinite; animation-delay: -15s; }
+        
+        .scenery-grass-1 { position: absolute; bottom: 0; width: 100%; height: 25vh; }
+        .scenery-grass-2 { position: absolute; bottom: 0; width: 100%; height: 15vh; }
 
-        // Tạo các tùy chọn sai
-        let wrongOptions = [];
-        while(wrongOptions.length < 2) {
-            let wrong = {
-                shape: roundType === 'shape' ? getRandomElements(SHAPES, 1)[0] : correctItem.shape,
-                color: roundType === 'color' ? getRandomElements(COLOR_VALS, 1)[0] : correctItem.color,
-                size: roundType === 'size' ? getRandomElements(SIZES, 1)[0] : correctItem.size
-            };
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+        @keyframes cloud-fly {
+            0% { transform: translateX(-15vw); }
+            100% { transform: translateX(115vw); }
+        }
+        @keyframes sun-pulse {
+            0%, 100% { transform: scale(1); opacity: 0.9; }
+            50% { transform: scale(1.05); opacity: 1; box-shadow: 0 0 80px rgba(255,209,102,1); }
+        }
+
+        /* ==================================================== */
+        /* GAME SPECIFIC STYLES */
+        /* ==================================================== */
+        body {
+            background-color: transparent;
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding-bottom: 50px;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(255,255,255,0.5);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .playground {
+            border: 4px dashed #7dd3fc;
+            min-height: 180px;
+        }
+
+        .item-pop {
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .item-pop:active { transform: scale(0.9); }
+
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            70% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .item-pop.clicked {
+            filter: grayscale(1) opacity(0.3);
+            transform: scale(0.8);
+        }
+
+        .graph-card {
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 6px solid transparent;
+        }
+
+        .graph-card.selected-correct {
+            border-color: #22c55e;
+            background-color: rgba(240, 253, 244, 0.9);
+        }
+
+        .graph-card.selected-wrong {
+            border-color: #ef4444;
+            background-color: rgba(254, 242, 242, 0.9);
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .graph-cell {
+            width: 45px;
+            height: 25px;
+            border: 1px solid rgba(0,0,0,0.05);
+            border-radius: 4px;
+            margin: 1px;
+        }
+
+        .cell-fill {
+            width: 100%;
+            height: 100%;
+            border-radius: 3px;
+            box-shadow: inset 0 -4px 0 rgba(0,0,0,0.1);
+        }
+
+        .y-axis-label {
+            height: 27px; /* Khớp với chiều cao cell (25px) + margin (2px) */
+            display: flex;
+            align-items: center;
+            justify-content: end;
+            padding-right: 8px;
+            font-weight: 800;
+            color: #94a3b8;
+            font-size: 0.75rem;
+        }
+
+        #fireworks-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .score-badge {
+            background: linear-gradient(to right, #fbbf24, #f59e0b);
+            border-bottom: 4px solid #b45309;
+        }
+
+        @media (max-width: 640px) {
+            .graph-cell { width: 35px; height: 20px; }
+            .y-axis-label { height: 22px; font-size: 10px; }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- ================= SCENERY BACKGROUND ================= -->
+    <div class="scenery-bg">
+        <div class="scenery-sun"></div>
+        <svg class="scenery-rainbow" viewBox="0 0 100 50">
+            <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#EF476F" stroke-width="3"/>
+            <path d="M 13 50 A 37 37 0 0 1 87 50" fill="none" stroke="#F78C6B" stroke-width="3"/>
+            <path d="M 16 50 A 34 34 0 0 1 84 50" fill="none" stroke="#FFD166" stroke-width="3"/>
+            <path d="M 19 50 A 31 31 0 0 1 81 50" fill="none" stroke="#06D6A0" stroke-width="3"/>
+            <path d="M 22 50 A 28 28 0 0 1 78 50" fill="none" stroke="#118AB2" stroke-width="3"/>
+            <path d="M 25 50 A 25 25 0 0 1 75 50" fill="none" stroke="#073B4C" stroke-width="3"/>
+        </svg>
+
+        <svg class="scenery-cloud scenery-cloud-1" viewBox="0 0 24 24"><path fill="currentColor" d="M17.5,19c2.48,0,4.5-2.02,4.5-4.5c0-2.33-1.78-4.25-4.06-4.47c-0.65-2.9-3.26-5.03-6.44-5.03c-2.81,0-5.21,1.75-6.19,4.24C2.5,9.45,0.5,11.83,0.5,14.5C0.5,17.53,2.97,20,6,20h11.5V19z"/></svg>
+        <svg class="scenery-cloud scenery-cloud-2" viewBox="0 0 24 24"><path fill="currentColor" d="M17.5,19c2.48,0,4.5-2.02,4.5-4.5c0-2.33-1.78-4.25-4.06-4.47c-0.65-2.9-3.26-5.03-6.44-5.03c-2.81,0-5.21,1.75-6.19,4.24C2.5,9.45,0.5,11.83,0.5,14.5C0.5,17.53,2.97,20,6,20h11.5V19z"/></svg>
+        <svg class="scenery-cloud scenery-cloud-3" viewBox="0 0 24 24"><path fill="currentColor" d="M17.5,19c2.48,0,4.5-2.02,4.5-4.5c0-2.33-1.78-4.25-4.06-4.47c-0.65-2.9-3.26-5.03-6.44-5.03c-2.81,0-5.21,1.75-6.19,4.24C2.5,9.45,0.5,11.83,0.5,14.5C0.5,17.53,2.97,20,6,20h11.5V19z"/></svg>
+
+        <svg class="scenery-grass-1" preserveAspectRatio="none" viewBox="0 0 1440 320"><path fill="#7ED321" d="M0,160L48,154.7C96,149,192,139,288,144C384,149,480,171,576,176C672,181,768,171,864,149.3C960,128,1056,96,1152,90.7C1248,85,1344,107,1392,117.3L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>
+        <svg class="scenery-grass-2" preserveAspectRatio="none" viewBox="0 0 1440 320"><path fill="#52B700" d="M0,224L60,208C120,192,240,160,360,160C480,160,600,192,720,202.7C840,213,960,203,1080,186.7C1200,171,1320,149,1380,138.7L1440,128L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"></path></svg>
+
+        <div class="scenery-flowers-container">
+            <span class="scenery-flower flower-1" style="bottom: 20%; left: 5%;">🌸</span>
+            <span class="scenery-flower flower-2" style="bottom: 40%; left: 25%; animation-delay: 0.4s">🌼</span>
+            <span class="scenery-flower flower-3" style="bottom: 15%; left: 50%; animation-delay: 1s">🌻</span>
+            <span class="scenery-flower flower-4" style="bottom: 30%; left: 75%; animation-delay: 0.6s">🌷</span>
+            <span class="scenery-flower flower-5" style="bottom: 10%; left: 90%; animation-delay: 0.2s">🌺</span>
+        </div>
+    </div>
+    <!-- ================= END SCENERY ================= -->
+
+    <canvas id="fireworks-canvas"></canvas>
+
+    <!-- Start Overlay -->
+    <div id="start-overlay" class="fixed inset-0 bg-sky-500/90 backdrop-blur-md z-[200] flex items-center justify-center flex-col text-white p-6 text-center">
+        <h1 class="text-5xl md:text-7xl font-black mb-6 drop-shadow-lg">Graphing Adventure!</h1>
+        <p class="text-2xl mb-10 font-semibold">Are you ready to count and win?</p>
+        <button onclick="startGame()" class="bg-white text-sky-600 px-14 py-5 rounded-full font-black text-3xl shadow-[0_10px_0_#0ea5e9] hover:translate-y-1 hover:shadow-[0_6px_0_#0ea5e9] transition-all active:translate-y-2 active:shadow-none">
+            PLAY NOW! 🚀
+        </button>
+    </div>
+
+    <div class="max-w-6xl mx-auto">
+        <header class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <div class="text-left glass-panel p-4 px-8 rounded-3xl">
+                <h1 class="text-4xl font-black text-sky-700">Level <span id="level-num">1</span></h1>
+                <p class="text-slate-500 font-bold uppercase tracking-wider text-xs">Count items and find the correct graph!</p>
+            </div>
+            <div class="score-badge px-8 py-3 rounded-full text-white font-black text-2xl flex items-center gap-3">
+                <span>⭐ SCORE:</span>
+                <span id="score-val">0</span>
+            </div>
+        </header>
+
+        <!-- The Items Area -->
+        <div id="playground" class="playground glass-panel rounded-[3rem] p-8 flex flex-wrap gap-4 justify-center items-center mb-10 shadow-inner">
+            <!-- Items injected here -->
+        </div>
+
+        <!-- Options Container -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             
-            // Kiểm tra xem nó có khác biệt với kết quả đúng và các kết quả sai khác không
-            let isDiffFromCorrect = wrong.shape !== correctItem.shape || wrong.color !== correctItem.color || wrong.size !== correctItem.size;
-            let isDiffFromWrongs = !wrongOptions.some(w => w.shape === wrong.shape && w.color === wrong.color && w.size === wrong.size);
-            
-            if(isDiffFromCorrect && isDiffFromWrongs) {
-                wrongOptions.push(wrong);
+            <div id="option-a" class="graph-card glass-panel p-8 rounded-[3rem] shadow-xl cursor-pointer" onclick="checkAnswer('a')">
+                <h3 class="text-center font-black text-2xl mb-8 text-indigo-600">Graph A</h3>
+                <div id="graph-a-content" class="flex justify-center items-end gap-3 overflow-x-auto pb-4">
+                    <!-- Graph A columns injected here -->
+                </div>
+            </div>
+
+            <div id="option-b" class="graph-card glass-panel p-8 rounded-[3rem] shadow-xl cursor-pointer" onclick="checkAnswer('b')">
+                <h3 class="text-center font-black text-2xl mb-8 text-pink-600">Graph B</h3>
+                <div id="graph-b-content" class="flex justify-center items-end gap-3 overflow-x-auto pb-4">
+                    <!-- Graph B columns injected here -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Win Modal -->
+    <div id="win-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-[150]">
+        <div class="bg-white rounded-[3.5rem] p-12 max-w-md w-full text-center shadow-2xl">
+            <div class="text-8xl mb-6">🥳</div>
+            <h2 class="text-4xl font-black text-slate-800 mb-2">AMAZING!</h2>
+            <p class="text-slate-500 text-lg mb-10 font-medium">You are a Math Superstar! Keep going!</p>
+            <button onclick="nextLevel()" class="bg-green-500 hover:bg-green-600 text-white w-full py-5 rounded-2xl font-black text-2xl shadow-[0_8px_0_#166534] transition-all active:translate-y-2 active:shadow-none">
+                NEXT LEVEL ➔
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Sound System
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'correct') {
+                [523.25, 659.25, 783.99].forEach((freq, i) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g); g.connect(audioCtx.destination);
+                    o.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.1);
+                    g.gain.setValueAtTime(0.1, audioCtx.currentTime + i * 0.1);
+                    g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.1 + 0.3);
+                    o.start(audioCtx.currentTime + i * 0.1);
+                    o.stop(audioCtx.currentTime + i * 0.1 + 0.3);
+                });
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
             }
         }
 
-        let options = [correctItem, ...wrongOptions];
-        shuffleArray(options);
-        let correctIndex = options.findIndex(opt => opt.shape === correctItem.shape && opt.color === correctItem.color && opt.size === correctItem.size);
+        // Game Configuration
+        const ALL_ITEMS = [
+            { emoji: '🚀', color: 'bg-indigo-500', name: 'Rocket' },
+            { emoji: '🦖', color: 'bg-green-500', name: 'Dino' },
+            { emoji: '🦄', color: 'bg-pink-400', name: 'Unicorn' },
+            { emoji: '🚗', color: 'bg-red-500', name: 'Car' },
+            { emoji: '🧸', color: 'bg-orange-400', name: 'Bear' },
+            { emoji: '🍦', color: 'bg-blue-300', name: 'Ice Cream' },
+            { emoji: '⚽', color: 'bg-slate-700', name: 'Ball' },
+            { emoji: '🦁', color: 'bg-amber-500', name: 'Lion' }
+        ];
 
-        return {
-            round: roundNum,
-            roundTitle: roundTitle,
-            patternType: patternType,
-            sequence: sequence,
-            options: options,
-            correctIndex: correctIndex
+        let state = {
+            score: 0,
+            level: 1,
+            correctOption: '',
+            currentItems: [],
+            actualCounts: []
         };
-    }
 
-    // Tạo 3 câu hỏi cho mỗi vòng
-    for(let i=0; i<3; i++) questions.push(buildQuestion('color', 1, "Round 1: Color Patterns! 🎨"));
-    for(let i=0; i<3; i++) questions.push(buildQuestion('shape', 2, "Round 2: Shape Patterns! ⭐"));
-    for(let i=0; i<3; i++) questions.push(buildQuestion('size', 3, "Round 3: Size Patterns! 📏"));
-
-    return questions;
-}
-
-// --- 3. HỆ THỐNG ÂM THANH & TTS ---
-let correctSynth, errorSynth, clickSynth;
-let isAudioReady = false;
-
-async function initAudio() {
-    if (isAudioReady) return;
-    
-    // Kiểm tra xem thư viện Tone có tải được thành công không
-    if (typeof Tone === 'undefined') {
-        console.warn("Thư viện Tone.js chưa được tải thành công.");
-        return;
-    }
-
-    try {
-        // Đảm bảo trình duyệt mở khóa AudioContext
-        await Tone.start();
-
-        correctSynth = new Tone.PolySynth(Tone.Synth, {
-            oscillator: { type: "triangle" },
-            envelope: { attack: 0.05, decay: 0.1, sustain: 0.2, release: 1 }
-        }).toDestination();
-        correctSynth.volume.value = 0; // Âm lượng to, rõ ràng
-
-        errorSynth = new Tone.Synth({
-            oscillator: { type: "sine" },
-            envelope: { attack: 0.1, decay: 0.4, sustain: 0, release: 0.1 }
-        }).toDestination();
-        errorSynth.volume.value = 0;
-
-        // Âm thanh "Pop/Bloop" đã đổi thành tiếng Synth cao và ngắn (dễ nghe trên mọi thiết bị)
-        clickSynth = new Tone.Synth({
-            oscillator: { type: "sine" },
-            envelope: { attack: 0.005, decay: 0.1, sustain: 0, release: 0.01 }
-        }).toDestination();
-        clickSynth.volume.value = 0;
-
-        isAudioReady = true;
-    } catch (e) {
-        console.log("Audio waiting for user interaction.", e);
-    }
-}
-
-function playClickSound() {
-    if (isAudioReady && typeof Tone !== 'undefined' && clickSynth && Tone.context.state === 'running') {
-        // Tiếng pop cao (C6) nhịp siêu ngắn
-        clickSynth.triggerAttackRelease("C6", "32n", Tone.now()); 
-    }
-}
-
-function playCorrectSound() {
-    if (isAudioReady && typeof Tone !== 'undefined' && correctSynth && Tone.context.state === 'running') {
-        // Phát sau tiếng pop 1 chút
-        const now = Tone.now() + 0.15; 
-        correctSynth.triggerAttackRelease("C5", "16n", now);
-        correctSynth.triggerAttackRelease("E5", "16n", now + 0.1);
-        correctSynth.triggerAttackRelease("G5", "16n", now + 0.2);
-        correctSynth.triggerAttackRelease("C6", "4n", now + 0.3);
-    }
-}
-
-function playIncorrectSound() {
-    if (isAudioReady && typeof Tone !== 'undefined' && errorSynth && Tone.context.state === 'running') {
-        // Trượt dốc pitch cho hiệu ứng "boing" (phát sau tiếng pop)
-        const now = Tone.now() + 0.15;
-        errorSynth.triggerAttack("D3", now);
-        errorSynth.frequency.exponentialRampToValueAtTime("D2", now + 0.4);
-        errorSynth.triggerRelease(now + 0.4);
-    }
-}
-
-function playVictorySound() {
-    if (isAudioReady && typeof Tone !== 'undefined' && correctSynth && Tone.context.state === 'running') {
-        const now = Tone.now();
-        correctSynth.triggerAttackRelease(["C4", "E4", "G4"], "4n", now);
-        correctSynth.triggerAttackRelease(["F4", "A4", "C5"], "4n", now + 0.3);
-        correctSynth.triggerAttackRelease(["G4", "B4", "D5"], "4n", now + 0.6);
-        correctSynth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "2n", now + 0.9);
-    }
-}
-
-// Chuyển văn bản thành giọng nói (Text to Speech)
-function speakQuestion() {
-    if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance("What comes next?");
-        utterance.lang = 'en-US';
-        utterance.rate = 0.85; 
-        utterance.pitch = 1.2; 
-        window.speechSynthesis.speak(utterance);
-    }
-}
-
-// --- 4. CÔNG CỤ HIỂN THỊ & SVGS ---
-
-function getAppElement() {
-    return document.getElementById('app');
-}
-
-// Icon đẹp bóng bẩy 3D
-function generateSVG(shapeObj) {
-    if (!shapeObj) return '';
-
-    const { shape, color, size } = shapeObj;
-
-    let sizeClasses = '';
-    if (size === 'large') sizeClasses = 'w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24';
-    if (size === 'medium') sizeClasses = 'w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20';
-    if (size === 'small') sizeClasses = 'w-8 h-8 sm:w-10 sm:h-10 md:w-14 md:h-14';
-
-    let path = '';
-    switch (shape) {
-        case 'square':
-            path = `<rect x="15" y="15" width="70" height="70" rx="16" fill="${color}" />
-                    <rect x="15" y="15" width="70" height="70" rx="16" fill="url(#shineGrad)" />`;
-            break;
-        case 'circle':
-            path = `<circle cx="50" cy="50" r="38" fill="${color}" />
-                    <circle cx="50" cy="50" r="38" fill="url(#shineGrad)" />`;
-            break;
-        case 'triangle':
-            path = `<polygon points="50,15 85,80 15,80" fill="${color}" stroke-linejoin="round" />
-                    <polygon points="50,15 85,80 15,80" fill="url(#shineGrad)" stroke-linejoin="round" />`;
-            break;
-        case 'star':
-            path = `<polygon points="50,10 61,35 88,35 66,52 75,78 50,62 25,78 34,52 12,35 39,35" fill="${color}" stroke-linejoin="round" />
-                    <polygon points="50,10 61,35 88,35 66,52 75,78 50,62 25,78 34,52 12,35 39,35" fill="url(#shineGrad)" stroke-linejoin="round" />`;
-            break;
-        case 'heart':
-            path = `<path d="M50,85 C50,85 15,55 15,30 C15,15 30,10 45,25 C50,30 50,30 55,25 C70,10 85,15 85,30 C85,55 50,85 50,85 Z" fill="${color}" stroke-linejoin="round" />
-                    <path d="M50,85 C50,85 15,55 15,30 C15,15 30,10 45,25 C50,30 50,30 55,25 C70,10 85,15 85,30 C85,55 50,85 50,85 Z" fill="url(#shineGrad)" stroke-linejoin="round" />`;
-            break;
-    }
-
-    return `
-    <svg class="shape-icon ${sizeClasses} drop-shadow-xl" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-            <linearGradient id="shineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stop-color="white" stop-opacity="0.6" />
-                <stop offset="30%" stop-color="white" stop-opacity="0.1" />
-                <stop offset="100%" stop-color="black" stop-opacity="0.15" />
-            </linearGradient>
-            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.3" />
-            </filter>
-        </defs>
-        <g filter="url(#shadow)">
-            ${path}
-        </g>
-    </svg>
-    `;
-}
-
-function triggerConfetti() {
-    const colors = ['#ff4b4b', '#1cb0f6', '#58cc02', '#ffc800', '#ce82ff'];
-    for (let i = 0; i < 80; i++) {
-        const confetti = document.createElement('div');
-        confetti.classList.add('confetti');
-        
-        confetti.style.left = Math.random() * 100 + 'vw';
-        confetti.style.top = -10 + 'px';
-        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-        confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
-        confetti.style.animationDelay = (Math.random() * 0.5) + 's';
-        
-        if (Math.random() > 0.5) confetti.style.borderRadius = '50%';
-        
-        document.body.appendChild(confetti);
-
-        setTimeout(() => { confetti.remove(); }, 5000);
-    }
-}
-
-// --- 5. RENDER GIAO DIỆN CHÍNH ---
-
-function renderStartScreen() {
-    const app = getAppElement();
-    app.innerHTML = `
-        <div class="flex flex-col items-center justify-center animate-bounceIn text-center w-full max-w-lg mx-auto">
-            <h1 class="text-5xl md:text-7xl font-black text-[#ffc800] mb-8 text-stroke-title drop-shadow-2xl leading-tight">
-                Pattern<br>Detective
-            </h1>
-
-            <div class="relative mb-12 animate-float">
-                <div class="text-[120px] md:text-[140px] drop-shadow-2xl">🐶</div>
-                <div class="absolute -top-8 -right-16 bg-white rounded-3xl p-4 shadow-xl text-lg md:text-xl font-bold text-[#1cb0f6] border-4 border-[#e5e7eb] rotate-6 z-10 whitespace-nowrap">
-                    Hi! I'm Doggo! <br> Let's play! 🔎
-                </div>
-            </div>
-
-            <button onclick="startGame()" class="w-full sm:w-auto duo-btn duo-btn-green font-bold text-3xl md:text-4xl py-5 px-16 rounded-3xl tracking-wide uppercase">
-                Start Game!
-            </button>
-        </div>
-    `;
-}
-
-function renderRoundTransition() {
-    const app = getAppElement();
-    const currentQ = currentState.questions[currentState.questionIdx];
-
-    app.innerHTML = `
-        <div class="fixed inset-0 bg-[#1cb0f6] bg-opacity-95 flex items-center justify-center z-50 p-4">
-            <div class="duo-box p-10 md:p-16 rounded-[40px] text-center w-full max-w-xl animate-bounceIn">
-                <h2 class="text-4xl md:text-5xl font-black text-[#1cb0f6] mb-6">${currentQ.roundTitle}</h2>
-                <div class="text-[80px] md:text-[100px] animate-float mb-4">🌟</div>
-                <p class="text-2xl md:text-3xl text-gray-500 font-bold uppercase tracking-wide">Get ready!</p>
-            </div>
-        </div>
-    `;
-
-    setTimeout(() => {
-        renderGameScreen();
-    }, 2000);
-}
-
-function renderGameScreen() {
-    const currentQ = currentState.questions[currentState.questionIdx];
-    const app = getAppElement();
-
-    if (currentState.questionIdx > 0 &&
-        currentState.questions[currentState.questionIdx].round !== currentState.questions[currentState.questionIdx - 1].round &&
-        currentState.screen !== 'round-transition') {
-        currentState.screen = 'round-transition';
-        renderRoundTransition();
-        return;
-    }
-    currentState.screen = 'game';
-
-    let sequenceHTML = currentQ.sequence.map((item, index) => {
-        if (item === null) {
-            return `<div class="missing-slot w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 animate-pulse">?</div>`;
+        function startGame() {
+            document.getElementById('start-overlay').classList.add('hidden');
+            initLevel();
         }
-        return `<div class="flex items-center justify-center transform transition hover:scale-110">${generateSVG(item)}</div>`;
-    }).join(`
-        <div class="text-2xl sm:text-3xl md:text-4xl text-white font-black opacity-60 px-1 drop-shadow-md">·</div>
-    `);
 
-    let optionsHTML = currentQ.options.map((opt, index) => {
-        return `
-            <div onclick="handleOptionClick(${index})" class="option-card p-4 sm:p-6 flex items-center justify-center w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36">
-                ${generateSVG(opt)}
-            </div>
-        `;
-    }).join('');
-
-    app.innerHTML = `
-        <!-- Top Bar -->
-        <div class="flex flex-col sm:flex-row justify-between items-center w-full mb-6 mt-2 px-4 gap-4">
-            <div class="bg-white/90 backdrop-blur-sm py-3 px-6 rounded-2xl shadow-sm font-black text-xl md:text-2xl text-[#1cb0f6] uppercase tracking-wide">
-                ${currentQ.roundTitle}
-            </div>
-            <div class="bg-[#ffc800] py-3 px-6 rounded-2xl shadow-sm font-black text-xl md:text-2xl text-white border-b-4 border-[#e5b400] flex items-center gap-2">
-                ⭐ Score: ${currentState.score}
-            </div>
-        </div>
-
-        <!-- Khung hiển thị câu hỏi -->
-        <div class="duo-box w-full max-w-4xl p-8 md:p-12 flex flex-col items-center justify-center mb-8 relative z-10">
-            <div class="absolute -top-14 -left-4 md:-left-8 text-[80px] md:text-[100px] animate-float z-20 drop-shadow-lg">🐶</div>
+        function initLevel() {
+            const container = document.getElementById('playground');
+            container.innerHTML = '';
             
-            <div class="flex items-center justify-center gap-4 mb-8">
-                <h2 class="text-3xl md:text-4xl font-black text-[#374151] text-center uppercase tracking-wide">
-                    What comes next?
-                </h2>
-                <!-- Nút loa -->
-                <button onclick="speakQuestion()" class="duo-btn duo-btn-speaker hover:scale-110 transition-transform active:scale-95" title="Read Question">
-                    <svg class="w-8 h-8 text-[#1cb0f6]" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77zM16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM3 9v6h4l5 5V4L7 9H3z"/>
-                    </svg>
-                </button>
-            </div>
+            const numCats = Math.min(4, 2 + Math.floor(state.level / 5));
+            const shuffled = [...ALL_ITEMS].sort(() => 0.5 - Math.random());
+            state.currentItems = shuffled.slice(0, numCats);
+            state.actualCounts = state.currentItems.map(() => Math.floor(Math.random() * 6) + 2);
 
-            <!-- Các biểu tượng mẫu trong chuỗi -->
-            <div class="flex items-center justify-center flex-wrap gap-y-6 w-full px-2">
-                ${sequenceHTML}
-            </div>
-        </div>
+            let pool = [];
+            state.currentItems.forEach((item, idx) => {
+                for (let i = 0; i < state.actualCounts[idx]; i++) {
+                    pool.push({...item});
+                }
+            });
+            pool.sort(() => 0.5 - Math.random());
 
-        <!-- Khu vực đáp án -->
-        <div class="w-full flex flex-col items-center z-10">
-            <p class="text-2xl md:text-3xl font-black text-white mb-6 drop-shadow-md uppercase tracking-wide text-stroke-title" style="text-shadow: 2px 2px 0 rgba(0,0,0,0.2);">
-                Choose the missing piece!
-            </p>
-            <div class="flex gap-4 sm:gap-6 md:gap-8 justify-center flex-wrap px-4">
-                ${optionsHTML}
-            </div>
-        </div>
+            pool.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'item-pop text-5xl md:text-7xl p-3 select-none drop-shadow-sm';
+                el.innerHTML = item.emoji;
+                el.onclick = () => {
+                    el.classList.toggle('clicked');
+                    playSound('click');
+                };
+                container.appendChild(el);
+            });
 
-        <!-- Màn hình kết quả trả lời -->
-        <div id="feedback-overlay" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-[#374151] bg-opacity-70 backdrop-blur-sm transition-opacity">
-            <div id="feedback-card" class="duo-box p-10 md:p-16 text-center transform scale-0 transition-transform duration-300">
-                <div id="feedback-emoji" class="text-[100px] md:text-[120px] mb-4 drop-shadow-xl">✅</div>
-                <h2 id="feedback-text" class="text-5xl md:text-6xl font-black text-[#58cc02] mb-4 uppercase">Correct!</h2>
-                <div class="bg-[#ffc800] text-white font-bold text-2xl py-2 px-6 rounded-full inline-block border-b-4 border-[#e5b400]">
-                    +1 Point
-                </div>
-            </div>
-        </div>
-    `;
-}
+            state.correctOption = Math.random() > 0.5 ? 'a' : 'b';
+            
+            let wrongCounts = [...state.actualCounts];
+            const changeIdx = Math.floor(Math.random() * numCats);
+            const offset = Math.random() > 0.5 ? 1 : -1;
+            wrongCounts[changeIdx] = Math.max(1, wrongCounts[changeIdx] + offset);
+            if (wrongCounts[changeIdx] === state.actualCounts[changeIdx]) wrongCounts[changeIdx]++;
 
-function renderCertificate() {
-    const app = getAppElement();
-    app.innerHTML = `
-        <div class="flex flex-col items-center justify-center w-full min-h-screen py-10 animate-bounceIn px-4 z-10 relative">
+            const maxDisplay = Math.max(...state.actualCounts, ...wrongCounts);
 
-            <div class="duo-box p-8 md:p-14 w-full max-w-2xl text-center relative overflow-hidden z-20">
-                <!-- Hình nền trang trí -->
-                <div class="absolute -top-10 -right-10 text-[150px] opacity-10">⭐</div>
-                <div class="absolute -bottom-10 -left-10 text-[150px] opacity-10">🎉</div>
+            renderGraph('a', state.correctOption === 'a' ? state.actualCounts : wrongCounts, maxDisplay);
+            renderGraph('b', state.correctOption === 'b' ? state.actualCounts : wrongCounts, maxDisplay);
+        }
 
-                <h1 class="text-4xl md:text-5xl font-black text-[#1cb0f6] mb-4 uppercase tracking-widest">
-                    Lesson Complete!
-                </h1>
+        function renderGraph(prefix, data, maxY) {
+            const container = document.getElementById(`graph-${prefix}-content`);
+            
+            // Xóa nội dung đồ thị cũ trước khi render
+            container.innerHTML = '';
+
+            // Tạo cột Trục Y (Y-Axis)
+            const yAxisCol = document.createElement('div');
+            yAxisCol.className = 'flex flex-col items-end';
+            
+            // Phần nhãn đánh số cho trục Y
+            const labelStack = document.createElement('div');
+            labelStack.className = 'flex flex-col-reverse';
+
+            for (let i = 1; i <= maxY; i++) {
+                const label = document.createElement('div');
+                label.className = 'y-axis-label';
+                label.innerText = i;
+                labelStack.appendChild(label);
+            }
+            
+            // Phần không gian đệm ở dưới cùng (Khớp với khoảng trống của Icon)
+            const emptySpace = document.createElement('div');
+            emptySpace.className = 'mt-3 h-10';
+            
+            yAxisCol.appendChild(labelStack);
+            yAxisCol.appendChild(emptySpace);
+            container.appendChild(yAxisCol);
+
+            // Tạo các cột đồ thị
+            state.currentItems.forEach((item, idx) => {
+                const col = document.createElement('div');
+                col.className = 'flex flex-col items-center';
                 
-                <div class="flex justify-center mb-6">
-                    <div class="text-[100px] md:text-[120px] drop-shadow-2xl animate-float">🐶</div>
-                </div>
+                const stack = document.createElement('div');
+                stack.className = 'flex flex-col-reverse';
 
-                <p class="text-xl md:text-2xl text-gray-500 font-bold mb-6 uppercase">
-                    You are a Pattern Master!
-                </p>
+                for (let i = 1; i <= maxY; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'graph-cell';
+                    if (i <= data[idx]) {
+                        cell.innerHTML = `<div class="cell-fill ${item.color}"></div>`;
+                    } else {
+                        cell.className += ' bg-slate-50/50';
+                    }
+                    stack.appendChild(cell);
+                }
 
-                <div class="bg-[#f3f4f6] rounded-3xl p-6 md:p-8 border-4 border-[#e5e7eb] mb-8 inline-block mx-auto w-4/5 sm:w-2/3">
-                    <p class="text-lg font-bold text-gray-500 uppercase tracking-wide mb-2">Final Score</p>
-                    <p class="text-5xl md:text-7xl font-black text-[#ffc800] drop-shadow-md">
-                        ${currentState.score} / ${currentState.totalQuestions}
-                    </p>
-                </div>
+                const icon = document.createElement('div');
+                icon.className = 'text-3xl mt-3 h-10 flex items-center justify-center';
+                icon.innerText = item.emoji;
 
-                <div class="w-full flex justify-center">
-                    <button onclick="resetGame()" class="w-full sm:w-auto duo-btn duo-btn-blue font-bold text-2xl py-4 px-12 rounded-2xl uppercase tracking-wide flex items-center justify-center gap-3">
-                        <span class="text-3xl">🔄</span> Play Again!
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Bắn pháo giấy tại màn hình kết thúc
-    triggerConfetti();
-    setTimeout(triggerConfetti, 500);
-    playVictorySound();
-}
-
-// --- 6. LOGIC TƯƠNG TÁC ---
-
-async function startGame() {
-    await initAudio(); 
-    playClickSound();
-    
-    currentState.questions = generateDynamicQuestions();
-    
-    currentState.score = 0;
-    currentState.questionIdx = 0;
-    currentState.round = 1;
-    renderGameScreen();
-}
-
-async function handleOptionClick(selectedIndex) {
-    // Đảm bảo đánh thức AudioContext nếu trình duyệt tạm dừng
-    if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state !== 'running') {
-        try {
-            await Tone.start();
-        } catch(e) {
-            console.log("Audio resume error:", e);
-        }
-    }
-    
-    playClickSound(); // Ngay lập tức phát tiếng Pop
-
-    const currentQ = currentState.questions[currentState.questionIdx];
-    const isCorrect = selectedIndex === currentQ.correctIndex;
-
-    const overlay = document.getElementById('feedback-overlay');
-    const card = document.getElementById('feedback-card');
-    const emoji = document.getElementById('feedback-emoji');
-    const text = document.getElementById('feedback-text');
-
-    if (isCorrect) {
-        // Đúng - Phát âm thanh chính xác
-        playCorrectSound(); 
-        currentState.score++;
-        
-        emoji.innerText = '🌟';
-        text.innerText = 'Awesome!';
-        text.className = 'text-5xl md:text-6xl font-black text-[#58cc02] mb-4 uppercase';
-
-        // Cập nhật ô bị thiếu
-        const missingSlot = document.querySelector('.missing-slot');
-        if(missingSlot) {
-            missingSlot.classList.remove('missing-slot', 'animate-pulse');
-            missingSlot.classList.add('flex', 'items-center', 'justify-center', 'animate-pop');
-            missingSlot.innerHTML = generateSVG(currentQ.options[selectedIndex]);
+                col.appendChild(stack);
+                col.appendChild(icon);
+                container.appendChild(col);
+            });
         }
 
-    } else {
-        // Sai
-        playIncorrectSound();
+        function checkAnswer(choice) {
+            const card = document.getElementById(`option-${choice}`);
+            if (choice === state.correctOption) {
+                playSound('correct');
+                card.classList.add('selected-correct');
+                state.score += 10;
+                document.getElementById('score-val').innerText = state.score;
+                startFireworks();
+                setTimeout(() => {
+                    document.getElementById('win-modal').classList.remove('hidden');
+                }, 800);
+            } else {
+                playSound('wrong');
+                card.classList.add('selected-wrong');
+                setTimeout(() => card.classList.remove('selected-wrong'), 500);
+            }
+        }
 
-        emoji.innerText = '🐶';
-        text.innerText = 'Try Again!';
-        text.className = 'text-5xl md:text-6xl font-black text-[#ff4b4b] mb-4 uppercase';
+        function nextLevel() {
+            state.level++;
+            document.getElementById('level-num').innerText = state.level;
+            document.getElementById('win-modal').classList.add('hidden');
+            document.getElementById('option-a').classList.remove('selected-correct');
+            document.getElementById('option-b').classList.remove('selected-correct');
+            initLevel();
+        }
 
-        // Lắc nút bấm
-        const buttons = document.querySelectorAll('.option-card');
-        buttons[selectedIndex].classList.add('animate-wiggle', 'border-[#ff4b4b]');
-        setTimeout(() => {
-            buttons[selectedIndex].classList.remove('animate-wiggle', 'border-[#ff4b4b]');
-        }, 500);
+        // Fireworks System
+        const canvas = document.getElementById('fireworks-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
 
-        overlay.classList.remove('hidden');
-        setTimeout(() => { card.style.transform = 'scale(1)'; }, 10);
-        
-        setTimeout(() => {
-            card.style.transform = 'scale(0)';
-            setTimeout(() => overlay.classList.add('hidden'), 300);
-        }, 1200);
-        return; 
-    }
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.onresize = resizeCanvas;
+        resizeCanvas();
 
-    // Giao diện đúng
-    overlay.classList.remove('hidden');
-    setTimeout(() => {
-        card.style.transform = 'scale(1.1) rotate(-3deg)';
-        setTimeout(() => { card.style.transform = 'scale(1) rotate(0deg)'; }, 150);
-    }, 10);
+        class Particle {
+            constructor() {
+                this.x = canvas.width / 2;
+                this.y = canvas.height / 2;
+                this.vx = (Math.random() - 0.5) * 20;
+                this.vy = (Math.random() - 0.5) * 20;
+                this.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                this.size = Math.random() * 5 + 2;
+                this.life = 100;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.15; // gravity
+                this.life -= 2;
+                this.size *= 0.96;
+            }
+        }
 
-    setTimeout(() => {
-        card.style.transform = 'scale(0)';
-        setTimeout(() => {
-            overlay.classList.add('hidden');
-            nextQuestion();
-        }, 300);
-    }, 1800);
-}
+        function startFireworks() {
+            particles = [];
+            for (let i = 0; i < 100; i++) particles.push(new Particle());
+            requestAnimationFrame(animate);
+        }
 
-function nextQuestion() {
-    currentState.questionIdx++;
-    if (currentState.questionIdx >= currentState.questions.length) {
-        currentState.screen = 'end';
-        renderCertificate();
-    } else {
-        renderGameScreen();
-    }
-}
-
-async function resetGame() {
-    if (typeof Tone !== 'undefined' && Tone.context && Tone.context.state !== 'running') {
-        try {
-            await Tone.start();
-        } catch(e) {}
-    }
-    playClickSound();
-    currentState = {
-        screen: 'start',
-        round: 0,
-        questionIdx: 0,
-        score: 0,
-        totalQuestions: 9,
-        questions: []
-    };
-    renderStartScreen();
-}
-
-// Khởi chạy khi tải trang
-window.onload = () => {
-    renderStartScreen();
-};
-
-</script>
+        function animate() {
+            if (particles.length === 0) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((p, i) => {
+                p.update();
+                p.draw();
+                if (p.life <= 0) particles.splice(i, 1);
+            });
+            if (particles.length > 0) requestAnimationFrame(animate);
+        }
+    </script>
 </body>
 </html>

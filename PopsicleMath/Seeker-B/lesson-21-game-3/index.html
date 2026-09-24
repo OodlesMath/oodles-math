@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Math Game V5 - Multi Range</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            overflow: hidden;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            height: 100vh;
+        }
+
+        /* Custom Scrollbar for large amounts of icons */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        /* Animations */
+        @keyframes bounce-in {
+            0% { transform: scale(0.5); opacity: 0; }
+            60% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-bounce-in { animation: bounce-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; opacity: 0; }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
+            50% { transform: translateY(-15px) rotate(var(--rot, 0deg)); }
+        }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        
+        @keyframes confetti-fall {
+            0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+
+        @keyframes cloud-slow {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(150vw); }
+        }
+        .animate-cloud-slow { animation: cloud-slow 40s linear infinite; }
+
+        @keyframes cloud-fast {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(180vw); }
+        }
+        .animate-cloud-fast { animation: cloud-fast 30s linear infinite; }
+
+        @keyframes sway-slow {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+        .animate-sway-slow { animation: sway-slow 4s ease-in-out infinite; }
+        
+        @keyframes sway-fast {
+            0%, 100% { transform: rotate(-8deg); }
+            50% { transform: rotate(8deg); }
+        }
+        .animate-sway-fast { animation: sway-fast 3s ease-in-out infinite; }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin { animation: spin 1s linear infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+        .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        
+        /* Utilities */
+        .hidden-screen { display: none !important; }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-[#56CCF2] to-[#D7F2FA] text-slate-800 flex flex-col items-center justify-center p-2 sm:p-6 relative">
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- Scenery Background -->
+    <div id="scenery-bg" class="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        <!-- Sun -->
+        <div class="absolute top-[5%] left-[8%] w-24 h-24 sm:w-32 sm:h-32 bg-[#FFD700] rounded-full shadow-[0_0_60px_rgba(255,215,0,0.8)] animate-pulse"></div>
+        <!-- Moving Clouds -->
+        <div class="absolute top-[12%] w-40 h-14 bg-white rounded-full opacity-90 animate-cloud-slow" style="left: -30%;">
+            <div class="absolute -top-6 left-6 w-16 h-16 bg-white rounded-full"></div>
+            <div class="absolute -top-4 right-8 w-14 h-14 bg-white rounded-full"></div>
+        </div>
+        <div class="absolute top-[25%] w-48 h-16 bg-white rounded-full opacity-80 animate-cloud-fast" style="left: -40%;">
+            <div class="absolute -top-8 left-8 w-20 h-20 bg-white rounded-full"></div>
+            <div class="absolute -top-6 right-10 w-16 h-16 bg-white rounded-full"></div>
+        </div>
+        <!-- Grass Layers -->
+        <div class="absolute bottom-0 w-full h-[25%] bg-[#58CC02]" style="clip-path: polygon(0 20%, 10% 15%, 20% 22%, 30% 12%, 40% 25%, 50% 15%, 60% 28%, 70% 18%, 80% 25%, 90% 10%, 100% 20%, 100% 100%, 0 100%)"></div>
+        <div class="absolute bottom-0 w-full h-[20%] bg-[#46A302]" style="clip-path: polygon(0 15%, 15% 25%, 25% 10%, 40% 22%, 50% 12%, 65% 28%, 75% 15%, 85% 26%, 100% 18%, 100% 100%, 0 100%)"></div>
+        <!-- Flowers -->
+        <svg class="absolute bottom-[8%] left-[15%] w-12 h-12 animate-sway-slow" viewBox="0 0 100 100" style="transform-origin: bottom center">
+            <rect x="47" y="50" width="6" height="50" fill="#2D7A00" />
+            <circle cx="50" cy="50" r="15" fill="#FFC800" />
+            <circle cx="50" cy="25" r="18" fill="#FF4B4B" />
+            <circle cx="50" cy="75" r="18" fill="#FF4B4B" />
+            <circle cx="25" cy="50" r="18" fill="#FF4B4B" />
+            <circle cx="75" cy="50" r="18" fill="#FF4B4B" />
+            <circle cx="50" cy="50" r="15" fill="#FFC800" />
+        </svg>
+        <svg class="absolute bottom-[12%] right-[20%] w-10 h-10 animate-sway-fast" viewBox="0 0 100 100" style="transform-origin: bottom center">
+            <rect x="47" y="50" width="6" height="50" fill="#2D7A00" />
+            <circle cx="50" cy="25" r="18" fill="#1CB0F6" />
+            <circle cx="50" cy="75" r="18" fill="#1CB0F6" />
+            <circle cx="25" cy="50" r="18" fill="#1CB0F6" />
+            <circle cx="75" cy="50" r="18" fill="#1CB0F6" />
+            <circle cx="50" cy="50" r="15" fill="#FFC800" />
+        </svg>
+    </div>
+
+    <!-- Main Game Container -->
+    <div class="w-full max-w-5xl h-full max-h-[950px] bg-white/95 backdrop-blur-sm rounded-[2rem] sm:rounded-[3.5rem] shadow-[0_15px_30px_rgba(0,0,0,0.2)] overflow-hidden relative z-10 flex flex-col border-[6px] sm:border-[8px] border-white/40">
+        <div class="p-3 sm:p-8 flex-1 flex flex-col gap-3 sm:gap-4 overflow-hidden justify-center relative w-full h-full">
+            
+            <!-- MENU SCREEN -->
+            <div id="screen-menu" class="flex-1 flex flex-col items-center justify-center space-y-6 sm:space-y-10">
+                <div class="flex justify-center gap-4 sm:gap-10 items-center">
+                    <div class="transform rotate-[-15deg] animate-float" id="menu-icon-1"></div>
+                    <div class="transform scale-125 animate-float" style="animation-delay: 0.5s" id="menu-icon-2"></div>
+                    <div class="transform rotate-[15deg] animate-float" style="animation-delay: 1s" id="menu-icon-3"></div>
+                </div>
+                <div class="space-y-2 sm:space-y-4 text-center px-2">
+                    <h2 class="text-3xl sm:text-6xl font-black text-slate-800 uppercase leading-[1.1] tracking-tight">
+                        <span class="text-[#1CB0F6]">ADDITION</span> & <span class="text-[#FF4B4B]">SUBTRACTION</span>
+                    </h2>
+                </div>
+
+                <!-- Range Selector -->
+                <div class="flex flex-col items-center gap-3 sm:gap-4 w-full px-2 mt-4">
+                    <h3 class="text-lg sm:text-2xl font-bold text-slate-500 uppercase tracking-widest bg-white/50 px-6 py-1 rounded-full">Select Target Range</h3>
+                    <div class="flex flex-wrap justify-center gap-3 sm:gap-4 w-full max-w-2xl">
+                        <button onclick="startGame(10)" class="flex-1 min-w-[100px] bg-[#58CC02] hover:bg-[#46A302] text-white font-black py-3 sm:py-4 rounded-xl text-lg sm:text-2xl border-b-[4px] border-[#46A302] active:border-b-0 active:translate-y-[4px] transition-all">
+                            1 - 10
+                        </button>
+                        <button onclick="startGame(20)" class="flex-1 min-w-[100px] bg-[#1CB0F6] hover:bg-[#1899D6] text-white font-black py-3 sm:py-4 rounded-xl text-lg sm:text-2xl border-b-[4px] border-[#1899D6] active:border-b-0 active:translate-y-[4px] transition-all">
+                            11 - 20
+                        </button>
+                        <button onclick="startGame(30)" class="flex-1 min-w-[100px] bg-[#CE82FF] hover:bg-[#B15EEB] text-white font-black py-3 sm:py-4 rounded-xl text-lg sm:text-2xl border-b-[4px] border-[#A045DB] active:border-b-0 active:translate-y-[4px] transition-all">
+                            21 - 30
+                        </button>
+                        <button onclick="startGame(50)" class="flex-1 min-w-[120px] bg-[#FF4B4B] hover:bg-[#D11515] text-white font-black py-3 sm:py-4 rounded-xl text-lg sm:text-2xl border-b-[4px] border-[#D11515] active:border-b-0 active:translate-y-[4px] transition-all">
+                            31 - 50
+                        </button>
+                        <button onclick="startGame(100)" class="flex-1 min-w-[120px] bg-[#FFC800] hover:bg-[#E59400] text-white font-black py-3 sm:py-4 rounded-xl text-lg sm:text-2xl border-b-[4px] border-[#E59400] active:border-b-0 active:translate-y-[4px] transition-all">
+                            51 - 100
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PLAYING SCREEN -->
+            <div id="screen-playing" class="flex-1 flex flex-col min-h-0 w-full h-full hidden-screen">
+                
+                <!-- Progress Bar -->
+                <div class="w-full flex items-center gap-2 sm:gap-4 mb-2 sm:mb-4 px-1">
+                    <button onclick="returnHome()" class="text-slate-400 hover:text-slate-600 transition-colors bg-white/50 rounded-full p-2">
+                        <svg class="w-6 h-6 sm:w-7 sm:h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    </button>
+                    <div class="flex-1 bg-slate-200 h-3 sm:h-5 rounded-full overflow-hidden relative">
+                        <div id="progress-fill" class="absolute top-0 left-0 h-full bg-[#58CC02] transition-all duration-500 ease-out rounded-full" style="width: 0%;">
+                            <div class="absolute top-1 left-2 right-2 h-1.5 bg-white opacity-30 rounded-full"></div>
+                        </div>
+                    </div>
+                    <div id="progress-text" class="font-bold text-slate-500 text-base sm:text-xl min-w-[3ch] text-center bg-white/50 px-2 py-1 rounded-full">
+                        0/10
+                    </div>
+                </div>
+
+                <!-- Main Game Area - Wooden Board -->
+                <div class="flex-1 bg-white py-3 px-2 sm:p-6 rounded-[1.5rem] sm:rounded-[3rem] border-[6px] sm:border-[10px] border-[#D18B47] flex flex-col items-center justify-center relative shadow-inner overflow-hidden min-h-0">
+                    <div class="absolute inset-0 shadow-[inset_0_0_20px_rgba(0,0,0,0.05)] pointer-events-none rounded-[1rem] sm:rounded-[2rem]"></div>
+
+                    <div id="math-board" class="flex flex-row items-stretch justify-between w-full h-full gap-1 sm:gap-6 transition-transform duration-300 z-10 scale-100 opacity-100 py-2">
+                        
+                        <!-- Group A -->
+                        <div class="flex-1 flex justify-center items-center overflow-hidden h-full" id="math-group-a"></div>
+                        
+                        <!-- Operator -->
+                        <div class="flex-shrink-0 z-20 flex flex-col justify-center mx-1 sm:mx-2">
+                            <div id="operator-badge" class="w-10 h-10 sm:w-20 sm:h-20 flex items-center justify-center rounded-full sm:rounded-[2rem] border-b-[3px] sm:border-b-[6px] transform transition-all duration-300 rotate-0 scale-100 shadow-md">
+                                <!-- Operator SVG injected here -->
+                            </div>
+                        </div>
+
+                        <!-- Group B -->
+                        <div class="flex-1 flex justify-center items-center overflow-hidden h-full" id="math-group-b"></div>
+                    </div>
+                    
+                    <div id="shuffling-overlay" class="absolute inset-0 flex items-center justify-center bg-white/70 backdrop-blur-sm z-30 hidden-screen">
+                        <svg class="text-[#1CB0F6] animate-spin w-12 h-12 sm:w-16 sm:h-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    </div>
+                </div>
+
+                <!-- CHECK BLOCK & RESULT AREA -->
+                <div class="mt-3 sm:mt-6 h-[60px] sm:h-[90px] flex justify-center items-center flex-shrink-0 px-1 sm:px-2 transition-all duration-300">
+                    
+                    <!-- Check Button -->
+                    <button id="btn-check" onclick="handleCheck()" class="w-full max-w-[240px] sm:max-w-[280px] bg-[#CE82FF] hover:bg-[#B15EEB] text-white font-black py-2 sm:py-4 rounded-xl sm:rounded-2xl text-lg sm:text-2xl border-b-[4px] sm:border-b-[6px] border-[#A045DB] active:border-b-0 active:translate-y-[4px] sm:active:translate-y-[6px] transition-all flex items-center justify-center gap-2 sm:gap-3 shadow-lg">
+                        CHECK 
+                        <svg class="w-6 h-6 sm:w-7 sm:h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                    </button>
+
+                    <!-- Result Board -->
+                    <div id="result-board" class="animate-bounce-in w-full max-w-[400px] bg-[#FFF2D6] px-3 sm:px-4 py-2 sm:py-4 rounded-2xl sm:rounded-3xl border-4 border-[#FFE099] flex items-center justify-between shadow-md hidden-screen">
+                        <div class="flex-1 flex justify-center items-center gap-2 sm:gap-4 text-2xl sm:text-5xl font-black">
+                            <span id="res-a" class="text-[#1CB0F6]"></span>
+                            <span id="res-op" class="text-slate-400 text-xl sm:text-4xl"></span>
+                            <span id="res-b" class="text-[#58CC02]"></span>
+                            <span class="text-slate-400 text-xl sm:text-4xl">=</span>
+                            <span id="res-ans" class="text-[#FF4B4B] animate-pulse"></span>
+                        </div>
+                        <button onclick="playResultAudio()" class="bg-[#1CB0F6] hover:bg-[#1899D6] p-2 sm:p-3 rounded-full text-white shadow-[0_4px_0_#1899D6] active:shadow-none active:translate-y-1 transition-all ml-1 sm:ml-2 flex-shrink-0">
+                            <svg class="w-5 h-5 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- Navigation Controls -->
+                <div class="flex gap-2 sm:gap-6 mt-2 sm:mt-4 flex-shrink-0 px-1 sm:px-4 pb-1">
+                    <button id="btn-prev" onclick="goBack()" class="flex-[1] bg-white hover:bg-slate-50 border-2 border-slate-200 disabled:opacity-40 disabled:active:border-b-[4px] disabled:active:translate-y-0 text-slate-400 font-black py-2 sm:py-4 rounded-xl sm:rounded-2xl text-base sm:text-xl border-b-[4px] sm:border-b-[6px] active:border-b-2 active:translate-y-[2px] transition-all flex items-center justify-center">
+                        <svg class="w-6 h-6 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
+                    
+                    <button id="btn-next" onclick="nextQuestion()" class="flex-[3] text-white font-black py-2 sm:py-4 rounded-xl sm:rounded-2xl text-lg sm:text-2xl border-b-[4px] sm:border-b-[6px] active:border-b-0 active:translate-y-[4px] transition-all flex items-center justify-center gap-1 sm:gap-3 uppercase tracking-wide bg-[#1CB0F6] hover:bg-[#1899D6] border-[#1899D6]">
+                        <span id="btn-next-text">NEXT</span>
+                        <span id="btn-next-icon">
+                            <svg class="w-6 h-6 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                        </span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- GAMEOVER SCREEN -->
+            <div id="screen-gameover" class="flex-1 flex flex-col items-center justify-center space-y-6 sm:space-y-8 animate-bounce-in relative z-10 text-center hidden-screen">
+                <div id="confetti-container" class="fixed inset-0 pointer-events-none z-50 overflow-hidden"></div>
+                
+                <div class="relative">
+                    <svg class="text-[#FFC800] drop-shadow-xl animate-float w-[90px] h-[90px] sm:w-[120px] sm:h-[120px]" fill="#FFC800" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+                    <svg class="absolute -top-4 -right-4 sm:-right-6 text-[#FF4B4B] drop-shadow-md animate-pulse w-[40px] h-[40px] sm:w-[60px] sm:h-[60px]" fill="#FF4B4B" viewBox="0 0 24 24" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg class="absolute bottom-0 -left-4 sm:-left-6 text-[#1CB0F6] drop-shadow-md animate-pulse w-[30px] h-[30px] sm:w-[40px] sm:h-[40px]" style="animation-delay: 0.5s" fill="#1CB0F6" viewBox="0 0 24 24" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </div>
+
+                <div class="space-y-1 sm:space-y-2">
+                    <h2 class="text-3xl sm:text-6xl font-black text-[#58CC02] uppercase tracking-tight drop-shadow-sm">
+                        AWESOME!
+                    </h2>
+                    <p class="text-lg sm:text-3xl font-bold text-slate-600">
+                        You completed <span class="text-[#FFC800]" id="final-total">10</span> questions!
+                    </p>
+                </div>
+
+                <div class="bg-[#FFF2D6] px-6 py-3 sm:px-8 sm:py-4 rounded-2xl sm:rounded-3xl border-4 border-[#FFE099] transform rotate-2">
+                    <p class="text-xl sm:text-4xl font-black text-[#E59400]">
+                        SCORE: <span id="final-score">10 / 10</span>
+                    </p>
+                </div>
+
+                <button onclick="playAgain()" class="mt-4 sm:mt-8 w-full max-w-[240px] sm:max-w-[280px] bg-[#1CB0F6] hover:bg-[#1899D6] text-white font-black py-3 sm:py-5 rounded-xl sm:rounded-2xl text-lg sm:text-2xl border-b-[4px] sm:border-b-[6px] border-[#1899D6] active:border-b-0 active:translate-y-[4px] sm:active:translate-y-[6px] transition-all uppercase tracking-wider">
+                    PLAY AGAIN
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Script / Game Logic -->
+    <script>
+        // --- Sound Engine ---
+        const SoundEngine = (() => {
+            let audioCtx = null;
+            const init = () => {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+            };
+            const playOsc = (type, f, v, d, rampF = null) => {
+                if (!audioCtx) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(f, audioCtx.currentTime);
+                if(rampF) osc.frequency.exponentialRampToValueAtTime(rampF, audioCtx.currentTime + d);
+                gain.gain.setValueAtTime(v, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + d);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + d);
+            };
+
+            return {
+                init,
+                playPop: (f = 500, d = 0.15) => playOsc('sine', f, 0.2, d, f * 1.5),
+                playClick: () => playOsc('triangle', 300, 0.1, 0.1, 100),
+                playSwoosh: () => playOsc('sine', 200, 0.1, 0.3, 600),
+                playSuccess: () => {
+                    [440, 554.37, 659.25, 880].forEach((f, i) => {
+                        setTimeout(() => playOsc('sine', f, 0.15, 0.4), i * 80);
+                    });
+                },
+                playTada: () => {
+                    const notes = [{ f: 523.25, t: 0, d: 0.15 }, { f: 659.25, t: 150, d: 0.15 }, { f: 783.99, t: 300, d: 0.15 }, { f: 1046.50, t: 450, d: 0.6 }];
+                    notes.forEach(({ f, t, d }) => {
+                        setTimeout(() => playOsc('triangle', f, 0.2, d), t);
+                    });
+                }
+            };
+        })();
+
+        // --- TTS ---
+        const speakEquation = (a, b, op, result) => {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const opText = op === 'addition' ? 'plus' : 'minus';
+                const text = `${a} ${opText} ${b} equals ${result}`;
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.9;
+                utterance.pitch = 1.1;
+                window.speechSynthesis.speak(utterance);
+            }
+        };
+
+        // --- Graphics ---
+        const getSVG = (theme, className) => {
+            const dropShadow = `style="filter: drop-shadow(0px 4px 3px rgba(0,0,0,0.2))"`;
+            if (theme === 'apples') return `
+                <svg viewBox="0 0 100 100" class="${className}" ${dropShadow}>
+                    <path d="M50,30 Q48,15 60,10" fill="none" stroke="#5C3A21" stroke-width="5" stroke-linecap="round" />
+                    <path d="M55,18 Q75,0 80,20 Q65,30 55,18" fill="#58CC02" stroke="#46A302" stroke-width="2" />
+                    <path d="M50,92 Q15,92 15,50 Q15,25 50,25 Q85,25 85,50 Q85,92 50,92" fill="#FF4B4B" />
+                    <path d="M25,45 Q30,30 45,30" fill="none" stroke="white" stroke-width="4" opacity="0.5" stroke-linecap="round" />
+                    <path d="M50,92 Q15,92 15,50 Q15,25 50,25 Q85,25 85,50 Q85,92 50,92" fill="none" stroke="#D11515" stroke-width="4" />
+                </svg>`;
+            if (theme === 'stars') return `
+                <svg viewBox="0 0 100 100" class="${className}" ${dropShadow}>
+                    <path d="M50,8 L64,39 L97,39 L70,61 L80,94 L50,73 L20,94 L30,61 L3,39 L36,39 Z" fill="#E59400" transform="translate(0, 4)" />
+                    <path d="M50,5 L64,36 L97,36 L70,58 L80,91 L50,70 L20,91 L30,58 L3,36 L36,36 Z" fill="#FFC800" />
+                    <path d="M50,15 L60,38 L85,38" fill="none" stroke="white" stroke-width="3" opacity="0.6" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M50,5 L64,36 L97,36 L70,58 L80,91 L50,70 L20,91 L30,58 L3,36 L36,36 Z" fill="none" stroke="#E59400" stroke-width="2" stroke-linejoin="round" />
+                </svg>`;
+            if (theme === 'burgers') return `
+                <svg viewBox="0 0 100 100" class="${className}" ${dropShadow}>
+                    <path d="M20,70 Q20,82 50,82 Q80,82 80,70 Z" fill="#EAAA54" stroke="#C48028" stroke-width="2" />
+                    <rect x="15" y="60" width="70" height="12" rx="6" fill="#6A3B14" stroke="#4A260A" stroke-width="2" />
+                    <path d="M15,58 L85,58 L80,66 L70,58 L60,66 L50,58 L40,66 L30,58 L20,66 Z" fill="#FFC800" />
+                    <path d="M12,54 Q20,48 28,54 Q36,48 44,54 Q52,48 60,54 Q68,48 76,54 Q84,48 88,54 L84,58 L16,58 Z" fill="#58CC02" />
+                    <path d="M18,52 Q18,22 50,22 Q82,22 82,52 Z" fill="#EAAA54" stroke="#C48028" stroke-width="2" />
+                    <path d="M25,45 Q28,30 45,28" fill="none" stroke="white" stroke-width="3" opacity="0.4" stroke-linecap="round" />
+                    <ellipse cx="40" cy="35" rx="2" ry="3" fill="#FFF2D6" transform="rotate(-20 40 35)" />
+                    <ellipse cx="60" cy="38" rx="2" ry="3" fill="#FFF2D6" transform="rotate(20 60 38)" />
+                    <ellipse cx="50" cy="30" rx="2" ry="3" fill="#FFF2D6" transform="rotate(0 50 30)" />
+                    <ellipse cx="32" cy="42" rx="2" ry="3" fill="#FFF2D6" transform="rotate(-40 32 42)" />
+                    <ellipse cx="68" cy="42" rx="2" ry="3" fill="#FFF2D6" transform="rotate(40 68 42)" />
+                </svg>`;
+            return '';
+        };
+
+        const renderMathGroupHTML = (value, theme, maxInEq) => {
+            // Dynamically scale icon size based on max quantity to ensure it fits beautifully
+            let sizeClass = 'w-10 h-10 sm:w-16 sm:h-16'; 
+            if (maxInEq > 50) {
+                sizeClass = 'w-4 h-4 sm:w-6 sm:h-6';
+            } else if (maxInEq > 30) {
+                sizeClass = 'w-5 h-5 sm:w-8 sm:h-8';
+            } else if (maxInEq > 15) {
+                sizeClass = 'w-6 h-6 sm:w-10 sm:h-10';
+            } else if (maxInEq > 10) {
+                sizeClass = 'w-8 h-8 sm:w-12 sm:h-12';
+            }
+
+            let items = '';
+            for (let i = 0; i < value; i++) {
+                items += `<div class="animate-bounce-in flex justify-center items-center ${sizeClass}" style="animation-delay: ${Math.min(i * 30, 1000)}ms">
+                            ${getSVG(theme, "w-full h-full")}
+                          </div>`;
+            }
+
+            return `<div class="flex flex-wrap justify-center content-center gap-1 sm:gap-2 p-2 sm:p-4 bg-[#F8FAFC] rounded-[1.5rem] border-4 border-slate-200 border-dashed w-full h-full min-h-[100px] overflow-y-auto custom-scrollbar">
+                        ${items}
+                    </div>`;
+        };
+
+        const svgs = {
+            plus: `<svg class="w-6 h-6 sm:w-12 sm:h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+            minus: `<svg class="w-6 h-6 sm:w-12 sm:h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+            award: `<svg class="w-6 h-6 sm:w-7 sm:h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>`,
+            chevronRight: `<svg class="w-6 h-6 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`
+        };
+
+        // --- Game State & Logic ---
+        const TOTAL_QUESTIONS = 10;
+        let state = {
+            gameState: 'MENU',
+            currentRange: 10,
+            history: [],
+            currentIndex: -1,
+            isShuffling: false,
+            showResult: false
+        };
+
+        // Init menu icons
+        document.getElementById('menu-icon-1').innerHTML = getSVG('apples', 'w-16 h-16 sm:w-28 sm:h-28');
+        document.getElementById('menu-icon-2').innerHTML = getSVG('stars', 'w-16 h-16 sm:w-28 sm:h-28');
+        document.getElementById('menu-icon-3').innerHTML = getSVG('burgers', 'w-16 h-16 sm:w-28 sm:h-28');
+
+        const generateRandomProblem = () => {
+            const themes = ['apples', 'stars', 'burgers'];
+            const theme = themes[Math.floor(Math.random() * themes.length)];
+            const op = Math.random() > 0.5 ? 'addition' : 'subtraction';
+            
+            // Determine result bounds based on selected range
+            let minRes = 1, maxRes = 10;
+            if (state.currentRange === 20) { minRes = 11; maxRes = 20; }
+            else if (state.currentRange === 30) { minRes = 21; maxRes = 30; }
+            else if (state.currentRange === 50) { minRes = 31; maxRes = 50; }
+            else if (state.currentRange === 100) { minRes = 51; maxRes = 100; }
+
+            // Math logic matching exact bounds
+            let result = Math.floor(Math.random() * (maxRes - minRes + 1)) + minRes;
+            let a, b;
+            
+            if (op === 'addition') {
+                let safeRes = result < 2 ? 2 : result; // ensure at least 2 for addition
+                a = Math.floor(Math.random() * (safeRes - 1)) + 1;
+                b = safeRes - a;
+                result = safeRes;
+            } else {
+                // Subtraction: a - b = result. Keep 'b' manageable but random.
+                let maxB = Math.min(20, Math.floor(maxRes / 2));
+                if (maxB < 5) maxB = 5;
+                b = Math.floor(Math.random() * maxB) + 1;
+                a = result + b;
+            }
+
+            return { a, b, op, theme, id: Math.random() };
+        };
+
+        const updateUI = () => {
+            ['screen-menu', 'screen-playing', 'screen-gameover'].forEach(id => {
+                document.getElementById(id).classList.add('hidden-screen');
+            });
+
+            if (state.gameState === 'MENU') {
+                document.getElementById('screen-menu').classList.remove('hidden-screen');
+            } 
+            else if (state.gameState === 'PLAYING') {
+                document.getElementById('screen-playing').classList.remove('hidden-screen');
+                const cp = state.history[state.currentIndex];
+                if(!cp) return;
+                
+                const maxInEq = Math.max(cp.a, cp.b);
+                const result = cp.op === 'addition' ? cp.a + cp.b : cp.a - cp.b;
+                const percent = Math.min((state.history.length / TOTAL_QUESTIONS) * 100, 100);
+
+                // Progress
+                document.getElementById('progress-fill').style.width = `${percent}%`;
+                document.getElementById('progress-text').innerText = `${state.history.length}/${TOTAL_QUESTIONS}`;
+
+                // Board
+                const board = document.getElementById('math-board');
+                const overlay = document.getElementById('shuffling-overlay');
+                const btnPrev = document.getElementById('btn-prev');
+                const btnNext = document.getElementById('btn-next');
+
+                if (state.isShuffling) {
+                    board.classList.add('scale-75', 'opacity-0');
+                    board.classList.remove('scale-100', 'opacity-100');
+                    overlay.classList.remove('hidden-screen');
+                    btnPrev.disabled = true;
+                    btnNext.disabled = true;
+                    document.getElementById('btn-check').disabled = true;
+                } else {
+                    board.classList.remove('scale-75', 'opacity-0');
+                    board.classList.add('scale-100', 'opacity-100');
+                    overlay.classList.add('hidden-screen');
+                    btnPrev.disabled = state.currentIndex === 0;
+                    btnNext.disabled = false;
+                    document.getElementById('btn-check').disabled = false;
+                    
+                    // Render Groups
+                    document.getElementById('math-group-a').innerHTML = renderMathGroupHTML(cp.a, cp.theme, maxInEq);
+                    document.getElementById('math-group-b').innerHTML = renderMathGroupHTML(cp.b, cp.theme, maxInEq);
+                    
+                    // Render Operator
+                    const opBadge = document.getElementById('operator-badge');
+                    opBadge.innerHTML = cp.op === 'addition' ? svgs.plus : svgs.minus;
+                    opBadge.className = `w-10 h-10 sm:w-20 sm:h-20 flex items-center justify-center rounded-full sm:rounded-[2rem] border-b-[3px] sm:border-b-[6px] transform transition-all duration-300 rotate-0 scale-100 shadow-md ${cp.op === 'addition' ? 'bg-[#58CC02] border-[#46A302] text-white' : 'bg-[#FF4B4B] border-[#D11515] text-white'}`;
+                }
+
+                // Check vs Result Area
+                if (!state.showResult) {
+                    document.getElementById('btn-check').classList.remove('hidden-screen');
+                    document.getElementById('result-board').classList.add('hidden-screen');
+                } else {
+                    document.getElementById('btn-check').classList.add('hidden-screen');
+                    const resBoard = document.getElementById('result-board');
+                    resBoard.classList.remove('hidden-screen');
+                    
+                    document.getElementById('res-a').innerText = cp.a;
+                    document.getElementById('res-op').innerText = cp.op === 'addition' ? '+' : '-';
+                    document.getElementById('res-b').innerText = cp.b;
+                    document.getElementById('res-ans').innerText = result;
+                }
+
+                // Next Button Styling
+                const isLast = state.history.length >= TOTAL_QUESTIONS && state.currentIndex === state.history.length - 1;
+                document.getElementById('btn-next-text').innerText = isLast ? 'FINISH' : 'NEXT';
+                document.getElementById('btn-next-icon').innerHTML = isLast ? svgs.award : svgs.chevronRight;
+                
+                if (isLast) {
+                    btnNext.classList.remove('bg-[#1CB0F6]', 'hover:bg-[#1899D6]', 'border-[#1899D6]');
+                    btnNext.classList.add('bg-[#FFC800]', 'hover:bg-[#E59400]', 'border-[#E59400]');
+                } else {
+                    btnNext.classList.add('bg-[#1CB0F6]', 'hover:bg-[#1899D6]', 'border-[#1899D6]');
+                    btnNext.classList.remove('bg-[#FFC800]', 'hover:bg-[#E59400]', 'border-[#E59400]');
+                }
+            } 
+            else if (state.gameState === 'GAMEOVER') {
+                document.getElementById('screen-gameover').classList.remove('hidden-screen');
+                document.getElementById('final-total').innerText = TOTAL_QUESTIONS;
+                document.getElementById('final-score').innerText = `${TOTAL_QUESTIONS} / ${TOTAL_QUESTIONS}`;
+                spawnConfetti();
+            }
+        };
+
+        const spawnConfetti = () => {
+            const container = document.getElementById('confetti-container');
+            container.innerHTML = '';
+            const colors = ['#ff4b4b', '#58cc02', '#1cb0f6', '#ffc800', '#ce82ff'];
+            for (let i = 0; i < 60; i++) {
+                const p = document.createElement('div');
+                const size = 8 + Math.random() * 10;
+                p.style.cssText = `
+                    position: absolute;
+                    top: -5%;
+                    left: ${Math.random() * 100}%;
+                    width: ${size}px;
+                    height: ${size * 0.6}px;
+                    background-color: ${colors[Math.floor(Math.random() * colors.length)]};
+                    border-radius: 2px;
+                    animation: confetti-fall ${2 + Math.random() * 3}s linear ${Math.random() * 2}s infinite;
+                    transform: rotate(${Math.random() * 360}deg);
+                `;
+                container.appendChild(p);
+            }
+        };
+
+        // --- Actions ---
+        window.startGame = (selectedRange) => {
+            SoundEngine.init();
+            SoundEngine.playSuccess();
+            state.currentRange = selectedRange;
+            state.history = [generateRandomProblem()];
+            state.currentIndex = 0;
+            state.showResult = false;
+            state.gameState = 'PLAYING';
+            updateUI();
+        };
+
+        window.nextQuestion = () => {
+            SoundEngine.init();
+            if (state.history.length >= TOTAL_QUESTIONS && state.currentIndex === state.history.length - 1) {
+                SoundEngine.playTada();
+                state.gameState = 'GAMEOVER';
+                updateUI();
+                return;
+            }
+
+            SoundEngine.playSwoosh();
+            state.isShuffling = true;
+            state.showResult = false;
+            updateUI();
+
+            setTimeout(() => {
+                if (state.currentIndex < state.history.length - 1) {
+                    state.currentIndex++;
+                } else {
+                    state.history.push(generateRandomProblem());
+                    state.currentIndex = state.history.length - 1;
+                }
+                state.isShuffling = false;
+                updateUI();
+                
+                const cp = state.history[state.currentIndex];
+                if(cp) {
+                   setTimeout(() => SoundEngine.playPop(400 + Math.random() * 200, 0.1), 50);
+                }
+            }, 300);
+        };
+
+        window.goBack = () => {
+            SoundEngine.playClick();
+            if (state.currentIndex > 0) {
+                state.currentIndex--;
+                state.showResult = false;
+                updateUI();
+            }
+        };
+
+        window.returnHome = () => {
+            SoundEngine.playClick();
+            state.gameState = 'MENU';
+            state.history = [];
+            state.currentIndex = -1;
+            state.showResult = false;
+            updateUI();
+        };
+
+        window.playAgain = () => {
+            SoundEngine.playClick();
+            window.returnHome();
+        };
+
+        window.handleCheck = () => {
+            SoundEngine.init();
+            SoundEngine.playPop(800, 0.2);
+            state.showResult = true;
+            updateUI();
+            playResultAudio();
+        };
+
+        window.playResultAudio = () => {
+            const cp = state.history[state.currentIndex];
+            if(cp) {
+                const res = cp.op === 'addition' ? cp.a + cp.b : cp.a - cp.b;
+                speakEquation(cp.a, cp.b, cp.op, res);
+            }
+        };
+
+        // Init UI
+        updateUI();
+    </script>
+</body>
+</html>
+
