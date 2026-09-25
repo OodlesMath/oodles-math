@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magical Shape Adventure</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #ec4899;
+            --accent: #f59e0b;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(180deg, #a1c4fd 0%, #c2e9fb 100%);
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        /* Hiệu ứng mây bay nền */
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+            opacity: 0.9;
+            z-index: -1;
+            animation: move-clouds 30s linear infinite;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+        }
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+        }
+        .cloud:nth-child(1) { width: 120px; height: 50px; top: 10%; left: -150px; animation-duration: 40s; }
+        .cloud:nth-child(1)::before { width: 60px; height: 60px; top: -30px; left: 15px; }
+        .cloud:nth-child(1)::after { width: 40px; height: 40px; top: -20px; left: 65px; }
+        
+        .cloud:nth-child(2) { width: 180px; height: 70px; top: 25%; left: -250px; animation-duration: 55s; animation-delay: 5s; transform: scale(0.8); }
+        .cloud:nth-child(2)::before { width: 80px; height: 80px; top: -40px; left: 20px; }
+        .cloud:nth-child(2)::after { width: 60px; height: 60px; top: -30px; left: 90px; }
+
+        .cloud:nth-child(3) { width: 140px; height: 60px; top: 60%; left: -200px; animation-duration: 45s; animation-delay: 15s; transform: scale(1.2); }
+        .cloud:nth-child(3)::before { width: 70px; height: 70px; top: -35px; left: 20px; }
+        .cloud:nth-child(3)::after { width: 50px; height: 50px; top: -25px; left: 75px; }
+
+        @keyframes move-clouds {
+            from { transform: translateX(0); }
+            to { transform: translateX(calc(100vw + 300px)); }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+            20%, 40%, 60%, 80% { transform: translateX(10px); }
+        }
+        .shake { animation: shake 0.5s ease-in-out; }
+
+        @keyframes bounce-pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.15); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .bounce-pop { animation: bounce-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+        @keyframes pulse-glow {
+            0%, 100% { filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.5)); }
+            50% { filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.9)); transform: scale(1.05); }
+        }
+        .text-glow { animation: pulse-glow 2s infinite; }
+
+        /* Nút bấm kiểu kẹo ngọt (3D) */
+        .btn-candy {
+            position: relative;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border-bottom: 8px solid rgba(0,0,0,0.15);
+        }
+        .btn-candy:hover { transform: translateY(-3px) scale(1.02); border-bottom-width: 10px; }
+        .btn-candy:active { transform: translateY(6px) scale(0.98); border-bottom-width: 2px; }
+
+        .treasure-item {
+            font-size: 5rem;
+            filter: drop-shadow(0 15px 15px rgba(0,0,0,0.15));
+            animation: treasure-float 3s ease-in-out infinite;
+        }
+        @keyframes treasure-float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.1); }
+        }
+
+        .particle {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 100;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        @keyframes firework-burst {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translate(var(--tw-x), var(--tw-y)) scale(0); opacity: 0; }
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 1; }
+        }
+
+        /* Tùy chỉnh thanh cuộn cho dãy pattern */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 12px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.4);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- Hiệu ứng mây nền -->
+    <div class="cloud"></div>
+    <div class="cloud"></div>
+    <div class="cloud"></div>
+
+    <div id="game-container" class="w-full max-w-5xl bg-white/95 backdrop-blur-xl rounded-[3rem] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] p-6 md:p-10 text-center relative overflow-hidden border-8 border-white">
+        
+        <!-- Màn hình bắt đầu -->
+        <div id="start-screen" class="absolute inset-0 bg-[#fff5f8] z-50 flex flex-col items-center justify-center p-6 text-center">
+            <div class="treasure-item mb-6">🦄</div>
+            <h1 class="text-6xl md:text-8xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 drop-shadow-sm text-glow">
+                Shape Fun!
+            </h1>
+            <p class="text-3xl text-pink-400 mb-12 font-bold uppercase tracking-widest drop-shadow-sm">A Magic Adventure</p>
+            <button id="start-button" class="btn-candy bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-4xl font-black py-6 px-20 rounded-full shadow-2xl hover:from-indigo-400 hover:to-purple-400">
+                PLAY NOW!
+            </button>
+        </div>
+
+        <!-- Thanh thông tin -->
+        <div class="flex justify-between items-center mb-6">
+            <div id="progress-text" class="bg-indigo-100 text-indigo-700 px-6 py-3 rounded-2xl font-black text-xl shadow-sm border-2 border-indigo-200">LEVEL 1 / 15</div>
+            <div id="score" class="bg-pink-100 text-pink-600 px-6 py-3 rounded-2xl font-black text-xl shadow-sm border-2 border-pink-200">✨ TREASURES: 0</div>
+        </div>
+        
+        <!-- Thanh tiến trình với tên lửa -->
+        <div class="relative w-full h-10 mb-10 bg-slate-100 rounded-full p-1.5 shadow-inner border-2 border-slate-200">
+            <div id="progress-bar" class="h-full bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 rounded-full transition-all duration-700 flex justify-end items-center px-1 shadow-sm" style="width: 0%;">
+                <div class="w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center text-sm">🚀</div>
+            </div>
+        </div>
+
+        <!-- Khu vực câu hỏi -->
+        <div id="question-area">
+            <div class="flex justify-center items-center gap-6 mb-8"> 
+                <h2 id="question-text" class="text-5xl md:text-6xl font-black text-slate-700 drop-shadow-sm">What's next?</h2>
+                <button id="replay-speech-button" class="btn-candy bg-amber-400 text-amber-900 p-4 rounded-3xl shadow-lg hover:bg-amber-300 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div id="pattern-display" class="flex flex-nowrap overflow-x-auto justify-start lg:justify-center items-center gap-4 md:gap-8 min-h-[200px] bg-indigo-50/50 rounded-[3rem] p-6 md:p-10 mb-12 border-4 border-dashed border-indigo-200 shadow-inner custom-scrollbar">
+                <!-- Nội dung được JS tạo -->
+            </div>
+        </div>
+
+        <!-- Khu vực lựa chọn -->
+        <div id="options-display" class="flex flex-wrap justify-center gap-8 md:gap-12">
+            <!-- Nội dung được JS tạo -->
+        </div>
+
+        <!-- Lớp phủ phản hồi -->
+        <div id="feedback-modal" class="absolute inset-0 bg-white/95 flex items-center justify-center z-20 hidden backdrop-blur-sm">
+            <div id="feedback-content" class="text-7xl md:text-[10rem] font-black drop-shadow-2xl scale-0 transition-transform duration-500">
+                GREAT!
+            </div>
+        </div>
+
+        <!-- Vòng thưởng (Kho báu) -->
+        <div id="bonus-modal" class="absolute inset-0 bg-gradient-to-br from-indigo-500/95 to-purple-600/95 flex flex-col items-center justify-center z-30 hidden p-6 backdrop-blur-md">
+            <h2 class="text-6xl md:text-8xl font-black text-white mb-6 animate-bounce drop-shadow-xl text-glow">MAGIC CHEST!</h2>
+            <p class="text-3xl text-white/90 font-bold mb-14 drop-shadow-md">Pick a box to find a surprise!</p>
+            <div id="door-container" class="flex flex-wrap justify-center gap-8 md:gap-16">
+                <!-- Các rương báu -->
+            </div>
+            <p id="bonus-result" class="text-5xl text-yellow-300 font-black mt-16 hidden drop-shadow-lg text-glow"></p>
+        </div>
+
+        <!-- Màn hình kết thúc game -->
+        <div id="game-over-modal" class="absolute inset-0 bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex flex-col items-center justify-center z-40 hidden p-6 text-white text-center">
+            <div class="treasure-item mb-10 text-8xl">🏆</div>
+            <h2 class="text-7xl md:text-[8rem] font-black mb-6 drop-shadow-2xl text-glow">SUPER STAR!</h2>
+            <p class="text-4xl font-bold mb-8 drop-shadow-md">All patterns are solved!</p>
+            <div class="bg-white/20 p-8 rounded-[3rem] border-4 border-white/40 backdrop-blur-sm mb-14">
+                <p id="final-score" class="text-6xl text-yellow-300 font-black drop-shadow-lg">Treasures Found: 0</p>
+            </div>
+            <button id="play-again-button" class="btn-candy bg-white text-indigo-600 text-4xl font-black py-6 px-20 rounded-full shadow-2xl hover:scale-105 active:scale-95">
+                PLAY AGAIN!
+            </button>
+        </div>
+
+        <div id="fx-container" class="absolute inset-0 pointer-events-none z-50"></div>
+    </div>
+
+    <script>
+        // --- Cấu hình & Dữ liệu ---
+        // Đã cập nhật thành class màu của text cho SVG fill
+        const shapes = {
+            RED_CIRCLE: { shape: 'circle', color: 'text-rose-500', value: 'Red Circle' },
+            BLUE_SQUARE: { shape: 'square', color: 'text-blue-500', value: 'Blue Square' },
+            GREEN_TRIANGLE: { shape: 'triangle', color: 'text-emerald-500', value: 'Green Triangle' },
+            YELLOW_STAR: { shape: 'star', color: 'text-yellow-400', value: 'Yellow Star' },
+            PURPLE_CIRCLE: { shape: 'circle', color: 'text-purple-500', value: 'Purple Circle' },
+            ORANGE_SQUARE: { shape: 'square', color: 'text-orange-500', value: 'Orange Square' },
+            PINK_TRIANGLE: { shape: 'triangle', color: 'text-pink-500', value: 'Pink Triangle' },
+            TEAL_STAR: { shape: 'star', color: 'text-teal-400', value: 'Teal Star' }
+        };
+
+        const treasures = [
+            { icon: "🧸", name: "Teddy Bear" },
+            { icon: "🌈", name: "Rainbow" },
+            { icon: "🍎", name: "Apple" }, // Test cho "an"
+            { icon: "🍭", name: "Candy" },
+            { icon: "🚀", name: "Rocket" },
+            { icon: "🐘", name: "Elephant" }, // Test cho "an"
+            { icon: "💎", name: "Diamond" },
+            { icon: "🍦", name: "Ice Cream" }, // Test cho "an"
+            { icon: "⚽", name: "Soccer Ball" },
+            { icon: "🔔", name: "Magic Bell" }
+        ];
+
+        const questions = [
+            { pattern: [shapes.RED_CIRCLE, shapes.BLUE_SQUARE, shapes.RED_CIRCLE, shapes.BLUE_SQUARE], options: [shapes.RED_CIRCLE, shapes.GREEN_TRIANGLE, shapes.BLUE_SQUARE], correct: shapes.RED_CIRCLE },
+            { pattern: [shapes.GREEN_TRIANGLE, shapes.GREEN_TRIANGLE, shapes.YELLOW_STAR, shapes.YELLOW_STAR], options: [shapes.YELLOW_STAR, shapes.GREEN_TRIANGLE, shapes.RED_CIRCLE], correct: shapes.GREEN_TRIANGLE },
+            { pattern: [shapes.RED_CIRCLE, shapes.BLUE_SQUARE, shapes.GREEN_TRIANGLE, shapes.RED_CIRCLE, shapes.BLUE_SQUARE], options: [shapes.RED_CIRCLE, shapes.BLUE_SQUARE, shapes.GREEN_TRIANGLE], correct: shapes.GREEN_TRIANGLE },
+            { pattern: [shapes.PURPLE_CIRCLE, shapes.PURPLE_CIRCLE, shapes.ORANGE_SQUARE, shapes.PURPLE_CIRCLE, shapes.PURPLE_CIRCLE], options: [shapes.PURPLE_CIRCLE, shapes.TEAL_STAR, shapes.ORANGE_SQUARE], correct: shapes.ORANGE_SQUARE },
+            { pattern: [shapes.YELLOW_STAR, shapes.PINK_TRIANGLE, shapes.PINK_TRIANGLE, shapes.YELLOW_STAR, shapes.PINK_TRIANGLE], options: [shapes.YELLOW_STAR, shapes.PINK_TRIANGLE, shapes.PURPLE_CIRCLE], correct: shapes.PINK_TRIANGLE },
+            { pattern: [shapes.BLUE_SQUARE, shapes.BLUE_SQUARE, shapes.RED_CIRCLE, shapes.RED_CIRCLE], options: [shapes.BLUE_SQUARE, shapes.RED_CIRCLE, shapes.GREEN_TRIANGLE], correct: shapes.BLUE_SQUARE },
+            { pattern: [shapes.TEAL_STAR, shapes.ORANGE_SQUARE, shapes.PINK_TRIANGLE, shapes.TEAL_STAR, shapes.ORANGE_SQUARE], options: [shapes.PINK_TRIANGLE, shapes.TEAL_STAR, shapes.ORANGE_SQUARE], correct: shapes.PINK_TRIANGLE },
+            { pattern: [shapes.RED_CIRCLE, shapes.RED_CIRCLE, shapes.BLUE_SQUARE, shapes.RED_CIRCLE, shapes.RED_CIRCLE], options: [shapes.RED_CIRCLE, shapes.BLUE_SQUARE, shapes.YELLOW_STAR], correct: shapes.BLUE_SQUARE },
+            { pattern: [shapes.GREEN_TRIANGLE, shapes.PURPLE_CIRCLE, shapes.PURPLE_CIRCLE, shapes.GREEN_TRIANGLE, shapes.PURPLE_CIRCLE], options: [shapes.PURPLE_CIRCLE, shapes.GREEN_TRIANGLE, shapes.RED_CIRCLE], correct: shapes.PURPLE_CIRCLE },
+            { pattern: [shapes.YELLOW_STAR, shapes.PURPLE_CIRCLE, shapes.YELLOW_STAR, shapes.PURPLE_CIRCLE], options: [shapes.PURPLE_CIRCLE, shapes.YELLOW_STAR, shapes.BLUE_SQUARE], correct: shapes.YELLOW_STAR },
+            { pattern: [shapes.TEAL_STAR, shapes.TEAL_STAR, shapes.RED_CIRCLE, shapes.TEAL_STAR, shapes.TEAL_STAR], options: [shapes.TEAL_STAR, shapes.RED_CIRCLE, shapes.ORANGE_SQUARE], correct: shapes.RED_CIRCLE },
+            { pattern: [shapes.RED_CIRCLE, shapes.BLUE_SQUARE, shapes.RED_CIRCLE, shapes.BLUE_SQUARE], options: [shapes.RED_CIRCLE, shapes.BLUE_SQUARE, shapes.GREEN_TRIANGLE], correct: shapes.RED_CIRCLE },
+            { pattern: [shapes.PINK_TRIANGLE, shapes.PINK_TRIANGLE, shapes.TEAL_STAR, shapes.PINK_TRIANGLE, shapes.PINK_TRIANGLE], options: [shapes.TEAL_STAR, shapes.PINK_TRIANGLE, shapes.RED_CIRCLE], correct: shapes.TEAL_STAR },
+            { pattern: [shapes.PURPLE_CIRCLE, shapes.GREEN_TRIANGLE, shapes.PURPLE_CIRCLE, shapes.GREEN_TRIANGLE], options: [shapes.PURPLE_CIRCLE, shapes.GREEN_TRIANGLE, shapes.YELLOW_STAR], correct: shapes.PURPLE_CIRCLE },
+            { pattern: [shapes.ORANGE_SQUARE, shapes.ORANGE_SQUARE, shapes.RED_CIRCLE, shapes.ORANGE_SQUARE], options: [shapes.ORANGE_SQUARE, shapes.RED_CIRCLE, shapes.BLUE_SQUARE], correct: shapes.ORANGE_SQUARE }
+        ];
+
+        let score = 0;
+        let currentQuestionIndex = 0;
+        let isChecking = false;
+        let gameOverLoop = null;
+        const totalQuestions = questions.length;
+
+        // Âm thanh
+        let correctSynth, incorrectSynth, bonusSynth, clickSynth;
+        function initAudio() {
+            if (correctSynth) return;
+            correctSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+            incorrectSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+            bonusSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+            clickSynth = new Tone.MembraneSynth().toDestination();
+            Tone.start();
+        }
+
+        const speechSynth = window.speechSynthesis;
+        function speak(text) {
+            speechSynth.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = 'en-US';
+            u.rate = 1.0;
+            u.pitch = 1.3;
+            speechSynth.speak(u);
+        }
+
+        // --- DOM Elements ---
+        const startScreen = document.getElementById('start-screen');
+        const startBtn = document.getElementById('start-button');
+        const patternDisplay = document.getElementById('pattern-display');
+        const optionsDisplay = document.getElementById('options-display');
+        const feedbackModal = document.getElementById('feedback-modal');
+        const feedbackContent = document.getElementById('feedback-content');
+        const bonusModal = document.getElementById('bonus-modal');
+        const gameOverModal = document.getElementById('game-over-modal');
+        const scoreEl = document.getElementById('score');
+        const progressTextEl = document.getElementById('progress-text');
+        const progressBarEl = document.getElementById('progress-bar');
+        const doorContainer = document.getElementById('door-container');
+        const fxContainer = document.getElementById('fx-container');
+
+        // --- Hiệu ứng hình ảnh ---
+        function createConfetti() {
+            const colors = ['#818cf8', '#f472b6', '#34d399', '#fbbf24', '#a78bfa', '#2dd4bf', '#f87171'];
+            for (let i = 0; i < 80; i++) {
+                const c = document.createElement('div');
+                c.className = 'particle';
+                c.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                c.style.left = `${Math.random() * 100}%`;
+                c.style.top = `-20px`;
+                c.style.animation = `fall ${2 + Math.random() * 2}s ease-out forwards`;
+                c.style.opacity = '1';
+                fxContainer.appendChild(c);
+                setTimeout(() => c.remove(), 4000);
+            }
+        }
+
+        function launchFirework() {
+            const colors = ['#ef4444', '#10b981', '#3b82f6', '#f59e0b', '#d946ef', '#06b6d4', '#f97316'];
+            const x = 10 + Math.random() * 80;
+            const y = 20 + Math.random() * 50;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            
+            for (let i = 0; i < 60; i++) {
+                const p = document.createElement('div');
+                const angle = (Math.PI * 2 * i) / 60;
+                const distance = 100 + Math.random() * 250;
+                const tx = Math.cos(angle) * distance;
+                const ty = Math.sin(angle) * distance;
+
+                p.className = 'particle';
+                p.style.backgroundColor = color;
+                p.style.color = color; // Cho bóng
+                p.style.left = `${x}%`;
+                p.style.top = `${y}%`;
+                p.style.setProperty('--tw-x', `${tx}px`);
+                p.style.setProperty('--tw-y', `${ty}px`);
+                p.style.animation = `firework-burst 1.5s cubic-bezier(0.1, 0.5, 0.5, 1) forwards`;
+                fxContainer.appendChild(p);
+                setTimeout(() => p.remove(), 1500);
+            }
+        }
+
+        // --- Hàm hỗ trợ vẽ hình bằng SVG (Đẹp hơn, sắc nét, không viền trắng) ---
+        function getShapeHtml(item, isLarge = true) {
+            const sizeClass = isLarge ? "w-[70px] h-[70px] md:w-[100px] md:h-[100px]" : "w-[60px] h-[60px] md:w-[80px] md:h-[80px]"; 
+            let svgPath = '';
+
+            // Vẽ các khối với highlight trắng (bóng mượt 3D)
+            if (item.shape === 'circle') {
+                svgPath = `<circle cx="50" cy="50" r="45" fill="currentColor"/><ellipse cx="35" cy="25" rx="15" ry="8" fill="white" opacity="0.4" transform="rotate(-30 35 25)"/>`;
+            } else if (item.shape === 'square') {
+                svgPath = `<rect x="10" y="10" width="80" height="80" rx="20" fill="currentColor"/><path d="M 20 25 Q 50 15 80 25" stroke="white" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.4"/>`;
+            } else if (item.shape === 'triangle') {
+                svgPath = `<path d="M 50 10 L 90 85 A 8 8 0 0 1 83 95 L 17 95 A 8 8 0 0 1 10 85 Z" fill="currentColor"/><path d="M 40 35 Q 50 20 60 35" stroke="white" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.4"/>`;
+            } else if (item.shape === 'star') {
+                svgPath = `<path d="M 50 5 L 61 35 L 95 35 L 67 55 L 78 85 L 50 65 L 22 85 L 33 55 L 5 35 L 39 35 Z" fill="currentColor" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/><circle cx="50" cy="40" r="8" fill="white" opacity="0.4"/>`;
+            }
+            
+            return `
+                <div class="relative flex shrink-0 items-center justify-center transition-transform hover:scale-110 p-2">
+                    <svg viewBox="0 0 100 100" class="drop-shadow-2xl ${item.color} filter saturate-[1.25] ${sizeClass}">
+                        ${svgPath}
+                    </svg>
+                </div>
+            `;
+        }
+
+        // --- Logic chính ---
+        function loadQuestion() {
+            if (currentQuestionIndex >= totalQuestions) {
+                showGameOver();
+                return;
+            }
+            isChecking = false;
+            const q = questions[currentQuestionIndex];
+            
+            patternDisplay.innerHTML = '';
+            
+            q.pattern.forEach((item, idx) => {
+                const el = document.createElement('div');
+                el.className = 'bounce-pop shrink-0';
+                el.style.animationDelay = `${idx * 0.1}s`;
+                el.innerHTML = getShapeHtml(item);
+                patternDisplay.appendChild(el);
+            });
+            
+            // Dấu chấm hỏi (nằm cùng trên 1 hàng)
+            const questionMark = document.createElement('div');
+            questionMark.className = 'bounce-pop shrink-0';
+            questionMark.style.animationDelay = `${q.pattern.length * 0.1}s`;
+            questionMark.innerHTML = `
+                <div class="relative flex items-center justify-center p-2">
+                    <div class="w-[70px] h-[70px] md:w-[100px] md:h-[100px] bg-white border-4 border-dashed border-indigo-300 rounded-[1.5rem] md:rounded-[2rem] flex items-center justify-center text-5xl md:text-7xl font-black text-indigo-200 shadow-inner">?</div>
+                </div>
+            `;
+            patternDisplay.appendChild(questionMark);
+
+            optionsDisplay.innerHTML = '';
+            [...q.options].sort(() => Math.random() - 0.5).forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-candy bg-white rounded-[2.5rem] p-6 shadow-xl border-4 border-slate-50 hover:bg-slate-50 active:bg-indigo-50 transition-colors';
+                btn.innerHTML = getShapeHtml(opt, false);
+                btn.onclick = () => handleChoice(opt, btn);
+                optionsDisplay.appendChild(btn);
+            });
+
+            updateUI();
+        }
+
+        function handleChoice(selected, btn) {
+            if (isChecking) return;
+            isChecking = true;
+            initAudio();
+            clickSynth.triggerAttackRelease('C4', '8n');
+
+            const correct = questions[currentQuestionIndex].correct;
+            const isMatch = JSON.stringify(selected) === JSON.stringify(correct);
+
+            if (isMatch) {
+                correctSynth.triggerAttackRelease(["C5", "E5", "G5"], "0.3");
+                createConfetti();
+                feedbackContent.textContent = "GREAT!";
+                feedbackContent.className = "text-8xl md:text-[10rem] font-black text-green-500 drop-shadow-2xl transform scale-100 transition-transform duration-500";
+                feedbackModal.classList.remove('hidden');
+                setTimeout(() => {
+                    feedbackModal.classList.add('hidden');
+                    feedbackContent.classList.add('scale-0');
+                    showBonus();
+                }, 1400);
+            } else {
+                incorrectSynth.triggerAttackRelease(["C4", "B3"], "0.3");
+                document.getElementById('game-container').classList.add('shake');
+                btn.classList.add('bg-red-50', 'border-red-200');
+                
+                feedbackContent.textContent = "TRY AGAIN!";
+                feedbackContent.className = "text-7xl md:text-9xl font-black text-red-500 drop-shadow-2xl transform scale-100 transition-transform duration-500";
+                feedbackModal.classList.remove('hidden');
+
+                setTimeout(() => {
+                    document.getElementById('game-container').classList.remove('shake');
+                    btn.classList.remove('bg-red-50', 'border-red-200');
+                    feedbackModal.classList.add('hidden');
+                    feedbackContent.classList.add('scale-0');
+                    isChecking = false;
+                }, 1000);
+            }
+        }
+
+        function showBonus() {
+            bonusModal.classList.remove('hidden');
+            document.getElementById('bonus-result').classList.add('hidden');
+            
+            const pool = [...treasures].sort(() => Math.random() - 0.5).slice(0, 3);
+            doorContainer.innerHTML = '';
+            
+            pool.forEach((treasure, idx) => {
+                const chest = document.createElement('button');
+                chest.className = 'btn-candy w-44 h-44 bg-white/20 backdrop-blur-md rounded-[3rem] border-4 border-white/60 shadow-2xl flex items-center justify-center text-[6rem] hover:bg-white/40 active:scale-110 transition-all';
+                chest.innerHTML = `🎁`;
+                chest.onclick = () => {
+                    if (chest.disabled) return;
+                    bonusSynth.triggerAttackRelease(["G4", "B4", "D5"], "0.5");
+                    
+                    const allChests = doorContainer.querySelectorAll('button');
+                    allChests.forEach((c, i) => {
+                        c.disabled = true;
+                        const item = pool[i];
+                        c.innerHTML = item.icon;
+                        if (item === treasure) {
+                            c.classList.add('scale-125', 'bg-white/90', 'rotate-12');
+                        } else {
+                            c.classList.add('opacity-40', 'scale-90', 'grayscale');
+                        }
+                    });
+
+                    score++;
+                    updateUI();
+                    
+                    // Xử lý ngữ pháp a/an (a cat, an apple)
+                    const firstChar = treasure.name.charAt(0).toLowerCase();
+                    const isVowel = ['a', 'e', 'i', 'o', 'u'].includes(firstChar);
+                    const article = isVowel ? 'an' : 'a';
+
+                    const resultText = document.getElementById('bonus-result');
+                    resultText.textContent = `You found ${article} ${treasure.name}!`;
+                    resultText.classList.remove('hidden');
+
+                    setTimeout(() => {
+                        bonusModal.classList.add('hidden');
+                        currentQuestionIndex++;
+                        loadQuestion();
+                    }, 2800);
+                };
+                doorContainer.appendChild(chest);
+            });
+        }
+
+        function updateUI() {
+            scoreEl.textContent = `✨ TREASURES: ${score}`;
+            progressTextEl.textContent = `LEVEL ${Math.min(currentQuestionIndex + 1, totalQuestions)} / ${totalQuestions}`;
+            progressBarEl.style.width = `${(currentQuestionIndex / totalQuestions) * 100}%`;
+        }
+
+        function showGameOver() {
+            document.getElementById('final-score').textContent = `Treasures Found: ${score}`;
+            gameOverModal.classList.remove('hidden');
+            
+            if (gameOverLoop) clearInterval(gameOverLoop);
+            gameOverLoop = setInterval(() => {
+                launchFirework();
+                if (Math.random() > 0.3) createConfetti();
+            }, 600);
+            
+            // Initial blast
+            launchFirework();
+            launchFirework();
+            createConfetti();
+        }
+
+        // --- Khởi tạo sự kiện ---
+        startBtn.onclick = () => {
+            initAudio();
+            startScreen.classList.add('hidden');
+            loadQuestion();
+        };
+
+        document.getElementById('play-again-button').onclick = () => {
+            if (gameOverLoop) clearInterval(gameOverLoop);
+            score = 0;
+            currentQuestionIndex = 0;
+            gameOverModal.classList.add('hidden');
+            fxContainer.innerHTML = ''; // Dọn dẹp pháo hoa cũ
+            loadQuestion();
+        };
+
+        document.getElementById('replay-speech-button').onclick = () => {
+            initAudio();
+            if (!bonusModal.classList.contains('hidden')) {
+                speak("Bonus time! Pick a magic box!");
+            } else if (!gameOverModal.classList.contains('hidden')) {
+                speak("Super star! You found all the patterns!");
+            } else {
+                speak("What comes next?");
+            }
+        };
+    </script>
+</body>
+</html>
