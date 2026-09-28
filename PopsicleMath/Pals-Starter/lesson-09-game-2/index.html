@@ -1,0 +1,951 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="../assets/brand.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Number Bond Forest</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #58cc02;
+            --primary-shadow: #58a700;
+            --secondary: #1cb0f6;
+            --secondary-shadow: #1899d6;
+            --danger: #ff4b4b;
+            --danger-shadow: #ea1515;
+            --warning: #ffc800;
+            --warning-shadow: #e5b400;
+            --text-main: #4b4b4b;
+            --bg-sky-top: #1cb0f6;
+            --bg-sky-bottom: #97e5ff;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            overflow: hidden;
+            touch-action: manipulation;
+            background: linear-gradient(180deg, var(--bg-sky-top) 0%, var(--bg-sky-bottom) 60%);
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-main);
+        }
+
+        /* User's Logo Placeholder */
+        .oodles-logo {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            max-width: 120px;
+            height: auto;
+            z-index: 100;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        }
+
+        /* --- Scenic Background Elements --- */
+        #scenery {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        /* Rainbow */
+        .rainbow {
+            position: absolute;
+            width: 80vw;
+            max-width: 600px;
+            aspect-ratio: 2 / 1;
+            left: 50%;
+            top: 10%;
+            transform: translateX(-50%);
+            border-radius: 500px 500px 0 0;
+            box-shadow: 
+                inset 0 20px 0 #ff4b4b,
+                inset 0 40px 0 #ff9600,
+                inset 0 60px 0 #ffc800,
+                inset 0 80px 0 #58cc02,
+                inset 0 100px 0 #1cb0f6,
+                inset 0 120px 0 #ce82ff;
+            opacity: 0.6;
+            filter: blur(2px);
+        }
+
+        /* Hills */
+        .hill-back {
+            position: absolute;
+            bottom: 0; left: -10%;
+            width: 120%; height: 35vh;
+            background: #7ee036;
+            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+            box-shadow: inset 0 10px 0 rgba(255,255,255,0.2);
+        }
+        .hill-front {
+            position: absolute;
+            bottom: -5vh; left: -20%;
+            width: 140%; height: 30vh;
+            background: #58cc02;
+            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+            box-shadow: inset 0 10px 0 rgba(255,255,255,0.2);
+        }
+
+        /* Decoration (Trees/Flowers) */
+        .deco {
+            position: absolute;
+            font-size: clamp(30px, 5vw, 60px);
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.2));
+            z-index: 1;
+        }
+
+        /* Clouds */
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+            opacity: 0.9;
+            animation: drift linear infinite;
+        }
+        .cloud::before, .cloud::after {
+            content: ''; position: absolute; background: white; border-radius: 50%;
+        }
+        .cloud1 { width: 140px; height: 50px; top: 15%; left: -150px; animation-duration: 40s; }
+        .cloud1::before { width: 60px; height: 60px; top: -30px; left: 20px; }
+        .cloud1::after { width: 80px; height: 80px; top: -40px; right: 20px; }
+        .cloud2 { width: 180px; height: 60px; top: 8%; left: -200px; animation-duration: 55s; animation-delay: -15s; transform: scale(0.8); opacity: 0.7;}
+        .cloud2::before { width: 70px; height: 70px; top: -35px; left: 25px; }
+        .cloud2::after { width: 90px; height: 90px; top: -45px; right: 25px; }
+
+        @keyframes drift {
+            0% { transform: translateX(-200px); }
+            100% { transform: translateX(120vw); }
+        }
+
+        /* --- App Container --- */
+        #app-wrapper {
+            position: relative;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 40px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15), inset 0 0 0 8px rgba(255,255,255,0.8);
+            border: 4px solid #fff;
+            width: 95%;
+            max-width: 800px;
+            height: 90vh;
+            max-height: 800px;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+        }
+
+        /* Duolingo Style Buttons */
+        .btn-duo {
+            border-radius: 20px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.1s ease;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .btn-duo:active {
+            transform: translateY(4px);
+        }
+
+        .btn-green { background: var(--primary); color: white; border: 2px solid var(--primary-shadow); box-shadow: 0 6px 0 var(--primary-shadow); }
+        .btn-green:active { box-shadow: 0 0 0 var(--primary-shadow); }
+
+        .btn-blue { background: var(--secondary); color: white; border: 2px solid var(--secondary-shadow); box-shadow: 0 6px 0 var(--secondary-shadow); }
+        .btn-blue:active { box-shadow: 0 0 0 var(--secondary-shadow); }
+
+        .btn-yellow { background: var(--warning); color: white; border: 2px solid var(--warning-shadow); box-shadow: 0 6px 0 var(--warning-shadow); }
+        .btn-yellow:active { box-shadow: 0 0 0 var(--warning-shadow); }
+
+        .btn-white { background: white; color: var(--text-main); border: 2px solid #e5e5e5; box-shadow: 0 6px 0 #e5e5e5; }
+        .btn-white:active { box-shadow: 0 0 0 #e5e5e5; }
+        .btn-white.answer-btn { border-color: var(--secondary); color: var(--secondary); box-shadow: 0 6px 0 var(--secondary-shadow); }
+        .btn-white.answer-btn:active { box-shadow: 0 0 0 var(--secondary-shadow); }
+        .btn-white.answer-btn:hover { background: #f0f9ff; }
+
+
+        /* Speaker Icon */
+        .speaker-icon {
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--secondary);
+            color: white;
+            border-radius: 50%;
+            width: 40px; height: 40px;
+            box-shadow: 0 4px 0 var(--secondary-shadow);
+        }
+        .speaker-icon:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 var(--secondary-shadow);
+        }
+        .speaker-icon.playing { animation: pulse 1s infinite; }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* 3D Number Nodes */
+        .number-node {
+            width: 75px; height: 75px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.5rem; font-weight: 900; color: white;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative; z-index: 5;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+            border: 4px solid #fff;
+        }
+        @media (min-width: 640px) {
+            .number-node { width: 100px; height: 100px; font-size: 3.5rem; }
+        }
+
+        .whole { background: var(--warning); box-shadow: 0 8px 0 var(--warning-shadow); }
+        .part { background: var(--primary); box-shadow: 0 8px 0 var(--primary-shadow); }
+        .missing { 
+            background: #f7f7f7; 
+            border: 4px dashed #afafaf; 
+            color: #afafaf;
+            box-shadow: none;
+            text-shadow: none;
+        }
+
+        /* Number Bond Lines */
+        .bond-svg-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; pointer-events: none;
+        }
+        .bond-line-path {
+            stroke: #e5e5e5;
+            stroke-width: 10;
+            stroke-linecap: round;
+        }
+
+        /* Fruits / Icons */
+        .fruit {
+            width: 45px; height: 45px;
+            font-size: 40px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; user-select: none;
+            transition: transform 0.1s;
+            /* Enhanced realism for kids */
+            filter: drop-shadow(0px 8px 4px rgba(0,0,0,0.2)) saturate(1.3);
+        }
+        @media (min-width: 640px) {
+            .fruit { width: 60px; height: 60px; font-size: 55px; }
+        }
+        .fruit:active { transform: scale(0.9); filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.2)) saturate(1.3); }
+        .fruit.dimmed { opacity: 0.4; filter: grayscale(50%); }
+
+        /* Animations */
+        .correct-pop { animation: pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.3) rotate(5deg); }
+            100% { transform: scale(1) rotate(0deg); background: var(--primary); box-shadow: 0 8px 0 var(--primary-shadow); color: white; border-style: solid; text-shadow: 2px 2px 0px rgba(0,0,0,0.2);}
+        }
+
+        .shake { animation: shake 0.5s ease-in-out; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-15px); }
+            40%, 80% { transform: translateX(15px); }
+        }
+
+        /* Falling Fruit Bonus */
+        .falling-fruit {
+            position: absolute; font-size: 60px;
+            cursor: pointer; user-select: none; z-index: 60;
+            filter: drop-shadow(0 15px 10px rgba(0,0,0,0.2)) saturate(1.3);
+            animation: falling linear forwards;
+        }
+        @keyframes falling {
+            from { transform: translateY(-100px) rotate(-20deg); }
+            to { transform: translateY(110vh) rotate(360deg); }
+        }
+        .bonus-star-pop {
+            position: absolute; color: var(--warning); font-weight: 900; font-size: 40px;
+            pointer-events: none; animation: starUp 0.8s ease-out forwards; z-index: 70;
+            text-shadow: 0 4px 0 var(--warning-shadow), 3px 3px 0 #fff, -3px -3px 0 #fff, 3px -3px 0 #fff, -3px 3px 0 #fff;
+        }
+        @keyframes starUp {
+            0% { transform: translateY(0) scale(0.5); opacity: 1; }
+            50% { transform: translateY(-50px) scale(1.2); }
+            100% { transform: translateY(-100px) scale(1); opacity: 0; }
+        }
+
+        /* Confetti Canvas */
+        #confetti-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        /* Text Gradients */
+        .text-gradient-orange {
+            background: linear-gradient(to bottom, #ff9600, #ff4b4b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0px 4px 10px rgba(255, 75, 75, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <img src="../assets/logo-oodles-math.png" class="oodles-logo">
+    <!-- Placeholder for user's logo -->
+    <!-- <img src="../assets/logo-oodles-math.png" class="oodles-logo" alt="Logo"> -->
+
+    <!-- Scenic Background -->
+    <div id="scenery">
+        <div class="rainbow"></div>
+        <div class="cloud cloud1"></div>
+        <div class="cloud cloud2"></div>
+        <div class="hill-back"></div>
+        <div class="hill-front"></div>
+        <!-- Decorative Trees & Flowers -->
+        <div class="deco" style="bottom: 25vh; left: 5%;">🌲</div>
+        <div class="deco" style="bottom: 22vh; left: 15%; font-size: 40px;">🍄</div>
+        <div class="deco" style="bottom: 26vh; right: 8%;">🌳</div>
+        <div class="deco" style="bottom: 15vh; right: 20%; font-size: 45px;">🌻</div>
+        <div class="deco" style="bottom: 5vh; left: 25%; font-size: 50px;">🌷</div>
+        <div class="deco" style="bottom: 8vh; right: 30%;">🌲</div>
+    </div>
+
+    <!-- Main Game Wrapper -->
+    <div id="app-wrapper">
+        
+        <!-- Top Bar UI -->
+        <div class="w-full flex justify-between items-center mb-2 sm:mb-4 px-2">
+            <div class="flex items-center gap-2 bg-yellow-100 border-2 border-[#e5b400] px-4 py-2 rounded-2xl shadow-sm">
+                <span class="text-2xl drop-shadow-sm">⭐</span>
+                <span id="score-text" class="text-2xl text-[#e5b400] font-black">0</span>
+            </div>
+            
+            <div id="level-display" class="bg-blue-100 border-2 border-[#1899d6] px-4 py-2 rounded-2xl text-[#1899d6] font-black text-sm sm:text-lg uppercase">
+                Level 1
+            </div>
+            
+            <div id="timer-container" class="hidden flex items-center gap-2 bg-red-100 border-2 border-[#ea1515] px-4 py-2 rounded-2xl text-[#ea1515] font-black text-sm sm:text-lg">
+                <span class="text-xl">⏰</span> <span id="timer-text">30</span>s
+            </div>
+
+            <button onclick="resetGame()" class="btn-duo btn-white w-12 h-12 text-xl" title="Restart">
+                ✖️
+            </button>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="absolute inset-0 z-50 bg-white rounded-[32px] flex flex-col items-center justify-center p-6 text-center">
+            <div class="text-7xl sm:text-8xl mb-4 filter drop-shadow-xl animate-bounce">🐻🌲</div>
+            <h1 class="text-4xl sm:text-6xl font-black mb-4 leading-tight text-gradient-orange">Number Bond<br>Forest</h1>
+            <p class="text-lg sm:text-xl text-gray-500 mb-8 font-bold">Find the missing part to win stars!</p>
+            
+            <div class="flex flex-col gap-4 w-full max-w-sm">
+                <button onclick="startGame('easy')" class="btn-duo btn-green text-xl py-4">Easy (Up to 5)</button>
+                <button onclick="startGame('medium')" class="btn-duo btn-blue text-xl py-4">Medium (Up to 10)</button>
+                <button onclick="startGame('challenge')" class="btn-duo btn-yellow text-xl py-4 flex justify-center items-center gap-2">Challenge ⚡</button>
+            </div>
+        </div>
+
+        <!-- Main Gameplay -->
+        <div id="play-area" class="w-full flex-1 flex flex-col items-center justify-between relative hidden z-20 py-2">
+            
+            <!-- Instruction with Speaker -->
+            <div class="flex items-center gap-3 bg-white px-6 py-3 rounded-3xl border-2 border-gray-200 shadow-sm z-20">
+                <h2 id="instruction" class="text-xl sm:text-2xl font-black text-[#4b4b4b]">What is the missing part?</h2>
+                <button id="speaker-btn" onclick="speakQuestion()" class="speaker-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11 5L6 9H2v6h4l5 4V5zm3.5 6.5c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14.5 3.22v2.06c2.89.86 5 3.54 5 6.72s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.78z"/></svg>
+                </button>
+            </div>
+
+            <!-- Number Bond Diagram -->
+            <div class="relative w-full h-56 sm:h-72 flex justify-center mt-2">
+                <!-- Connectors -->
+                <svg class="bond-svg-container">
+                    <line x1="50%" y1="35%" x2="30%" y2="70%" class="bond-line-path" />
+                    <line x1="50%" y1="35%" x2="70%" y2="70%" class="bond-line-path" />
+                </svg>
+
+                <!-- Nodes -->
+                <div class="absolute top-[0%] left-[50%] -translate-x-1/2 flex flex-col items-center z-10">
+                    <div class="text-xs sm:text-sm font-bold text-gray-500 mb-1 uppercase tracking-wider">Whole</div>
+                    <div id="whole-node" class="number-node whole">?</div>
+                </div>
+                
+                <div class="absolute bottom-[0%] left-[30%] -translate-x-1/2 flex flex-col items-center z-10">
+                    <div id="part-1-node" class="number-node part">?</div>
+                    <div class="text-xs sm:text-sm font-bold text-gray-500 mt-1 uppercase tracking-wider">Part</div>
+                </div>
+
+                <div class="absolute bottom-[0%] left-[70%] -translate-x-1/2 flex flex-col items-center z-10">
+                    <div id="part-2-node" class="number-node missing">?</div>
+                    <div class="text-xs sm:text-sm font-bold text-gray-500 mt-1 uppercase tracking-wider">Part</div>
+                </div>
+            </div>
+
+            <!-- Visual Counters Area (Fruits) -->
+            <div id="counter-area" class="flex flex-wrap justify-center content-center gap-3 min-h-[90px] w-full max-w-lg bg-orange-50 bg-opacity-80 p-4 rounded-3xl border-4 border-orange-100 my-2">
+                <!-- Fruits injected here -->
+            </div>
+
+            <!-- Answer Choices -->
+            <div id="options-container" class="flex gap-4 sm:gap-6 flex-wrap justify-center pb-2 w-full">
+                <!-- Buttons injected here -->
+            </div>
+        </div>
+
+        <!-- Bonus Round Screen -->
+        <div id="bonus-screen" class="absolute inset-0 z-40 bg-white rounded-[32px] flex flex-col items-center justify-center hidden overflow-hidden">
+            <div class="absolute top-8 text-center z-50 bg-yellow-50 p-4 rounded-3xl border-4 border-yellow-400">
+                <h2 class="text-3xl sm:text-5xl font-black text-gradient-orange mb-2">BONUS ROUND!</h2>
+                <p class="text-lg sm:text-xl text-[#4b4b4b] font-bold">Catch the falling fruits!</p>
+                <div class="flex justify-center items-center mt-2 gap-2">
+                    <span class="text-2xl">⏰</span>
+                    <span id="bonus-timer" class="text-4xl font-black text-red-500">10</span>
+                </div>
+            </div>
+            <div id="bonus-catcher-area" class="w-full h-full relative"></div>
+        </div>
+
+        <!-- Feedback Overlay -->
+        <div id="feedback-msg" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 px-8 py-4 bg-white border-4 rounded-[30px] shadow-2xl text-3xl font-black scale-0 transition-all duration-300 z-50 pointer-events-none text-center"></div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="absolute inset-0 z-50 bg-white rounded-[32px] flex flex-col items-center justify-center p-6 text-center hidden">
+            <div class="z-10 w-full max-w-md">
+                <h2 class="text-5xl sm:text-6xl font-black mb-4 text-gradient-orange">Amazing!</h2>
+                <div id="badge-display" class="text-8xl sm:text-9xl mb-6 filter drop-shadow-xl animate-bounce">🏆</div>
+                <div id="final-stats" class="mb-8"></div>
+                <button onclick="resetGame()" class="btn-duo btn-green text-2xl py-4 w-full">PLAY AGAIN</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Confetti layer outside the wrapper to cover the whole screen -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <script>
+        // --- Web Audio API & TTS Setup ---
+        let audioCtx;
+        
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const t = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, t);
+                osc.frequency.exponentialRampToValueAtTime(1200, t + 0.1);
+                gain.gain.setValueAtTime(0.5, t);
+                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+                osc.start(t);
+                osc.stop(t + 0.4);
+            } else if (type === 'wrong') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(250, t);
+                osc.frequency.exponentialRampToValueAtTime(100, t + 0.3);
+                gain.gain.setValueAtTime(0.5, t);
+                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+                osc.start(t);
+                osc.stop(t + 0.4);
+            } else if (type === 'pop') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(900, t);
+                osc.frequency.exponentialRampToValueAtTime(300, t + 0.1);
+                gain.gain.setValueAtTime(0.4, t);
+                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+                osc.start(t);
+                osc.stop(t + 0.1);
+            } else if (type === 'yay') {
+                [400, 500, 600, 800].forEach(freq => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g); g.connect(audioCtx.destination);
+                    o.type = 'sine';
+                    o.frequency.value = freq;
+                    g.gain.setValueAtTime(0.1, t);
+                    g.gain.linearRampToValueAtTime(0.2, t + 0.2);
+                    g.gain.exponentialRampToValueAtTime(0.01, t + 1.5);
+                    o.start(t); o.stop(t + 1.5);
+                });
+            }
+        }
+
+        function speakQuestion() {
+            if ('speechSynthesis' in window) {
+                const btn = document.getElementById('speaker-btn');
+                btn.classList.add('playing');
+                
+                // Cancel any ongoing speech
+                window.speechSynthesis.cancel();
+                
+                const msg = new SpeechSynthesisUtterance("What is the missing part?");
+                msg.lang = 'en-US';
+                msg.rate = 0.9; // Slightly slower for kids
+                msg.pitch = 1.1; // Slightly higher pitch
+                
+                msg.onend = () => {
+                    btn.classList.remove('playing');
+                };
+                
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        // --- Game Logic ---
+        const state = {
+            mode: 'easy',
+            score: 0,
+            streak: 0,
+            level: 1,
+            timer: 30,
+            timerInterval: null,
+            currentWhole: 0,
+            currentPart1: 0,
+            currentPart2: 0,
+            maxNum: 5,
+            fruits: ['🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🍒', '🍑', '🍍', '🥭'],
+            isCorrecting: false,
+            bonusInterval: null,
+            bonusCountdown: null
+        };
+
+        const dom = {
+            start: document.getElementById('start-screen'),
+            play: document.getElementById('play-area'),
+            bonus: document.getElementById('bonus-screen'),
+            bonusTimer: document.getElementById('bonus-timer'),
+            bonusArea: document.getElementById('bonus-catcher-area'),
+            result: document.getElementById('result-screen'),
+            whole: document.getElementById('whole-node'),
+            p1: document.getElementById('part-1-node'),
+            p2: document.getElementById('part-2-node'),
+            options: document.getElementById('options-container'),
+            counters: document.getElementById('counter-area'),
+            feedback: document.getElementById('feedback-msg'),
+            score: document.getElementById('score-text'),
+            level: document.getElementById('level-display'),
+            timerBox: document.getElementById('timer-container'),
+            timerText: document.getElementById('timer-text'),
+            finalStats: document.getElementById('final-stats'),
+        };
+
+        function startGame(mode) {
+            initAudio(); 
+            state.mode = mode;
+            state.score = 0;
+            state.level = 1;
+            state.streak = 0;
+            state.currentWhole = 0; 
+            state.currentPart1 = 0;
+            state.maxNum = mode === 'easy' ? 5 : 10;
+            
+            dom.start.classList.add('hidden');
+            dom.play.classList.remove('hidden');
+            dom.bonus.classList.add('hidden');
+            dom.result.classList.add('hidden');
+            
+            if (mode === 'challenge') {
+                dom.timerBox.classList.remove('hidden');
+                startTimer();
+            } else {
+                dom.timerBox.classList.add('hidden');
+            }
+
+            nextProblem();
+        }
+
+        function startTimer() {
+            state.timer = 45;
+            dom.timerText.innerText = state.timer;
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            
+            state.timerInterval = setInterval(() => {
+                state.timer--;
+                dom.timerText.innerText = state.timer;
+                if (state.timer <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function nextProblem() {
+            state.isCorrecting = false;
+            
+            let range = state.maxNum;
+            if (state.mode !== 'challenge' && state.level > 5) {
+                range = state.maxNum + Math.floor(state.level / 2);
+            }
+
+            let newWhole, newPart1, newPart2;
+            
+            do {
+                newWhole = Math.floor(Math.random() * (range - 2)) + 3; 
+                newPart1 = Math.floor(Math.random() * (newWhole - 1)) + 1; 
+                newPart2 = newWhole - newPart1;
+            } while (newWhole === state.currentWhole && newPart1 === state.currentPart1);
+
+            state.currentWhole = newWhole;
+            state.currentPart1 = newPart1;
+            state.currentPart2 = newPart2;
+
+            updateUI();
+            
+            // Auto-play question on new level (optional, removed to prevent annoyance, user can click speaker)
+        }
+
+        function updateUI() {
+            dom.whole.innerText = state.currentWhole;
+            dom.p1.innerText = state.currentPart1;
+            dom.p2.innerText = "?";
+            dom.p2.className = "number-node missing";
+            dom.score.innerText = state.score;
+            dom.level.innerText = `Level ${state.level}`;
+
+            // Setup visual fruits
+            dom.counters.innerHTML = '';
+            const fruitType = state.fruits[Math.floor(Math.random() * state.fruits.length)];
+            for (let i = 0; i < state.currentWhole; i++) {
+                const f = document.createElement('div');
+                f.className = 'fruit';
+                f.innerText = fruitType;
+                f.onclick = function() {
+                    initAudio();
+                    playSound('pop');
+                    this.classList.toggle('dimmed');
+                };
+                dom.counters.appendChild(f);
+            }
+
+            // Setup Options
+            dom.options.innerHTML = '';
+            const answers = new Set([state.currentPart2]);
+            const limit = Math.max(state.maxNum + 2, state.currentWhole + 2);
+            
+            while (answers.size < 4) {
+                const wrong = Math.floor(Math.random() * limit);
+                if (wrong !== state.currentPart2) answers.add(wrong);
+            }
+
+            [...answers].sort(() => Math.random() - 0.5).forEach(val => {
+                const btn = document.createElement('button');
+                btn.className = "btn-duo btn-white answer-btn text-3xl sm:text-4xl w-20 h-20 sm:w-24 sm:h-24";
+                btn.innerText = val;
+                btn.onclick = () => checkAnswer(val);
+                dom.options.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(val) {
+            initAudio();
+            if (state.isCorrecting) return;
+
+            if (val === state.currentPart2) {
+                handleCorrect();
+            } else {
+                handleIncorrect();
+            }
+        }
+
+        function handleCorrect() {
+            state.isCorrecting = true;
+            playSound('correct');
+            state.score += 10;
+            state.streak++;
+            
+            dom.p2.innerText = state.currentPart2;
+            dom.p2.className = "number-node part correct-pop";
+            
+            showFeedback("SUPER! ⭐", "text-[#58cc02] border-[#58cc02]");
+
+            if (state.streak > 0 && state.streak % 5 === 0) {
+                setTimeout(startBonusRound, 1200);
+                return;
+            }
+
+            if (state.streak % 3 === 0) {
+                state.level++;
+                if (state.mode === 'challenge') {
+                    state.timer += 5;
+                    showFeedback("TIME +5s ⏱️", "text-[#1cb0f6] border-[#1cb0f6]");
+                }
+            }
+
+            setTimeout(nextProblem, 1500);
+        }
+
+        function handleIncorrect() {
+            playSound('wrong');
+            dom.p2.classList.add('shake');
+            setTimeout(() => dom.p2.classList.remove('shake'), 500);
+            
+            state.streak = 0;
+            showFeedback(`Try Again!`, "text-[#ff4b4b] border-[#ff4b4b]");
+        }
+
+        function showFeedback(text, classes) {
+            dom.feedback.innerText = text;
+            dom.feedback.className = `absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 px-8 py-4 bg-white border-4 rounded-[30px] shadow-2xl text-3xl font-black z-50 pointer-events-none text-center transition-all duration-300 ${classes}`;
+            
+            // Pop in
+            dom.feedback.style.transform = "translate(-50%, -50%) scale(1.1)";
+            dom.feedback.style.opacity = "1";
+            
+            setTimeout(() => {
+                dom.feedback.style.transform = "translate(-50%, -50%) scale(0)";
+                dom.feedback.style.opacity = "0";
+            }, 1000);
+        }
+
+        // --- Bonus Round ---
+        function startBonusRound() {
+            state.isCorrecting = true;
+            dom.play.classList.add('hidden');
+            dom.bonus.classList.remove('hidden');
+            dom.bonusArea.innerHTML = '';
+            
+            let bonusTimer = 10;
+            dom.bonusTimer.innerText = bonusTimer;
+            
+            state.bonusInterval = setInterval(() => {
+                spawnBonusFruit();
+            }, 400); 
+
+            state.bonusCountdown = setInterval(() => {
+                bonusTimer--;
+                dom.bonusTimer.innerText = bonusTimer;
+                if (bonusTimer <= 0) {
+                    endBonusRound();
+                }
+            }, 1000);
+        }
+
+        function spawnBonusFruit() {
+            const f = document.createElement('div');
+            f.className = 'falling-fruit';
+            f.innerText = state.fruits[Math.floor(Math.random() * state.fruits.length)];
+            f.style.left = Math.random() * 80 + 10 + '%';
+            f.style.animationDuration = (Math.random() * 2 + 2.5) + 's'; 
+            
+            f.addEventListener('touchstart', catchFruit, {passive: false});
+            f.addEventListener('mousedown', catchFruit);
+            
+            function catchFruit(e) {
+                e.preventDefault();
+                playSound('pop');
+                state.score += 5;
+                dom.score.innerText = state.score;
+                
+                const pop = document.createElement('div');
+                pop.className = 'bonus-star-pop';
+                pop.innerText = '+5 ⭐';
+                
+                let clientX = e.clientX;
+                let clientY = e.clientY;
+                if(e.touches && e.touches.length > 0) {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                }
+                
+                pop.style.left = clientX - 40 + 'px';
+                pop.style.top = clientY - 40 + 'px';
+                pop.style.position = 'fixed';
+                document.body.appendChild(pop);
+                
+                setTimeout(() => pop.remove(), 800);
+                f.remove();
+            }
+
+            dom.bonusArea.appendChild(f);
+            
+            setTimeout(() => {
+                if (f.parentNode) f.remove();
+            }, 5000);
+        }
+
+        function endBonusRound() {
+            clearInterval(state.bonusInterval);
+            clearInterval(state.bonusCountdown);
+            
+            showFeedback("YUMMY! 🍎", "text-[#ff9600] border-[#ff9600]");
+            
+            setTimeout(() => {
+                dom.bonus.classList.add('hidden');
+                dom.play.classList.remove('hidden');
+                state.level++;
+                nextProblem();
+            }, 1500);
+        }
+
+        // --- End Game & Confetti ---
+        function endGame() {
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            if (state.bonusInterval) clearInterval(state.bonusInterval);
+            if (state.bonusCountdown) clearInterval(state.bonusCountdown);
+            
+            playSound('yay');
+            
+            dom.play.classList.add('hidden');
+            dom.bonus.classList.add('hidden');
+            dom.result.classList.remove('hidden');
+            
+            dom.finalStats.innerHTML = `
+                <div class="bg-yellow-50 p-6 rounded-3xl border-4 border-yellow-200 mb-4">
+                    <p class="text-gray-500 uppercase font-black tracking-widest text-lg">Total Stars</p>
+                    <p class="text-6xl sm:text-7xl text-[#e5b400] font-black my-2">${state.score}</p>
+                </div>
+            `;
+            
+            const badge = document.getElementById('badge-display');
+            if (state.score >= 300) badge.innerText = "👑";
+            else if (state.score >= 150) badge.innerText = "🏆";
+            else if (state.score >= 50) badge.innerText = "🌟";
+            else badge.innerText = "👍";
+
+            startConfetti();
+        }
+
+        function resetGame() {
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            if (state.bonusInterval) clearInterval(state.bonusInterval);
+            if (state.bonusCountdown) clearInterval(state.bonusCountdown);
+            stopConfetti();
+            
+            state.score = 0;
+            state.level = 1;
+            state.streak = 0;
+            dom.result.classList.add('hidden');
+            dom.play.classList.add('hidden');
+            dom.bonus.classList.add('hidden');
+            dom.start.classList.remove('hidden');
+            dom.score.innerText = "0";
+            
+            window.speechSynthesis.cancel();
+        }
+
+        // --- Confetti System (Pháo giấy) ---
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        let confetti = [];
+        let confettiAnimationId;
+
+        const colors = ['#58cc02', '#1cb0f6', '#ff4b4b', '#ffc800', '#ce82ff'];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function createConfettiPiece() {
+            return {
+                x: Math.random() * canvas.width,
+                y: -10 - Math.random() * 50,
+                r: Math.random() * 6 + 4, // radius/size
+                dx: Math.random() * 2 - 1,
+                dy: Math.random() * 3 + 2, // fall speed
+                tilt: Math.floor(Math.random() * 10) - 10,
+                tiltAngleIncrement: (Math.random() * 0.07) + 0.05,
+                tiltAngle: 0,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                shape: Math.random() > 0.5 ? 'circle' : 'rect'
+            };
+        }
+
+        function animateConfetti() {
+            if (dom.result.classList.contains('hidden')) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Add new pieces continuously
+            if (confetti.length < 150) {
+                confetti.push(createConfettiPiece());
+            }
+
+            for (let i = 0; i < confetti.length; i++) {
+                let p = confetti[i];
+                p.tiltAngle += p.tiltAngleIncrement;
+                p.y += p.dy;
+                p.x += p.dx;
+                p.tilt = Math.sin(p.tiltAngle) * 15;
+
+                ctx.beginPath();
+                ctx.lineWidth = p.r;
+                ctx.strokeStyle = p.color;
+                ctx.fillStyle = p.color;
+                
+                if (p.shape === 'circle') {
+                    ctx.arc(p.x, p.y, p.r / 2, 0, 2 * Math.PI);
+                    ctx.fill();
+                } else {
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.tiltAngle);
+                    ctx.fillRect(-p.r/2, -p.r/2, p.r, p.r * 1.5);
+                    ctx.restore();
+                }
+
+                // Reset pieces that fall off screen
+                if (p.y > canvas.height) {
+                    confetti[i] = createConfettiPiece();
+                    confetti[i].y = -10;
+                }
+            }
+            
+            confettiAnimationId = requestAnimationFrame(animateConfetti);
+        }
+
+        function startConfetti() {
+            resizeCanvas();
+            confetti = [];
+            for(let i=0; i<100; i++) {
+                // Initial burst scattered across upper half
+                let p = createConfettiPiece();
+                p.y = Math.random() * (canvas.height / 2);
+                confetti.push(p);
+            }
+            animateConfetti();
+        }
+
+        function stopConfetti() {
+            cancelAnimationFrame(confettiAnimationId);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            confetti = [];
+        }
+
+    </script>
+</body>
+</html>
