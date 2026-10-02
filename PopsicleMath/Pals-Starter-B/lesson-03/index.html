@@ -97,6 +97,13 @@
   .pairQuestionStage.show{display:flex}
   .pairQuestionCard{pointer-events:auto;display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;padding:19px 24px;border-radius:24px;background:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.96);box-shadow:0 14px 34px rgba(50,91,119,.16);backdrop-filter:blur(8px);animation:questionPop .28s ease both}
   .pairQuestionText{font-size:clamp(23px,3vw,34px);font-weight:900;color:#344b69;line-height:1.15}
+  .pairQuestionCard.countQuestion{flex-direction:column;min-width:min(560px,92%);gap:16px;padding:22px 26px}
+  .pairCountChoices{display:grid;grid-template-columns:repeat(4,minmax(82px,1fr));gap:12px;width:min(510px,100%)}
+  .pairCountChoice{border:2px solid rgba(255,255,255,.95);border-radius:18px;min-height:64px;background:linear-gradient(180deg,#82c9ff,#67b9f8);color:#214d73;font-size:clamp(23px,3vw,31px);font-weight:900;cursor:pointer;box-shadow:0 7px 0 #4498d7,0 10px 18px rgba(55,109,151,.14);transition:transform .14s ease,filter .14s ease,box-shadow .14s ease}
+  .pairCountChoice:hover{transform:translateY(-2px);filter:brightness(1.035)}
+  .pairCountChoice:active{transform:translateY(5px);box-shadow:0 2px 0 #4498d7,0 5px 10px rgba(55,109,151,.12)}
+  .pairCountChoice.correct{background:linear-gradient(180deg,#94e5a5,#70d889);color:#1d5530;box-shadow:0 7px 0 #4caf66,0 10px 18px rgba(55,120,76,.14)}
+  .pairCountChoice.wrongAnswer{animation:shake .35s ease;background:linear-gradient(180deg,#ffb9c8,#f39bae);color:#713548;box-shadow:0 7px 0 #dc7189,0 10px 18px rgba(128,68,83,.12)}
   .answerReveal{pointer-events:auto;display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;padding:20px 24px;border-radius:24px;background:rgba(255,255,255,.93);border:1px solid rgba(255,255,255,.98);box-shadow:0 14px 34px rgba(50,91,119,.16);backdrop-filter:blur(8px);animation:questionPop .28s ease both}
   .answerText{font-size:clamp(27px,3.4vw,41px);font-weight:900;line-height:1.12;color:#344b69;text-align:center}
   .answerText .evenWord{color:#1e9e59}.answerText .oddWord{color:#d84c84}
@@ -116,13 +123,13 @@
   @keyframes fall{to{transform:translate(var(--drift),620px) rotate(630deg);opacity:.9}}
   .toast{position:absolute;left:50%;top:72px;transform:translateX(-50%) translateY(-10px);opacity:0;background:#fff;padding:9px 16px;border-radius:14px;box-shadow:0 8px 20px rgba(54,86,112,.18);font-weight:800;transition:.2s;z-index:12;pointer-events:none}.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   @media (max-width:850px){.topbar{grid-template-columns:1fr auto auto}.brand{grid-column:1/-1}.mittenGrid{grid-template-columns:repeat(4,minmax(78px,1fr))}.mittenCard{min-height:135px}.mittenSvg{height:122px}.board{min-height:390px}.mittenGrid{min-height:350px}}
-  @media (max-width:560px){.pairTray{padding:8px}.pairedRows{gap:4px}.pairGroup{padding:2px}.pairGroup .mittenCard{width:49px;min-height:62px}.pairGroup .mittenSvg{height:61px}.wrap{width:97vw;padding-top:8px}.main{padding:10px}.pill{padding:7px 10px;min-height:45px}.mittenGrid{grid-template-columns:repeat(3,minmax(75px,1fr));gap:6px}.mittenCard{min-height:116px}.mittenSvg{height:108px}.board{padding:10px;min-height:400px}.mittenGrid{min-height:380px}.instruction{font-size:18px}.brand h1{font-size:27px}}
+  @media (max-width:560px){.pairCountChoices{grid-template-columns:repeat(2,minmax(90px,1fr))}.pairTray{padding:8px}.pairedRows{gap:4px}.pairGroup{padding:2px}.pairGroup .mittenCard{width:49px;min-height:62px}.pairGroup .mittenSvg{height:61px}.wrap{width:97vw;padding-top:8px}.main{padding:10px}.pill{padding:7px 10px;min-height:45px}.mittenGrid{grid-template-columns:repeat(3,minmax(75px,1fr));gap:6px}.mittenCard{min-height:116px}.mittenSvg{height:108px}.board{padding:10px;min-height:400px}.mittenGrid{min-height:380px}.instruction{font-size:18px}.brand h1{font-size:27px}}
   @media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
   <img src="../assets/logo-oodles-math.png" class="oodles-logo">
-<!-- Mitten Match Ver 1: original game preserved; illustrated winter background embedded -->
+<!-- Mitten Match Ver 2: original layout preserved; pair-count question added before pair-status question -->
 <div class="game" id="game">
   <div class="sky-deco" aria-hidden="true">
     <div class="sun"></div><div class="rainbow"></div><div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div>
@@ -152,14 +159,14 @@
           <div class="finishCard">
             <div class="big">🏆</div><h2>Great matching!</h2>
             <div class="starsLine">⭐⭐⭐⭐⭐</div>
-            <div class="scoreText" id="finalScore">You found the Odd and Even numbers!</div>
+            <div class="scoreText" id="finalScore">You found the odd and even numbers!</div>
             <button class="btn again" type="button" id="againBtn">PLAY AGAIN</button>
           </div>
         </div>
       </div>
       <div class="pairTray" id="pairTray" aria-label="Matched mitten pairs">
         <div class="trayTop"><span>🧤</span> Matched Pairs</div>
-        <div class="pairedRows" id="pairedRows"><div class="trayPlaceholder">Your matching pairs will come here.</div></div>
+        <div class="pairedRows" id="pairedRows"><div class="trayPlaceholder">Your matched pairs will appear here.</div></div>
       </div>
       <div class="resultArea" id="resultArea" aria-live="polite"></div>
       <div class="footerTip">Match two mittens with the same color and pattern.</div>
@@ -244,7 +251,7 @@
 
   function svgFor(p, uid){
     const accent=p.accent, base=p.base;
-    const dark=shade(base,-30), deep=shade(base,-43), light=shade(base,24);
+    const dark=shade(base,-28), deep=shade(base,-48), light=shade(base,30), midLight=shade(base,15);
     const extra = {
       heart:`<path d="M50 72 C39 57 18 59 18 41 C18 25 35 19 50 35 C65 19 82 25 82 41 C82 59 61 57 50 72Z" fill="${accent}"/>`,
       star:`<path d="M50 25l8.3 17.4 19.2 2.4-14 13.3 3.8 19-17.3-9.2-17.3 9.2 3.8-19-14-13.3 19.2-2.4z" fill="${accent}"/>`,
@@ -259,24 +266,31 @@
       leaf:`<g fill="${accent}"><path d="M27 62c-2-21 14-32 29-27 0 17-11 31-29 27z"/><path d="M49 74c0-19 14-28 27-23-1 16-12 26-27 23z"/></g><path d="M31 60c10-5 17-12 23-21M52 71c8-4 15-10 21-17" stroke="#bce9b8" stroke-width="3"/>`,
       candy:`<g fill="${accent}"><circle cx="35" cy="41" r="7.5"/><circle cx="65" cy="41" r="7.5"/><circle cx="50" cy="65" r="8.5"/></g><path d="M24 79h52" stroke="${accent}" stroke-width="6.5" stroke-linecap="round"/>`
     }[p.id] || '';
-    const bodyPath='M31 116C21 107 17 96 18 82L22 38C23 22 30 13 41 13C47 13 52 17 55 23C58 14 66 10 73 13C81 16 84 24 84 37L84 60L92 48C98 39 108 42 108 51C108 55 106 60 103 66L92 88C89 94 87 105 84 116Z';
-    return `<svg class="mittenSvg" viewBox="0 0 112 150" role="img" aria-label="${p.id} mitten">
+
+    // Softer palm, rounded fingertip and a more natural thumb silhouette.
+    const bodyPath='M29 116C22 109 18 99 18 87L20 43C20 24 30 13 43 13C50 13 56 17 60 24C64 18 70 15 76 16C86 18 91 27 90 42L88 62L94 52C101 40 113 43 113 54C113 59 110 65 106 71L95 90C91 97 90 108 86 116Z';
+    const cuffPath='M27 111H88V137C88 144 82 149 74 149H41C33 149 27 144 27 137Z';
+
+    return `<svg class="mittenSvg" viewBox="0 0 118 154" role="img" aria-label="${p.id} mitten">
       <defs>
-        <linearGradient id="g${uid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${light}"/><stop offset=".38" stop-color="${base}"/><stop offset=".78" stop-color="${dark}"/><stop offset="1" stop-color="${deep}"/></linearGradient>
-        <linearGradient id="c${uid}" x1="0" x2="1"><stop stop-color="${light}"/><stop offset=".48" stop-color="${base}"/><stop offset="1" stop-color="${dark}"/></linearGradient>
-        <pattern id="k${uid}" width="8" height="7" patternUnits="userSpaceOnUse"><path d="M0 4 Q2 1 4 4 T8 4" fill="none" stroke="rgba(255,255,255,.42)" stroke-width="1.15"/><path d="M0 6 Q2 3 4 6 T8 6" fill="none" stroke="rgba(41,42,50,.12)" stroke-width=".8"/></pattern>
-        <clipPath id="clip${uid}"><path d="${bodyPath}"/><path d="M24 112h62v25c0 7-5 11-12 11H36c-7 0-12-4-12-11z"/></clipPath>
-        <filter id="ps${uid}" x="-25%" y="-25%" width="150%" height="150%"><feDropShadow dx="0" dy="1.8" stdDeviation="1.2" flood-color="#4f4051" flood-opacity=".22"/></filter>
+        <linearGradient id="g${uid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${light}"/><stop offset=".30" stop-color="${midLight}"/><stop offset=".63" stop-color="${base}"/><stop offset=".88" stop-color="${dark}"/><stop offset="1" stop-color="${deep}"/></linearGradient>
+        <linearGradient id="c${uid}" x1="0" x2="1"><stop stop-color="${light}"/><stop offset=".45" stop-color="${base}"/><stop offset="1" stop-color="${dark}"/></linearGradient>
+        <linearGradient id="shine${uid}" x1="0" y1="0" x2="1" y2="1"><stop stop-color="rgba(255,255,255,.72)"/><stop offset="1" stop-color="rgba(255,255,255,0)"/></linearGradient>
+        <pattern id="k${uid}" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 4 Q1.75 1 3.5 4 T7 4" fill="none" stroke="rgba(255,255,255,.36)" stroke-width="1"/><path d="M0 6 Q1.75 3 3.5 6 T7 6" fill="none" stroke="rgba(38,34,46,.11)" stroke-width=".75"/></pattern>
+        <clipPath id="clip${uid}"><path d="${bodyPath}"/></clipPath>
+        <filter id="ps${uid}" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="2" stdDeviation="1.35" flood-color="#3d3742" flood-opacity=".24"/></filter>
       </defs>
-      <path d="${bodyPath}" fill="url(#g${uid})" stroke="${deep}" stroke-opacity=".36" stroke-width="2.2" stroke-linejoin="round"/>
-      <path d="${bodyPath}" fill="url(#k${uid})" opacity=".34"/>
-      <path d="M85 61C92 61 97 57 102 50" fill="none" stroke="rgba(255,255,255,.28)" stroke-width="3" stroke-linecap="round"/>
-      <path d="M27 112h59v25c0 6-5 10-11 10H38c-6 0-11-4-11-10z" fill="url(#c${uid})" stroke="${deep}" stroke-opacity=".28" stroke-width="2"/>
-      <path d="M28 118h57M28 126h57M28 134h57M31 142h51" stroke="rgba(255,255,255,.5)" stroke-width="2.4" stroke-linecap="round"/>
-      <path d="M36 116v28M44 116v30M52 116v30M60 116v30M68 116v30M76 116v28" stroke="rgba(44,35,46,.1)" stroke-width="1.5"/>
-      <g filter="url(#ps${uid})">${extra}</g>
-      <path d="M29 34C30 22 36 17 42 17C47 17 50 19 53 24" fill="none" stroke="rgba(255,255,255,.52)" stroke-width="4.2" stroke-linecap="round"/>
-      <path d="M31 116C21 107 17 96 18 82" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="3" stroke-linecap="round"/>
+      <path d="${bodyPath}" fill="url(#g${uid})" stroke="${deep}" stroke-opacity=".42" stroke-width="2.35" stroke-linejoin="round"/>
+      <path d="${bodyPath}" fill="url(#k${uid})" opacity=".31"/>
+      <path d="M24 45C25 27 33 18 43 18C49 18 53 21 57 26" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="4.2" stroke-linecap="round"/>
+      <path d="M90 64C97 62 102 58 107 51" fill="none" stroke="rgba(255,255,255,.30)" stroke-width="3.2" stroke-linecap="round"/>
+      <path d="M83 111C89 98 90 87 94 79" fill="none" stroke="rgba(45,35,50,.10)" stroke-width="2" stroke-linecap="round"/>
+      <g clip-path="url(#clip${uid})" filter="url(#ps${uid})">${extra}</g>
+      <path d="${cuffPath}" fill="url(#c${uid})" stroke="${deep}" stroke-opacity=".34" stroke-width="2.15"/>
+      <path d="M30 118H85M30 126H85M30 134H85M34 142H81" stroke="rgba(255,255,255,.52)" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M37 115V145M45 115V147M53 115V148M61 115V148M69 115V147M77 115V145" stroke="rgba(42,34,45,.11)" stroke-width="1.55"/>
+      <path d="M31 112H84" stroke="rgba(255,255,255,.5)" stroke-width="2" stroke-dasharray="2.2 3" stroke-linecap="round"/>
+      <path d="M26 94C27 104 30 110 35 115" fill="none" stroke="rgba(255,255,255,.19)" stroke-width="3.1" stroke-linecap="round"/>
     </svg>`;
   }
 
@@ -286,7 +300,7 @@
   }
 
   function makeRound(){
-    answering=false; selected=null; locked=false; matchedPairs=0; resultArea.innerHTML=''; pairQuestionStage.classList.remove('show'); pairQuestionStage.innerHTML=''; finishOverlay.classList.remove('show'); grid.innerHTML=''; pairedRows.innerHTML='<div class="trayPlaceholder">Your matching pairs will come here.</div>';
+    answering=false; selected=null; locked=false; matchedPairs=0; resultArea.innerHTML=''; pairQuestionStage.classList.remove('show'); pairQuestionStage.innerHTML=''; finishOverlay.classList.remove('show'); grid.innerHTML=''; pairedRows.innerHTML='<div class="trayPlaceholder">Your matched pairs will appear here.</div>';
     let options=[5,6,7,8,9,10,11,12].filter(n=>n!==previousCount); currentCount=choice(options); previousCount=currentCount;
     const pairCount=Math.floor(currentCount/2); const styles=shuffle([...patternDefs]).slice(0,pairCount+1);
     const items=[]; let id=0;
@@ -335,26 +349,67 @@
     for(let i=0;i<5;i++){ const s=document.createElement('span'); s.className='spark'; s.textContent=i%2?'✨':'⭐'; s.style.left=(35+Math.random()*35)+'%'; s.style.top=(30+Math.random()*35)+'%'; s.style.setProperty('--dx',(Math.random()*80-40)+'px'); s.style.setProperty('--dy',(Math.random()*70-45)+'px'); el.appendChild(s); setTimeout(()=>s.remove(),700); }
   }
 
+  function makePairCountChoices(correctPairs){
+    const candidates=[correctPairs-2,correctPairs-1,correctPairs+1,correctPairs+2,correctPairs+3,correctPairs-3]
+      .filter((n,i,a)=>n>=1 && n<=7 && n!==correctPairs && a.indexOf(n)===i);
+    shuffle(candidates);
+    return shuffle([correctPairs,...candidates.slice(0,3)]);
+  }
+
+  function showPairCountQuestion(){
+    const correctPairs=Math.floor(currentCount/2);
+    const choices=makePairCountChoices(correctPairs);
+    pairQuestionStage.innerHTML=`<div class="pairQuestionCard countQuestion"><div class="pairQuestionText">How many pairs are there?</div><div class="pairCountChoices">${choices.map(n=>`<button class="pairCountChoice" type="button" data-pair-count="${n}">${n}</button>`).join('')}</div></div>`;
+    pairQuestionStage.classList.add('show');
+    pairQuestionStage.querySelectorAll('[data-pair-count]').forEach(b=>b.addEventListener('click',()=>answerPairCount(Number(b.dataset.pairCount),b)));
+    setTimeout(()=>speak('How many pairs are there?'),180);
+  }
+
+  function answerPairCount(ans,button){
+    const correctPairs=Math.floor(currentCount/2);
+    if(ans!==correctPairs){
+      beep('oops');
+      button.classList.remove('wrongAnswer'); void button.offsetWidth; button.classList.add('wrongAnswer');
+      showToast('Count the matched pairs again.');
+      return;
+    }
+    beep('good');
+    button.classList.add('correct');
+    pairQuestionStage.querySelectorAll('[data-pair-count]').forEach(b=>b.disabled=true);
+    setTimeout(showPairQuestion,420);
+  }
+
+  function showPairQuestion(){
+    pairQuestionStage.innerHTML=`<div class="pairQuestionCard"><div class="pairQuestionText">Do they have a pair?</div><div class="yn"><button class="btn yes" type="button" data-answer="yes">YES</button><button class="btn no" type="button" data-answer="no">NO</button></div></div>`;
+    pairQuestionStage.classList.add('show');
+    pairQuestionStage.querySelectorAll('[data-answer]').forEach(b=>b.addEventListener('click',()=>answerPairQuestion(b.dataset.answer)));
+    setTimeout(()=>speak('Do they have a pair?'),180);
+  }
+
   function checkCompleted(){
     if(matchedPairs===Math.floor(currentCount/2)){
-      answering=true; const lonely=grid.querySelector('[data-pair="lonely"]'); if(lonely){ lonely.classList.add('lonely'); moveLonelyToTray(lonely); }
-      pairQuestionStage.innerHTML=`<div class="pairQuestionCard"><div class="pairQuestionText">Do they all have a pair?</div><div class="yn"><button class="btn yes" type="button" data-answer="yes">YES</button><button class="btn no" type="button" data-answer="no">NO</button></div></div>`;
-      pairQuestionStage.classList.add('show');
-      pairQuestionStage.querySelectorAll('[data-answer]').forEach(b=>b.addEventListener('click',()=>answerPairQuestion(b.dataset.answer)));
-      setTimeout(()=>speak('Do they all have a pair?'), 180);
+      answering=true;
+      const lonely=grid.querySelector('[data-pair="lonely"]');
+      if(lonely){ lonely.classList.add('lonely'); moveLonelyToTray(lonely); }
+      showPairCountQuestion();
     }
   }
 
   function answerPairQuestion(ans){
-    const isEven=currentCount%2===0; const correct=(isEven && ans==='yes')||(!isEven && ans==='no');
-    if(!correct){ beep('oops'); showToast(isEven?'Look again. Every mitten has a partner!':'Look again. One mitten is alone!'); return; }
+    const isEven=currentCount%2===0;
+    const correct=(isEven && ans==='yes')||(!isEven && ans==='no');
+    if(!correct){
+      beep('oops');
+      showToast(isEven?'Look again. Every mitten has a pair.':'Look again. One mitten does not have a pair.');
+      return;
+    }
     score++; updateTop(); beep('celebrate'); burstConfetti(24);
     resultArea.innerHTML='';
-    const numberType=isEven?'even':'odd';
-    pairQuestionStage.innerHTML=`<div class="answerReveal"><div class="answerText">${currentCount} is an <span class="${isEven?'evenWord':'oddWord'}">${numberType}</span> number.</div><button class="btn next" id="nextBtn" type="button">NEXT ➜</button></div>`;
+    const feedback=isEven?'Yes! Every mitten has a pair.':'That’s right! One mitten does not have a pair.';
+    pairQuestionStage.innerHTML=`<div class="answerReveal"><div class="answerText">${feedback}</div><button class="btn next" id="nextBtn" type="button">NEXT ➜</button></div>`;
     pairQuestionStage.classList.add('show');
     document.getElementById('nextBtn').addEventListener('click',nextRound);
-    speak(`${currentCount} is an ${numberType} number.`);
+    speak(feedback);
   }
 
   function nextRound(){
@@ -362,7 +417,7 @@
   }
 
   function finishGame(){
-    finalScore.textContent=`${score} / ${TOTAL_ROUNDS} stars — You found the Odd and Even numbers!`; finishOverlay.classList.add('show'); burstConfetti(90); beep('celebrate');
+    finalScore.textContent=`${score} / ${TOTAL_ROUNDS} stars — You found the odd and even numbers!`; finishOverlay.classList.add('show'); burstConfetti(90); beep('celebrate');
   }
 
   function updateTop(){ roundPill.textContent=`Round ${round} / ${TOTAL_ROUNDS}`; scorePill.textContent=`⭐ ${score} / ${TOTAL_ROUNDS}`; countTag.textContent=`🧤 ${currentCount} Mittens`; }
