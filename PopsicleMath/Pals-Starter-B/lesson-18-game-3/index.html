@@ -17,7 +17,7 @@ body{overflow:hidden;background:#fff4e4;-webkit-tap-highlight-color:transparent}
 .hero-sub{position:absolute;top:121px;left:584px;width:490px;text-align:center;font-weight:800;font-size:25px;color:#1169aa;text-shadow:0 2px 0 white,2px 0 white,-2px 0 white}
 .hero-round{position:absolute;top:189px;left:615px;width:428px;display:flex;justify-content:center;align-items:center;gap:13px}
 .round-pill{border-radius:35px;background:#fff;box-shadow:0 5px 0 #e2cfab,0 8px 17px #6686a526;padding:9px 23px;font-weight:900;font-size:23px;color:#fa5675;border:3px solid #fff}
-.round-stars{font-size:23px;color:#ffb500;letter-spacing:5px;text-shadow:0 2px white}
+.round-pill.question-progress{font-size:18px;padding:9px 13px;white-space:nowrap}.round-stars{font-size:23px;color:#ffb500;letter-spacing:5px;text-shadow:0 2px white}
 .prompt-line{position:absolute;top:275px;left:550px;width:565px;min-height:64px;display:flex;justify-content:center;align-items:center;gap:12px;text-align:center;font-weight:800;font-size:25px;line-height:1.3;color:#075e9d;text-shadow:0 2px 0 #fff,2px 0 #fff,-2px 0 #fff,0 0 10px #fff}
 .speaker{flex:0 0 auto;border-radius:50%;width:47px;height:47px;color:#fff;background:linear-gradient(160deg,#21bbee,#0784de);box-shadow:0 5px 0 #116bb6,0 8px 12px #075b9955;border:3px solid #fff;display:inline-grid;place-items:center;transition:transform .16s}.speaker svg{width:24px;height:24px}.speaker:active{transform:translateY(3px);box-shadow:0 2px 0 #116bb6}
 .team-grid{position:absolute;top:416px;left:101px;width:1434px;height:411px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.team{position:relative;min-width:0;text-align:center}
@@ -53,7 +53,7 @@ body{overflow:hidden;background:#fff4e4;-webkit-tap-highlight-color:transparent}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
 body.mobile-layout{overflow:hidden}body.mobile-layout #stage{display:none}body.mobile-layout #mobile{display:block;height:100dvh}
 
-/* Ver 2: background includes Team 1 / Team 2 / Team 3 headers. */
+/* Background includes Team 1 / Team 2 / Team 3 headers. */
 .team-score{top:125px}
 .team-body{top:163px}
 .pairs{gap:5px}
@@ -84,7 +84,7 @@ body.mobile-layout{overflow:hidden}body.mobile-layout #stage{display:none}body.m
 const NS={min:1,max:50};
 const icons={speaker:'<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15 9a5 5 0 0 1 0 6M18 6a9 9 0 0 1 0 12"/></svg>'};
 const teams=['Team 1','Team 2','Team 3'];
-let state={phase:'intro',round:0,sets:[],marks:[],voiceReady:false};
+let state={phase:'intro',round:0,question:0,sets:[],marks:[],voiceReady:false};
 let lastMobile=false;
 const $=id=>document.getElementById(id);
 function rand(n){return Math.floor(Math.random()*n)}
@@ -92,7 +92,7 @@ function shuffle(a){let b=[...a];for(let i=b.length-1;i>0;i--){const j=rand(i+1)
 function chooseDistinct(n){return shuffle(Array.from({length:NS.max-NS.min+1},(_,i)=>i+NS.min)).slice(0,n)}
 function makeSession(){
  const usedPairs=new Set(),usedSets=new Set();
- const first=Array.from({length:3},()=>{
+ const first=Array.from({length:3},()=>Array.from({length:3},()=>{
    const relations=shuffle(['<','>','=']);
    const pairs=relations.map(type=>{
      let a,b,key,attempt=0;
@@ -105,27 +105,29 @@ function makeSession(){
      usedPairs.add(key);return {a,b};
    });
    return {pairs};
- });
+ }));
  function orderSet(count,dir){let nums,key,attempt=0;do{nums=chooseDistinct(count);key=[...nums].sort((a,b)=>a-b).join(':');attempt++}while((usedSets.has(key)||nums.join(',')===[...nums].sort((a,b)=>a-b).join(',')||nums.join(',')===[...nums].sort((a,b)=>b-a).join(','))&&attempt<300);usedSets.add(key);return {nums,dir};}
- const second=Array.from({length:3},()=>orderSet(3,'asc'));
- const directions=shuffle(['asc','asc','desc']);
- const third=Array.from({length:3},(_,i)=>orderSet(5,directions[i]));
+ const second=Array.from({length:3},()=>Array.from({length:3},()=>orderSet(3,'asc')));
+ const third=Array.from({length:3},()=>{
+   const directions=shuffle(['asc','asc','desc']);
+   return Array.from({length:3},(_,i)=>orderSet(5,directions[i]));
+ });
  return [first,second,third];
 }
 function getCorrectSymbols(p){return p.a>p.b?'>':p.a<p.b?'<':'='}
 function sorted(task){return [...task.nums].sort((a,b)=>task.dir==='asc'?a-b:b-a)}
-function total(t){return state.marks.reduce((acc,r)=>acc+(Number.isInteger(r[t])?r[t]:0),0)}
+function total(t){return state.marks.reduce((acc,r)=>acc+r.reduce((sum,q)=>sum+(Number.isInteger(q[t])?q[t]:0),0),0)}
 function allowedPoints(){return 5}
-function allMarked(){return state.marks[state.round].every(Number.isInteger)}
+function allMarked(){return state.marks[state.round][state.question].every(Number.isInteger)}
 function speak(txt){if(!('speechSynthesis' in window))return;try{speechSynthesis.cancel();const utter=new SpeechSynthesisUtterance(txt);utter.lang='en-US';utter.rate=.87;utter.pitch=1.08;const voices=speechSynthesis.getVoices();utter.voice=voices.find(v=>/^en/i.test(v.lang)&&/female|samantha|zira|aria|google us english/i.test(v.name))||voices.find(v=>/^en/i.test(v.lang))||null;speechSynthesis.speak(utter)}catch(e){}}
 function instruction(){return state.round===0?'Compare the numbers. Write greater than, less than, or equal to.':state.round===1?'Arrange the three numbers from smallest to greatest.':'Arrange five numbers in the correct order. Follow your team’s arrows.'}
-function speechTeam(t){const q=state.sets[state.round][t];if(state.round===0)return `${teams[t]}. Compare these three pairs of numbers. `+q.pairs.map(p=>`${p.a} and ${p.b}.`).join(' ');return `${teams[t]}. Arrange ${q.nums.length} numbers from ${q.dir==='asc'?'smallest to greatest':'greatest to smallest'}. ${q.nums.join(', ')}.`}
+function speechTeam(t){const q=state.sets[state.round][state.question][t];if(state.round===0)return `${teams[t]}. Compare these three pairs of numbers. `+q.pairs.map(p=>`${p.a} and ${p.b}.`).join(' ');return `${teams[t]}. Arrange ${q.nums.length} numbers from ${q.dir==='asc'?'smallest to greatest':'greatest to smallest'}. ${q.nums.join(', ')}.`}
 function beep(kind='win'){
  try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;if(!window._audio)window._audio=new C();const ctx=window._audio;ctx.resume();const notes=kind==='win'?[523,659,784]:kind==='finish'?[523,659,784,1046,1318]:kind==='tick'?[660]:[330,440];notes.forEach((f,i)=>{const osc=ctx.createOscillator(),gain=ctx.createGain(),start=ctx.currentTime+i*.085;osc.type='sine';osc.frequency.setValueAtTime(f,start);gain.gain.setValueAtTime(.0001,start);gain.gain.exponentialRampToValueAtTime(.065,start+.018);gain.gain.exponentialRampToValueAtTime(.0001,start+.18);osc.connect(gain);gain.connect(ctx.destination);osc.start(start);osc.stop(start+.2)})}catch(e){}
 }
 function buttonSpeaker(text,extra=''){return `<button type="button" class="speaker ${extra}" data-action="speak" data-text="${encodeURIComponent(text)}" aria-label="Play English instructions">${icons.speaker}</button>`}
 function getTeamBody(t,forMobile=false){
- const q=state.sets[state.round][t],show=state.phase==='revealed';
+ const q=state.sets[state.round][state.question][t],show=state.phase==='revealed';
  if(state.round===0){
   if(forMobile)return `<div class="m-pairs">${q.pairs.map(p=>`<div class="m-pair"><div class="m-pair-row"><span>${p.a}</span><span class="m-write ${show?'filled':''}">${show?`<span class="revealed-symbol">${getCorrectSymbols(p)}</span>`:''}</span><span>${p.b}</span></div></div>`).join('')}</div>`;
   return `<div class="pairs">${q.pairs.map(p=>`<div class="pair-item"><div class="pair-main"><span>${p.a}</span><span class="write-blank ${show?'filled':''}">${show?`<span class="revealed-symbol">${getCorrectSymbols(p)}</span>`:''}</span><span>${p.b}</span></div></div>`).join('')}</div>`;
@@ -135,30 +137,30 @@ function getTeamBody(t,forMobile=false){
  if(forMobile)return `<div class="task-note">${q.dir==='asc'?'SMALLEST → GREATEST':'GREATEST → SMALLEST'}</div><div class="m-given">${q.nums.join(', ')}</div><div class="m-order ${five?'five':''}">${slots}</div>`;
  return `<div class="task-note">${q.dir==='asc'?'SMALLEST → GREATEST':'GREATEST → SMALLEST'}</div><div class="given-set">${q.nums.join(', ')}</div><div class="number-sequence ${five?'five':''}">${slots}</div>`;
 }
-function scoreControls(t,mobile){if(state.phase!=='revealed')return '';const max=allowedPoints(),score=state.marks[state.round][t];return `<div class="${mobile?'m-score-options':'score-zone'}"><span>SCORE</span>${Array.from({length:max+1},(_,i)=>`<button class="score-option ${score===i?'selected':''}" data-action="points" data-team="${t}" data-points="${i}" aria-label="Give ${i} point${i!==1?'s':''} to ${teams[t]}" aria-pressed="${score===i}">${i}</button>`).join('')}</div>`}
-function nextButton(){if(state.phase==='question')return `<button class="action" data-action="check">CHECK ✓</button>`;if(state.phase==='revealed')return `<button class="action secondary" data-action="next" ${allMarked()?'':'disabled'}>${state.round===2?'FINISH GAME ★':'NEXT ROUND →'}</button>`;return ''}
+function scoreControls(t,mobile){if(state.phase!=='revealed')return '';const max=allowedPoints(),score=state.marks[state.round][state.question][t];return `<div class="${mobile?'m-score-options':'score-zone'}"><span>SCORE</span>${Array.from({length:max+1},(_,i)=>`<button class="score-option ${score===i?'selected':''}" data-action="points" data-team="${t}" data-points="${i}" aria-label="Give ${i} point${i!==1?'s':''} to ${teams[t]}" aria-pressed="${score===i}">${i}</button>`).join('')}</div>`}
+function nextButton(){if(state.phase==='question')return `<button class="action" data-action="check">CHECK ✓</button>`;if(state.phase==='revealed')return `<button class="action secondary" data-action="next" ${allMarked()?'':'disabled'}>${state.round===2&&state.question===2?'FINISH GAME ★':state.question===2?'NEXT ROUND →':'NEXT QUESTION →'}</button>`;return ''}
 function displayDesktop(){let out='';
  if(state.phase==='intro'){
   out=`<section class="screen" aria-label="Welcome"><div class="hero-title">BIG BOARD RACE!</div><div class="hero-sub">COMPARING NUMBERS • 3 TEAMS</div><div class="hero-round"><span class="round-pill">3 FUN ROUNDS</span><span class="round-stars">★★★</span></div><div class="intro-message">Ready, Set, Solve!</div><div class="intro-explain">Write on the board • Check together • Earn stars</div><div class="bottom-actions"><button class="action" data-action="start">PLAY NOW ▶</button></div></section>`;
  } else if(state.phase==='finished'){
-  const scores=teams.map((_,i)=>total(i)),best=Math.max(...scores);out=`<section class="screen" aria-label="Final scores"><div class="result-title">AMAZING JOB!</div><div class="result-sub">Three teams, three super challenges!</div><div class="results">${scores.map((s,i)=>`<div class="result-team"><div class="rank-symbol">${s===best?'🏆':'⭐'}</div><div class="result-points">${s} <small style="font-size:28px">/ 15</small></div><div class="winner">${s===best?'TOP TEAM!':'GREAT WORK!'}</div></div>`).join('')}</div><div class="bottom-actions"><button class="action" data-action="start">PLAY AGAIN ↻</button></div></section>`;
+  const scores=teams.map((_,i)=>total(i)),best=Math.max(...scores);out=`<section class="screen" aria-label="Final scores"><div class="result-title">AMAZING JOB!</div><div class="result-sub">Three teams, three super challenges!</div><div class="results">${scores.map((s,i)=>`<div class="result-team"><div class="rank-symbol">${s===best?'🏆':'⭐'}</div><div class="result-points">${s} <small style="font-size:28px">/ 45</small></div><div class="winner">${s===best?'TOP TEAM!':'GREAT WORK!'}</div></div>`).join('')}</div><div class="bottom-actions"><button class="action" data-action="start">PLAY AGAIN ↻</button></div></section>`;
  }else{
   const title=['Compare the Numbers!','Order Three Numbers!','Order Five Numbers!'][state.round];
-  out=`<section class="screen" aria-label="Round ${state.round+1}"><div class="hero-title">BIG BOARD RACE!</div><div class="hero-sub">${title}</div><div class="hero-round"><span class="round-pill">ROUND ${state.round+1} / 3</span><span class="round-stars">${'★'.repeat(state.round+1)}</span></div><div class="prompt-line"><span>${instruction()}</span>${buttonSpeaker(instruction())}</div><div class="team-grid">${teams.map((t,i)=>`<section class="team" aria-label="${t}"><div class="team-score">★ <strong>${total(i)}</strong> / 15 ${buttonSpeaker(speechTeam(i),'team-speaker')}</div><div class="team-body">${getTeamBody(i)}</div></section>`).join('')}</div>${state.phase==='revealed'?`<div class="scoring">${teams.map((_,i)=>scoreControls(i,false)).join('')}</div>`:''}<div class="bottom-actions">${nextButton()}${state.phase==='revealed'&&!allMarked()?'<span class="score-hint">Choose each team’s score</span>':''}</div></section>`;
+  out=`<section class="screen" aria-label="Round ${state.round+1}, question ${state.question+1}"><div class="hero-title">BIG BOARD RACE!</div><div class="hero-sub">${title}</div><div class="hero-round"><span class="round-pill question-progress">ROUND ${state.round+1} / 3 • QUESTION ${state.question+1} / 3</span><span class="round-stars">${'★'.repeat(state.round+1)}</span></div><div class="prompt-line"><span>${instruction()}</span>${buttonSpeaker(instruction())}</div><div class="team-grid">${teams.map((t,i)=>`<section class="team" aria-label="${t}"><div class="team-score">★ <strong>${total(i)}</strong> / 45 ${buttonSpeaker(speechTeam(i),'team-speaker')}</div><div class="team-body">${getTeamBody(i)}</div></section>`).join('')}</div>${state.phase==='revealed'?`<div class="scoring">${teams.map((_,i)=>scoreControls(i,false)).join('')}</div>`:''}<div class="bottom-actions">${nextButton()}${state.phase==='revealed'&&!allMarked()?'<span class="score-hint">Choose each team’s score</span>':''}</div></section>`;
  }
  $('desktopContent').innerHTML=out;
 }
 function displayMobile(){const mobile=$('mobile'),scroll=mobile.scrollTop;let out='';
  if(state.phase==='intro')out=`<div class="mobile-top"><h1>BIG BOARD RACE!</h1><div class="mobile-round">3 TEAMS • 3 FUN ROUNDS</div><div class="mobile-msg">Ready, Set, Solve!<p style="font-size:14px">Write on the board. Earn stars together!</p></div></div><div class="mobile-buttons"><button class="action" data-action="start">PLAY NOW ▶</button></div>`;
- else if(state.phase==='finished'){const scores=teams.map((_,i)=>total(i)),best=Math.max(...scores);out=`<div class="mobile-top"><h1>AMAZING JOB!</h1><div class="mobile-round">Your final team scores</div></div><div class="mobile-result">${scores.map((s,i)=>`<div class="result-row ${s===best?'winning':''}"><span>${s===best?'🏆':'⭐'} ${teams[i]}</span><strong>${s} / 15</strong><span>${s===best?'WINNER!':'GREAT!'}</span></div>`).join('')}</div><div class="mobile-buttons"><button class="action" data-action="start">PLAY AGAIN ↻</button></div>`}
- else out=`<div class="mobile-top"><h1>BIG BOARD RACE!</h1><div class="mobile-round">ROUND ${state.round+1} / 3 • ${['COMPARE TWO NUMBERS','ORDER THREE NUMBERS','ORDER FIVE NUMBERS'][state.round]}</div><div class="mobile-prompt"><span>${instruction()}</span>${buttonSpeaker(instruction())}</div></div><div class="mobile-teams">${teams.map((name,i)=>`<section class="mobile-team"><h2>${name.toUpperCase()}</h2><div class="m-score">★ ${total(i)} / 15 &nbsp; ${buttonSpeaker(speechTeam(i),'m-team-speaker')}</div>${getTeamBody(i,true)}${scoreControls(i,true)}</section>`).join('')}</div><div class="mobile-buttons">${nextButton()}${state.phase==='revealed'&&!allMarked()?'<div class="score-hint">Choose each team’s score first.</div>':''}</div>`;
+ else if(state.phase==='finished'){const scores=teams.map((_,i)=>total(i)),best=Math.max(...scores);out=`<div class="mobile-top"><h1>AMAZING JOB!</h1><div class="mobile-round">Your final team scores</div></div><div class="mobile-result">${scores.map((s,i)=>`<div class="result-row ${s===best?'winning':''}"><span>${s===best?'🏆':'⭐'} ${teams[i]}</span><strong>${s} / 45</strong><span>${s===best?'WINNER!':'GREAT!'}</span></div>`).join('')}</div><div class="mobile-buttons"><button class="action" data-action="start">PLAY AGAIN ↻</button></div>`}
+ else out=`<div class="mobile-top"><h1>BIG BOARD RACE!</h1><div class="mobile-round">ROUND ${state.round+1} / 3 • QUESTION ${state.question+1} / 3 • ${['COMPARE TWO NUMBERS','ORDER THREE NUMBERS','ORDER FIVE NUMBERS'][state.round]}</div><div class="mobile-prompt"><span>${instruction()}</span>${buttonSpeaker(instruction())}</div></div><div class="mobile-teams">${teams.map((name,i)=>`<section class="mobile-team"><h2>${name.toUpperCase()}</h2><div class="m-score">★ ${total(i)} / 45 &nbsp; ${buttonSpeaker(speechTeam(i),'m-team-speaker')}</div>${getTeamBody(i,true)}${scoreControls(i,true)}</section>`).join('')}</div><div class="mobile-buttons">${nextButton()}${state.phase==='revealed'&&!allMarked()?'<div class="score-hint">Choose each team’s score first.</div>':''}</div>`;
  $('mobileContent').innerHTML=out;mobile.scrollTop=scroll;
 }
 function render(){displayDesktop();displayMobile()}
-function start(){state={phase:'question',round:0,sets:makeSession(),marks:[[null,null,null],[null,null,null],[null,null,null]],voiceReady:true};beep('tick');render();setTimeout(()=>speak(instruction()),350)}
+function start(){state={phase:'question',round:0,question:0,sets:makeSession(),marks:Array.from({length:3},()=>Array.from({length:3},()=>[null,null,null])),voiceReady:true};beep('tick');render();setTimeout(()=>speak(instruction()),350)}
 function check(){if(state.phase!=='question')return;state.phase='revealed';beep('win');render()}
-function next(){if(state.phase!=='revealed'||!allMarked())return;beep('tick');if(state.round===2){state.phase='finished';render();speak('Amazing job! Great work, everyone!');beep('finish');startConfetti()}else{state.round++;state.phase='question';render();setTimeout(()=>speak(instruction()),250)}}
-function setPoints(t,p){if(state.phase!=='revealed'||p<0||p>allowedPoints())return;state.marks[state.round][t]=p;beep('tick');render()}
+function next(){if(state.phase!=='revealed'||!allMarked())return;beep('tick');if(state.round===2&&state.question===2){state.phase='finished';render();speak('Amazing job! Great work, everyone!');beep('finish');startConfetti()}else{if(state.question===2){state.round++;state.question=0}else state.question++;state.phase='question';render();setTimeout(()=>speak(instruction()),250)}}
+function setPoints(t,p){if(state.phase!=='revealed'||p<0||p>allowedPoints())return;state.marks[state.round][state.question][t]=p;beep('tick');render()}
 document.addEventListener('click',e=>{const btn=e.target.closest('[data-action]');if(!btn||btn.disabled)return;const action=btn.dataset.action;if(action==='start')start();else if(action==='check')check();else if(action==='next')next();else if(action==='points')setPoints(+btn.dataset.team,+btn.dataset.points);else if(action==='speak')speak(decodeURIComponent(btn.dataset.text||''))});
 function resize(){const w=innerWidth,h=innerHeight,mobile=(w<850)||(h>w*1.04);if(lastMobile!==mobile){document.body.classList.toggle('mobile-layout',mobile);lastMobile=mobile}const sc=Math.min(w/1671,h/941);const stage=$('stage');stage.style.transform=`scale(${sc})`;stage.style.left=`${(w-1671*sc)/2}px`;stage.style.top=`${(h-941*sc)/2}px`;}
 window.addEventListener('resize',resize);window.addEventListener('orientationchange',resize);
