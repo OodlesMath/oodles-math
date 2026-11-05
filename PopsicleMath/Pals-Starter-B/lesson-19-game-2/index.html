@@ -89,7 +89,6 @@
     <h1 id="intro-heading">MAKE 10!</h1>
     <h2>Team Math Challenge</h2>
     <p class="intro-text">Add three numbers. Make 10 first!<br>Think together, write your answers, and earn stars!</p>
-    <label class="round-picker" for="round-select">Number of rounds <select id="round-select"><option>3</option><option>4</option><option selected>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select></label>
     <button class="big-play" id="play-btn">PLAY NOW ▶</button>
     <p class="intro-foot">3 TEAMS · 2 STARS PER QUESTION · TEACHER-LED</p>
   </div>
@@ -119,7 +118,8 @@ function randShuffle(input){const a=[...input];for(let i=a.length-1;i>0;i--){let
 function makeDirect(a,b,c,pair){const terms=[a,b,c],other=[0,1,2].find(i=>!pair.includes(i));return{type:'A',terms,sum:a+b+c,pair:[...pair],steps:[`${terms[pair[0]]} + ${terms[pair[1]]} = 10`,`10 + ${terms[other]} = ${a+b+c}`]}}
 function makeSplit(a,b,c,split,partner,makePart){const terms=[a,b,c],rest=terms[split]-makePart,leftover=[0,1,2].find(i=>i!==split&&i!==partner),rem=terms[leftover],sum=a+b+c;
 const text=partner>split?`${makePart} + ${terms[partner]} = 10`:`${terms[partner]} + ${makePart} = 10`;
-return{type:'B',terms,sum,split,partner,parts:[makePart,rest],remaining:leftover,steps:[text,`${rest} + ${rem} = ${rest+rem}`,`10 + ${sum-10} = ${sum}`]}}
+const second=leftover<split?`${rem} + ${rest} = ${rem+rest}`:`${rest} + ${rem} = ${rest+rem}`;
+return{type:'B',terms,sum,split,partner,parts:[makePart,rest],remaining:leftover,steps:[text,second,`10 + ${sum-10} = ${sum}`]}}
 function validate(q){const t=q.terms,s=t.reduce((a,b)=>a+b,0);if(t.length!==3||t.some(x=>!Number.isInteger(x)||x<1||x>9)||s<11||s>20||q.sum!==s)return false;
 if(q.type==='A'){if(q.pair.length!==2||q.pair[1]!==q.pair[0]+1)return false;return t[q.pair[0]]+t[q.pair[1]]===10}
 if(q.type!=='B'||q.split===q.partner||q.parts[0]<=0||q.parts[1]<=0||q.parts[0]+q.parts[1]!==t[q.split]||q.parts[0]+t[q.partner]!==10)return false;
@@ -132,17 +132,25 @@ const s=a+b+c;if(s<12||s>20)continue;
 const pair=a+b===10?[0,1]:b+c===10?[1,2]:null;
 if(pair){let q=makeDirect(a,b,c,pair);if(validate(q))A.push(q);continue}
 if(a+c===10)continue;
+const possible=[];
 for(let{ s:sp,p:pa}of allowedSplit){const terms=[a,b,c],part=10-terms[pa];if(part<=0||part>=terms[sp])continue;
-let q=makeSplit(a,b,c,sp,pa,part);if(validate(q))B.push(q)}
+let q=makeSplit(a,b,c,sp,pa,part);if(validate(q))possible.push(q)}
+// A single consistent number bond per equation: prefer splitting the
+// middle number so the left and right bond parts match neighboring terms.
+// When the middle and last terms are equal, prefer making 10 to the right.
+if(possible.length){
+const middle=possible.filter(q=>q.split===1),options=middle.length?middle:possible;
+const preferred=(middle.length&&b===c)?options.find(q=>q.partner===2):null;
+B.push(preferred||options.find(q=>q.partner<q.split)||options[0])}
 }return{A:randShuffle(A),B:randShuffle(B)}}
 function newRounds(count){const pool=questionPools(),used=new Set(exampleRound.map(q=>q.terms.join(','))),rounds=[exampleRound.map(q=>({...q}))];
 for(let r=1;r<count;r++){const row=[];for(let t=0;t<3;t++){const expected=((r+t+1)%2===0)?'A':'B';let q=pool[expected].find(x=>!used.has(x.terms.join(','))&&x.sum>=14&&x.sum<=20);if(!q)q=pool[expected].find(x=>!used.has(x.terms.join(',')));if(!q)throw Error('Not enough unique questions');row.push({...q});used.add(q.terms.join(','))}rounds.push(row)}
 return rounds}
 function totalStars(team){return game.grades.reduce((sum,r)=>sum+(r[team]??0),0)}
-function save(){try{localStorage.setItem('oodles_make10_v1',JSON.stringify({roundCount:game.roundCount,index:game.index,rounds:game.rounds,grades:game.grades,checked:game.checked,activeTeam:game.activeTeam,started:game.started,final:game.final}))}catch(e){}}
-function restore(){try{const old=JSON.parse(localStorage.getItem('oodles_make10_v1')||'null');if(!old||!Array.isArray(old.rounds)||!Array.isArray(old.grades)||old.rounds.length!==old.roundCount||old.roundCount<3||old.roundCount>10||!old.rounds.every(row=>Array.isArray(row)&&row.length===3&&row.every(validate)))return;
-Object.assign(game,old);game.index=clamp(game.index,0,game.roundCount-1);game.activeTeam=clamp(game.activeTeam,0,2);$('round-select').value=game.roundCount;$('play-btn').textContent='RESUME GAME ▶'}catch(e){}}
-function resetGame(){game.roundCount=parseInt($('round-select').value,10)||5;game.index=0;game.rounds=newRounds(game.roundCount);game.grades=Array.from({length:game.roundCount},()=>[null,null,null]);game.checked=Array(game.roundCount).fill(false);game.activeTeam=0;game.started=true;game.final=false;save()}
+function save(){try{localStorage.setItem('oodles_make10_v3',JSON.stringify({roundCount:game.roundCount,index:game.index,rounds:game.rounds,grades:game.grades,checked:game.checked,activeTeam:game.activeTeam,started:game.started,final:game.final}))}catch(e){}}
+function restore(){try{const old=JSON.parse(localStorage.getItem('oodles_make10_v3')||'null');if(!old||!Array.isArray(old.rounds)||!Array.isArray(old.grades)||old.rounds.length!==5||old.roundCount!==5||!old.rounds.every(row=>Array.isArray(row)&&row.length===3&&row.every(validate)))return;
+Object.assign(game,old);game.index=clamp(game.index,0,game.roundCount-1);game.activeTeam=clamp(game.activeTeam,0,2);$('play-btn').textContent='RESUME GAME ▶'}catch(e){}}
+function resetGame(){game.roundCount=5;game.index=0;game.rounds=newRounds(game.roundCount);game.grades=Array.from({length:game.roundCount},()=>[null,null,null]);game.checked=Array(game.roundCount).fill(false);game.activeTeam=0;game.started=true;game.final=false;save()}
 function scoreHTML(t){const chosen=game.grades[game.index][t],checked=game.checked[game.index];return `<div class="score-row"><div class="score-chip">${icon('star','star-icon')} <span class="score-total" data-score-team="${t}">${totalStars(t)}</span></div>${checked?`<div class="grade-set"><span class="mini-label">POINTS</span>${[0,1,2].map(n=>`<button class="grade-btn ${n===chosen?'selected':''}" data-grade-team="${t}" data-grade-value="${n}" aria-label="Give Team ${t+1} ${n} points" aria-pressed="${n===chosen}">${n}</button>`).join('')}</div>`:''}</div>`}
 function equationHTML(q,t){return `<div class="equation" aria-label="${q.terms.join(' plus ')} equals what">${q.terms.map((n,i)=>`${i?'<span class="op">+</span>':''}<span class="term" data-term="${i}">${n}</span>`).join('')}<span class="equals">=</span><span class="answer-line">${game.checked[game.index]?`<span class="answer-n">${q.sum}</span>`:''}</span><button class="speaker-btn" data-speaker-team="${t}" aria-label="Read question for Team ${t+1}">${icon('sound','speak-icon')}</button></div>`}
 function questionHTML(q,t,mobile){const checked=game.checked[game.index],steps=checked?q.steps.map((x,i)=>`<div class="solution-step" style="animation-delay:${.18+i*.35}s">${x}</div>`).join(''):'<div class="no-answer-placeholder"></div>';
@@ -158,7 +166,10 @@ const circle=(x,y,val)=>`<circle class="bond-ring" cx="${x.toFixed(1)}" cy="${y}
 if(q.type==='A'){let x=(cx(q.pair[0])+cx(q.pair[1]))/2;html+=path(cx(q.pair[0]),bottom(q.pair[0])+3,x-r*.3,Y-r+3);html+=path(cx(q.pair[1]),bottom(q.pair[1])+3,x+r*.3,Y-r+3);html+=circle(x,Y,10)}
 else{let x=cx(q.split),gap=mobile?37:43,cy=Y;
 html+=path(x,bottom(q.split)+5,x-gap+4,cy-r+5);html+=path(x,bottom(q.split)+5,x+gap-4,cy-r+5);
-html+=circle(x-gap,cy,q.parts[0]);html+=circle(x+gap,cy,q.parts[1])}
+// Number bonds follow the equation from left to right: the part nearest
+// the partner makes 10, the other part stays on the opposite side.
+const bondParts=q.partner<q.split?q.parts:[q.parts[1],q.parts[0]];
+ html+=circle(x-gap,cy,bondParts[0]);html+=circle(x+gap,cy,bondParts[1])}
 svg.innerHTML=html}
 function renderAll(){if(!game.started||!game.rounds.length)return;
 let row=game.rounds[game.index];$('desktop-teams').innerHTML=row.map((q,t)=>questionHTML(q,t,false)).join('');$('mobile-team-holder').innerHTML=row.map((q,t)=>questionHTML(q,t,true)).join('');
@@ -183,7 +194,7 @@ $('podium').innerHTML=scores.map((s,t)=>`<div class="podium-card ${winners.inclu
 $('champion-line').textContent=winners.length===3?'ALL TEAMS ARE CHAMPIONS! 🏆':winners.length===2?`TEAMS ${winners[0]+1} & ${winners[1]+1} ARE CHAMPIONS! 🏆`:`TEAM ${winners[0]+1} IS THE CHAMPION! 🏆`;
 $('end-screen').classList.remove('hidden');playFanfare();launchConfetti()}
 function showHome(){stopSpeech();stopConfetti();$('end-screen').classList.add('hidden');$('intro-screen').classList.remove('hidden');$('play-btn').textContent=game.started?'RESUME GAME ▶':'PLAY NOW ▶'}
-function playStart(){const choose=Number($('round-select').value);if(!game.started||game.final||game.roundCount!==choose){resetGame()}else{game.final=false;save()}
+function playStart(){if(!game.started||game.final){resetGame()}else{game.final=false;save()}
 $('intro-screen').classList.add('hidden');$('end-screen').classList.add('hidden');playTransition();renderAll()}
 function startAgain(){stopConfetti();resetGame();$('end-screen').classList.add('hidden');$('intro-screen').classList.add('hidden');playTransition();renderAll()}
 function speakQuestion(team){if(game.muted)return;const q=game.rounds[game.index][team];if(!('speechSynthesis' in window))return showToast('Voice is not available on this device.');stopSpeech();const u=new SpeechSynthesisUtterance(`${q.terms[0]} plus ${q.terms[1]} plus ${q.terms[2]} equals what? Make ten first!`);u.lang='en-US';u.rate=.83;u.pitch=1.08;u.volume=.95;const voices=window.speechSynthesis.getVoices();u.voice=voices.find(v=>v.lang.toLowerCase().startsWith('en-us')&&/female|samantha|zira|jenny|aria|google/i.test(v.name))||voices.find(v=>v.lang.toLowerCase().startsWith('en-us'))||voices.find(v=>v.lang.toLowerCase().startsWith('en'))||null;try{window.speechSynthesis.speak(u)}catch(e){showToast('Voice is not available.') }}
@@ -198,7 +209,6 @@ const grade=e.target.closest('[data-grade-value]');if(grade){setGrade(+grade.dat
 const action=e.target.closest('[data-action]');if(action){onAction(action.dataset.action);return}
 const tab=e.target.closest('[data-tab]');if(tab){game.activeTeam=+tab.dataset.tab;playClick();save();renderAll()}});
 $('play-btn').addEventListener('click',playStart);$('again-btn').addEventListener('click',startAgain);$('finish-home').addEventListener('click',showHome);
-$('round-select').addEventListener('change',()=>{$('play-btn').textContent=Number($('round-select').value)===game.roundCount&&game.started&&!game.final?'RESUME GAME ▶':'PLAY NOW ▶'});
 document.addEventListener('keydown',e=>{if($('intro-screen').classList.contains('hidden')&&!game.final){if(e.key==='ArrowRight'){e.preventDefault();goNext()}else if(e.key==='ArrowLeft'){e.preventDefault();goBack()}else if(e.key==='Enter'&&e.target===document.body){e.preventDefault();doCheck()}}});
 function resize(){const w=window.innerWidth,h=window.innerHeight;stageScale=Math.min(w/1672,h/941);$('design-stage').style.setProperty('--stage-scale',stageScale.toFixed(5));const mode=w/h<=1.25?'mobile':'desktop';if(lastMode!==mode){lastMode=mode;if(game.started&&!game.final&&$('intro-screen').classList.contains('hidden'))renderAll()}else redrawBonds()}
 window.addEventListener('resize',()=>{cancelAnimationFrame(resizePending);resizePending=requestAnimationFrame(resize)});
